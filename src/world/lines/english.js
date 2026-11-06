@@ -177,8 +177,8 @@ export default {
     nextRound: ['One more round!', 'Again!', 'This time I’ll show you!', 'Revenge round!', 'Collect the chits, let’s go again'],
     winner: ['I won! 🏆', 'Who’s the champion? Me! 🏆', 'I beat everyone! 😎', 'I’m the real {king} today', 'Sweets are on me! 🍬'],
     loser: ['Let’s play again tomorrow!', 'Revenge tomorrow 😤', 'That was so much fun!', 'Next time it’s me, for sure', 'Good game, everyone'],
-    parent: ['Kids, not so loud! 📢', 'Have you done your homework? 📚', 'Everyone drink your milk! 🥛', 'Don’t go out in the sun!', 'Sit under the fan, it’s hot today'],
-    parentEnd: ['Kids! Food’s ready, go wash your hands! 🍛', 'Okay everyone, nap time now! 😴'],
+    parent: ['Hey, not so loud! 📢', 'Have you done your homework? 📚', 'Everyone drink your milk! 🥛', 'Don’t go out in the sun!', 'Sit under the fan, it’s hot today'],
+    parentEnd: ['Everyone! Food’s ready, go wash your hands! 🍛', 'Okay everyone, nap time now! 😴'],
     cheatCaught: [
       'Hey! You’re cheating! 😠',
       'I saw that! You were peeking!',

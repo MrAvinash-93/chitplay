@@ -6,14 +6,14 @@
  * {placeholders} filled in. Within one match:
  *   - a final sentence is never spoken twice (exact-string guarantee),
  *   - unused core lines are always preferred over reused ones,
- *   - if a key is truly exhausted the kid stays quiet instead of repeating.
+ *   - if a key is truly exhausted the player stays quiet instead of repeating.
  *
  * Lines spoken before the result are role-neutral, so a bluffing thief sounds
  * exactly like the royals and nothing leaks.
  */
 // Language packs are loaded on demand: a player only downloads the lines of
 // the language they are actually playing in.
-const V = '?v=20261108-prod';
+const V = '?v=20261107-cast';
 const LOADERS = {
   english: () => import(`./lines/english.js${V}`),
   japanese: () => import(`./lines/japanese.js${V}`),
@@ -36,7 +36,7 @@ const LOADERS = {
   spanish: () => import(`./lines/spanish.js${V}`),
 };
 
-/** Languages a player can pick for the kids' chat (text). Voices always stay English. */
+/** Languages a player can pick for the players' chat (text). Voices always stay English. */
 export const CHAT_LANGUAGES = [
   { id: 'en', label: 'English' },
   { id: 'hinglish', label: 'Hinglish' },
@@ -91,7 +91,7 @@ export class Dialogue {
     this.coreUses = new Map();     // `${key}|${core}` -> count
   }
 
-  // call loadPack(lang) first; until it arrives the kids simply stay quiet
+  // call loadPack(lang) first; until it arrives the players simply stay quiet
   get pack() { return PACKS[this.lang] || PACKS.english || EMPTY; }
 
   /** What has been said so far (saved with the match so a refresh doesn't repeat lines). */

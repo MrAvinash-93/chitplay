@@ -1,7 +1,7 @@
 {
   "name": "CHITPLAY",
   "short_name": "CHITPLAY",
-  "description": "The paper chit game in 3D: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more.",
+  "description": "The indoor paper chit game for all ages: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more.",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "fullscreen",

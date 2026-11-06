@@ -94,8 +94,8 @@ export default {
     nextRound: ['One more round!', 'Again!', 'This time I’ll show you!', 'Revenge round!', 'Collect the slips!'],
     winner: ['I won! 🏆', 'Who’s the champion? Me! 🏆', 'Beat everyone! 😎', 'Today’s {king} is me', 'White Rabbit candy on me! 🍬'],
     loser: ['Let’s play again tomorrow!', 'Revenge tomorrow 😤', 'That was fun!', 'Next time for sure', 'Méi shì, no problem'],
-    parent: ['Kids, quieter! 📢', 'Have you done your summer homework? 📚', 'Drink some mung bean soup! 🥣', 'Don’t go out in the sun!', 'Grandpa is sleeping!'],
-    parentEnd: ['Kids! Dinner is ready, wash your hands! 🥟', 'Everyone come, watermelon time! 🍉'],
+    parent: ['Hey, quieter! 📢', 'Have you done your summer homework? 📚', 'Drink some mung bean soup! 🥣', 'Don’t go out in the sun!', 'Grandpa is sleeping!'],
+    parentEnd: ['Everyone! Dinner is ready, wash your hands! 🥟', 'Everyone come, watermelon time! 🍉'],
     cheatCaught: [
       'Wèi! You’re cheating! Zuòbì! 😠',
       'I saw that! You peeked!',

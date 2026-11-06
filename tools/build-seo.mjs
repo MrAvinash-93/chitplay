@@ -3,6 +3,7 @@
  *   games/<slug>/index.html  — one landing page per game name (rules, roles, FAQ)
  *   games/index.html         — hub of every game name
  *   sitemap.xml, robots.txt, manifest.webmanifest
+ *   indoor-games/, school-games/ — the topics people search for: what to play with four people
  *   about, contact, privacy, terms, disclaimer — the pages ad networks look for
  *   CNAME                    — the custom domain for GitHub Pages
  *   index.html, 404.html     — refreshes the <!-- seo:… --> and <!-- analytics --> blocks
@@ -47,7 +48,7 @@ const ANALYTICS = `<!-- analytics -->
 <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KRTTSTQQ"></script>${ADSENSE_TAG}
 <!-- /analytics -->`;
 
-const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
+const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
 const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src="${up}assets/logo.png" alt="CHITPLAY" width="180" height="31" style="display:block"></a>`;
 const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
 <link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
@@ -112,10 +113,10 @@ function pageFor(id) {
   const country = base.name;
   const seoName = primary.replace(':', '');
   const title = `CHITPLAY: ${seoName}`;
-  const desc = `Play ${primary}${localScript ? ` (${localScript})` : ''}, ${country}'s paper chit game, free online. The ${guesserEn} must catch the ${thiefEn}. Rules and printable chits.`;
+  const desc = `Play ${primary}${localScript ? ` (${localScript})` : ''} free online: the indoor chit game for all ages. The ${guesserEn} must catch the ${thiefEn}. Rules and printable chits.`;
   const lh = LOCAL_HOWTO[id];
   const ex = scoringExample(base);
-  const kidName = (i) => base.kids[i];
+  const castName = (i) => base.cast[i];
   // the game's own role name in Latin letters (Raja, Wazir…), plus English and local script when they differ
   const roleLabel = (slot, i) => {
     const own = ROLE_LATIN?.[id]?.[i] || en.roles[slot].name;
@@ -124,7 +125,7 @@ function pageFor(id) {
   };
   const exRows = SLOTS.map((slot, i) => {
     const l = roleLabel(slot, i);
-    return `<tr><td>${esc(kidName(i))}</td><td>${esc(base.roles[slot].emoji)} ${esc(l.own)}${l.enName ? ` (${esc(l.enName)})` : ''}</td><td>${ex.caught[i]}</td><td>${ex.missed[i]}</td></tr>`;
+    return `<tr><td>${esc(castName(i))}</td><td>${esc(base.roles[slot].emoji)} ${esc(l.own)}${l.enName ? ` (${esc(l.enName)})` : ''}</td><td>${ex.caught[i]}</td><td>${ex.missed[i]}</td></tr>`;
   }).join('');
   const chits = SLOTS.map((slot, i) => {
     const l = roleLabel(slot, i);
@@ -148,14 +149,16 @@ function pageFor(id) {
   const faq = [
     [`How do you play ${primary}?`, `${steps.join(' ')}`],
     [`Is ${primary} free to play online?`, `Yes. ChitPlay is free, runs in any modern browser on phone or computer, and needs no download or sign-up.`],
-    [`How many players does ${primary} need?`, `The classic game needs exactly four players. In ChitPlay you can play with three computer kids, or just watch all four play.`],
+    [`How many players does ${primary} need?`, `The classic game needs exactly four players. In CHITPLAY you can play with three computer players, invite up to three friends on their own phones, or just watch.`],
+    [`Is ${primary} only for children?`, `No. Children, teenagers, parents and grandparents all play it. It takes a minute to learn, and bluffing is just as much fun at any age.`],
+    [`Is ${primary} a good indoor game?`, `Yes. On paper all you need is a page and a pen, so it works at home, in a classroom, on a train or during a power cut. Online you only need a phone.`],
     [`What are the roles in ${primary}?`, `${SLOTS.map(s => `${en.roles[s].name} (${local.roles[s].name})`).join(', ')}.`],
     [`What is ${primary} also called?`, `${aka.join(', ')}.`],
     [`Can I play ${primary} on my phone?`, `Yes. ChitPlay works on Android and iPhone browsers. Tap 🔄 to play in landscape, and add it to your home screen to play like an app, even offline.`],
-    [`Which languages can I play ${primary} in?`, 'The game and the voices are in English. The kids\' chat bubbles can also be shown in Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese, Korean, Chinese, Russian, German, French, Portuguese or Spanish, all written in Latin letters.'],
+    [`Which languages can I play ${primary} in?`, 'The game and the voices are in English. The players\' chat bubbles can also be shown in Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese, Korean, Chinese, Russian, German, French, Portuguese or Spanish, all written in Latin letters.'],
     [`How do you make the chits for ${primary} at home?`, `Tear a page into four slips, write ${SLOTS.map(s => en.roles[s].name).join(', ')} on them with the points, fold them and shuffle. Or print the ready-made chits on this page.`],
     [`How many points does each role get in ${primary}?`, `${SLOTS.filter(s => s !== 'thief').map(s => `${en.roles[s].name} ${base.roles[s].points}`).join(', ')}. The ${thiefEn} gets 0 when caught and ${base.rules.escape ?? base.roles[base.rules.guesser].points} when not caught.`],
-    [`Can you cheat in ${primary}?`, `In ChitPlay the ${guesserEn} can press 🤫 Cheat to try to peek at a chit, with a 50/50 chance of seeing it. If it works, one innocent player is cleared. If someone notices, you lose 100 points. Computer players try it too.`],
+    [`Can you cheat in ${primary}?`, `In CHITPLAY the ${guesserEn} can press 🤫 Cheat to try to peek at a chit. Seven times in ten nobody notices, and you see one innocent player's chit, never the ${thiefEn}'s. Three times in ten you are caught: you see nothing, you lose 100 points, and the table lets you hear about it. Computer players try it too.`],
   ];
   const ruleTip = base.rules.secondChance ? `You get two shots: use the first to test your hunch, then watch how everyone reacts.`
     : base.rules.night ? `Watch who looks relieved after the night. The Mafia already knows who was attacked.`
@@ -257,9 +260,9 @@ button.btn{border:1px solid #6b4a2a;font:inherit;font-weight:700;cursor:pointer}
 <main>
 ${logoLink('../../')}
 <nav class="crumbs" aria-label="Breadcrumb"><a href="../../">CHITPLAY</a> › <a href="../">Games</a> › ${esc(primary)}</nav>
-<h1>${esc(primary)} — play online in 3D</h1>
+<h1>${esc(primary)}: play the indoor chit game online</h1>
 <p class="lead" style="margin-top:-4px">${esc(country)}'s chit game${localScript ? ` · <span lang="${LANG[id]}">${esc(localScript)}</span>` : ''}</p>
-<p class="lead">The 4-player paper chit game <strong>${esc(primary)}</strong>${sameName ? '' : ` (${esc(en.game)})`}, free in your browser. Four kids, four folded chits: the ${esc(guesserEn)} has to catch the ${esc(thiefEn)}.</p>
+<p class="lead">The 4-player paper chit game <strong>${esc(primary)}</strong>${sameName ? '' : ` (${esc(en.game)})`}, free in your browser for all ages. Four players, four folded chits: the ${esc(guesserEn)} has to catch the ${esc(thiefEn)}.</p>
 <div class="cta"><a class="btn" href="${playEn}">▶ Play ${esc(primary)} now</a></div>
 <h2>Also known as</h2>
 <ul class="aka">${aka.map(a => `<li>${esc(a)}</li>`).join('')}</ul>
@@ -271,7 +274,7 @@ ${logoLink('../../')}
 <p>${esc(en.ruleText)}</p>
 ${local.ruleText !== en.ruleText ? `<p lang="${LANG[id]}">${esc(local.ruleText)}</p>` : ''}
 <h2>Scoring example</h2>
-<p>One round of ${esc(primary)}. ${esc(kidName(ex.guesserSeat))} is the ${esc(guesserEn)}. What everyone scores if the ${esc(thiefEn)} is caught, and if ${esc(kidName(ex.guesserSeat))} accuses ${esc(kidName(ex.wrongSeat))} instead:</p>
+<p>One round of ${esc(primary)}. ${esc(castName(ex.guesserSeat))} is the ${esc(guesserEn)}. What everyone scores if the ${esc(thiefEn)} is caught, and if ${esc(castName(ex.guesserSeat))} accuses ${esc(castName(ex.wrongSeat))} instead:</p>
 <table><thead><tr><th>Player</th><th>Chit</th><th>${esc(thiefEn)} caught</th><th>Wrong guess</th></tr></thead><tbody>${exRows}</tbody></table>
 ${lh ? `<h2 lang="${lh[0]}">${esc(lh[1])}</h2>\n<p lang="${lh[0]}">${esc(lh[2])}</p>` : ''}
 <h2>Print the chits</h2>
@@ -309,7 +312,7 @@ function hubPage() {
   const hubFaq = [
     ['Are Raja Rani Chor Police, Raja Mantri Chor Sipahi and King Queen Thief Police the same game?', 'Yes. They are names for the same four-player paper chit game. The role names, the points and one small rule change from place to place.'],
     ['Which chit game should I play?', 'Pick the name you grew up with. ChitPlay opens the game of your own country first, and you can swipe to any other.'],
-    ['Can I play a chit game online alone?', 'Yes. In ChitPlay three computer kids play with you, or you can just watch all four play.'],
+    ['Can I play a chit game online alone?', 'Yes. In CHITPLAY three computer players sit with you. You can also invite up to three friends on their own phones, or just watch.'],
   ];
   const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: hubFaq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
   const title = 'CHITPLAY: All Chit Games';
@@ -340,7 +343,7 @@ ${iconLinks('../')}
 <main>
 ${logoLink('../')}
 <h1>Chit games from around the world</h1>
-<p>One game, many names. Pick yours and play it free in 3D.</p>
+<p>One indoor game, many names. Pick yours and play it free, at any age. Looking for ideas? See <a href="../indoor-games/">indoor games for four people</a> and <a href="../school-games/">paper games for school</a>.</p>
 <p><a class="btn" href="../">▶ Play now</a></p>
 <ol>${items}</ol>
 <h2>Roles in every version</h2>
@@ -361,6 +364,96 @@ for (const id of COUNTRY_ORDER) {
   writeFileSync(join(dir, 'index.html'), pageFor(id));
 }
 writeFileSync(join(ROOT, 'games', 'index.html'), hubPage());
+
+// ── Topic pages: useful answers for what people actually search ──
+const TOPICS = {
+  'indoor-games': {
+    title: 'Indoor Games for 4 People', h1: 'Indoor games for four people',
+    desc: 'The best indoor game for 4 people needs only paper and a pen: the chit game of bluffing, for all ages. Rules for home, or play free online with friends.',
+    intro: 'Stuck indoors with three other people and nothing to do? The chit game needs no board and no batteries: one page, one pen, and a straight face. It has been played in homes for generations because a grandparent, a parent and a teenager can all sit down and be equally good at it.',
+    sections: [
+      ['Why it works at home', 'Rounds last about a minute, so it fits between other things. Nobody has to be good at anything except keeping a straight face, which makes it fair across ages. And since a different person is the guesser each round, nobody sits out.'],
+      ['What you need', 'Tear a page into four slips. Write King, Queen, Police and Thief on them (or your own version of the names), fold them and shuffle. One person tosses them on the floor and everyone picks one. Keep a score on the back of the same page.'],
+      ['When there are fewer than four of you', 'Open CHITPLAY on a phone: computer players take the empty seats. Friends in the same room can join from their own phones by scanning a QR code, and each person keeps their chit private on their own screen.'],
+      ['A forfeit makes it better', 'Agree before you start what last place has to do: sing a line of an old song, tell an embarrassing story, or make the next round of tea. CHITPLAY suggests a harmless forfeit at the end of every match.'],
+    ],
+    faq: [
+      ['What is the best indoor game for 4 people?', 'If you have no board game at hand, the chit game (known as Raja Rani Chor Police, Mafia, or Cops and Robbers) is hard to beat: it needs only paper, takes a minute to learn and suits every age.'],
+      ['What indoor games can adults and children play together?', 'Games that reward bluffing rather than skill or strength. In the chit game a child can fool an adult as easily as the other way round.'],
+      ['Which indoor games need no equipment?', 'The chit game needs just a page and a pen, or only a phone if you play it online for free.'],
+    ],
+  },
+  'school-games': {
+    title: 'Paper Games to Play in School', h1: 'Paper games to play in school',
+    desc: 'The classic paper game from school days: four chits, one thief, a lot of bluffing. How to play it in class or at break, and how to play it online with friends.',
+    intro: 'Almost everyone who went to school in South Asia remembers a torn notebook page folded into four chits. It was played on the last bench, in free periods and on long bus rides, and it is still one of the best games for a few minutes with friends.',
+    sections: [
+      ['How to play with a notebook page', 'Tear a page into four slips and write the four roles with their points. Fold them the same way so nobody can tell them apart, then toss them on the desk. Everyone picks one and reads it secretly. The guesser announces themselves and has to find the thief by looking at faces. Everyone opens their chit and you add up the scores on the same page.'],
+      ['Good for a free period', 'A round takes about a minute and stops whenever the teacher arrives. It helps new classmates get talking, too: you have to look people in the eye to play.'],
+      ['For teachers', 'It works as an ice-breaker, for practising simple addition with the scores, and for talking about how we read other people. Each group needs only four slips. You can print ready-made chits from any of our game pages.'],
+      ['Now you’ve left school', 'CHITPLAY brings the game back for anyone who misses it, whatever their age. Invite old classmates with a link and play from wherever you all are now.'],
+    ],
+    faq: [
+      ['What paper games can you play in class?', 'The four-chit game, also known as Raja Rani Chor Police or Raja Mantri Chor Sipahi, is the classic. It only needs one notebook page.'],
+      ['How do you make the chits?', 'Tear a page into four equal slips, write King 1000, Queen 800, Police 500 and Thief 0, then fold each one the same way.'],
+      ['Can it be played online with classmates?', 'Yes. One person hosts in CHITPLAY and the others join by QR code, invite link or a 6-digit code. Up to four people can play.'],
+    ],
+  },
+};
+function topicPage(slug, t) {
+  const url = `${SITE}/${slug}/`;
+  const title = `CHITPLAY: ${t.title}`;
+  const items = COUNTRY_ORDER.map(id => `<li><a href="../games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)})</li>`).join('');
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'Article', headline: t.h1, description: t.desc, url, image: `${SITE}/assets/og-image.jpg`, author: DEVELOPER_LD, publisher: { '@type': 'Organization', name: 'CHITPLAY', logo: { '@type': 'ImageObject', url: `${SITE}/assets/icon-512.png` } }, dateModified: TODAY },
+    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: t.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'CHITPLAY', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: t.title, item: url }] },
+  ];
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${ANALYTICS}
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(t.desc)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="CHITPLAY">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(t.desc)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${SITE}/assets/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(t.desc)}">
+<meta name="twitter:image" content="${SITE}/assets/og-image.jpg">
+${iconLinks('../')}
+<script type="application/ld+json">${json(ld)}</script>
+<style>body{margin:0;background:#140b07;color:#f6ead2;font:17px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(28px,6vw,40px);line-height:1.2}h2{font-size:21px;margin-top:28px}.btn{display:inline-block;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}.others{columns:2}footer{margin-top:40px;font-size:13px;color:#d4c2a0}</style>
+</head>
+<body>
+<main>
+${logoLink('../')}
+<h1>${esc(t.h1)}</h1>
+<p>${esc(t.intro)}</p>
+<p><a class="btn" href="../">▶ Play free now</a></p>
+${t.sections.map(([h, p]) => `<h2>${esc(h)}</h2>\n<p>${esc(p)}</p>`).join('\n')}
+<h2>Pick the version you grew up with</h2>
+<ul class="others">${items}</ul>
+<h2>Questions</h2>
+${t.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
+<footer>${footerLinks('../')} · © ${TODAY.slice(0, 4)} CHITPLAY</footer>
+</main>
+</body>
+</html>
+`;
+}
+for (const [slug, t] of Object.entries(TOPICS)) {
+  mkdirSync(join(ROOT, slug), { recursive: true });
+  writeFileSync(join(ROOT, slug, 'index.html'), topicPage(slug, t));
+}
 
 // ── About / Privacy / Terms (what ad networks look for before approving a site) ──
 function infoPage(slug, title, desc, bodyHtml) {
@@ -399,7 +492,7 @@ ${bodyHtml}
 const gameList = COUNTRY_ORDER.map(id => `<li><a href="../games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a></li>`).join('');
 const INFO = {
   about: ['About ChitPlay', 'ChitPlay is a free 3D paper chit game for your browser: Raja Rani Chor Police, Mafia, Cops and Robbers and more. Made by developer Mr Avinash.', `
-<p>ChitPlay is a free, 3D version of the four-player paper chit game. Four kids sit around a mat, draw folded chits, bluff, and the investigator has to catch the thief. You can play with three computer kids, play with friends on nearby phones, or just watch.</p>
+<p>CHITPLAY is a free 3D version of the four-player paper chit game, made for every age: children, teenagers, parents and grandparents. Four players sit around a mat, draw folded chits and bluff, and the investigator has to catch the thief. You can play with three computer players, play with friends on nearby phones, or just watch.</p>
 <h2>Who makes ChitPlay</h2>
 <p>ChitPlay is designed and developed by <strong>${DEVELOPER}</strong> as an independent project, to keep a game many of us played on paper as children alive for anyone with a browser.</p>
 <p>Questions, ideas, bug reports or business enquiries: ${MAILTO}. See the <a href="../contact/">contact page</a> for more.</p>
@@ -407,7 +500,7 @@ const INFO = {
 <p>The same game is played under many names. ChitPlay has fourteen of them, each with its own roles, rules and room, and every one has a page with its full rules, scoring and printable chits:</p>
 <ul>${gameList}</ul>
 <h2>How it's made</h2>
-<p>The game runs on your device: the 3D room, the kids, their voices (your browser's built-in speech) and your saved match. There are no accounts and no downloads, and it works on phones, tablets and computers, even offline once it's been opened.</p>
+<p>The game runs on your device: the 3D room, the characters, their voices (your browser's built-in speech), your profile and your saved match. There are no accounts and no downloads, and it works on phones, tablets and computers, even offline once it's been opened.</p>
 <h2>How ChitPlay stays free</h2>
 <p>ChitPlay is free to play. We use Google Analytics to understand which games people enjoy, and the site may show advertising to cover its costs. Our <a href="../privacy/">Privacy Policy</a> explains both.</p>`],
   contact: ['Contact ChitPlay', 'Contact the ChitPlay team by email for support, bug reports, privacy requests, copyright concerns or advertising enquiries.', `
@@ -426,7 +519,9 @@ const INFO = {
   privacy: ['Privacy Policy', 'How ChitPlay handles your data: no accounts, game data stored on your device, Google Analytics, cookies, advertising and your choices.', `
 <p>ChitPlay (www.chitplay.com) is a game that runs in your browser, developed by ${DEVELOPER}. This page explains what data it uses and the choices you have. Questions: ${MAILTO}.</p>
 <h2>Saved on your device</h2>
-<p>ChitPlay saves your player name and settings (sound, voice, chat language, number of rounds), your win/match counts and your current match in your browser's local storage, so that a refresh doesn't lose your game. We don't receive this data, and you can delete it at any time by clearing your browser's site data. The game also picks a starting game from your device's timezone and language settings; that check happens on your device.</p>
+<p>CHITPLAY saves your profile (player name, gender and character), your settings (sound, voice, conversation, chat language, graphics, number of rounds), your points, rank, badges, best matches, pinned games and your current match in your browser's local storage, so that a refresh doesn't lose your game. We don't receive this data. The reset button in your profile erases your score, and clearing your browser's site data erases everything. The game also picks a starting game and suitable first names from your device's timezone and language settings; that check happens on your device.</p>
+<h2>Camera (only if you scan a QR code)</h2>
+<p>When you choose to scan a friend's QR code to join a game, your browser asks for permission to use the camera, or you can take a photo instead. The picture is read on your device to find the game code. It is never stored or uploaded, and the camera stops as soon as the code is found or you cancel.</p>
 <h2>What we don't ask for</h2>
 <p>There are no accounts or sign-ups, and we don't ask for your email address or phone number. The player name you choose stays on your device, unless you use Nearby Play. If you email us, we use your message and address only to reply.</p>
 <h2>Google Analytics</h2>
@@ -437,11 +532,11 @@ const INFO = {
 <h2>Visitors in the EEA, UK and Switzerland</h2>
 <p>For visitors from these regions, analytics and advertising cookies are off by default and are used only if you give consent. You may have rights under local law to access, correct or delete personal data, or to object to its use. Email us to make a request; we hold almost nothing that identifies you, and data held by Google can be managed through the links above.</p>
 <h2>Nearby Play</h2>
-<p>Nearby Play is optional and only connects when you host or join a game. To find each other, the phones contact the free PeerJS connection service (peerjs.com), which sees your IP address and a temporary game code. The game then runs directly between the phones; if a direct connection isn't possible, its messages may pass through PeerJS's relay server. The name you type is shown to the other players in that game. ChitPlay doesn't store any of this.</p>
+<p>Nearby Play is optional and only connects when you host or join a game. To find each other, the phones contact the free PeerJS connection service (peerjs.com), which sees your IP address and a temporary game code. The game then runs directly between the phones; if a direct connection isn't possible, its messages may pass through PeerJS's relay server. The name, gender and character you chose are shown to the other players in that game. CHITPLAY doesn't store any of this.</p>
 <h2>Voices</h2>
-<p>The kids' voices use your browser's built-in speech synthesis. Depending on your browser and operating system, text may be processed by the speech service built into it.</p>
+<p>The characters' voices use your browser's built-in speech synthesis. Depending on your browser and operating system, text may be processed by the speech service built into it.</p>
 <h2>Children</h2>
-<p>ChitPlay is a general-audience game and is not directed at children under 13. We don't knowingly collect personal information from children. If you are a parent or guardian and believe a child has sent us personal information, email ${MAILTO} and we will delete it.</p>
+<p>CHITPLAY is a general-audience game for players of all ages and is not directed specifically at children under 13. We don't knowingly collect personal information from children. If you are a parent or guardian and believe a child has sent us personal information, email ${MAILTO} and we will delete it.</p>
 <h2>Changes</h2>
 <p>If this policy changes, we'll update this page and the date at the bottom.</p>`],
   terms: ['Terms of Use', 'The terms for playing ChitPlay, a free browser game: fair use, intellectual property, advertising, disclaimers and how to contact us.', `
@@ -455,7 +550,7 @@ const INFO = {
 <h2>Nearby Play</h2>
 <p>The name you enter is shown to the people in your game. Please don't use offensive names or names that aren't yours to use.</p>
 <h2>Content</h2>
-<p>Game names such as Raja Rani Chor Police, Mafia or Cops and Robbers are traditional names for a public-domain game. The kids, the room and the dialogue in ChitPlay are original. If you believe something here infringes your rights, please <a href="../contact/">contact us</a>.</p>
+<p>Game names such as Raja Rani Chor Police, Mafia or Cops and Robbers are traditional names for a public-domain game. The characters, the room and the dialogue in CHITPLAY are original. If you believe something here infringes your rights, please <a href="../contact/">contact us</a>.</p>
 <h2>Advertising and links</h2>
 <p>ChitPlay may display ads from third parties. We are not responsible for the content of external websites reached through ads or links.</p>
 <h2>Liability</h2>
@@ -492,7 +587,7 @@ const HOST = new URL(SITE).hostname;
 if (HOST.endsWith('github.io')) rmSync(join(ROOT, 'CNAME'), { force: true });
 else writeFileSync(join(ROOT, 'CNAME'), `${HOST}\n`);
 
-const urls = [`${SITE}/`, `${SITE}/games/`, ...COUNTRY_ORDER.map(id => `${SITE}/games/${GAME_SLUGS[id]}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`)];
+const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), ...COUNTRY_ORDER.map(id => `${SITE}/games/${GAME_SLUGS[id]}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`)];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u, i) => `  <url><loc>${u}</loc><lastmod>${TODAY}</lastmod><changefreq>monthly</changefreq><priority>${i === 0 ? '1.0' : i === 1 ? '0.9' : '0.8'}</priority></url>`).join('\n')}
@@ -502,7 +597,7 @@ writeFileSync(join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /arc
 writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
   name: 'CHITPLAY',
   short_name: 'CHITPLAY',
-  description: 'The paper chit game in 3D: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more.',
+  description: 'The indoor paper chit game for all ages: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more.',
   start_url: './?source=pwa',
   scope: './',
   display: 'fullscreen',
@@ -520,8 +615,8 @@ writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
 
 // ── refresh the SEO blocks inside index.html ────────────────
 const mainNames = [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id].slice(0, 2)]))];
-const homeTitle = 'CHITPLAY: Raja Rani Chor Police & Chit Games Online';
-const homeDesc = 'The paper chit game from your school days, free online: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more. No download needed.';
+const homeTitle = 'CHITPLAY: Raja Rani Chor Police & Indoor Chit Games Online';
+const homeDesc = 'The indoor chit game for all ages, free online: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more. No download needed.';
 const homeLd = [
   { '@context': 'https://schema.org', '@type': 'WebSite', name: 'CHITPLAY', alternateName: ['ChitPlay', 'chitplay.com'], url: `${SITE}/`, inLanguage: 'en' },
   {
@@ -532,7 +627,7 @@ const homeLd = [
   {
     '@context': 'https://schema.org', '@type': 'VideoGame', name: 'CHITPLAY',
     alternateName: mainNames, url: `${SITE}/`, description: homeDesc, author: DEVELOPER_LD,
-    genre: ['Party game', 'Social deduction game', 'Paper chit game'], gamePlatform: 'Web browser',
+    genre: ['Party game', 'Social deduction game', 'Paper chit game', 'Indoor game'], audience: { '@type': 'PeopleAudience', suggestedMinAge: 6 }, gamePlatform: 'Web browser',
     applicationCategory: 'Game', operatingSystem: 'Any', image: `${SITE}/assets/og-image.jpg`,
     numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 },
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
@@ -559,13 +654,13 @@ const head = `<!-- seo:head -->
   <!-- /seo:head -->`;
 const body = `<!-- seo:body -->
   <section class="seo-intro" aria-label="About ChitPlay">
-    <h1>Raja Rani Chor Police — the chit game, in 3D</h1>
-    <p>ChitPlay is the 4-player paper chit game, free in your browser. Draw a folded chit, keep a straight face, and let the Police (or Sipahi, Wazir, Sheriff…) catch the Thief.</p>
+    <h1>Raja Rani Chor Police: the indoor chit game for all ages</h1>
+    <p>CHITPLAY is the 4-player paper chit game, free in your browser for children, teenagers, parents and grandparents alike. Draw a folded chit, keep a straight face, and let the Police (or Sipahi, Wazir, Sheriff…) catch the Thief.</p>
     <h2>Every version of the game</h2>
     <ul>
 ${COUNTRY_ORDER.map(id => `      <li><a href="games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)}) — ${esc(GAME_AKA[id].filter(a => a !== GAME_NAME_EN[id]).slice(0, 2).join(', '))}</li>`).join('\n')}
     </ul>
-    <p><a href="games/">All chit games and rules</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
+    <p><a href="games/">All chit games and rules</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
   </section>
   <!-- /seo:body -->`;
 let index = readFileSync(join(ROOT, 'index.html'), 'utf8');

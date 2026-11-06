@@ -105,7 +105,7 @@ export default {
     nextRound: ['Ek aur round!', 'Chalo phir se!', 'Abki baar main dikhata hoon!', 'Revenge round!', 'Chit wapas laao, phir khelte hain'],
     winner: ['Main jeet gaya! 🏆', 'Champion kaun? Main! 🏆', 'Sabko haraya! 😎', 'Aaj ka {king} main hi hoon', 'Party meri taraf se! 🍬'],
     loser: ['Kal phir khelenge!', 'Revenge kal leta hoon 😤', 'Mazaa aa gaya yaar!', 'Next time pakka main', 'Chalo koi baat nahi'],
-    parent: ['Shor kam karo bachcho! 📢', 'Homework kiya ya nahi? 📚', 'Doodh pee lo sab! 🥛', 'Dhoop me mat jaana koi!', 'Fan ke neeche baitho, garmi hai'],
+    parent: ['Shor kam karo sab log! 📢', 'Homework kiya ya nahi? 📚', 'Doodh pee lo sab! 🥛', 'Dhoop me mat jaana koi!', 'Fan ke neeche baitho, garmi hai'],
     parentEnd: ['Bachcho! Khaana lag gaya, haath dho lo! 🍛', 'Chalo sab so jao thodi der! 😴'],
     cheatCaught: [
       'Oye! Tu cheating kar raha hai! 😠',

@@ -117,8 +117,8 @@ export default {
     nextRound: ['One more round!', 'Again!', 'This time I’ll show you!', 'Revenge round!', 'Collect the slips!'],
     winner: ['I won! 🏆', 'Who’s the champion? Me! 🏆', 'Beat everyone! 😎', 'Daebak, I’m the best', 'Banana milk is on me! 🍌'],
     loser: ['Let’s play again tomorrow!', 'Revenge tomorrow 😤', 'That was fun!', 'Next time for sure', 'Gwaenchana, gwaenchana'],
-    parent: ['Kids, too loud! 📢', 'Did you do your homework? 📚', 'Drink your barley tea! 🍵', 'Don’t go out, it’s too hot!', 'Halmeoni is sleeping!'],
-    parentEnd: ['Kids! Dinner’s ready, wash your hands! 🍚', 'Okay everyone, watermelon time! 🍉'],
+    parent: ['Hey, too loud! 📢', 'Did you do your homework? 📚', 'Drink your barley tea! 🍵', 'Don’t go out, it’s too hot!', 'Halmeoni is sleeping!'],
+    parentEnd: ['Everyone! Dinner’s ready, wash your hands! 🍚', 'Okay everyone, watermelon time! 🍉'],
     cheatCaught: [
       'Ya! You’re cheating! 😠',
       'I saw that! You peeked!',

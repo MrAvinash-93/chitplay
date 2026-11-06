@@ -100,8 +100,8 @@ export default {
     nextRound: ['One more round!', 'Again!', 'This time I’ll show you!', 'Revenge round!', 'Collect the slips!'],
     winner: ['I won! 🏆', 'Who’s the champion? Me! 🏆', 'Beat everyone! 😎', 'Today’s {king} is me', 'Ramune is on me! 🥤'],
     loser: ['Let’s play again tomorrow!', 'Revenge tomorrow 😤', 'That was fun!', 'Next time for sure', 'Shō ga nai'],
-    parent: ['Kids, not so loud! 📢', 'Did you finish your summer homework? 📚', 'Drink your barley tea! 🍵', 'Don’t go out in the heat!', 'Grandma is sleeping!'],
-    parentEnd: ['Kids! Dinner is ready, wash your hands! 🍚', 'Okay everyone, time for the festival fireworks! 🎆'],
+    parent: ['Hey, not so loud! 📢', 'Did you finish your summer homework? 📚', 'Drink your barley tea! 🍵', 'Don’t go out in the heat!', 'Grandma is sleeping!'],
+    parentEnd: ['Everyone! Dinner is ready, wash your hands! 🍚', 'Okay everyone, time for the festival fireworks! 🎆'],
     cheatCaught: [
       'Hey! You’re cheating! Zurui! 😠',
       'I saw that! You peeked!',

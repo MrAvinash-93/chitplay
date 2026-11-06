@@ -1,4 +1,4 @@
-// USA — Cops and Robbers (90s American kids)
+// USA — Cops and Robbers (American edition)
 export default {
   prefixes: ['Dude,', 'Whoa,', 'Okay okay,', 'Hey,', 'Haha,', 'Man,', 'Seriously,', 'Like,', 'Yo,', 'Totally,'],
   lines: {
@@ -105,8 +105,8 @@ export default {
     nextRound: ['One more round!', 'Again!', 'This time I’ll show you!', 'Rematch!', 'Grab the slips!'],
     winner: ['I won! 🏆', 'Who’s the champ? Me! 🏆', 'Beat everybody! 😎', 'Undefeated!', 'Pizza’s on me! 🍕'],
     loser: ['Rematch tomorrow!', 'I’ll get you next time 😤', 'That was awesome!', 'Next time for sure', 'GG, guys'],
-    parent: ['Kids, keep it down! 📢', 'Did you finish your summer reading? 📚', 'Drink some water! 🥤', 'Wear sunscreen if you go out!', 'Inside voices, please!'],
-    parentEnd: ['Kids! Dinner’s ready, wash up! 🍔', 'Okay guys, time for fireworks in the backyard! 🎆'],
+    parent: ['Hey, keep it down! 📢', 'Did you finish your summer reading? 📚', 'Drink some water! 🥤', 'Wear sunscreen if you go out!', 'Inside voices, please!'],
+    parentEnd: ['Everyone! Dinner’s ready, wash up! 🍔', 'Okay guys, time for fireworks in the backyard! 🎆'],
     cheatCaught: [
       'Hey! You’re cheating! 😠',
       'I saw that! You totally peeked!',

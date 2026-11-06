@@ -1,21 +1,21 @@
 /**
- * ChitPlay 3D "Garmiyon ki chhutti" room — a low-res, retro-rendered backdrop
- * that reacts to the game: chits get tossed on the chatai, players pick them
- * up, the power goes out while the Detective thinks, and the tubelight
- * flickers back on for the result.
+ * The 3D room. It reacts to the game: chits get tossed on the mat, players pick
+ * them up, the power goes out while the guesser thinks, the tubelight flickers
+ * back on for the result, and the camera follows whoever is talking.
  *
- * Purely decorative: it never touches game state and never shows roles.
+ * It never decides anything and never shows a role by itself: the game screen
+ * tells it what to do through `story`.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261106-rotate';
+import { settingsStore } from '../persistence/settings-store.js?v=20261107-cast';
 import { audioManager } from '../audio/audio-manager.js';
-import { createKid, KID_LOOKS } from './kids.js?v=20261106-rotate';
-import { COUNTRIES } from './countries.js?v=20261106-rotate';
-import * as Themes from './themes.js?v=20261106-rotate';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261107-cast';
+import { lookOf, lookKey } from './character-looks.js?v=20261107-cast';
+import { buildRoomDetails } from './room-details.js?v=20261107-cast';
+import { COUNTRIES } from './countries.js?v=20261107-cast';
+import * as Themes from './themes.js?v=20261107-cast';
 
-const RENDER_HEIGHT = 420;      // internal resolution (chunky, PS1-era look)
-const FRAME_MS = 1000 / 30;     // retro 30fps cap, also easier on phone batteries
 const TAU = Math.PI * 2;
 
 const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -40,7 +40,7 @@ function supportsWebGL() {
   }
 }
 
-function canvasTex(w, h, draw, { repeat, nearest = true } = {}) {
+function canvasTex(w, h, draw, { repeat } = {}) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -51,71 +51,17 @@ function canvasTex(w, h, draw, { repeat, nearest = true } = {}) {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(repeat[0], repeat[1]);
   }
-  if (nearest) t.magFilter = THREE.NearestFilter;
-  t.anisotropy = 4;
+  t.anisotropy = 8;
   return t;
 }
 
 /* ─── Procedural textures ─────────────────────────────────────────── */
 
-function floorTexture() {
-  const r = rng(7);
-  return canvasTex(512, 512, (g, w, h) => {
-    g.fillStyle = '#7a281b';
-    g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 260; i++) {
-      const x = r() * w, y = r() * h, rad = 10 + r() * 60;
-      const grad = g.createRadialGradient(x, y, 0, x, y, rad);
-      const light = r() < 0.5;
-      grad.addColorStop(0, light ? `rgba(170,70,45,${0.08 + r() * 0.12})` : `rgba(70,20,12,${0.08 + r() * 0.14})`);
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = grad;
-      g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
-    }
-    for (let i = 0; i < 1800; i++) {
-      g.fillStyle = `rgba(255,220,200,${r() * 0.06})`;
-      g.fillRect(r() * w, r() * h, 1, 1);
-    }
-    g.strokeStyle = 'rgba(35,8,4,.55)';
-    g.lineWidth = 2;
-    for (let k = 0; k <= 4; k++) {
-      g.beginPath(); g.moveTo(k * w / 4, 0); g.lineTo(k * w / 4, h); g.stroke();
-      g.beginPath(); g.moveTo(0, k * h / 4); g.lineTo(w, k * h / 4); g.stroke();
-    }
-  }, { repeat: [5, 5] });
-}
-
-function matTexture() {
-  const r = rng(11);
-  return canvasTex(512, 342, (g, w, h) => {
-    const bands = ['#cfa865', '#9a3326', '#cfa865', '#cfa865', '#2e6a43', '#cfa865', '#d8b14a', '#cfa865', '#28457a', '#cfa865'];
-    const bh = 10, cw = 6;
-    for (let y = 0, row = 0; y < h; y += bh, row++) {
-      g.fillStyle = bands[row % bands.length];
-      g.fillRect(0, y, w, bh);
-      for (let x = (row % 2) * cw; x < w; x += cw * 2) {
-        g.fillStyle = 'rgba(0,0,0,.16)';
-        g.fillRect(x, y, cw, bh);
-      }
-      g.fillStyle = 'rgba(255,255,255,.10)';
-      g.fillRect(0, y, w, 1);
-    }
-    for (let i = 0; i < 900; i++) {
-      g.fillStyle = `rgba(60,30,10,${r() * 0.12})`;
-      g.fillRect(r() * w, r() * h, 2, 1);
-    }
-    g.strokeStyle = '#6e1f18';
-    g.lineWidth = 18;
-    g.strokeRect(9, 9, w - 18, h - 18);
-    g.strokeStyle = '#d8b14a';
-    g.lineWidth = 3;
-    g.strokeRect(20, 20, w - 40, h - 40);
-  });
-}
-
 function paperTexture(seed = 3) {
   const r = rng(seed);
-  return canvasTex(128, 128, (g, w, h) => {
+  return canvasTex(512, 512, (g2) => {
+    g2.scale(4, 4);
+    const g = g2, w = 128, h = 128;
     g.fillStyle = '#f3ead2';
     g.fillRect(0, 0, w, h);
     g.strokeStyle = 'rgba(70,110,190,.5)';
@@ -144,66 +90,8 @@ function paperTexture(seed = 3) {
   });
 }
 
-function wallTexture() {
-  const r = rng(21);
-  return canvasTex(512, 256, (g, w, h) => {
-    const split = h * 0.68;   // top = limewash, bottom = oil-paint dado
-    g.fillStyle = '#e6dcc6';
-    g.fillRect(0, 0, w, split);
-    g.fillStyle = '#7fae95';
-    g.fillRect(0, split, w, h - split);
-    g.fillStyle = '#4f7f68';
-    g.fillRect(0, split - 3, w, 4);
-    for (let i = 0; i < 70; i++) {
-      const x = r() * w, y = r() * split, rad = 8 + r() * 40;
-      const grad = g.createRadialGradient(x, y, 0, x, y, rad);
-      grad.addColorStop(0, `rgba(140,110,70,${r() * 0.12})`);
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = grad;
-      g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
-    }
-    // peeling paint chips on the dado
-    for (let i = 0; i < 18; i++) {
-      g.fillStyle = 'rgba(230,220,200,.7)';
-      g.fillRect(r() * w, split + 6 + r() * (h - split - 10), 2 + r() * 6, 1 + r() * 3);
-    }
-  }, { repeat: [3, 1] });
-}
-
-function calendarTexture() {
-  return canvasTex(192, 288, (g, w, h) => {
-    g.fillStyle = '#fbf6ea';
-    g.fillRect(0, 0, w, h);
-    const pic = h * 0.56;
-    const sky = g.createLinearGradient(0, 0, 0, pic);
-    sky.addColorStop(0, '#ff8a3d');
-    sky.addColorStop(0.55, '#ffd27a');
-    sky.addColorStop(1, '#ffb066');
-    g.fillStyle = sky;
-    g.fillRect(8, 8, w - 16, pic - 8);
-    g.fillStyle = '#fff3c4';
-    g.beginPath(); g.arc(w * 0.62, pic * 0.48, 18, 0, TAU); g.fill();
-    g.fillStyle = '#7a4a7e';
-    g.beginPath(); g.moveTo(8, pic * 0.72);
-    g.lineTo(w * 0.3, pic * 0.38); g.lineTo(w * 0.5, pic * 0.62); g.lineTo(w * 0.72, pic * 0.42); g.lineTo(w - 8, pic * 0.7);
-    g.lineTo(w - 8, pic); g.lineTo(8, pic); g.fill();
-    g.fillStyle = '#3d6f8f';
-    g.fillRect(8, pic * 0.8, w - 16, pic * 0.2);
-    g.fillStyle = '#c8272d';
-    g.font = 'bold 20px monospace';
-    g.textAlign = 'center';
-    g.fillText('JUNE 1998', w / 2, pic + 26);
-    g.font = '11px monospace';
-    for (let d = 1; d <= 30; d++) {
-      const col = (d + 0) % 7, row = Math.floor((d + 0) / 7);
-      g.fillStyle = col === 0 ? '#c8272d' : '#333';
-      g.fillText(String(d), 18 + col * 26, pic + 50 + row * 18);
-    }
-  });
-}
-
 function stripeTexture() {
-  return canvasTex(16, 128, (g, w, h) => {
+  return canvasTex(64, 512, (g, w, h) => {
     const cols = ['#c98d4a', '#c8272d', '#f0c23a', '#c98d4a', '#2c7a4a', '#c8272d', '#c98d4a', '#2a4f9a'];
     const bh = h / cols.length;
     cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(0, i * bh, w, bh + 1); });
@@ -225,7 +113,7 @@ function fanShadowTexture() {
       g.restore();
     }
     g.beginPath(); g.arc(0, 0, 16, 0, TAU); g.fill();
-  }, { nearest: false });
+  });
 }
 
 function glowTexture() {
@@ -236,7 +124,7 @@ function glowTexture() {
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
     g.fillRect(0, 0, w, h);
-  }, { nearest: false });
+  });
 }
 
 /* ─── World ───────────────────────────────────────────────────────── */
@@ -252,9 +140,6 @@ const SHOTS = {
   result: { pos: [0, 2.0, 3.1],  look: [0, 0.45, -0.2], orbit: 0.08 },
   overhead: { pos: [0, 3.6, 2.0], look: [0, 0.1, -0.05], orbit: 0.05 },
 };
-
-const MENU_PHASES = new Set(['PLAYER_SETUP', 'HOW_TO_PLAY', 'SETTINGS', 'MULTIPLAYER']);
-const SUSPENSE_PHASES = new Set(['DETECTIVE_HANDOFF', 'GUESS_SELECTION', 'GUESS_CONFIRMATION']);
 
 let instance = null;
 
@@ -273,8 +158,7 @@ const SEATS = [
 ];
 
 
-function createWorld(app) {
-  const state = app?.state || null;   // read-only: kids mirror the real players
+function createWorld() {
   const html = document.documentElement;
   const canvas = document.createElement('canvas');
   canvas.className = 'world3d';
@@ -286,13 +170,37 @@ function createWorld(app) {
   caption.setAttribute('aria-hidden', 'true');
   document.body.appendChild(caption);
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
+
+  /* Graphics levels. "ultra" draws at up to 3840 × 2160 on a screen that has those pixels. */
+  const QUALITY = [
+    { name: 'low', maxHeight: 720, dpr: 1, shadow: 1024, texture: 2, dust: false, frameMs: 1000 / 30 },
+    { name: 'medium', maxHeight: 1080, dpr: 1.5, shadow: 1024, texture: 2, dust: true, frameMs: 1000 / 45 },
+    { name: 'high', maxHeight: 1440, dpr: 2, shadow: 2048, texture: 3, dust: true, frameMs: 1000 / 60 },
+    { name: 'ultra', maxHeight: 2160, dpr: 3, shadow: 4096, texture: 4, dust: true, frameMs: 1000 / 60 },
+  ];
+  const levelNamed = (name) => QUALITY.findIndex(q => q.name === name);
+  const coarse = window.matchMedia?.('(pointer: coarse)').matches;
+  const memory = navigator.deviceMemory || 4;
+  const cores = navigator.hardwareConcurrency || 4;
+  function automaticLevel() {
+    if (memory <= 2 || cores <= 2) return levelNamed('low');
+    const physicalHeight = Math.min(screen.width, screen.height) * (window.devicePixelRatio || 1);
+    if (coarse) return memory <= 3 ? levelNamed('medium') : levelNamed('high');
+    return physicalHeight >= 1800 ? levelNamed('ultra') : levelNamed('high');
+  }
+  // ?quality=ultra (or the choice in the profile) fixes the level; "auto" steps down when frames run slow
+  let graphicsChoice = new URLSearchParams(location.search).get('quality') || settingsStore.get('graphics') || 'auto';
+  if (levelNamed(graphicsChoice) < 0) graphicsChoice = 'auto';
+  let quality = graphicsChoice === 'auto' ? automaticLevel() : levelNamed(graphicsChoice);
+  Themes.setTextureDetail(QUALITY[quality].texture, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
+  setCharacterDetail(QUALITY[quality].texture / 4);
 
   const scene = new THREE.Scene();
   const BG = new THREE.Color('#1a0e09');
@@ -328,18 +236,18 @@ function createWorld(app) {
   const std = (p) => new THREE.MeshStandardMaterial({ envMapIntensity: 0.35, ...p });
 
   /* Room shell */
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), std({ map: floorTexture(), roughness: 0.42, metalness: 0 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), std({ map: Themes.floorTexture('redoxide'), roughness: 0.42, metalness: 0 }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  const wallMat = std({ map: wallTexture(), roughness: 0.9 });
+  const wallMat = std({ map: Themes.wallTexture(['#e6dcc6', '#7fae95', '#4f7f68']), roughness: 0.9 });
   const backWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 4.5), wallMat);
   backWall.position.set(0, 2.25, -2.6);
   backWall.receiveShadow = true;
   scene.add(backWall);
 
-  const calendar = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.75), std({ map: calendarTexture(), roughness: 0.8 }));
+  const calendar = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.75), std({ map: Themes.calendarTexture('JUNE 1998'), roughness: 0.8 }));
   calendar.position.set(-1.1, 1.45, -2.585);
   calendar.rotation.z = 0.035;
   scene.add(calendar);
@@ -352,11 +260,14 @@ function createWorld(app) {
   tube.position.set(0.4, 2.35, -2.55);
   scene.add(tube);
 
-  /* Chatai mat */
+  buildRoomDetails(scene, wallMat, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
+
+  /* The mat */
   const MAT_W = 3.0, MAT_D = 2.0;
-  const mat = new THREE.Mesh(new THREE.PlaneGeometry(MAT_W, MAT_D), std({ map: matTexture(), roughness: 0.95 }));
+  const mat = new THREE.Mesh(new THREE.PlaneGeometry(MAT_W, MAT_D), std({ map: Themes.matTexture('woven'), roughness: 0.95, bumpScale: 0.8 }));
   mat.rotation.x = -Math.PI / 2;
   mat.position.y = 0.004;
+  mat.material.bumpMap = mat.material.map;
   mat.receiveShadow = true;
   scene.add(mat);
 
@@ -368,7 +279,7 @@ function createWorld(app) {
   sun.position.copy(sunDir).multiplyScalar(-11);
   sun.target = sunTarget;
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(QUALITY[quality].shadow, QUALITY[quality].shadow);
   Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 22 });
   sun.shadow.bias = -0.0006;
   sun.shadow.normalBias = 0.02;
@@ -435,12 +346,12 @@ function createWorld(app) {
     chits.push({ mesh: group, flight: null, picked: false, phase: i * 1.7 });
   }
 
-  /* The four kids playing */
+  /* The four people playing */
   const heldPaper = std({ map: paperTexture(42), roughness: 0.85 });
-  const kids = SEATS.map((seat, i) => createKid(scene, KID_LOOKS[i], { seat, paperMaterial: heldPaper }));
+  const STARTING_CAST = ['office-man', 'saree-lady', 'hoodie-teen', 'college-girl'];
+  const actors = SEATS.map((seat, i) => createCharacter(scene, lookOf(STARTING_CAST[i]), { seat, paperMaterial: heldPaper }));
   let country = COUNTRIES.IN;
   const roleInfo = (slot) => country.roles[slot] || null;
-  const roleTex = (slot) => roleInfo(slot);
   const roleAcc = (slot) => roleInfo(slot)?.acc || null;
 
   /* Props */
@@ -448,10 +359,10 @@ function createWorld(app) {
   scene.add(props);
   const shadowy = (m) => { m.castShadow = true; m.receiveShadow = true; return m; };
 
-  // Lattu (spinning top)
-  const lattu = new THREE.Group();
-  const lattuTilt = new THREE.Group();
-  const lattuSpin = new THREE.Group();
+  // Spinning top
+  const top = new THREE.Group();
+  const topTilt = new THREE.Group();
+  const topSpin = new THREE.Group();
   {
     const prof = [[0, 0.012], [0.012, 0.016], [0.05, 0.055], [0.083, 0.1], [0.088, 0.122], [0.07, 0.15], [0.03, 0.165], [0.022, 0.2], [0, 0.21]]
       .map(([x, y]) => new THREE.Vector2(x, y));
@@ -459,15 +370,15 @@ function createWorld(app) {
     const tip = shadowy(new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.016, 6), std({ color: '#9aa3ab', metalness: 1, roughness: 0.3, envMapIntensity: 1 })));
     tip.rotation.x = Math.PI;
     tip.position.y = 0.008;
-    lattuSpin.add(body, tip);
+    topSpin.add(body, tip);
   }
-  lattuTilt.add(lattuSpin);
-  lattu.add(lattuTilt);
-  const LATTU_AT = { x: 0.15, z: 1.4 };
-  lattu.position.set(LATTU_AT.x, 0, LATTU_AT.z);
-  props.add(lattu);
+  topTilt.add(topSpin);
+  top.add(topTilt);
+  const TOP_AT = { x: 0.15, z: 1.4 };
+  top.position.set(TOP_AT.x, 0, TOP_AT.z);
+  props.add(top);
 
-  // Kanche (glass marbles)
+  // Glass marbles
   {
     const glass = std({ color: '#cdeeff', transparent: true, opacity: 0.5, roughness: 0.04, envMapIntensity: 1.6 });
     const swirl = ['#e63b2e', '#2e8be6', '#f2c12e', '#2ec46a', '#e63b9a', '#f28a2e'];
@@ -529,13 +440,12 @@ function createWorld(app) {
 
   // Old CRT TV on a stool, playing static
   const tvCanvas = document.createElement('canvas');
-  tvCanvas.width = 64;
-  tvCanvas.height = 48;
+  tvCanvas.width = 160;
+  tvCanvas.height = 120;
   const tvCtx = tvCanvas.getContext('2d');
-  const tvImage = tvCtx.createImageData(64, 48);
+  const tvImage = tvCtx.createImageData(160, 120);
   const tvTex = new THREE.CanvasTexture(tvCanvas);
   tvTex.colorSpace = THREE.SRGBColorSpace;
-  tvTex.magFilter = THREE.NearestFilter;
   const tvScreenMat = new THREE.MeshBasicMaterial({ map: tvTex, toneMapped: false });
   const tvLight = new THREE.PointLight('#9bbcff', 1.4, 3.5, 2);
   {
@@ -606,7 +516,7 @@ function createWorld(app) {
   dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
   const dustBase = dustPos.slice();
   const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
-    map: glowTexture(), color: '#ffd9a3', size: 0.04, transparent: true, opacity: 0.8,
+    map: glowTexture(), color: '#ffd9a3', size: 0.016, transparent: true, opacity: 0.8,
     depthWrite: false, blending: THREE.AdditiveBlending,
   }));
   scene.add(dust);
@@ -623,9 +533,9 @@ function createWorld(app) {
   const camLook = new THREE.Vector3(...SHOTS.home.look);
   const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3(), tmpOff = new THREE.Vector3();
   const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
-  let picked = 0;
+  let paused = false;
+  let talkShot = null, talkUntil = 0, lastCut = -10;
   let powerTarget = 1, power = 1, fanSpeed = 1, restoreAt = -100;
-  let celebrate = false, nextCelebrate = 0;
   let tvFrame = 0;
   let captionTimer = 0;
   let snapCamera = true;
@@ -651,7 +561,7 @@ function createWorld(app) {
     for (let i = 0; i < chits.length; i++) {
       let p, tries = 0;
       do {
-        // centre of the mat, clear of the kids' laps
+        // centre of the mat, clear of the actors' laps
         p = new THREE.Vector3((r() - 0.5) * 1.5, 0.006, (r() - 0.5) * 0.8 - 0.05);
         tries++;
       } while (tries < 40 && out.some(q => q.distanceTo(p) < 0.36));
@@ -694,17 +604,6 @@ function createWorld(app) {
     audioManager.play('paper-toss');
   }
 
-  function pickUp() {
-    const c = chits.find(ch => !ch.picked);
-    if (!c) return;
-    c.picked = true;
-    picked++;
-    launch(c, new THREE.Vector3(c.mesh.position.x * 0.4, 3.4, 3.2), {
-      height: 0.25, dur: 0.75, spin: false,
-      onDone: () => { if (c.picked) c.mesh.visible = false; },
-    });
-  }
-
   function setPower(on) {
     const target = on ? 1 : 0;
     if (target === powerTarget) return;
@@ -719,60 +618,37 @@ function createWorld(app) {
     }
   }
 
-  /* ─── Kids choreography ─────────────────────────────────────── */
+  /* ─── Choreography ─────────────────────────────────────── */
   const MAT_CENTER = new THREE.Vector3(0, 0, -0.05);
-  let currentPhase = 'HOME';
   let timeline = [];
-  let chatter = true, nextChatter = 0;
-  let detectiveScan = null;      // { kid, others, next, i }
-  const revealedKids = new Set();
+  let detectiveScan = null;      // { actor, others, next, i }
   const v1 = new THREE.Vector3();
 
   const after = (sec, fn) => timeline.push({ at: time + (reduced ? 0 : sec), fn });
-  const players = () => (state?.players?.length === kids.length ? state.players : null);
-  const kidIndex = (pid) => (players() ? players().findIndex(p => p.id === pid) : -1);
-  const kidFor = (pid) => kids[kidIndex(pid)] || null;
-  const roleOf = (i) => (players() ? state.getRoleFor(players()[i].id) : null);
 
-  function syncPlayers(showNames) {
-    const ps = players();
-    kids.forEach((k, i) => {
-      k.setShirt(ps?.[i]?.color?.hex || KID_LOOKS[i].shirt);
-      k.setName(showNames && ps ? ps[i].name : null);
-    });
-  }
-
-  function resetKids() {
+  function resetActors() {
     detectiveScan = null;
-    kids.forEach(k => {
-      k.setPose('idle');
-      k.lookAt(MAT_CENTER);
-      k.showRole(null);
-      k.setAccessory(null);
-      k.holdChit(false);
+    actors.forEach(a => {
+      a.setPose('idle');
+      a.lookAt(MAT_CENTER);
+      a.showRole(null);
+      a.setAccessory(null);
+      a.holdChit(false);
     });
   }
 
-  function handChitsToRevealed() {
-    revealedKids.forEach(i => {
-      kids[i].holdChit(true);
-      kids[i].setPose('hold');
-    });
-  }
-
-  // A kid leans in, the chit flies into their hand, and they peek at it
-  function kidPicksChit(kid, i, { peek } = {}) {
-    const reach = kid.reachPoint(v1).clone();
+  // Someone leans in, the nearest chit goes into their hand, and it leaves the mat for good
+  function actorPicksChit(actor, { peek } = {}) {
+    const reach = actor.reachPoint(v1).clone();
     const c = chits
       .filter(ch => !ch.picked && ch.mesh.visible)
       .sort((a, b) => a.mesh.position.distanceTo(reach) - b.mesh.position.distanceTo(reach))[0];
-    revealedKids.add(i);
-    kid.setPose('reach');
-    kid.lookAt(c ? c.mesh.position : MAT_CENTER);
+    actor.setPose('reach');
+    actor.lookAt(c ? c.mesh.position : MAT_CENTER);
     const done = () => {
-      kid.holdChit(true);
-      kid.lookAt(null);
-      kid.setPose((peek ?? currentPhase === 'ROLE_REVEAL') ? 'peek' : 'hold');
+      actor.holdChit(true);
+      actor.lookAt(null);
+      actor.setPose(peek ? 'peek' : 'hold');
     };
     if (!c) { done(); return; }
     c.picked = true;
@@ -782,21 +658,25 @@ function createWorld(app) {
     });
   }
 
-  function pickUp() {
-    const c = chits.find(ch => !ch.picked);
-    if (!c) return;
-    c.picked = true;
-    picked++;
-    launch(c, new THREE.Vector3(c.mesh.position.x * 0.4, 3.4, 3.2), {
-      height: 0.25, dur: 0.75, spin: false,
-      onDone: () => { if (c.picked) c.mesh.visible = false; },
+  // All four chits, folded, in one small pile in the middle of the mat
+  function gatherChits(animate = true) {
+    chits.forEach((c, i) => {
+      c.picked = false;
+      const spot = new THREE.Vector3(MAT_CENTER.x + (i - 1.5) * 0.015, 0.006 + i * 0.022, MAT_CENTER.z + ((i % 2) - 0.5) * 0.02);
+      if (animate && c.mesh.visible) launch(c, spot, { height: 0.1, dur: 0.45, spin: false, delay: i * 0.05 });
+      else {
+        c.flight = null;
+        c.mesh.visible = true;
+        c.mesh.position.copy(spot);
+        c.mesh.rotation.set(0, i * 0.7, 0);
+      }
     });
   }
 
-  function headOf(kid) { return kid.headWorld(new THREE.Vector3()); }
+  function headOf(actor) { return actor.headWorld(new THREE.Vector3()); }
 
-  const shotOnKid = (kid, { y = 1.5, back = 2.0, lift = 0 } = {}) => () => {
-    const h = headOf(kid);
+  const shotOnActor = (actor, { y = 1.5, back = 2.0, lift = 0 } = {}) => () => {
+    const h = headOf(actor);
     return {
       pos: [h.x * 0.55, y, h.z + back],
       look: [h.x * 0.85, h.y - 0.15 + lift, h.z],
@@ -804,159 +684,48 @@ function createWorld(app) {
     };
   };
 
-  function startDetectiveScan(det, acc = 'cap') {
-    const others = kids.filter(k => k !== det);
-    detectiveScan = { kid: det, others, next: 0, i: 0 };
-    det.setAccessory(acc);
-    det.setPose('think');
-    others.forEach(k => {
-      k.setPose('nervous');
-      k.lookAt(headOf(det));
+  /* Conversation camera: whoever talks fills the frame, seen over the shoulder of whoever they talk to */
+  const tA = new THREE.Vector3(), tB = new THREE.Vector3(), tDir = new THREE.Vector3();
+  const talkFraming = (speaker, listener) => () => {
+    const S = actors[speaker].headWorld(tA);
+    const narrow = camera.aspect < 0.8;
+    if (listener != null && actors[listener]) {
+      const L = actors[listener].headWorld(tB);
+      tDir.copy(S).sub(L); tDir.y = 0; tDir.normalize();
+      const back = narrow ? 0.72 : 0.46;
+      // the shoulder on the side away from the room's centre keeps the third player out of the way
+      const px = -tDir.z, pz = tDir.x;
+      const side = (L.x + px) ** 2 + (L.z + pz) ** 2 > (L.x - px) ** 2 + (L.z - pz) ** 2 ? 1 : -1;
+      return {
+        pos: [L.x - tDir.x * back + side * px * 0.2, Math.max(0.55, L.y + 0.17), L.z - tDir.z * back + side * pz * 0.2],
+        look: [S.x, S.y - 0.03, S.z], orbit: 0, exact: true,
+      };
+    }
+    // talking to the whole table: straight on, from the middle of the mat
+    tDir.set(MAT_CENTER.x - S.x, 0, MAT_CENTER.z - S.z).normalize();
+    const d = narrow ? 1.35 : 1.0;
+    return { pos: [S.x + tDir.x * d, S.y + 0.06, S.z + tDir.z * d], look: [S.x, S.y - 0.05, S.z], orbit: 0, exact: true };
+  };
+  // the head high in the frame, the profile panel below it
+  const portraitFraming = (seat) => () => {
+    const H = actors[seat].headWorld(tA);
+    tDir.set(MAT_CENTER.x - H.x, 0, MAT_CENTER.z - H.z).normalize();
+    const d = camera.aspect < 0.8 ? 1.75 : 1.05;
+    return { pos: [H.x + tDir.x * d, H.y + 0.03, H.z + tDir.z * d], look: [H.x, H.y - (camera.aspect < 0.8 ? 0.34 : 0.1), H.z], orbit: 0, exact: true };
+  };
+
+  function startGuesserScan(guesser, acc = 'cap') {
+    const others = actors.filter(a => a !== guesser);
+    detectiveScan = { actor: guesser, others, next: 0, i: 0 };
+    guesser.setAccessory(acc);
+    guesser.setPose('think');
+    others.forEach(a => {
+      a.setPose('nervous');
+      a.lookAt(headOf(guesser));
     });
   }
 
-  function playResult() {
-    const r = state?.lastResult;
-    const ps = players();
-    if (!r || !ps) {
-      kids.forEach(k => k.setPose('clap'));
-      return;
-    }
-    const det = kidFor(r.detectivePlayerId);
-    const thief = kidFor(r.thiefPlayerId);
-    const accused = kidFor(state.detectiveGuessPlayerId);
-    detectiveScan = null;
-    handChitsToRevealed();
-    // 1) Detective points at the accused; everyone stares at them
-    if (det && accused) {
-      det.setPose('point');
-      det.lookAt(headOf(accused));
-      kids.forEach(k => { if (k !== det) k.lookAt(headOf(accused)); });
-      accused.setPose('nervous');
-    }
-    // 2) Everyone opens their chit
-    after(1.4, () => {
-      kids.forEach((k, i) => {
-        const role = roleOf(i);
-        k.showRole(roleTex(role));
-        k.setAccessory(roleAcc(role));
-        k.setPose('show');
-        k.lookAt(camera.position);
-      });
-      audioManager.play('paper-toss');
-    });
-    // 3) Reactions
-    after(3.0, () => {
-      kids.forEach(k => k.setPose('clap'));
-      if (r.detectiveGuessedCorrectly) {
-        det?.setPose('cheer');
-        thief?.setPose('sad');
-        thief?.lookAt(null);
-      } else {
-        thief?.setPose('cheer');
-        det?.setPose('facepalm');
-        det?.lookAt(null);
-      }
-      kids.forEach(k => { if (k.pose !== 'sad' && k.pose !== 'facepalm') k.lookAt(camera.position); });
-    });
-  }
-
-  function onPhase(phase) {
-    currentPhase = phase;
-    timeline = [];
-    celebrate = phase === 'GAME_OVER';
-    chatter = phase === 'HOME' || MENU_PHASES.has(phase);
-    if (phase !== 'DETECTIVE_HANDOFF' && !SUSPENSE_PHASES.has(phase)) detectiveScan = null;
-    if (phase !== 'BACHPAN' && phase !== 'HOME' && story.active) story.end();
-
-    if (phase === 'BACHPAN' || phase === 'HOME') {
-      // Bachpan Mode's director (the screen) drives everything through `story`
-      chatter = false;
-      shot = SHOTS.home;
-      setPower(true);
-      resetKids();
-    } else if (phase === 'HOME' || MENU_PHASES.has(phase)) {
-      shot = phase === 'HOME' ? SHOTS.home : SHOTS.menu;
-      setPower(true);
-      resetKids();
-      syncPlayers(false);
-      if (chits.some(c => c.picked || !c.mesh.visible)) tossAll();
-    } else if (phase === 'ROUND_INTRO') {
-      shot = SHOTS.mat;
-      setPower(true);
-      picked = 0;
-      revealedKids.clear();
-      resetKids();
-      syncPlayers(true);
-      // roundNumber still counts completed rounds here; the dealer rotates each round
-      const dealer = kids[(state?.roundNumber || 0) % kids.length];
-      dealer.play([['throw', 0.4, 10], ['fling', 0.6, 16], ['idle', 0, 6]]);
-      kids.forEach(k => { if (k !== dealer) k.lookAt(dealer.handWorld(new THREE.Vector3())); });
-      chits.forEach(c => { if (!c.mesh.visible) c.picked = true; });
-      after(0.42, () => {
-        tossAll({ from: dealer.handWorld(new THREE.Vector3()) });
-        kids.forEach(k => k.lookAt(MAT_CENTER));
-      });
-    } else if (phase === 'ROLE_HANDOFF') {
-      shot = SHOTS.mat;
-      syncPlayers(true);
-      handChitsToRevealed();
-      const next = kidFor(state?.currentRevealPlayerId);
-      if (next) {
-        next.setPose('nervous');
-        next.lookAt(MAT_CENTER);
-        kids.forEach(k => { if (k !== next) k.lookAt(headOf(next)); });
-      }
-    } else if (phase === 'ROLE_REVEAL') {
-      const i = kidIndex(state?.currentRevealPlayerId);
-      if (i >= 0) {
-        const kid = kids[i];
-        shot = shotOnKid(kid);
-        kidPicksChit(kid, i);
-        // the others politely look away (or try to peek!)
-        kids.forEach((k, j) => {
-          if (j === i) return;
-          k.lookAt(Math.random() < 0.3 ? headOf(kid) : camera.position);
-        });
-      } else {
-        shot = SHOTS.close;
-        pickUp();
-      }
-    } else if (SUSPENSE_PHASES.has(phase)) {
-      setPower(false);
-      handChitsToRevealed();
-      const det = kidFor(state?.detectivePlayerId);
-      if (det) {
-        shot = shotOnKid(det, { y: 1.05, back: 2.4, lift: 0.1 });
-        if (!detectiveScan || detectiveScan.kid !== det) startDetectiveScan(det);
-      } else {
-        shot = SHOTS.low;
-      }
-    } else if (phase === 'RESULT_REVEAL') {
-      shot = SHOTS.result;
-      setPower(true);
-      playResult();
-    } else if (phase === 'SCOREBOARD') {
-      shot = SHOTS.score;
-      setPower(true);
-    } else if (phase === 'GAME_OVER') {
-      shot = SHOTS.home;
-      setPower(true);
-      nextCelebrate = time + 0.4;
-      const ps = players();
-      let best = -1, bestScore = -Infinity;
-      ps?.forEach((p, i) => { const s = state.totals?.[p.id] ?? 0; if (s > bestScore) { bestScore = s; best = i; } });
-      kids.forEach((k, i) => {
-        k.showRole(null);
-        k.holdChit(false);
-        k.setAccessory(i === best ? 'crown' : null);
-        k.setPose(i === best ? 'cheer' : 'clap');
-        k.lookAt(i === best ? camera.position : (best >= 0 ? headOf(kids[best]) : MAT_CENTER));
-      });
-    }
-  }
-
-  function updateKids(dt) {
+  function updateActors(dt) {
     if (timeline.length) {
       const due = timeline.filter(e => e.at <= time);
       if (due.length) {
@@ -964,20 +733,13 @@ function createWorld(app) {
         due.forEach(e => { try { e.fn(); } catch (err) { console.error(err); } });
       }
     }
-    if (chatter && time > nextChatter) {
-      nextChatter = time + 1.5 + Math.random() * 2.5;
-      const a = kids[Math.floor(Math.random() * kids.length)];
-      const b = kids[Math.floor(Math.random() * kids.length)];
-      a.lookAt(a === b ? MAT_CENTER : headOf(b));
-    }
     if (detectiveScan && time > detectiveScan.next) {
-      const { kid, others } = detectiveScan;
+      const { actor, others } = detectiveScan;
       detectiveScan.next = time + 1.1 + Math.random() * 0.8;
       detectiveScan.i = (detectiveScan.i + 1 + Math.floor(Math.random() * 2)) % others.length;
-      const suspect = others[detectiveScan.i];
-      kid.lookAt(headOf(suspect));
+      actor.lookAt(headOf(others[detectiveScan.i]));
     }
-    kids.forEach(k => k.update(dt, time, reduced));
+    actors.forEach(a => a.update(dt, time, reduced));
     updateTags();
     updateBubbles();
   }
@@ -985,12 +747,12 @@ function createWorld(app) {
   /* ─── Per-frame update ──────────────────────────────────────── */
   function updateTv() {
     const d = tvImage.data;
-    const roll = (time * 30) % 48;
-    for (let y = 0; y < 48; y++) {
-      const band = Math.abs(y - roll) < 3 ? 60 : 0;
-      for (let x = 0; x < 64; x++) {
+    const roll = (time * 30) % 120;
+    for (let y = 0; y < 120; y++) {
+      const band = Math.abs(y - roll) < 6 ? 60 : 0;
+      for (let x = 0; x < 160; x++) {
         const v = Math.min(255, (Math.random() * 200 + band) | 0);
-        const i = (y * 64 + x) * 4;
+        const i = (y * 160 + x) * 4;
         d[i] = v * 0.92; d[i + 1] = v * 0.96; d[i + 2] = v; d[i + 3] = 255;
       }
     }
@@ -1035,10 +797,10 @@ function createWorld(app) {
     if (power > 0.05 && (tvFrame++ % 2 === 0) && (motion || tvFrame < 3)) updateTv();
 
     // Lattu spin + precession
-    lattuSpin.rotation.y += (reduced ? 3 : 32) * dt;
-    lattuTilt.rotation.z = reduced ? 0.04 : 0.06 + Math.sin(time * 0.7) * 0.03;
-    lattu.rotation.y += (reduced ? 0.2 : 2.2) * dt;
-    if (!reduced) lattu.position.set(LATTU_AT.x + Math.cos(time * 0.9) * 0.06, 0, LATTU_AT.z + Math.sin(time * 0.9) * 0.06);
+    topSpin.rotation.y += (reduced ? 3 : 32) * dt;
+    topTilt.rotation.z = reduced ? 0.04 : 0.06 + Math.sin(time * 0.7) * 0.03;
+    top.rotation.y += (reduced ? 0.2 : 2.2) * dt;
+    if (!reduced) top.position.set(TOP_AT.x + Math.cos(time * 0.9) * 0.06, 0, TOP_AT.z + Math.sin(time * 0.9) * 0.06);
 
     // Dust
     if (motion) {
@@ -1053,7 +815,7 @@ function createWorld(app) {
     }
     dust.material.opacity = 0.35 + 0.5 * (powerTarget ? 1 : 0.4);
 
-    // Chits
+    // Chits rest where they land; they only move when someone throws or picks them
     for (const c of chits) {
       const m = c.mesh;
       const f = c.flight;
@@ -1074,26 +836,20 @@ function createWorld(app) {
           m.rotation.z = 0;
           f.onDone?.();
         }
-      } else if (m.visible && motion) {
-        // fan breeze makes the paper flutter
-        m.rotation.z = Math.sin(time * 11 + c.phase) * 0.018 * fanSpeed;
       }
-    }
-
-    if (celebrate && time > nextCelebrate) {
-      nextCelebrate = time + 2.4;
-      tossAll({ high: true });
     }
 
     // Camera: damped move to the shot + slow orbit + camcorder hand-shake + pointer parallax
     pointer.sx = damp(pointer.sx, pointer.x, 3, dt);
     pointer.sy = damp(pointer.sy, pointer.y, 3, dt);
-    updateKids(dt);
-    const sh = typeof shot === 'function' ? shot() : shot;
+    updateActors(dt);
+    const talking = talkShot && time < talkUntil;
+    const framing = portraitShot || (talking ? talkShot : shot);
+    const sh = typeof framing === 'function' ? framing() : framing;
     tmpLook.set(...sh.look);
-    tmpOff.set(...sh.pos).sub(tmpLook).multiplyScalar(distMul);
-    if (distMul > 1) {
-      // portrait phones: look more top-down so the chatai fills the frame
+    tmpOff.set(...sh.pos).sub(tmpLook).multiplyScalar(sh.exact ? 1 : distMul);
+    if (distMul > 1 && !sh.exact) {
+      // portrait phones: look more top-down so the mat fills the frame
       tmpOff.y *= 1 + (distMul - 1) * 0.5;
       tmpLook.y *= 0.2;
       tmpLook.z += 0.3;
@@ -1107,7 +863,7 @@ function createWorld(app) {
       camLook.copy(tmpLook);
       snapCamera = false;
     } else {
-      const k = 1.5;
+      const k = sh.exact ? 3.4 : 1.5;
       camPos.set(damp(camPos.x, tmpPos.x, k, dt), damp(camPos.y, tmpPos.y, k, dt), damp(camPos.z, tmpPos.z, k, dt));
       camLook.set(damp(camLook.x, tmpLook.x, k, dt), damp(camLook.y, tmpLook.y, k, dt), damp(camLook.z, tmpLook.z, k, dt));
     }
@@ -1118,38 +874,36 @@ function createWorld(app) {
     camera.rotation.z += Math.sin(time * 0.53) * 0.006 * motion;
   }
 
-  /* Adaptive quality: if the device can't keep up, render fewer pixels and
-     drop the costliest effects instead of stuttering. */
-  const QUALITY = [
-    { height: 300, shadows: false, dust: false },
-    { height: 330, shadows: true, dust: false },
-    { height: RENDER_HEIGHT, shadows: true, dust: true },
-  ];
-  const lowEnd = (navigator.hardwareConcurrency || 4) <= 2 || (navigator.deviceMemory || 4) <= 2;
-  let quality = lowEnd ? 1 : 2;
+  /* If the device can't keep up, draw fewer pixels instead of stuttering. */
   let slowMs = 0, warmUntil = 0;
   function applyQuality() {
     const q = QUALITY[quality];
-    sun.castShadow = q.shadows;
     dust.visible = q.dust;
+    if (sun.shadow.mapSize.x !== q.shadow) {
+      sun.shadow.mapSize.set(q.shadow, q.shadow);
+      sun.shadow.map?.dispose();
+      sun.shadow.map = null;
+    }
     resize();
   }
   function watchPerformance(frameMs, now) {
-    if (now < warmUntil || quality === 0) return;          // ignore shader warm-up
-    if (frameMs > 52) slowMs += frameMs; else slowMs = Math.max(0, slowMs - frameMs * 0.5);
+    if (graphicsChoice !== 'auto' || now < warmUntil || quality === 0) return;   // ignore shader warm-up
+    if (frameMs > 42) slowMs += frameMs; else slowMs = Math.max(0, slowMs - frameMs * 0.5);
     if (slowMs > 3000) {
       quality -= 1;
       slowMs = 0;
       warmUntil = now + 2500;
       applyQuality();
-      console.info('[World3D] lowered quality to', quality);
+      console.info('[World3D] graphics level:', QUALITY[quality].name);
     }
   }
 
   function resize() {
     const W = window.innerWidth || 1, H = window.innerHeight || 1;
-    const s = Math.min(1, QUALITY[quality].height / H);
-    renderer.setSize(Math.max(1, Math.round(W * s)), Math.max(1, Math.round(H * s)), false);
+    const q = QUALITY[quality];
+    const ratio = Math.min(window.devicePixelRatio || 1, q.dpr);
+    const k = Math.min(ratio, q.maxHeight / Math.min(W, H), 3840 / Math.max(W, H));
+    renderer.setSize(Math.max(1, Math.round(W * k)), Math.max(1, Math.round(H * k)), false);
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
     const aspect = W / H;
@@ -1160,10 +914,10 @@ function createWorld(app) {
 
   function frame(now) {
     rafId = requestAnimationFrame(frame);
-    if (now - lastRender < FRAME_MS - 2) return;
+    if (now - lastRender < QUALITY[quality].frameMs - 2) return;
     watchPerformance(now - lastRender, now);
     lastRender = now;
-    const dt = Math.min(0.1, (now - last) / 1000);
+    const dt = paused ? 0 : Math.min(0.1, (now - last) / 1000);
     last = now;
     time += dt;
     try {
@@ -1207,21 +961,19 @@ function createWorld(app) {
   canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); stop(); });
   canvas.addEventListener('webglcontextrestored', () => start());
 
-  gameBus.on(EVENTS.PHASE_CHANGED, ({ phase } = {}) => { if (phase) onPhase(phase); });
   gameBus.on(EVENTS.SETTINGS_CHANGED, (payload = {}) => {
     const s = payload.settings || {};
-    // the 3D room is the whole game now, so it always stays on
     if (payload.settings) readMotion(s);
   });
 
-  /* ─── Story API (Bachpan Mode director) ─────────────────────── */
+  /* ─── Story API: how the game screen directs the room ───────── */
   const bubbleLayer = document.createElement('div');
-  bubbleLayer.className = 'kid-bubbles';
+  bubbleLayer.className = 'player-bubbles';
   bubbleLayer.setAttribute('aria-hidden', 'true');
   document.body.appendChild(bubbleLayer);
-  const bubbles = kids.map((_, i) => {
+  const bubbles = actors.map((_, i) => {
     const b = document.createElement('div');
-    b.className = `kid-bubble kid-bubble--${i}`;
+    b.className = `player-bubble player-bubble--${i}`;
     bubbleLayer.appendChild(b);
     return { el: b, until: 0, typer: 0 };
   });
@@ -1232,20 +984,20 @@ function createWorld(app) {
   // Names are HTML above the canvas, not sprites inside it: the room renders at a low
   // resolution, so anything drawn in 3D would come out blurred and pixelated.
   const tagLayer = document.createElement('div');
-  tagLayer.className = 'kid-tags';
+  tagLayer.className = 'player-tags';
   tagLayer.setAttribute('aria-hidden', 'true');
   document.body.appendChild(tagLayer);
-  const tags = kids.map(() => {
+  const tags = actors.map(() => {
     const el = document.createElement('div');
-    el.className = 'kid-tag';
+    el.className = 'player-tag';
     el.hidden = true;
     tagLayer.appendChild(el);
     return { el, text: null, width: 0 };
   });
   // an opened chit, same idea: real text, so the role can always be read
-  const roleCards = kids.map(() => {
+  const roleCards = actors.map(() => {
     const el = document.createElement('div');
-    el.className = 'kid-chit';
+    el.className = 'player-chit';
     el.hidden = true;
     const emoji = document.createElement('span');
     const name = document.createElement('strong');
@@ -1260,7 +1012,7 @@ function createWorld(app) {
     const off = proj.z > 1 || y < 0 || y > H + 24;
     label.el.style.visibility = off ? 'hidden' : 'visible';
     if (off) return;
-    // stays whole at the screen edges, where a kid can sit partly out of view on phones
+    // stays whole at the screen edges, where a player can sit partly out of view on phones
     const half = label.width / 2 + 4;
     const x = half * 2 > W ? W / 2 : Math.max(half, Math.min(W - half, (proj.x + 1) / 2 * W));
     label.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)${angle}`;
@@ -1268,7 +1020,7 @@ function createWorld(app) {
 
   function updateTags() {
     roleCards.forEach((chit, i) => {
-      const role = kids[i].shownRole;
+      const role = actors[i].shownRole;
       if (role !== chit.role) {
         chit.role = role;
         chit.el.hidden = !role;
@@ -1280,12 +1032,12 @@ function createWorld(app) {
         }
       }
       if (!role) return;
-      kids[i].handWorld(proj);
+      actors[i].handWorld(proj);
       proj.y += 0.1;
       placeLabel(chit, i % 2 ? ' rotate(2deg)' : ' rotate(-2deg)');
     });
     tags.forEach((tag, i) => {
-      const text = kids[i].name;
+      const text = actors[i].name;
       if (text !== tag.text) {
         tag.text = text;
         tag.el.textContent = text || '';
@@ -1293,7 +1045,7 @@ function createWorld(app) {
         tag.width = text ? tag.el.offsetWidth : 0;
       }
       if (!text) return;
-      kids[i].headWorld(proj);
+      actors[i].headWorld(proj);
       proj.y += 0.3;
       placeLabel(tag);
     });
@@ -1303,9 +1055,9 @@ function createWorld(app) {
     if (!story.active) return;
     const W = window.innerWidth, H = window.innerHeight;
     bubbles.forEach((b, i) => {
-      if (!b.el.classList.contains('kid-bubble--show')) return;
-      if (time > b.until) { b.el.classList.remove('kid-bubble--show'); return; }
-      kids[i].headWorld(proj);
+      if (!b.el.classList.contains('player-bubble--show')) return;
+      if (time > b.until) { b.el.classList.remove('player-bubble--show'); return; }
+      actors[i].headWorld(proj);
       proj.y += 0.5;
       proj.project(camera);
       const off = proj.z > 1;
@@ -1320,60 +1072,99 @@ function createWorld(app) {
     });
   }
 
-  const swapMap = (material, texture) => {
-    material.map?.dispose();
-    material.map = texture;
-    material.needsUpdate = true;
-  };
+  /* Room textures are kept for the last few games, so swiping back is instant. */
+  const themeCache = new Map();
+  function themed(key, make, inUse) {
+    let t = themeCache.get(key);
+    if (!t) {
+      t = make();
+      themeCache.set(key, t);
+      if (themeCache.size > 12) {
+        for (const [k, old] of themeCache) {
+          if (!inUse.includes(old)) { themeCache.delete(k); old.dispose(); break; }
+        }
+      }
+    }
+    return t;
+  }
+  let themeTimer = 0;
+  function applyTheme(c) {
+    clearTimeout(themeTimer);
+    const t = c.theme;
+    const inUse = [floor.material.map, mat.material.map, wallMat.map, calendar.material.map];
+    const put = (material, texture) => { material.map = texture; material.needsUpdate = true; };
+    put(floor.material, themed(`floor|${t.floor}`, () => Themes.floorTexture(t.floor), inUse));
+    put(mat.material, themed(`mat|${t.mat}`, () => Themes.matTexture(t.mat), inUse));
+    mat.material.bumpMap = mat.material.map;
+    put(wallMat, themed(`wall|${t.wall.join()}`, () => Themes.wallTexture(t.wall), inUse));
+    put(calendar.material, themed(`month|${t.month}`, () => Themes.calendarTexture(t.month), inUse));
+    const b = Themes.BALL_COLORS[t.ball] || Themes.BALL_COLORS.cricket;
+    ballMat.color.set(b.body);
+    seamMat.color.set(b.seam);
+    ball.scale.setScalar(b.r);
+    ball.position.y = b.r;
+  }
+
+  let portraitShot = null;
+  const dressAll = (list) => list?.forEach((p, i) => { if (p?.look && actors[i]) actors[i].setLook(p.look); });
 
   const story = {
     active: false,
     get country() { return country; },
-    // swap role names / captions (English ⇄ local) without rebuilding the room
-    relabel(c) { if (c) country = c; },
-    setCountry(c) {
+    get quality() { return QUALITY[quality].name; },
+    get graphics() { return graphicsChoice; },
+    // swiping through games stays smooth: the room repaints once the swipe settles
+    setCountry(c, { soon = false } = {}) {
       if (!c) return;
       country = c;
-      const t = c.theme;
-      swapMap(floor.material, Themes.floorTexture(t.floor));
-      swapMap(mat.material, Themes.matTexture(t.mat));
-      swapMap(wallMat, Themes.wallTexture(t.wall));
-      swapMap(calendar.material, Themes.calendarTexture(t.month));
-      const b = Themes.BALL_COLORS[t.ball] || Themes.BALL_COLORS.cricket;
-      ballMat.color.set(b.body);
-      seamMat.color.set(b.seam);
-      ball.scale.setScalar(b.r);
-      ball.position.y = b.r;
-      kids.forEach((k, i) => k.setSkin(t.skins[i % t.skins.length]));
+      clearTimeout(themeTimer);
+      if (soon) themeTimer = setTimeout(() => applyTheme(c), 140);
+      else applyTheme(c);
     },
-    preview(names) {
-      // show the country's kids (names + default shirts) on the start screen
-      kids.forEach((k, i) => { k.setShirt(KID_LOOKS[i].shirt); k.setName(names?.[i] || null); });
+    setGraphics(choice) {
+      graphicsChoice = levelNamed(choice) >= 0 ? choice : 'auto';
+      quality = graphicsChoice === 'auto' ? automaticLevel() : levelNamed(graphicsChoice);
+      slowMs = 0;
+      warmUntil = performance.now() + 2500;
+      Themes.setTextureDetail(QUALITY[quality].texture);
+      setCharacterDetail(QUALITY[quality].texture / 4);
+      themeCache.forEach(t => t.dispose());
+      themeCache.clear();
+      applyQuality();
+      applyTheme(country);
     },
+    /** The people at the table on the start screen: [{ name, look }] */
+    preview(list) {
+      dressAll(list);
+      actors.forEach((a, i) => a.setName(list?.[i]?.label || list?.[i]?.name || null));
+    },
+    setLook(i, look) { actors[i]?.setLook(look); },
+    lookKeyOf: lookKey,
+    portrait(seat) { portraitShot = seat == null ? null : portraitFraming(seat); },
+    setPaused(on) { paused = !!on; },
     begin(list) {
       story.active = true;
       html.classList.add('story-mode');
       setEnabled(true);
       timeline = [];
-      chatter = false;
-      revealedKids.clear();
-      resetKids();
+      talkShot = null;
+      portraitShot = null;
+      resetActors();
       setPower(true);
       shot = camera.aspect < 0.8 ? SHOTS.overhead : SHOTS.home;
-      list.forEach((p, i) => {
-        kids[i].setShirt(p.color);
-        kids[i].setName(p.label || p.name);
-      });
-      if (chits.some(c => c.picked || !c.mesh.visible)) tossAll();
+      dressAll(list);
+      list.forEach((p, i) => actors[i].setName(p.label || p.name));
+      gatherChits(false);
     },
     end() {
       if (!story.active) return;
       story.active = false;
       html.classList.remove('story-mode');
-      bubbles.forEach(b => { clearInterval(b.typer); b.el.classList.remove('kid-bubble--show'); });
+      bubbles.forEach(b => { clearInterval(b.typer); b.el.classList.remove('player-bubble--show'); });
       timeline = [];
-      resetKids();
-      kids.forEach(k => k.setName(null));
+      talkShot = null;
+      resetActors();
+      actors.forEach(a => a.setName(null));
       setPower(true);
     },
     say(i, text, ms) {
@@ -1382,7 +1173,7 @@ function createWorld(app) {
       const dur = ms || Math.min(4200, 1100 + text.length * 55);
       clearInterval(b.typer);
       b.el.textContent = '';
-      b.el.classList.add('kid-bubble--show');
+      b.el.classList.add('player-bubble--show');
       b.until = time + dur / 1000;
       let n = 0;
       const chars = [...text];
@@ -1392,46 +1183,68 @@ function createWorld(app) {
         b.el.textContent = chars.slice(0, n).join('');
         if (n >= chars.length) clearInterval(b.typer);
       }, 35);
-      kids[i].talk(dur / 1000 * 0.8);
+      actors[i].talk(dur / 1000 * 0.8);
       audioManager.play('talk');
       return dur;
     },
+    /** Point the camera at a conversation: i talks to j (or to everyone when j is null). */
+    talkTo(i, j, ms = 2500) {
+      if (!actors[i]) return;
+      talkShot = talkFraming(i, j);
+      talkUntil = time + ms / 1000 + 0.5;
+      lastCut = time;
+      if (j != null && actors[j]) {
+        actors[i].lookAt(headOf(actors[j]));
+        actors[j].lookAt(headOf(actors[i]));
+      }
+    },
+    clearTalk() { talkShot = null; talkUntil = 0; },
+    get sinceCut() { return time - lastCut; },
     narrate(text) { showCaption(text); },
-    deal(d) {
-      revealedKids.clear();
+    /** Before the toss: the chits sit in one still pile. */
+    gather() {
       detectiveScan = null;
-      kids.forEach(k => { k.showRole(null); k.holdChit(false); k.setAccessory(null); k.setPose('idle'); });
-      const dealer = kids[d];
+      actors.forEach(a => { a.showRole(null); a.holdChit(false); a.setAccessory(null); a.setPose('idle'); a.lookAt(MAT_CENTER); });
       shot = camera.aspect < 0.8 ? SHOTS.overhead : SHOTS.mat;
-      chits.forEach(c => { if (!c.mesh.visible) c.picked = true; });
-      dealer.play([['throw', 0.4, 10], ['fling', 0.6, 16], ['idle', 0, 6]]);
-      kids.forEach(k => { if (k !== dealer) k.lookAt(headOf(dealer)); });
-      after(0.42, () => {
-        tossAll({ from: dealer.handWorld(new THREE.Vector3()) });
-        kids.forEach(k => k.lookAt(MAT_CENTER));
+      gatherChits(true);
+    },
+    chitsOnMat() { return chits.filter(c => c.mesh.visible && !c.picked).length; },
+    /** One player scoops up the pile and throws it. Only this makes the chits fly. */
+    deal(d) {
+      detectiveScan = null;
+      const tosser = actors[d];
+      tosser.play([['reach', 0.42, 11], ['throw', 0.42, 12], ['fling', 0.55, 16], ['idle', 0, 6]]);
+      actors.forEach(a => { if (a !== tosser) a.lookAt(headOf(tosser)); });
+      after(0.32, () => {
+        const hand = tosser.handWorld(new THREE.Vector3());
+        chits.forEach((c, i) => launch(c, hand, { height: 0.04, dur: 0.24, spin: false, delay: i * 0.02 }));
+      });
+      after(0.92, () => {
+        tossAll({ from: tosser.handWorld(new THREE.Vector3()) });
+        actors.forEach(a => a.lookAt(MAT_CENTER));
       });
     },
-    pick(i) { kidPicksChit(kids[i], i, { peek: true }); },
-    hold(i) { kids[i].holdChit(true); kids[i].setPose('hold'); kids[i].lookAt(MAT_CENTER); },
-    pose(i, name) { kids[i]?.setPose(name); },
-    emote(i, symbol, sec = 2) { kids[i]?.emote(symbol, sec); },
-    mood(i, name, sec = 2.5) { kids[i]?.mood(name, sec); },
-    // a kid sneaks a look at another kid's chit
+    pick(i) { actorPicksChit(actors[i], { peek: true }); },
+    hold(i) { actors[i].holdChit(true); actors[i].setPose('hold'); actors[i].lookAt(MAT_CENTER); },
+    pose(i, name) { actors[i]?.setPose(name); },
+    emote(i, symbol, sec = 2) { actors[i]?.emote(symbol, sec); },
+    mood(i, name, sec = 2.5) { actors[i]?.mood(name, sec); },
+    // one player sneaks a look at another's chit
     sneak(i, j) {
-      kids[i].setPose('sneaky');
-      kids[i].lookAt(kids[j].handWorld(new THREE.Vector3()));
+      actors[i].setPose('sneaky');
+      actors[i].lookAt(actors[j].handWorld(new THREE.Vector3()));
     },
     look(i, j) {
-      const k = kids[i];
-      if (!k) return;
-      if (j === 'camera') k.lookAt(camera.position);
-      else if (j === 'center') k.lookAt(MAT_CENTER);
-      else if (j == null) k.lookAt(null);
-      else k.lookAt(headOf(kids[j]));
+      const a = actors[i];
+      if (!a) return;
+      if (j === 'camera') a.lookAt(camera.position);
+      else if (j === 'center') a.lookAt(MAT_CENTER);
+      else if (j == null) a.lookAt(null);
+      else a.lookAt(headOf(actors[j]));
     },
-    allLook(j) { kids.forEach((k, i) => { if (i !== j) story.look(i, j); }); },
-    // on tall phone screens a top-down view is the only way to fit all four kids
-    focus(i, opts) { shot = i == null ? (camera.aspect < 0.8 ? SHOTS.overhead : SHOTS.home) : shotOnKid(kids[i], opts); },
+    allLook(j) { actors.forEach((a, i) => { if (i !== j) story.look(i, j); }); },
+    // on tall phone screens a top-down view is the only way to fit all four
+    focus(i, opts) { shot = i == null ? (camera.aspect < 0.8 ? SHOTS.overhead : SHOTS.home) : shotOnActor(actors[i], opts); },
     view(name) { shot = camera.aspect < 0.8 && name === 'result' ? SHOTS.overhead : (SHOTS[name] || SHOTS.home); },
     power(on) { setPower(on); },
     // Mafia-style night: lights down without the "power cut" caption/sound
@@ -1441,58 +1254,57 @@ function createWorld(app) {
       powerTarget = target;
       if (!on) restoreAt = time - 1;
     },
-    detective(i) { startDetectiveScan(kids[i]); },
-    investigate(i, acc) { startDetectiveScan(kids[i], acc || 'cap'); },
-    // one kid publicly shows their chit (e.g. "Raja main hoon!")
+    investigate(i, acc) { startGuesserScan(actors[i], acc || 'cap'); },
+    // one player publicly shows their chit (e.g. "I am the King!")
     showOne(i, slot) {
-      const k = kids[i];
-      k.showRole(roleTex(slot));
-      k.setAccessory(roleAcc(slot));
-      k.play([['show', 1.8, 8], ['hold', 0, 6]]);
-      after(1.9, () => { k.showRole(null); k.holdChit(true); });
-      kids.forEach((o, n) => { if (n !== i) o.lookAt(headOf(k)); });
+      const a = actors[i];
+      a.showRole(roleInfo(slot));
+      a.setAccessory(roleAcc(slot));
+      a.play([['show', 1.8, 8], ['hold', 0, 6]]);
+      after(1.9, () => { a.showRole(null); a.holdChit(true); });
+      actors.forEach((o, n) => { if (n !== i) o.lookAt(headOf(a)); });
     },
     stopScan() { detectiveScan = null; },
     point(i, j) {
       detectiveScan = null;
-      kids[i].setPose('point');
-      kids[i].lookAt(headOf(kids[j]));
-      kids.forEach((k, n) => { if (n !== i) k.lookAt(headOf(kids[j])); });
-      kids[j].setPose('nervous');
+      actors[i].setPose('point');
+      actors[i].lookAt(headOf(actors[j]));
+      actors.forEach((a, n) => { if (n !== i) a.lookAt(headOf(actors[j])); });
+      actors[j].setPose('nervous');
     },
     reveal(roles) {
-      kids.forEach((k, i) => {
-        k.showRole(roleTex(roles[i]));
-        k.setAccessory(roleAcc(roles[i]));
-        k.setPose('show');
-        k.lookAt(camera.position);
+      talkShot = null;
+      actors.forEach((a, i) => {
+        a.showRole(roleInfo(roles[i]));
+        a.setAccessory(roleAcc(roles[i]));
+        a.setPose('show');
+        a.lookAt(camera.position);
       });
       audioManager.play('paper-toss');
     },
     celebrate(w) {
-      celebrate = true;
-      nextCelebrate = time + 0.4;
-      kids.forEach((k, i) => {
-        k.showRole(null);
-        k.holdChit(false);
-        k.setAccessory(i === w ? 'crown' : null);
-        k.setPose(i === w ? 'cheer' : 'clap');
-        k.lookAt(i === w ? camera.position : headOf(kids[w]));
+      talkShot = null;
+      tossAll({ high: true });     // one big throw for the winner
+      actors.forEach((a, i) => {
+        a.showRole(null);
+        a.holdChit(false);
+        a.setAccessory(i === w ? 'crown' : null);
+        a.setPose(i === w ? 'cheer' : 'clap');
+        a.lookAt(i === w ? camera.position : headOf(actors[w]));
       });
     },
-    stopCelebrate() { celebrate = false; },
-    kidAt(clientX, clientY) {
+    actorAt(clientX, clientY) {
       ndc.set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
       let best = -1, bestD = Infinity;
-      kids.forEach((k, i) => {
-        const hit = raycaster.intersectObject(k.root, true)[0];
+      actors.forEach((a, i) => {
+        const hit = raycaster.intersectObject(a.root, true)[0];
         if (hit && hit.distance < bestD) { bestD = hit.distance; best = i; }
       });
       if (best >= 0) return best;
       // forgiving fallback: nearest head on screen within 90px
-      kids.forEach((k, i) => {
-        k.headWorld(proj).project(camera);
+      actors.forEach((a, i) => {
+        a.headWorld(proj).project(camera);
         const dx = ((proj.x + 1) / 2) * window.innerWidth - clientX;
         const dy = ((1 - proj.y) / 2) * window.innerHeight - clientY;
         const d = Math.hypot(dx, dy);
@@ -1508,5 +1320,5 @@ function createWorld(app) {
   renderer.render(scene, camera);
   setEnabled(true);
 
-  return { setEnabled, onPhase, story };
+  return { setEnabled, story };
 }

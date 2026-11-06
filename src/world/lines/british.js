@@ -1,4 +1,4 @@
-// UK — Cops and Robbers (90s British kids)
+// UK — Cops and Robbers (British edition)
 export default {
   prefixes: ['Blimey,', 'Oi,', 'Right,', 'Cor,', 'Haha,', 'Honestly,', 'Mate,', 'Crikey,', 'Go on,', 'Ooh,'],
   lines: {
@@ -105,7 +105,7 @@ export default {
     winner: ['I won! 🏆', 'Who’s the champion? Me! 🏆', 'Beat everyone! 😎', 'Undefeated!', 'Sweets are on me! 🍬'],
     loser: ['Rematch tomorrow!', 'I’ll get you next time 😤', 'That was ace!', 'Next time for sure', 'Well played, everyone'],
     parent: ['Keep the noise down! 📢', 'Have you tidied your room? 🧹', 'Squash is on the table! 🧃', 'Take a coat if you go out!', 'Shoes off on the carpet!'],
-    parentEnd: ['Kids! Tea’s ready, wash your hands! 🍟', 'Right you lot, bath time! 🛁'],
+    parentEnd: ['Everyone! Tea’s ready, wash your hands! 🍟', 'Right you lot, bath time! 🛁'],
     cheatCaught: [
       'Oi! You’re cheating! 😠',
       'I saw that! You had a sneaky look!',

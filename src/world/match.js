@@ -24,8 +24,7 @@ function shuffle(arr) {
 }
 
 export const CHEAT_PENALTY = 100;
-export const CHEAT_CATCH_CHANCE = 0.35;
-export const CHEAT_PEEK_CHANCE = 0.5;
+export const CHEAT_CATCH_CHANCE = 0.3;   // so 70% of tries go unnoticed
 
 export class Match {
   constructor(country, playerCount = 4, rounds = 5, { humanSeat = -1 } = {}) {
@@ -38,6 +37,8 @@ export class Match {
     this.guesserCount = Array(playerCount).fill(0);
     this.catches = Array(playerCount).fill(0);   // thief caught while guessing
     this.escapes = Array(playerCount).fill(0);   // got away as the thief
+    this.cheats = Array(playerCount).fill(0);    // tried to peek
+    this.caughtCheats = Array(playerCount).fill(0);
     this.roles = [];          // seat -> slot
     this.lastPoints = [];
   }
@@ -118,7 +119,7 @@ export class Match {
     return s;
   }
 
-  /** Korea: the Mafia attacks one non-Mafia kid; the Doctor guesses whom to save. */
+  /** Korea: the Mafia attacks one non-Mafia player; the Doctor guesses whom to save. */
   playNight() {
     const others = [0, 1, 2, 3].filter(s => s !== this.thief);
     const victim = pick(others);
@@ -128,9 +129,11 @@ export class Match {
   }
 
   /**
-   * The guesser tries to peek at a suspect's chit, once a round. Half the time it
-   * works and clears one innocent; otherwise nothing is seen. Either way someone
-   * may notice. Returns { peeked, seat, slot, caught }; slot is null when nothing was seen.
+   * The guesser tries to peek at a suspect's chit, once a round.
+   * - Noticed (30%): nothing is seen, every suspect stays in play and the fine applies.
+   * - Unnoticed (70%): one innocent suspect's chit is seen and cleared.
+   * The thief's chit is never the one seen.
+   * Returns { caught, peeked, seat, slot }: seat is who they tried to look at; slot is null when nothing was seen.
    */
   cheat() {
     if (this.cheated) return null;
@@ -138,12 +141,16 @@ export class Match {
     const innocents = suspects.filter(s => s !== this.thief);
     if (!innocents.length) return null;
     this.cheated = true;
-    const caught = Math.random() < CHEAT_CATCH_CHANCE;
-    if (caught) this.cheatPenalty = CHEAT_PENALTY;
-    if (Math.random() >= CHEAT_PEEK_CHANCE) return { peeked: false, seat: pick(suspects), slot: null, caught };
+    const g = this.guesser;
+    if (this.cheats) this.cheats[g]++;
+    if (Math.random() < CHEAT_CATCH_CHANCE) {
+      this.cheatPenalty = CHEAT_PENALTY;
+      if (this.caughtCheats) this.caughtCheats[g]++;
+      return { caught: true, peeked: false, seat: pick(suspects), slot: null };
+    }
     const seat = pick(innocents);
     this.cleared.push(seat);
-    return { peeked: true, seat, slot: this.roles[seat], caught };
+    return { caught: false, peeked: true, seat, slot: this.roles[seat] };
   }
 
   /** A simple computer guesser: a light nose for the thief. */
@@ -210,6 +217,7 @@ export class Match {
       rounds: this.rounds, round: this.round, humanSeat: this.humanSeat,
       totals: this.totals.slice(), guesserCount: this.guesserCount.slice(),
       catches: this.catches.slice(), escapes: this.escapes.slice(),
+      cheats: this.cheats.slice(), caughtCheats: this.caughtCheats.slice(),
       roles: this.roles.slice(), cleared: (this.cleared || []).slice(),
       cheated: !!this.cheated, cheatPenalty: this.cheatPenalty || 0,
     };
@@ -222,6 +230,8 @@ export class Match {
     m.guesserCount = s.guesserCount.slice();
     if (Array.isArray(s.catches) && s.catches.length === 4) m.catches = s.catches.slice();
     if (Array.isArray(s.escapes) && s.escapes.length === 4) m.escapes = s.escapes.slice();
+    if (Array.isArray(s.cheats) && s.cheats.length === 4) m.cheats = s.cheats.slice();
+    if (Array.isArray(s.caughtCheats) && s.caughtCheats.length === 4) m.caughtCheats = s.caughtCheats.slice();
     m.roles = s.roles.slice();
     m.cleared = (s.cleared || []).slice();
     m.cheated = !!s.cheated;

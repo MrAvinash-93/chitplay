@@ -1,30 +1,46 @@
 import { describe, it, expect } from './harness.js';
-import { Match, CHEAT_PENALTY } from '../src/world/match.js?v=20261106-rotate';
-import { COUNTRIES } from '../src/world/countries.js?v=20261108-prod';
+import { Match, CHEAT_PENALTY, CHEAT_CATCH_CHANCE } from '../src/world/match.js?v=20261107-cast';
+import { COUNTRIES } from '../src/world/countries.js?v=20261107-cast';
+import { nextCaughtScene, nextCloseCall, SCENE_COUNTS } from '../src/world/cheat-lines.js?v=20261107-cast';
 
-const withRandom = (values, fn) => {
+const withRandom = (value, fn) => {
   const original = Math.random;
-  let i = 0;
-  Math.random = () => values[Math.min(i++, values.length - 1)];
+  Math.random = () => value;
   try { return fn(); } finally { Math.random = original; }
 };
 const fresh = () => { const m = new Match(COUNTRIES.IN, 4, 7); m.startRound(); return m; };
 
 describe('Cheat', () => {
-  it('a failed peek sees nothing and clears nobody', () => {
+  it('caught: nothing is seen, nobody is cleared, all suspects stay, and it costs points', () => {
     const m = fresh();
-    const res = withRandom([0.9, 0.9, 0], () => m.cheat());
+    const res = withRandom(0, () => m.cheat());
+    expect(res.caught).toBe(true);
     expect(res.peeked).toBe(false);
     expect(res.slot).toBe(null);
     expect(m.cleared).toHaveLength(0);
+    expect(m.suspects()).toHaveLength(3);
+    expect(m.cheatPenalty).toBe(CHEAT_PENALTY);
   });
 
-  it('a successful peek clears an innocent, never the thief', () => {
+  it('not caught: one innocent is cleared and two suspects are left', () => {
     const m = fresh();
-    const res = withRandom([0.9, 0.1, 0], () => m.cheat());
+    const res = withRandom(0.99, () => m.cheat());
+    expect(res.caught).toBe(false);
     expect(res.peeked).toBe(true);
-    expect(res.seat === m.thief).toBe(false);
-    expect(m.cleared).toHaveLength(1);
+    expect(m.suspects()).toHaveLength(2);
+    expect(m.cheatPenalty).toBe(0);
+  });
+
+  it('the thief is never the chit that gets seen', () => {
+    for (let i = 0; i < 500; i++) {
+      const m = fresh();
+      const res = m.cheat();
+      if (res.peeked) {
+        expect(res.seat === m.thief).toBe(false);
+        expect(res.slot === 'thief').toBe(false);
+      }
+      expect(m.suspects().includes(m.thief)).toBe(true);
+    }
   });
 
   it('only one try per round', () => {
@@ -33,15 +49,44 @@ describe('Cheat', () => {
     expect(m.cheat()).toBe(null);
   });
 
-  it('being noticed costs points whether or not the peek worked', () => {
-    const m = fresh();
-    withRandom([0, 0.9, 0], () => m.cheat());
-    expect(m.cheatPenalty).toBe(CHEAT_PENALTY);
+  it('goes unnoticed about 70% of the time', () => {
+    expect(CHEAT_CATCH_CHANCE).toBe(0.3);
+    let safe = 0;
+    for (let i = 0; i < 3000; i++) if (!fresh().cheat().caught) safe++;
+    expect(safe > 1950 && safe < 2250).toBe(true);
   });
 
-  it('works about half the time', () => {
-    let seen = 0;
-    for (let i = 0; i < 2000; i++) if (fresh().cheat()?.peeked) seen++;
-    expect(seen > 850 && seen < 1150).toBe(true);
+  it('counts tries and catches for the profile', () => {
+    const m = fresh();
+    withRandom(0, () => m.cheat());
+    expect(m.cheats[m.guesser]).toBe(1);
+    expect(m.caughtCheats[m.guesser]).toBe(1);
+  });
+});
+
+describe('Cheat scenes', () => {
+  const allDifferent = (next, n) => {
+    const seen = new Set();
+    for (let i = 0; i < n; i++) seen.add(next('english', { name: 'A', other: 'B' }).join('|'));
+    return seen.size;
+  };
+  it('has at least 20 scenes of each kind', () => {
+    expect(SCENE_COUNTS.caught >= 20).toBe(true);
+    expect(SCENE_COUNTS.closeCall >= 20).toBe(true);
+  });
+  it('20 catches in a row are 20 different scenes', () => {
+    expect(allDifferent(nextCaughtScene, 20)).toBe(20);
+  });
+  it('20 close calls in a row are 20 different scenes', () => {
+    expect(allDifferent(nextCloseCall, 20)).toBe(20);
+  });
+  it('every scene is a full exchange with names filled in', () => {
+    for (const lang of ['english', 'hinglish', 'spanish']) {
+      for (let i = 0; i < 30; i++) {
+        const scene = nextCaughtScene(lang, { name: 'Asha', other: 'Ravi' });
+        expect(scene).toHaveLength(3);
+        expect(scene.join(' ').includes('{')).toBe(false);
+      }
+    }
   });
 });

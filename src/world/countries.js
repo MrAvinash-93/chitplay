@@ -1,7 +1,7 @@
 /**
  * Country editions of the chit game. Every edition maps onto the same four
  * internal role slots, then customises names, points, who guesses, rule twists,
- * kid names, room theme and language.
+ * player names, room theme and language.
  *
  * Slots:  king   — top royal, always scores
  *         queen  — second royal (Rani / Wazir / Mantri / Doctor…)
@@ -14,7 +14,7 @@
  * rules.onWrong: 'swap' (guesser and thief swap points) | 'thief' (thief takes
  *   their full escape value) | 'penalty' (guesser loses rules.penalty).
  * rules.hint: guesser gets one innocent cleared before guessing.
- * rules.night: Mafia-style night — thief attacks one kid, the queen slot
+ * rules.night: Mafia-style night — thief attacks one player, the queen slot
  *   (Doctor) tries to save; an unsaved victim scores 0 this round.
  * rules.secondChance: guesser gets a second try for half points.
  * rules.alibi: every suspect gives an alibi before the guess.
@@ -32,11 +32,11 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'swap' },
     ruleText: 'Police ko 3 me se Chor pakadna hai. Galat guess kiya to Police aur Chor ke points aapas me badal jaate hain.',
-    kids: ['Monu', 'Pinky', 'Golu', 'Chinki'],
+    cast: ['Monu', 'Pinky', 'Golu', 'Chinki'],
     parent: 'Mummy',
     outage: { off: '🕯️ Light chali gayi…', on: '💡 Light aa gayi!' },
     theme: {
-      floor: 'redoxide', mat: 'chatai', wall: ['#e6dcc6', '#7fae95', '#4f7f68'],
+      floor: 'redoxide', mat: 'woven', wall: ['#e6dcc6', '#7fae95', '#4f7f68'],
       month: 'JUNE 1998', ball: 'cricket', skins: ['#c58c5c', '#a86f45', '#d9a273', '#8d5a35'],
     },
   },
@@ -50,7 +50,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'queen', announce: 'king', onWrong: 'swap' },
     ruleText: 'Raja khud ko batata hai aur poochta hai "Mera Wazir kaun?". Wazir ko bache hue 2 me se Chor dhundhna hai. Galat guess kiya to Wazir aur Chor ke points swap ho jaate hain.',
-    kids: ['Ahmed', 'Ayesha', 'Bilal', 'Sana'],
+    cast: ['Ahmed', 'Ayesha', 'Bilal', 'Sana'],
     parent: 'Ammi',
     outage: { off: '🕯️ Load shedding shuru…', on: '💡 Bijli aa gayi!' },
     theme: {
@@ -68,7 +68,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'queen', announce: 'king', onWrong: 'swap' },
     ruleText: 'Raja aafno parichaya dinchha ra sodhchha "Mero Mantri ko?". Mantri le baaki 2 madhye Chor chinnu parchha. Galat bhaye Mantri ra Chor ko number saatinchha.',
-    kids: ['Bibek', 'Sita', 'Ramesh', 'Gita'],
+    cast: ['Bibek', 'Sita', 'Ramesh', 'Gita'],
     parent: 'Aama',
     outage: { off: '🕯️ Load shedding bhayo…', on: '💡 Batti aayo!' },
     theme: {
@@ -86,7 +86,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', hint: true, escape: 1000 },
     ruleText: '岡っ引きは手がかりを一つもらい、無実の人を一人はずせます。残り二人から泥棒を当てよう。泥棒が逃げ切ったら1000点！',
-    kids: ['Kenta', 'Yui', 'Haruto', 'Sakura'],
+    cast: ['Kenta', 'Yui', 'Haruto', 'Sakura'],
     kidsLocal: ['けんた', 'ゆい', 'はると', 'さくら'],
     parent: 'お母さん',
     outage: { off: '🌩️ 停電だ！台風…', on: '💡 電気がついた！' },
@@ -105,7 +105,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', night: true, escape: 1000 },
     ruleText: '밤에 마피아가 한 명을 공격하고, 의사는 한 명을 살리려고 해요. 못 살린 사람은 이번 판 0점! 낮에는 경찰이 범인을 지목해요. 마피아가 도망치면 1000점!',
-    kids: ['Minjun', 'Jiwoo', 'Seojun', 'Hayoon'],
+    cast: ['Minjun', 'Jiwoo', 'Seojun', 'Hayoon'],
     kidsLocal: ['민준', '지우', '서준', '하윤'],
     parent: '엄마',
     outage: { off: '🌩️ 정전이다! 천둥 번개…', on: '💡 불 들어왔다!' },
@@ -124,7 +124,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', secondChance: true, escape: 1000 },
     ruleText: 'The Sheriff gets two shots. Catching the Robber on the first try is worth 500, on the second try 250. Miss twice and the Robber escapes with 1000.',
-    kids: ['Jake', 'Emily', 'Tyler', 'Ashley'],
+    cast: ['Jake', 'Emily', 'Tyler', 'Ashley'],
     parent: 'Mom',
     outage: { off: '🌩️ Power’s out! Big storm…', on: '💡 Power’s back!' },
     theme: {
@@ -142,7 +142,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'penalty', penalty: 200, alibi: true, escape: 1000 },
     ruleText: 'Everyone gives an alibi, then the Bobby makes an arrest. A wrong arrest costs the Bobby 200 and the Robber gets away with 1000.',
-    kids: ['Oliver', 'Amelia', 'Harry', 'Isla'],
+    cast: ['Oliver', 'Amelia', 'Harry', 'Isla'],
     parent: 'Mum',
     outage: { off: '🕯️ Power cut! Fuse has gone…', on: '💡 Lights are back!' },
     theme: {
@@ -160,7 +160,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', fine: 200, escape: 1000 },
     ruleText: '警察要从另外三个人里找出小偷。抓到了，小偷要罚给警察200分；小偷逃掉了，就得1000分！',
-    kids: ['Xiaoming', 'Lili', 'Wei', 'Meimei'],
+    cast: ['Xiaoming', 'Lili', 'Wei', 'Meimei'],
     kidsLocal: ['小明', '丽丽', '伟伟', '美美'],
     parent: '妈妈',
     outage: { off: '🕯️ 停电了！', on: '💡 来电了！' },
@@ -179,7 +179,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: 'king', onWrong: 'swap' },
     ruleText: 'Raja nijer porichoy dey ar dake "Amar Police kothay?". Police ke baki 2 jon theke Chor dhorte hobe. Bhul hole Police ar Chor er number bodle jay.',
-    kids: ['Rafi', 'Nusrat', 'Tanvir', 'Mim'],
+    cast: ['Rafi', 'Nusrat', 'Tanvir', 'Mim'],
     parent: 'Ammu',
     outage: { off: '🕯️ Current chole gelo…', on: '💡 Current eshe gese!' },
     theme: {
@@ -197,7 +197,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', check: true, escape: 1000 },
     ruleText: 'Ночью Комиссар тайно проверяет одного игрока: иногда находит Мафию сразу, иногда только снимает подозрение. Днём он обвиняет. Если Мафия уходит, она получает 1000.',
-    kids: ['Vanya', 'Masha', 'Dima', 'Katya'],
+    cast: ['Vanya', 'Masha', 'Dima', 'Katya'],
     kidsLocal: ['Ваня', 'Маша', 'Дима', 'Катя'],
     parent: 'Мама',
     outage: { off: '🕯️ Свет вырубили!', on: '💡 Свет дали!' },
@@ -216,7 +216,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', witness: true, escape: 1000 },
     ruleText: 'Ein Zeuge gibt dem Gendarm einen Tipp, aber Zeugen irren sich manchmal! Dann wird verhaftet. Entkommt der Räuber, bekommt er 1000.',
-    kids: ['Lukas', 'Lena', 'Felix', 'Hanna'],
+    cast: ['Lukas', 'Lena', 'Felix', 'Hanna'],
     parent: 'Mama',
     outage: { off: '🌩️ Stromausfall! Gewitter…', on: '💡 Der Strom ist wieder da!' },
     theme: {
@@ -234,7 +234,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', finalDouble: true, escape: 1000 },
     ruleText: 'Le Gendarme cherche le Voleur parmi les trois autres. Au dernier tour, tous les points comptent double ! Si le Voleur s’échappe, il gagne 1000.',
-    kids: ['Lucas', 'Chloé', 'Hugo', 'Manon'],
+    cast: ['Lucas', 'Chloé', 'Hugo', 'Manon'],
     parent: 'Maman',
     outage: { off: '🌩️ Panne de courant ! L’orage…', on: '💡 Le courant est revenu !' },
     theme: {
@@ -252,7 +252,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', steal: 300, escape: 1000 },
     ruleText: 'A Polícia tem que achar o Ladrão entre os outros três. Se o Ladrão fugir, ganha 1000 e ainda rouba 300 do Rei!',
-    kids: ['Pedro', 'Ana', 'Gabriel', 'Júlia'],
+    cast: ['Pedro', 'Ana', 'Gabriel', 'Júlia'],
     parent: 'Mãe',
     outage: { off: '🌩️ Acabou a luz! Temporal…', on: '💡 A luz voltou!' },
     theme: {
@@ -270,7 +270,7 @@ export const COUNTRIES = {
     },
     rules: { guesser: 'detective', announce: null, onWrong: 'thief', tell: true, escape: 1000 },
     ruleText: 'Alguien no aguanta la risa… ¡casi siempre es el Ladrón, pero no siempre! La Policía decide a quién arrestar. Si el Ladrón escapa, gana 1000.',
-    kids: ['Diego', 'Sofía', 'Mateo', 'Valeria'],
+    cast: ['Diego', 'Sofía', 'Mateo', 'Valeria'],
     parent: 'Mamá',
     outage: { off: '🌩️ ¡Se fue la luz!', on: '💡 ¡Ya volvió la luz!' },
     theme: {
@@ -304,7 +304,7 @@ const ENGLISH = {
     ruleText: 'The Constable gets one character clue that clears an innocent, then picks the Thief from the last two. If the Thief escapes, they take 1000.',
     outage: { off: '🌩️ Blackout! Typhoon…', on: '💡 The lights are back!' } },
   KR: { game: 'Mafia Game', roles: ['Citizen', 'Doctor', 'Police', 'Mafia'], parent: 'Mom',
-    ruleText: 'At night the Mafia attacks someone and the Doctor tries to save one kid. An unsaved victim scores 0 this round. By day, the Police accuses. If the Mafia escapes, they take 1000.',
+    ruleText: 'At night the Mafia attacks someone and the Doctor tries to save one player. An unsaved victim scores 0 this round. By day, the Police accuses. If the Mafia escapes, they take 1000.',
     outage: { off: '🌩️ Blackout! Thunderstorm…', on: '💡 The power is back!' } },
   CN: { game: 'Police Catch the Thief', roles: ['Emperor', 'Minister', 'Police', 'Thief'], parent: 'Mom',
     ruleText: 'The Police picks the Thief from the other three. If caught, the Thief pays a 200 fine to the Police. If the Thief escapes, they take 1000.',
@@ -375,7 +375,7 @@ export function localize(country, mode = 'en') {
     ruleText: local ? country.ruleText : en.ruleText,
     outage: local ? country.outage : en.outage,
     parent: local ? country.parent : en.parent,
-    kids: local ? (country.kidsLocal || country.kids) : country.kids,
+    cast: country.cast,
     lang: local ? country.packs.local : country.packs.en,
     voice: local ? country.voices.local : country.voices.en,
   };

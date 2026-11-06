@@ -1,4 +1,4 @@
-import { settingsStore } from '../persistence/settings-store.js?v=20261106-rotate';
+import { settingsStore } from '../persistence/settings-store.js?v=20261107-cast';
 
 /**
  * Web Audio API sound manager. All sounds are synthesized — no external files.
@@ -171,7 +171,7 @@ class AudioManager {
         this.#chord([659.25, 830.61, 987.77, 1318.51], { dur: 0.4, type: 'triangle', gain: 0.06, delay: 0.2 });
         break;
       case 'paper-toss':
-        // chits rustling as they're thrown on the chatai
+        // chits rustling as they're thrown on the mat
         for (let i = 0; i < 6; i++) {
           this.#noise({ dur: 0.04 + Math.random() * 0.06, gain: 0.05, freq: 2200 + Math.random() * 3000, delay: i * 0.07 + Math.random() * 0.03 });
         }

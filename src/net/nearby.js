@@ -8,6 +8,9 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
+import { cleanName } from '../world/names.js?v=20261107-cast';
+import { cleanLook } from '../world/character-looks.js?v=20261107-cast';
+
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
 const PING_MS = 3000;
@@ -91,14 +94,14 @@ export class NearbyHost {
     this.hostName = '';
   }
 
-  /** Avin, Avin 2, Avin 3…: everyone at the table has to be told apart. */
-  #uniqueName(name) {
-    const taken = new Set([this.hostName, ...[...this.guests.values()].map(g => g.name)].map(n => n.toLowerCase()));
-    if (!taken.has(name.toLowerCase())) return name;
-    for (let n = 2; ; n++) {
-      const next = `${name.slice(0, 10)} ${n}`;
-      if (!taken.has(next.toLowerCase())) return next;
-    }
+  /**
+   * Everyone at the table has to be told apart: two people called Avin become
+   * "Avin 1" and "Avin 4" after their place in the room. Others keep their name.
+   */
+  labels() {
+    const raw = [this.hostName, ...[...this.guests.values()].map(g => g.name)];
+    const count = (n) => raw.filter(x => x.toLowerCase() === n.toLowerCase()).length;
+    return raw.map((n, i) => (count(n) > 1 ? `${n.slice(0, 10)} ${i + 1}` : n));
   }
 
   /** The match starts: only these phones can come back from now on. */
@@ -152,8 +155,8 @@ export class NearbyHost {
         const returning = this.locked && this.known.has(token);
         if (this.locked && !returning) { safeSend(conn, { t: 'reject', reason: 'started' }); setTimeout(() => conn.close(), 400); return; }
         if (this.guests.size >= MAX_GUESTS) { safeSend(conn, { t: 'reject', reason: 'full' }); setTimeout(() => conn.close(), 400); return; }
-        const name = this.#uniqueName(String(msg.name || '').trim().slice(0, 12) || `Player ${this.guests.size + 2}`);
-        const guest = { id, name, token, conn, w: watch(conn, () => this.#drop(id)) };
+        const name = cleanName(msg.name).trim() || `Player`;
+        const guest = { id, name, gender: msg.gender === 'f' ? 'f' : 'm', look: cleanLook(msg.look, msg.look?.id), token, conn, w: watch(conn, () => this.#drop(id)) };
         this.guests.set(id, guest);
         this.h.onChange?.();
         if (returning) this.h.onRejoin?.(id, token);
@@ -174,7 +177,11 @@ export class NearbyHost {
     if (!this.closed) { this.h.onLeave?.(id, g.name); this.h.onChange?.(); }
   }
 
-  get list() { return [...this.guests.values()].map(g => ({ id: g.id, name: g.name, token: g.token })); }
+  get list() {
+    const labels = this.labels();
+    return [...this.guests.values()].map((g, i) => ({ id: g.id, name: labels[i + 1], gender: g.gender, look: g.look, token: g.token }));
+  }
+  get hostLabel() { return this.labels()[0]; }
   send(id, msg) { safeSend(this.guests.get(id)?.conn, msg); }
   broadcast(msg) { this.guests.forEach(g => safeSend(g.conn, msg)); }
   kick(id) { this.send(id, { t: 'reject', reason: 'kicked' }); setTimeout(() => this.#drop(id), 300); }
@@ -200,7 +207,7 @@ export class NearbyGuest {
   }
 
   /** Connect to the host with this code. Resolves once the host has said welcome. */
-  async join(code, name, token) {
+  async join(code, name, token, extra = {}) {
     const Peer = await loadPeer();
     const p = await openPeer(Peer);
     if (this.closed) { p.destroy(); throw new Error('cancelled'); }
@@ -219,7 +226,7 @@ export class NearbyGuest {
       this.conn = conn;
       conn.on('open', () => {
         this.w = watch(conn, () => this.#lost('lost'));
-        safeSend(conn, { t: 'hello', name, token, v: 1 });
+        safeSend(conn, { t: 'hello', name, token, v: 2, ...extra });
       });
       conn.on('error', (e) => finish(e));
       conn.on('data', (msg) => {

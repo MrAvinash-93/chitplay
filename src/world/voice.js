@@ -1,6 +1,6 @@
 /**
- * Kid voices via the browser's built-in speech synthesis (offline-capable on
- * most devices). Each seat gets its own voice + a child-like pitch, in the
+ * Character voices via the browser's built-in speech synthesis (offline-capable on
+ * most devices). Each seat gets its own voice and a pitch for its age, in the
  * country's language. Falls back to silence (the cartoon blips still play)
  * when no matching voice is installed.
  */
@@ -21,10 +21,9 @@ const EMOTION = {
   sly:     { p: -0.06, r: -0.05, v: 0.85 },
 };
 
-// seats 1 and 3 are girls in the room (plaits and bob)
-const GIRL_SEATS = new Set([1, 3]);
-const PITCH = [1.45, 1.75, 1.35, 1.65];
-const RATE = [1.04, 1.08, 1.0, 1.06];
+// pitch and pace by age and gender, so a grandfather doesn't sound like a schoolchild
+const PITCH = { child: { m: 1.45, f: 1.7 }, teen: { m: 1.1, f: 1.4 }, adult: { m: 0.92, f: 1.2 }, elder: { m: 0.78, f: 1.05 } };
+const RATE = { child: 1.06, teen: 1.04, adult: 1, elder: 0.9 };
 
 class VoiceBox {
   constructor() {
@@ -32,6 +31,7 @@ class VoiceBox {
     this.enabled = true;
     this.voices = [];
     this.seatVoices = [null, null, null, null];
+    this.cast = [{ gender: 'm', age: 'adult' }, { gender: 'f', age: 'adult' }, { gender: 'm', age: 'teen' }, { gender: 'f', age: 'teen' }];
     this.langList = ['en-US'];
     this.pending = 0;
     if (this.synth) {
@@ -46,6 +46,11 @@ class VoiceBox {
   setEnabled(on) {
     this.enabled = !!on;
     if (!on) this.stop();
+  }
+
+  /** Who sits in each seat: [{ gender, age }] */
+  setCast(list) {
+    if (list?.length === 4) { this.cast = list; this.assign(); }
   }
 
   setLanguages(list) {
@@ -69,7 +74,7 @@ class VoiceBox {
     const girls = pool.filter(v => FEMALE.test(v.name));
     const boys = pool.filter(v => !FEMALE.test(v.name));
     this.seatVoices = [0, 1, 2, 3].map(seat => {
-      const list = GIRL_SEATS.has(seat) ? (girls.length ? girls : pool) : (boys.length ? boys : pool);
+      const list = this.cast[seat]?.gender === 'f' ? (girls.length ? girls : pool) : (boys.length ? boys : pool);
       return list[Math.floor(seat / 2) % list.length] || pool[0];
     });
   }
@@ -92,13 +97,14 @@ class VoiceBox {
       const v = this.seatVoices[seat];
       u.voice = v;
       u.lang = v.lang;
-      // neural voices already sound human — push them less towards "kid" pitch
+      // neural voices already sound human — push them less towards a character pitch
       const natural = QUALITY.test(v.name);
-      const base = PITCH[seat] ?? 1.5;
+      const who = this.cast[seat] || { gender: 'm', age: 'adult' };
+      const base = PITCH[who.age]?.[who.gender] ?? 1.1;
       const e = EMOTION[emotion] || EMOTION.neutral;
       const jitter = (Math.random() - 0.5) * 0.08;
       u.pitch = clamp((natural ? 1 + (base - 1) * 0.45 : base) + e.p + jitter, 0.5, 2);
-      u.rate = clamp((RATE[seat] ?? 1.05) + e.r + jitter / 2, 0.6, 1.6);
+      u.rate = clamp((RATE[who.age] ?? 1) + e.r + jitter / 2, 0.6, 1.6);
       u.volume = e.v ?? 1;
       this.pending += 1;
       let settled = false;
@@ -113,6 +119,10 @@ class VoiceBox {
       setTimeout(done, 1500 + clean.length * 120);
       try { this.synth.speak(u); } catch { done(); }
     });
+  }
+
+  pause(on) {
+    try { if (on) this.synth?.pause(); else this.synth?.resume(); } catch {}
   }
 
   stop() {

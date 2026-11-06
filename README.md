@@ -2,7 +2,15 @@
 
 **The childhood chit game, from around the world.**
 
-A 3D, fully automatic take on the classic four-player paper-slip game. Four low-poly kids sit on the floor of a 90s room. They deal the chits, peek at them, bluff, investigate and react on their own, talking in speech bubbles in their own language. You can sit in as one of the kids or just watch.
+A 3D take on the classic four-player paper-chit game, for every age. Four characters (children, teenagers, adults or elders) sit on the floor of an old-style room. They toss the chits, peek at them, bluff, investigate and react, talking in speech bubbles while the camera follows the conversation. You can take a seat, invite friends on their own phones, or just watch.
+
+## Profile, rank and characters
+
+- **👤 Profile:** name (letters only), gender, 24 ready-made characters or your own (age, hair, skin, eyes, clothes, glasses, facial hair, headwear), and the graphics level (Auto, Low, Medium, High, 4K). A random name that fits your country is picked on your first visit.
+- **Score:** solo and Nearby points are kept apart. Lifetime points set your rank, and there are badges, a play streak and your best matches. Everything stays on the device, and **Reset score** erases it.
+- **✕ menu:** Pause (really stops the match, on every phone if the host pauses), Restart (solo), Quit.
+- **Cheat:** 70% unnoticed, and you see one innocent player's chit, never the thief's; sometimes with a close call. 30% caught: you see nothing, lose 100 and get one of 26 scenes that don't repeat until all have played.
+- **Toss:** anyone can throw the chits; after 5 seconds someone else does.
 
 ## Quick start
 
@@ -23,9 +31,9 @@ Players pick a game by its **name**, written in Latin letters so anyone can read
 
 On phones: 🔄 switches to fullscreen landscape (Android; iPhone shows a "turn your phone" nudge). Phones held upright also get a clear rotate button on the start screen and a dismissible one during the match. The screen stays awake during a match, and key moments give a short vibration.
 
-**Home screen:** swipe the big game cards left or right (or use ‹ › and the arrow keys). Whichever card stops in the middle becomes the game, and the room, kids, roles and rules switch with it. Then tap **▶ Play** or **👀 Just Watch**, pick the rounds, and optionally a chat language. There are no flags anywhere.
+**Home screen:** swipe the big game cards left or right (or use ‹ › and the arrow keys). Whichever card stops in the middle becomes the game, and the room, players, roles and rules switch with it. Then tap **▶ Play** or **👀 Just Watch**, pick the rounds, and optionally a chat language. There are no flags anywhere.
 
-**Language:** menus, rules and voices are always **English**. The kids' chat bubbles are English by default, and **🗣️ Chat** lets each player read them in their own language, always written in Latin letters: Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese (Romaji), Korean (Romanized), Chinese (Pinyin), Russian (Latin), Deutsch, Français, Português or Español. Any language works with any game. Moments a language doesn't have yet (game-specific rules) borrow the game's English line, so nobody goes quiet. Each game keeps its own role names, such as Raja (King), Chor (Thief) or Huángdì (Emperor). Each edition changes the role names, points, who guesses, a rule twist, the kids' names and the room.
+**Language:** menus, rules and voices are always **English**. The players' chat bubbles are English by default, and **🗣️ Chat** lets each player read them in their own language, always written in Latin letters: Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese (Romaji), Korean (Romanized), Chinese (Pinyin), Russian (Latin), Deutsch, Français, Português or Español. Any language works with any game. Moments a language doesn't have yet (game-specific rules) borrow the game's English line, so nobody goes quiet. Each game keeps its own role names, such as Raja (King), Chor (Thief) or Huángdì (Emperor). Each edition changes the role names, points, who guesses, a rule twist, the players' names and the room.
 
 | Country | Game | Roles (points) | Rule twist |
 |---|---|---|---|
@@ -48,8 +56,8 @@ Each room has its own floor and mat, a localised calendar, a ball (cricket, base
 
 ## Playing
 
-- **Play:** you sit front-left. Your only actions are tapping to open your chit and, when you are the guesser, tapping the kid you suspect (name chips work too).
-- **Just Watch:** all four kids are computer players.
+- **Play:** you sit front-left. Your only actions are tapping to open your chit and, when you are the guesser, tapping the player you suspect (name chips work too).
+- **Just Watch:** all four players are computer players.
 - **Rounds:** choose 3, 5, 7, 10 or 20 on the start screen (7 by default).
 - **Fair turns:** the guessing role goes to whoever has had it the fewest times, picked at random among ties. Everyone gets turns, and the human always gets at least one per match.
 - **Your name:** set on the start screen and remembered on this device (default **Avin**). It's your name in Play and Nearby Play; two players with one name become Avin and Avin 2.
@@ -58,15 +66,15 @@ Each room has its own floor and mat, a localised calendar, a ball (cricket, base
 - **End of match:** final standings with 🥇🥈🥉, awards (🕵️ Sharp Eye for the most catches, 🦊 Escape Artist for the thief who got away most; no award on a tie), and **📤 Share**. Share opens the phone's share sheet, or copies an "I scored … can you beat me?" message with a link to that game.
 - **Your stats:** wins, matches and best score from Play mode are kept on this device and shown on the home screen.
 - **Layout:** works on any screen, from 320px phones and landscape phones to tablets and big desktops (two-column start sheet in landscape, Play buttons first on small phones).
-- **Sound:** ceiling-fan hum while the power's on, thunder and rain for storm blackouts, crickets at night. Each kid's voice changes with the moment: excited, sad, scared, whispering or sly.
-- **Voices 🗣️:** kids speak their lines aloud in English with the browser's built-in speech voices, using an accent that suits the game where the device has one (Indian, British or American English). Each kid gets their own voice and a child-like pitch. If no voice is installed, the speech bubbles still work. Off by default; toggle with 🤐 / 🗣️.
-- **Expressions:** each kid has eyes, brows and a mouth that change with their mood, plus situation animations (laugh, cry, shrug, deny, jump, sneak, wave) and emote bubbles (❗❓💢😂😭🤫).
+- **Sound:** ceiling-fan hum while the power's on, thunder and rain for storm blackouts, crickets at night. Each player's voice changes with the moment: excited, sad, scared, whispering or sly.
+- **Voices 🗣️:** players speak their lines aloud in English with the browser's built-in speech voices, using an accent that suits the game where the device has one (Indian, British or American English). Each character gets a voice and pitch that suit their age. If no voice is installed, the speech bubbles still work. Off by default; toggle with 🤐 / 🗣️.
+- **Expressions:** each player has eyes, brows and a mouth that change with their mood, plus situation animations (laugh, cry, shrug, deny, jump, sneak, wave) and emote bubbles (❗❓💢😂😭🤫).
 
 Before the result, roles are shown only when the rules make them public (the Raja's opening, the guesser's hat). Lines spoken before the result are role-neutral, so a bluffing thief sounds exactly like the royals.
 
 ## Dialogue never repeats
 
-Every language pack (`src/world/lines/*.js`) has many lines per moment plus short interjections. The engine in `src/world/dialogue.js` guarantees that no sentence is spoken twice in a match. It prefers lines that haven't been used yet, and if a moment's lines ever run out, the kid stays quiet instead of repeating.
+Every language pack (`src/world/lines/*.js`) has many lines per moment plus short interjections. The engine in `src/world/dialogue.js` guarantees that no sentence is spoken twice in a match. It prefers lines that haven't been used yet, and if a moment's lines ever run out, the player stays quiet instead of repeating.
 
 ## Deploy on GitHub Pages
 
@@ -135,15 +143,15 @@ When you serve ads to visitors in the EU/UK, turn on Google's consent message (P
 ## Project layout
 
 ```
-src/world/countries.js   editions: roles, points, rules, kids, theme, language
+src/world/countries.js   editions: roles, points, rules, players, theme, language
 src/world/match.js       rules engine (guesser, swap/penalty/fine, clue, night, second shot)
 src/world/dialogue.js    no-repeat line picker
 src/world/lines/         English packs (international, American, British, Japanese/Korean/Chinese games) + 12 Latin-script chat packs
-src/world/voice.js       per-kid speech-synthesis voices
+src/world/voice.js       per-player speech-synthesis voices
 src/world/world-3d.js    the 3D room, camera, lighting, power cuts, story API
-src/world/kids.js        the kids' rig, poses and accessories
+src/world/players.js        the players' rig, poses and accessories
 src/world/themes.js      per-game room textures
-src/ui/screens/bachpan.js  start screen + the match director
+src/ui/screens/game-screen.js  start screen + the match director
 src/net/nearby.js        Nearby Play rooms: up to 4 phones over WebRTC (PeerJS), joined with a 6-digit code
 ```
 

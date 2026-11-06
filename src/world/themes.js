@@ -15,19 +15,49 @@ function rng(seed) {
   };
 }
 
-function tex(w, h, draw, { repeat, nearest = true } = {}) {
+let textureScale = 2;
+let maxAnisotropy = 8;
+/** 2 = 1024 px floors and mats, 4 = 2048 px. All numbers below are in the 512 px layout. */
+export function setTextureDetail(scale, anisotropy) {
+  textureScale = scale;
+  if (anisotropy) maxAnisotropy = anisotropy;
+}
+
+let grainTile = null;
+function grain() {
+  if (grainTile) return grainTile;
+  grainTile = document.createElement('canvas');
+  grainTile.width = grainTile.height = 256;
+  const g = grainTile.getContext('2d');
+  const image = g.createImageData(256, 256);
+  for (let i = 0; i < image.data.length; i += 4) {
+    const v = Math.random() < 0.5 ? 0 : 255;
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = v;
+    image.data[i + 3] = Math.random() * 16;
+  }
+  g.putImageData(image, 0, 0);
+  return grainTile;
+}
+
+function tex(w, h, draw, { repeat, grainy = true } = {}) {
   const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  draw(c.getContext('2d'), w, h);
+  c.width = w * textureScale;
+  c.height = h * textureScale;
+  const g = c.getContext('2d');
+  g.scale(textureScale, textureScale);
+  draw(g, w, h);
+  if (grainy) {
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = g.createPattern(grain(), 'repeat');
+    g.fillRect(0, 0, c.width, c.height);
+  }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   if (repeat) {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(repeat[0], repeat[1]);
   }
-  if (nearest) t.magFilter = THREE.NearestFilter;
-  t.anisotropy = 4;
+  t.anisotropy = maxAnisotropy;
   return t;
 }
 
