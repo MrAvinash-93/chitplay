@@ -25,6 +25,7 @@ function shuffle(arr) {
 
 export const CHEAT_PENALTY = 100;
 export const CHEAT_CATCH_CHANCE = 0.35;
+export const CHEAT_PEEK_CHANCE = 0.5;
 
 export class Match {
   constructor(country, playerCount = 4, rounds = 5, { humanSeat = -1 } = {}) {
@@ -127,19 +128,22 @@ export class Match {
   }
 
   /**
-   * The human guesser peeks at one innocent suspect's chit. Returns the
-   * revealed seat and whether someone noticed.
+   * The guesser tries to peek at a suspect's chit, once a round. Half the time it
+   * works and clears one innocent; otherwise nothing is seen. Either way someone
+   * may notice. Returns { peeked, seat, slot, caught }; slot is null when nothing was seen.
    */
   cheat() {
     if (this.cheated) return null;
-    const innocents = this.suspects().filter(s => s !== this.thief);
+    const suspects = this.suspects();
+    const innocents = suspects.filter(s => s !== this.thief);
     if (!innocents.length) return null;
     this.cheated = true;
-    const seat = pick(innocents);
-    this.cleared.push(seat);
     const caught = Math.random() < CHEAT_CATCH_CHANCE;
     if (caught) this.cheatPenalty = CHEAT_PENALTY;
-    return { seat, slot: this.roles[seat], caught };
+    if (Math.random() >= CHEAT_PEEK_CHANCE) return { peeked: false, seat: pick(suspects), slot: null, caught };
+    const seat = pick(innocents);
+    this.cleared.push(seat);
+    return { peeked: true, seat, slot: this.roles[seat], caught };
   }
 
   /** A simple computer guesser: a light nose for the thief. */

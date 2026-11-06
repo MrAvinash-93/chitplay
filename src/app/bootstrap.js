@@ -2,8 +2,8 @@ import { createApp } from './lifecycle.js?v=20261105-story';
 import { GAME_PHASES } from './config.js?v=20261105-story';
 import { audioManager } from '../audio/audio-manager.js';
 import { initVhsOverlay } from '../world/vhs-overlay.js?v=20261104-bachpan';
-import { loadWorld } from '../world/world-loader.js?v=20261105-world';
-import { BachpanScreen } from '../ui/screens/bachpan.js?v=20261110-nearby3';
+import { loadWorld } from '../world/world-loader.js?v=20261106-rotate';
+import { BachpanScreen } from '../ui/screens/bachpan.js?v=20261106-rotate';
 
 /**
  * ChitPlay is now a single 3D game: one screen (the 3D room) that hosts the

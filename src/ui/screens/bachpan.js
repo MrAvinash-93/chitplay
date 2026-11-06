@@ -1,17 +1,17 @@
 import { el, clear } from '../../utils/dom.js';
 import { GAME_PHASES } from '../../app/config.js?v=20261105-story';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261014-profile-v4';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261106-rotate';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261105-world';
+import { loadWorld } from '../../world/world-loader.js?v=20261106-rotate';
 import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261108-prod';
 import { Dialogue, loadPack, CHAT_LANGUAGES } from '../../world/dialogue.js?v=20261108-prod';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261110-awards';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261106-rotate';
 import { voiceBox } from '../../world/voice.js?v=20261106-more';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken } from '../../net/nearby.js?v=20261110-nearby3';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken } from '../../net/nearby.js?v=20261106-rotate';
 
 
 /**
- * ChitPlay 3D — the whole game. Pick a country edition, then the kids play a
+ * CHITPLAY — the whole game. Pick a country edition, then the kids play a
  * full match on their own: deal, pick, peek, bluff, investigate, react. The
  * human (when playing) taps to open their chit, may sneakily cheat, and taps
  * the kid they suspect when it's their turn to guess.
@@ -21,6 +21,9 @@ const HUMAN_SEAT = 3;
 const SHIRTS = ['#d4a017', '#e91e63', '#2196f3', '#43a047'];
 const CANCEL = Symbol('cancel');
 const ROUND_OPTIONS = [3, 5, 7, 10, 20];
+const DEFAULT_ROUNDS = 7;
+const DEFAULT_NAME = 'Avin';
+const AI_CHEAT_TRY = 0.5;     // how often a computer guesser tries to peek
 
 const UI = {
   sa: {
@@ -40,7 +43,8 @@ const UI = {
     watch: '👀 Just Watch', watchSub: 'All four kids play on their own', rounds: 'Rounds',
     chit: 'Your slip has arrived!', chitTap: 'Tap to open it, don’t show anyone 🤫', youAre: 'You are the {role}!', close: 'Tap to close',
     accuse: '{icon} You are the {role}! Who is the {thief}? Tap a kid', second: 'One more chance! Pick another kid',
-    cheat: '🤫 Cheat', cheatSub: 'Sneak a peek at one kid', peekResult: 'Psst… {name} is the {role} {emoji}',
+    cheat: '🤫 Cheat', cheatSub: 'Try to peek at a chit: 50/50 chance', peekResult: 'Psst… {name} is the {role} {emoji}',
+    peekFail: '🙈 {name} hid the chit! You saw nothing', aiPeeked: '🤫 {name} peeked at {other}’s chit!', aiPeekFail: '🙈 {name} tried to peek, but {other} hid the chit!',
     caught: 'Caught! −{n} 😬', safe: 'Nobody noticed 😏',
     nightClear: '🌙 Night check: {name} is innocent', nightThief: '🌙 Night check: {name} is the {thief}! 😱',
     over: 'Match over!', won: '{name} wins! 🏆', youWon: 'You win! 🎉', again: '🔁 Play again', againSub: 'Same game, new match',
@@ -48,6 +52,8 @@ const UI = {
     sharpEye: '🕵️ Sharp Eye', sharpEyeSub: '{n} catches', escape: '🦊 Escape Artist', escapeSub: 'got away {n}×',
     share: '📤 Share', shareSub: 'Challenge a friend', copied: 'Link copied! 📋',
     statsLine: '🏆 {w} wins · {m} matches · best {b}',
+    tagline: 'Four paper chits. One thief. Just like school.',
+    rejoinBtn: '🔁 Rejoin your game', rejoinSub: 'Back to the game you left · code {code}',
     nearby: '📶 Nearby Play', nearbySub: 'Friends on their own phones, up to 4 players',
     invite: '📤 Share invite link', inviteSub: 'WhatsApp, SMS, anywhere', inviteText: 'Join my ChitPlay game! Code {code}', qrLabel: 'QR code to join this game',
     reconnecting: '📶 Reconnecting…', reconnectSub: 'Getting you back into the game. Keep this page open.',
@@ -355,14 +361,23 @@ export function BachpanScreen({ transition }) {
   let onModeChange = null;                  // the start sheet re-renders itself on a switch
 
   /* ─── HUD ─────────────────────────────────────────────── */
-  const roundEl = el('span', { className: 'bachpan__round' }, ['ChitPlay 3D']);
+  const roundEl = el('span', { className: 'bachpan__round-text' }, ['CHITPLAY']);
+  const roundPill = el('span', { className: 'bachpan__round' }, [
+    el('img', { className: 'bachpan__logo', attrs: { src: 'assets/icon.svg', alt: '', width: '22', height: '22' } }),
+    roundEl,
+  ]);
   const scoreRow = el('div', { className: 'bachpan__scores' });
   const prompt = el('div', { className: 'bachpan__prompt', attrs: { 'aria-live': 'polite' } });
   const toast = el('div', { className: 'bachpan__toast', attrs: { 'aria-live': 'polite' } });
   const sheet = el('div', { className: 'bachpan__sheet' });
   const iconBtn = (label, text, onClick) => el('button', { className: 'bachpan__exit', type: 'button', attrs: { 'aria-label': label }, onClick }, [text]);
   // ✕ is a deliberate "leave this match", unlike an accidental refresh
-  const exitBtn = iconBtn('Back to start', '✕', () => { clearSave(); clearRejoin(); transition(GAME_PHASES.HOME); });
+  const exitBtn = iconBtn('Back to start', '✕', () => {
+    clearSave();
+    const ticket = net?.role === 'guest' ? loadRejoin() : null;
+    if (ticket) saveRejoin({ ...ticket, left: true }); else clearRejoin();
+    transition(GAME_PHASES.HOME);
+  });
   const soundBtn = iconBtn('Toggle sound', settingsStore.get('soundEnabled') ? '🔊' : '🔇', () => {
     const next = !settingsStore.get('soundEnabled');
     settingsStore.set('soundEnabled', next);
@@ -387,24 +402,42 @@ export function BachpanScreen({ transition }) {
   rotateBtn.hidden = !isTouch;
   async function toggleLandscape() {
     haptic(15);
+    // window.screen: a local `screen` element below hides the global one in this function
+    const orientation = window.screen.orientation;
     const fs = document.fullscreenElement;
     try {
-      if (fs && screen.orientation?.type?.startsWith('landscape')) {
-        screen.orientation.unlock?.();
+      if (fs && orientation?.type?.startsWith('landscape')) {
+        orientation.unlock?.();
         await document.exitFullscreen?.();
         return;
       }
       await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' });
-      await screen.orientation.lock('landscape');
+      await orientation.lock('landscape');
     } catch {
       // iPhones (and some browsers) can't rotate for us: show a friendly nudge
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
       if (!isLandscape()) showRotateHint(true);
     }
   }
   const rotateHint = el('div', { className: 'bachpan__rotatehint', attrs: { 'aria-live': 'polite' } }, [
     el('span', { className: 'bachpan__rotatehint-phone', attrs: { 'aria-hidden': 'true' } }, ['📱']),
-    el('span', {}, ['Turn your phone sideways for a bigger view']),
+    el('span', {}, ['Turn your phone sideways. If it stays upright, turn off rotation lock.']),
   ]);
+  // shown by CSS only on phone-sized touch screens held upright
+  const ROTATE_LABEL = 'Rotate for a bigger view';
+  const rotatePill = el('div', { className: 'bachpan__rotatepill' }, [
+    el('button', { className: 'bachpan__rotatepill-go', type: 'button', onClick: () => toggleLandscape() }, [
+      el('span', { className: 'bachpan__rotatehint-phone', attrs: { 'aria-hidden': 'true' } }, ['📱']), ROTATE_LABEL,
+    ]),
+    el('button', {
+      className: 'bachpan__rotatepill-close', type: 'button', attrs: { 'aria-label': 'Hide the rotate option' },
+      onClick: () => {
+        rotatePill.hidden = true;
+        try { sessionStorage.setItem('chitplay.rotatePillHidden', '1'); } catch {}
+      },
+    }, ['✕']),
+  ]);
+  try { rotatePill.hidden = sessionStorage.getItem('chitplay.rotatePillHidden') === '1'; } catch {}
   function showRotateHint(on) {
     rotateHint.classList.toggle('bachpan__rotatehint--show', !!on);
     clearTimeout(rotateHint._t);
@@ -436,9 +469,9 @@ export function BachpanScreen({ transition }) {
   }
 
 
-  const screen = el('div', { className: 'screen bachpan', attrs: { 'aria-label': 'ChitPlay 3D' } }, [
-    el('div', { className: 'bachpan__top' }, [exitBtn, roundEl, el('div', { className: 'bachpan__top-right' }, [rotateBtn, voiceBtn, soundBtn])]),
-    scoreRow, prompt, toast, rotateHint, sheet,
+  const screen = el('div', { className: 'screen bachpan', attrs: { 'aria-label': 'CHITPLAY' } }, [
+    el('div', { className: 'bachpan__top' }, [exitBtn, roundPill, el('div', { className: 'bachpan__top-right' }, [rotateBtn, voiceBtn, soundBtn])]),
+    scoreRow, prompt, toast, rotateHint, sheet, rotatePill,
   ]);
   screen.addEventListener('pointerdown', (e) => { if (tapHandler && e.target === screen) tapHandler(e); });
 
@@ -538,7 +571,7 @@ export function BachpanScreen({ transition }) {
   function chooseSetup() {
     return new Promise((resolve) => {
       const order = [detected.id, ...COUNTRY_ORDER.filter(id => id !== detected.id)];  // own game first
-      setRound('🎬 ChitPlay');
+      setRound('CHITPLAY');
       clear(sheet);
       sheet.className = 'bachpan__sheet bachpan__sheet--show bachpan__sheet--start';
 
@@ -580,7 +613,7 @@ export function BachpanScreen({ transition }) {
           sheet.className = 'bachpan__sheet'; onModeChange = null; resolve(value);
         },
       }, [el('strong', {}, [label]), el('span', {}, [sub])]);
-      const roundsNow = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : 5);
+      const roundsNow = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS);
       const rounds = el('div', { className: 'bachpan__rounds' }, [
         el('span', {}, [ui.rounds]),
         ...ROUND_OPTIONS.map(n => el('button', {
@@ -598,14 +631,21 @@ export function BachpanScreen({ transition }) {
       const chat = el('label', { className: 'bachpan__chatlang' }, [el('span', {}, ['🗣️ Chat']), chatSelect]);
 
       const st = readStats();
+      const ticket = loadRejoin();
       sheet.append(
+        ...(ticket?.left ? [el('div', { className: 'bachpan__modes bachpan__modes--one' }, [opt(ui.rejoinBtn, fmt(ui.rejoinSub, { code: ticket.code }), 'rejoin', true)])] : []),
+        el('p', { className: 'bachpan__tagline' }, [ui.tagline]),
         carousel,
         dots,
         details,
+        nameField(),
         ...(st.matches > 0 ? [el('p', { className: 'bachpan__stats' }, [fmt(ui.statsLine, { w: st.wins, m: st.matches, b: st.best })])] : []),
-        el('div', { className: 'bachpan__modes' }, [opt(ui.play, ui.playSub, 'play', true), opt(ui.watch, ui.watchSub, 'watch', false)]),
+        el('div', { className: 'bachpan__modes' }, [opt(ui.play, ui.playSub, 'play', !ticket?.left), opt(ui.watch, ui.watchSub, 'watch', false)]),
         el('div', { className: 'bachpan__modes bachpan__modes--one' }, [opt(ui.nearby, ui.nearbySub, 'nearby', false)]),
         el('div', { className: 'bachpan__row' }, [rounds, chat]),
+        el('button', { className: 'bachpan__rotatebar', type: 'button', onClick: () => toggleLandscape() }, [
+          el('span', { className: 'bachpan__rotatehint-phone', attrs: { 'aria-hidden': 'true' } }, ['📱']), ROTATE_LABEL,
+        ]),
       );
 
       function fillDetails() {
@@ -647,7 +687,10 @@ export function BachpanScreen({ transition }) {
         world?.story?.setCountry(country);
         world?.story?.preview(country.kids);
         // a plain visit keeps its clean / address: analytics counts a rewrite as a second page view
-        if (base.id !== detected.id || new URLSearchParams(location.search).has('game')) setUrlGame(base);
+        if (base.id !== detected.id || new URLSearchParams(location.search).has('game')) {
+          setUrlGame(base);
+          document.title = `CHITPLAY: ${GAME_NAME_EN[base.id].replace(':', '')}`;
+        }
         loadPack(chatPack());
         cards.forEach((c, cid) => { c.classList.toggle('bachpan__bigcard--on', cid === id); c.setAttribute('aria-selected', String(cid === id)); });
         dots.querySelectorAll('span').forEach(d => d.classList.toggle('on', d.dataset.id === id));
@@ -755,6 +798,27 @@ export function BachpanScreen({ transition }) {
     S().pose(h, 'think');
   }
 
+  /** A computer guesser tries to peek too, and everybody sees the attempt. */
+  async function aiCheatScene(g) {
+    const res = match.cheat();
+    if (!res) return;
+    saveGame('inRound');
+    sfx.play('select');
+    S().sneak(g, res.seat);
+    S().emote(g, res.peeked ? '🤫' : '🙈', 2);
+    const text = fmt(res.peeked ? ui.aiPeeked : ui.aiPeekFail, { name: players[g].name, other: players[res.seat].name });
+    showToast(text, 2800);
+    tell({ t: 'toast', text, ms: 2800 });
+    await sleep(1800);
+    if (res.caught) await cheatCaughtScene(g);
+    else S().pose(g, 'think');
+  }
+  const cheatResultText = (res) => {
+    if (!res.peeked) return fmt(ui.peekFail, { name: players[res.seat].name });
+    const role = country.roles[res.slot];
+    return fmt(ui.peekResult, { name: players[res.seat].name, role: role.name, emoji: role.emoji });
+  };
+
   function humanAccuse(allowed, text, { canCheat = false } = {}) {
     return new Promise((resolve) => {
       let pool = allowed.slice();
@@ -791,10 +855,9 @@ export function BachpanScreen({ transition }) {
               saveGame('inRound');   // refreshing can't undo a cheat (or its fine)
               sfx.play('select');
               S().sneak(h, res.seat);
-              S().emote(h, '🤫', 2);
-              const role = country.roles[res.slot];
-              showToast(fmt(ui.peekResult, { name: players[res.seat].name, role: role.name, emoji: role.emoji }), 4200);
-              pool = pool.filter(s => s !== res.seat);
+              S().emote(h, res.peeked ? '🤫' : '🙈', 2);
+              showToast(cheatResultText(res), 4200);
+              if (res.peeked) pool = pool.filter(s => s !== res.seat);
               renderChips();
               await sleep(1600).catch(() => {});
               if (res.caught && alive) await cheatCaughtScene(h).catch(() => {});
@@ -858,10 +921,9 @@ export function BachpanScreen({ transition }) {
       if (!res) { job.busy = false; tellSeat(seat, { t: 'cheatDone' }); return; }
       sfx.play('select');
       S().sneak(seat, res.seat);
-      S().emote(seat, '🤫', 2);
-      const role = country.roles[res.slot];
-      tellSeat(seat, { t: 'cheatResult', seat: res.seat, text: fmt(ui.peekResult, { name: players[res.seat].name, role: role.name, emoji: role.emoji }) });
-      job.allowed = job.allowed.filter(s => s !== res.seat);
+      S().emote(seat, res.peeked ? '🤫' : '🙈', 2);
+      tellSeat(seat, { t: 'cheatResult', seat: res.peeked ? res.seat : null, text: cheatResultText(res) });
+      if (res.peeked) job.allowed = job.allowed.filter(s => s !== res.seat);
       await sleep(1600).catch(() => {});
       if (res.caught && alive) await cheatCaughtScene(seat).catch(() => {});
       else if (alive) { tellSeat(seat, { t: 'toast', text: ui.safe, ms: 1800 }); S().pose(seat, 'think'); }
@@ -952,7 +1014,6 @@ export function BachpanScreen({ transition }) {
     world.story.setCountry(country);
     renderScores();
     keepAwake(true);
-    if (isTouch && !isLandscape()) setTimeout(() => { if (alive && !isLandscape()) showRotateHint(true); }, 2500);
   }
 
   function guestApply(m) {
@@ -987,26 +1048,28 @@ export function BachpanScreen({ transition }) {
   }
 
   /* ─── Nearby Play lobby ─────────────────────────────────── */
-  const myName = () => {
-    const n = settingsStore.get('playerName') || '';
-    return /^Player-/.test(n) ? '' : n.slice(0, 12);
-  };
+  const myName = () => (settingsStore.get('playerName') || DEFAULT_NAME).slice(0, 12);
+  /** The player's name box: saved as they type, it never stays empty. */
+  function nameInputEl() {
+    const input = el('input', {
+      className: 'bachpan__input',
+      attrs: { type: 'text', maxlength: '12', placeholder: ui.yourName, 'aria-label': ui.yourName, autocomplete: 'nickname', enterkeyhint: 'done' },
+      value: myName(),
+    });
+    input.addEventListener('input', () => { const n = input.value.trim(); if (n) settingsStore.set('playerName', n); });
+    input.addEventListener('blur', () => { if (!input.value.trim()) input.value = myName(); });
+    return input;
+  }
+  const nameField = () => el('label', { className: 'bachpan__field bachpan__field--name' }, [el('span', {}, [ui.yourName]), nameInputEl()]);
   /**
    * Resolves 'host' (room open, Start pressed), 'guest' (joined; the host drives from here) or 'back'.
    * Opens on the normal menu, on the join page for an invite link (code) or on "Reconnecting…" (rejoin).
    */
   function nearbyFlow({ code: linkCode = null, rejoin = null } = {}) {
     return new Promise((resolve) => {
-      const nameInput = el('input', {
-        className: 'bachpan__input', attrs: { type: 'text', maxlength: '12', placeholder: ui.yourName, 'aria-label': ui.yourName, autocomplete: 'nickname', enterkeyhint: 'done' },
-        value: myName(),
-      });
-      const nameNow = () => {
-        const n = nameInput.value.trim().slice(0, 12);
-        if (n) settingsStore.set('playerName', n);
-        return n;   // no name: the host is "Host", a friend gets "Player 2" and so on, never "You" on other phones
-      };
-      const rounds = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : 5);
+      const nameInput = nameInputEl();
+      const nameNow = () => nameInput.value.trim().slice(0, 12) || myName();
+      const rounds = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS);
       const big = (label, sub, onClick, primary) => el('button', {
         className: `bachpan__choice${primary ? ' bachpan__choice--primary' : ''}`, type: 'button', onClick,
       }, [el('strong', {}, [label]), el('span', {}, [sub])]);
@@ -1032,7 +1095,7 @@ export function BachpanScreen({ transition }) {
       }
 
       async function hostLobby() {
-        const name = nameNow() || ui.hostName;
+        const name = nameNow();
         const codeEl = el('div', { className: 'bachpan__code', attrs: { 'aria-label': ui.codeIs } }, ['······']);
         const list = el('ol', { className: 'bachpan__lobby' });
         const qrBox = el('div', { className: 'bachpan__qr' });
@@ -1048,6 +1111,9 @@ export function BachpanScreen({ transition }) {
           // each friend keeps this seat for the whole room, even if their phone drops
           net.seats = room.list.slice(0, 3).map(g => ({ token: g.token, name: g.name }));
           room.lock();
+          // the host goes straight into the game, like everyone else
+          clear(sheet);
+          sheet.className = 'bachpan__sheet';
           resolve('host');
         }, true);
         startBtn.disabled = true;
@@ -1057,6 +1123,7 @@ export function BachpanScreen({ transition }) {
           onLeave: (id, gname) => onGuestLeave(id, gname),
           onRejoin: (id, token) => onGuestBack(id, token),
         });
+        room.hostName = name;
         net = { role: 'host', room, name, seats: [], lastEnd: null };
         const paint = () => {
           if (room.locked) return;   // the lobby is over: never paint it on friends' phones mid-match
@@ -1094,7 +1161,7 @@ export function BachpanScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261110-nearby3').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261106-rotate').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -1434,6 +1501,7 @@ export function BachpanScreen({ transition }) {
         ? await humanAccuse(match.suspects(), accusePrompt, { canCheat: true })
         : await remoteAccuse(g, match.suspects(), accusePrompt, { canCheat: true }));
     } else {
+      if (forced == null && Math.random() < AI_CHEAT_TRY) await aiCheatScene(g);
       const sus = match.suspects();
       const a = pickOne(sus);
       S().emote(g, '🤔', 2);
@@ -1560,7 +1628,8 @@ export function BachpanScreen({ transition }) {
     // an invite link, or a friend's phone coming back after a reload, goes straight to Nearby Play
     const urlJoin = readUrlJoin();
     const ticket = loadRejoin();
-    let nearbyStart = ticket && (!urlJoin || urlJoin === ticket.code) ? { rejoin: ticket } : urlJoin ? { code: urlJoin } : null;
+    // after a reload the phone goes straight back; after ✕ the player chooses (the Rejoin button)
+    let nearbyStart = ticket && (urlJoin === ticket.code || (!urlJoin && !ticket.left)) ? { rejoin: ticket } : urlJoin ? { code: urlJoin } : null;
     if (nearbyStart?.rejoin) {
       // a reload has no tap to unlock sound yet: the first touch does it
       screen.addEventListener('pointerdown', () => audioManager.unlock(), { once: true });
@@ -1587,6 +1656,12 @@ export function BachpanScreen({ transition }) {
     for (;;) {
       pm = nearbyStart ? 'nearby' : await chooseSetup();
       if (!alive) return;
+      if (pm === 'rejoin') {
+        const back = loadRejoin();
+        if (!back) continue;
+        nearbyStart = { rejoin: back };
+        pm = 'nearby';
+      }
       if (pm !== 'nearby') break;
       const r = await nearbyFlow(nearbyStart || {});
       nearbyStart = null;
@@ -1607,8 +1682,7 @@ export function BachpanScreen({ transition }) {
     } else {
       players = country.kids.map((n, i) => ({ name: n, color: SHIRTS[i], isHuman: false, remote: null }));
       if (pm === 'play' || pm === 'nearby') {
-        const n = settingsStore.get('playerName') || '';
-        players[HUMAN_SEAT] = { ...players[HUMAN_SEAT], name: /^Player-/.test(n) ? ui.you : n.slice(0, 12), isHuman: true };
+        players[HUMAN_SEAT] = { ...players[HUMAN_SEAT], name: myName(), isHuman: true };
       }
       // Nearby: friends take seats 0, 1, 2 in the order they joined; empty seats stay computer kids
       if (pm === 'nearby' && isHost()) {
@@ -1620,7 +1694,7 @@ export function BachpanScreen({ transition }) {
           players[k] = { name: s.name, color: SHIRTS[k], isHuman: false, remote: online.find(g => g.token === s.token)?.id || null };
         });
       }
-      const rounds = ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : 5;
+      const rounds = ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS;
       match = new Match(base, 4, rounds, { humanSeat: pm === 'play' || pm === 'nearby' ? HUMAN_SEAT : -1 });
       if (isHost()) {
         pending.clear();
@@ -1651,7 +1725,6 @@ export function BachpanScreen({ transition }) {
     })));
     if (voiceOn() && !voiceBox.available) showToast(ui.voiceOff, 3500);
     keepAwake(true);
-    if (isTouch && !isLandscape()) setTimeout(() => { if (alive && !isLandscape()) showRotateHint(true); }, 2500);
     await sleep(800);
 
     let first = 1, resumeRound = false;

@@ -73,53 +73,6 @@ function std(p) {
   return new THREE.MeshStandardMaterial({ roughness: 0.75, envMapIntensity: 0.35, ...p });
 }
 
-function labelTexture(text, { w = 256, h = 64, bg = 'rgba(15,8,4,.78)', fg = '#ffe6b0', font = 'bold 30px monospace' } = {}) {
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  const g = c.getContext('2d');
-  g.font = font;
-  const tw = Math.min(w - 8, g.measureText(text).width + 28);
-  g.fillStyle = bg;
-  const x = (w - tw) / 2;
-  g.beginPath();
-  g.roundRect ? g.roundRect(x, 6, tw, h - 12, 12) : g.rect(x, 6, tw, h - 12);
-  g.fill();
-  g.fillStyle = fg;
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(text, w / 2, h / 2 + 1);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
-export function roleChitTexture(label, emoji, color) {
-  const c = document.createElement('canvas');
-  c.width = 192;
-  c.height = 128;
-  const g = c.getContext('2d');
-  g.fillStyle = '#f3ead2';
-  g.fillRect(0, 0, 192, 128);
-  g.strokeStyle = 'rgba(70,110,190,.45)';
-  for (let y = 14; y < 128; y += 12) { g.beginPath(); g.moveTo(0, y); g.lineTo(192, y); g.stroke(); }
-  g.strokeStyle = 'rgba(120,90,50,.35)';
-  g.beginPath(); g.moveTo(96, 0); g.lineTo(96, 128); g.stroke();   // fold crease
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.font = '40px serif';
-  g.fillText(emoji, 96, 46);
-  g.fillStyle = color;
-  g.font = `bold ${label.length > 6 ? 24 : 32}px monospace`;
-  g.fillText(label, 96, 96);
-  g.strokeStyle = '#5a4022';
-  g.lineWidth = 4;
-  g.strokeRect(2, 2, 188, 124);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
 function buildHair(style, mat) {
   const hair = new THREE.Group();
   const cap = new THREE.Mesh(new THREE.SphereGeometry(0.113, 16, 10, 0, TAU, 0, Math.PI * 0.55), mat);
@@ -521,15 +474,8 @@ export function createKid(scene, look, { seat, paperMaterial }) {
   }
 
   // World-space sprites: open role chit (result only) and name tag
-  const openChit = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, toneMapped: false, depthWrite: false }));
-  openChit.scale.set(0.42, 0.28, 1);
-  openChit.visible = false;
-  scene.add(openChit);
-  const nameTag = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, toneMapped: false, depthTest: false, depthWrite: false }));
-  nameTag.scale.set(0.6, 0.15, 1);
-  nameTag.renderOrder = 10;
-  nameTag.visible = false;
-  scene.add(nameTag);
+  let openRole = null;   // the role this kid is showing; drawn as HTML by updateTags in world-3d.js
+  let nameText = null;
 
   // Emote bubble above the head (❗ ❓ 💢 😂 😭 …)
   const emoteSprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, toneMapped: false, depthTest: false, depthWrite: false }));
@@ -691,16 +637,6 @@ export function createKid(scene, look, { seat, paperMaterial }) {
         emoteSprite.position.set(tmp.x + 0.14, tmp.y + 0.2 + Math.sin(age * 5) * 0.015 + bounce, tmp.z);
       }
     }
-
-    // Sprites follow the kid
-    if (openChit.visible) {
-      R.hand.getWorldPosition(tmp);
-      openChit.position.copy(tmp).add(new THREE.Vector3(0, 0.1, 0));
-    }
-    if (nameTag.visible) {
-      head.getWorldPosition(tmp);
-      nameTag.position.set(tmp.x, tmp.y + 0.3 + bounce, tmp.z);
-    }
   }
 
   return {
@@ -728,32 +664,17 @@ export function createKid(scene, look, { seat, paperMaterial }) {
       return root.localToWorld(out);
     },
     holdChit(on) { heldChit.visible = !!on; },
-    showRole(texture) {
-      openChit.material.map = texture || null;
-      openChit.material.needsUpdate = true;
-      openChit.visible = !!texture;
-      if (texture) heldChit.visible = false;
+    showRole(role) {
+      openRole = role || null;
+      if (role) heldChit.visible = false;
     },
+    get shownRole() { return openRole; },
     setAccessory(name) {
       Object.entries(acc).forEach(([k, g]) => (g.visible = k === name));
     },
-    setName(text) {
-      if (!text) { nameTag.visible = false; return; }
-      if (nameTag.userData.text !== text) {
-        nameTag.material.map?.dispose();
-        nameTag.material.map = labelTexture(text);
-        nameTag.material.needsUpdate = true;
-        nameTag.userData.text = text;
-      }
-      nameTag.visible = true;
-    },
+    setName(text) { nameText = text || null; },
+    get name() { return nameText; },
     setShirt(hex) { if (hex) shirt.color.set(hex); },
     setSkin(hex) { if (hex) skin.color.set(hex); },
-    // keep the name tag a sensible size on screen, even in close-ups
-    fitTag(cameraPos) {
-      if (!nameTag.visible) return;
-      const s = Math.min(1, Math.max(0.3, nameTag.position.distanceTo(cameraPos) / 3.6));
-      nameTag.scale.set(0.6 * s, 0.15 * s, 1);
-    },
   };
 }

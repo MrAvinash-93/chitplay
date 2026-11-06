@@ -2,32 +2,18 @@ import { STORAGE_KEYS } from '../app/config.js';
 import { storage } from './storage-manager.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
 
-function createDefaultPlayerName() {
-  const values = new Uint32Array(2);
-  if (globalThis.crypto?.getRandomValues) {
-    globalThis.crypto.getRandomValues(values);
-  } else {
-    values[0] = (Date.now() ^ Math.floor(Math.random() * 0x100000000)) >>> 0;
-    values[1] = Math.floor(Math.random() * 0x100000000);
-  }
-  const suffix = [...values]
-    .map(value => value.toString(36).padStart(7, '0'))
-    .join('')
-    .slice(0, 12)
-    .toUpperCase();
-  return `Player-${suffix}`;
-}
-
 const DEFAULTS = Object.freeze({
   soundEnabled: true,
   musicEnabled: false,
   reducedMotion: false,
   animationsEnabled: true,
-  matchRounds: 5,
+  matchRounds: 7,
   hapticsEnabled: true,
   world3d: true,
   vhsFilter: true,
-  playerName: createDefaultPlayerName(),
+  playerName: 'Avin',
+  voiceEnabled: false,
+  defaultsVersion: 2,
 });
 
 let current = { ...DEFAULTS };
@@ -39,6 +25,14 @@ function load() {
   const stored = storage.get(STORAGE_KEYS.SETTINGS, null);
   if (stored && typeof stored === 'object') {
     current = { ...DEFAULTS, ...stored };
+    // settings saved under the old defaults move to the new ones once; later choices stick
+    if (stored.defaultsVersion !== DEFAULTS.defaultsVersion) {
+      if (/^Player-/.test(current.playerName || '')) current.playerName = DEFAULTS.playerName;
+      if (current.matchRounds === 5) current.matchRounds = DEFAULTS.matchRounds;
+      current.voiceEnabled = DEFAULTS.voiceEnabled;
+      current.defaultsVersion = DEFAULTS.defaultsVersion;
+      save();
+    }
   }
   if (typeof current.playerName !== 'string' || !current.playerName.trim()) {
     current.playerName = DEFAULTS.playerName;

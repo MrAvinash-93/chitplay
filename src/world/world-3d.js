@@ -8,11 +8,11 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261014-profile-v4';
+import { settingsStore } from '../persistence/settings-store.js?v=20261106-rotate';
 import { audioManager } from '../audio/audio-manager.js';
-import { createKid, KID_LOOKS, roleChitTexture } from './kids.js?v=20261105-world';
-import { COUNTRIES } from './countries.js?v=20261105-world';
-import * as Themes from './themes.js?v=20261105-world';
+import { createKid, KID_LOOKS } from './kids.js?v=20261106-rotate';
+import { COUNTRIES } from './countries.js?v=20261106-rotate';
+import * as Themes from './themes.js?v=20261106-rotate';
 
 const RENDER_HEIGHT = 420;      // internal resolution (chunky, PS1-era look)
 const FRAME_MS = 1000 / 30;     // retro 30fps cap, also easier on phone batteries
@@ -439,15 +439,8 @@ function createWorld(app) {
   const heldPaper = std({ map: paperTexture(42), roughness: 0.85 });
   const kids = SEATS.map((seat, i) => createKid(scene, KID_LOOKS[i], { seat, paperMaterial: heldPaper }));
   let country = COUNTRIES.IN;
-  const roleTextures = {};
   const roleInfo = (slot) => country.roles[slot] || null;
-  const roleTex = (slot) => {
-    const r = roleInfo(slot);
-    if (!r) return null;
-    const key = `${country.id}:${slot}:${r.name}`;   // names differ in English / local mode
-    if (!roleTextures[key]) roleTextures[key] = roleChitTexture(r.name.toUpperCase(), r.emoji, r.color);
-    return roleTextures[key];
-  };
+  const roleTex = (slot) => roleInfo(slot);
   const roleAcc = (slot) => roleInfo(slot)?.acc || null;
 
   /* Props */
@@ -984,7 +977,8 @@ function createWorld(app) {
       const suspect = others[detectiveScan.i];
       kid.lookAt(headOf(suspect));
     }
-    kids.forEach(k => { k.update(dt, time, reduced); k.fitTag(camera.position); });
+    kids.forEach(k => k.update(dt, time, reduced));
+    updateTags();
     updateBubbles();
   }
 
@@ -1234,6 +1228,76 @@ function createWorld(app) {
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const proj = new THREE.Vector3();
+
+  // Names are HTML above the canvas, not sprites inside it: the room renders at a low
+  // resolution, so anything drawn in 3D would come out blurred and pixelated.
+  const tagLayer = document.createElement('div');
+  tagLayer.className = 'kid-tags';
+  tagLayer.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(tagLayer);
+  const tags = kids.map(() => {
+    const el = document.createElement('div');
+    el.className = 'kid-tag';
+    el.hidden = true;
+    tagLayer.appendChild(el);
+    return { el, text: null, width: 0 };
+  });
+  // an opened chit, same idea: real text, so the role can always be read
+  const roleCards = kids.map(() => {
+    const el = document.createElement('div');
+    el.className = 'kid-chit';
+    el.hidden = true;
+    const emoji = document.createElement('span');
+    const name = document.createElement('strong');
+    el.append(emoji, name);
+    tagLayer.appendChild(el);
+    return { el, emoji, name, role: null, width: 0 };
+  });
+  function placeLabel(label, angle = '') {
+    const W = window.innerWidth, H = window.innerHeight;
+    proj.project(camera);
+    const y = (1 - proj.y) / 2 * H;
+    const off = proj.z > 1 || y < 0 || y > H + 24;
+    label.el.style.visibility = off ? 'hidden' : 'visible';
+    if (off) return;
+    // stays whole at the screen edges, where a kid can sit partly out of view on phones
+    const half = label.width / 2 + 4;
+    const x = half * 2 > W ? W / 2 : Math.max(half, Math.min(W - half, (proj.x + 1) / 2 * W));
+    label.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)${angle}`;
+  }
+
+  function updateTags() {
+    roleCards.forEach((chit, i) => {
+      const role = kids[i].shownRole;
+      if (role !== chit.role) {
+        chit.role = role;
+        chit.el.hidden = !role;
+        if (role) {
+          chit.emoji.textContent = role.emoji;
+          chit.name.textContent = role.name.toUpperCase();
+          chit.name.style.color = role.color;
+          chit.width = chit.el.offsetWidth;
+        }
+      }
+      if (!role) return;
+      kids[i].handWorld(proj);
+      proj.y += 0.1;
+      placeLabel(chit, i % 2 ? ' rotate(2deg)' : ' rotate(-2deg)');
+    });
+    tags.forEach((tag, i) => {
+      const text = kids[i].name;
+      if (text !== tag.text) {
+        tag.text = text;
+        tag.el.textContent = text || '';
+        tag.el.hidden = !text;
+        tag.width = text ? tag.el.offsetWidth : 0;
+      }
+      if (!text) return;
+      kids[i].headWorld(proj);
+      proj.y += 0.3;
+      placeLabel(tag);
+    });
+  }
 
   function updateBubbles() {
     if (!story.active) return;

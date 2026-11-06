@@ -88,6 +88,17 @@ export class NearbyHost {
     this.known = new Set();       // …except the phones that started it (by token)
     this.closed = false;
     this.retry = 0;
+    this.hostName = '';
+  }
+
+  /** Avin, Avin 2, Avin 3…: everyone at the table has to be told apart. */
+  #uniqueName(name) {
+    const taken = new Set([this.hostName, ...[...this.guests.values()].map(g => g.name)].map(n => n.toLowerCase()));
+    if (!taken.has(name.toLowerCase())) return name;
+    for (let n = 2; ; n++) {
+      const next = `${name.slice(0, 10)} ${n}`;
+      if (!taken.has(next.toLowerCase())) return next;
+    }
   }
 
   /** The match starts: only these phones can come back from now on. */
@@ -141,7 +152,7 @@ export class NearbyHost {
         const returning = this.locked && this.known.has(token);
         if (this.locked && !returning) { safeSend(conn, { t: 'reject', reason: 'started' }); setTimeout(() => conn.close(), 400); return; }
         if (this.guests.size >= MAX_GUESTS) { safeSend(conn, { t: 'reject', reason: 'full' }); setTimeout(() => conn.close(), 400); return; }
-        const name = String(msg.name || '').trim().slice(0, 12) || `Player ${this.guests.size + 2}`;
+        const name = this.#uniqueName(String(msg.name || '').trim().slice(0, 12) || `Player ${this.guests.size + 2}`);
         const guest = { id, name, token, conn, w: watch(conn, () => this.#drop(id)) };
         this.guests.set(id, guest);
         this.h.onChange?.();

@@ -48,6 +48,7 @@ const ANALYTICS = `<!-- analytics -->
 <!-- /analytics -->`;
 
 const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
+const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src="${up}assets/logo.png" alt="CHITPLAY" width="180" height="31" style="display:block"></a>`;
 const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
 <link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="${up}assets/icon-192.png">`;
@@ -109,8 +110,9 @@ function pageFor(id) {
   // the name in the country's own script (राजा रानी चोर पुलिस, 警察抓小偷…) helps people searching there
   const localScript = aka.find(a => /[^\u0000-ɏ\s'’&,.:()-]/.test(a)) || (local.game !== primary ? local.game : null);
   const country = base.name;
-  const title = `${primary}${localScript ? ` (${localScript})` : ''} – Play Online Free | ChitPlay`;
-  const desc = `Play ${primary}, ${country}'s paper chit game, free online in 3D. The ${guesserEn} must catch the ${thiefEn}. Rules, points, printable chits and FAQ.`;
+  const seoName = primary.replace(':', '');
+  const title = `CHITPLAY: ${seoName}`;
+  const desc = `Play ${primary}${localScript ? ` (${localScript})` : ''}, ${country}'s paper chit game, free online. The ${guesserEn} must catch the ${thiefEn}. Rules and printable chits.`;
   const lh = LOCAL_HOWTO[id];
   const ex = scoringExample(base);
   const kidName = (i) => base.kids[i];
@@ -153,7 +155,7 @@ function pageFor(id) {
     [`Which languages can I play ${primary} in?`, 'The game and the voices are in English. The kids\' chat bubbles can also be shown in Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese, Korean, Chinese, Russian, German, French, Portuguese or Spanish, all written in Latin letters.'],
     [`How do you make the chits for ${primary} at home?`, `Tear a page into four slips, write ${SLOTS.map(s => en.roles[s].name).join(', ')} on them with the points, fold them and shuffle. Or print the ready-made chits on this page.`],
     [`How many points does each role get in ${primary}?`, `${SLOTS.filter(s => s !== 'thief').map(s => `${en.roles[s].name} ${base.roles[s].points}`).join(', ')}. The ${thiefEn} gets 0 when caught and ${base.rules.escape ?? base.roles[base.rules.guesser].points} when not caught.`],
-    [`Can you cheat in ${primary}?`, `In ChitPlay the ${guesserEn} can press 🤫 Cheat to secretly see one innocent player's chit. But if someone notices, you lose 100 points.`],
+    [`Can you cheat in ${primary}?`, `In ChitPlay the ${guesserEn} can press 🤫 Cheat to try to peek at a chit, with a 50/50 chance of seeing it. If it works, one innocent player is cleared. If someone notices, you lose 100 points. Computer players try it too.`],
   ];
   const ruleTip = base.rules.secondChance ? `You get two shots: use the first to test your hunch, then watch how everyone reacts.`
     : base.rules.night ? `Watch who looks relieved after the night. The Mafia already knows who was attacked.`
@@ -184,7 +186,7 @@ function pageFor(id) {
       inLanguage: ['en', LANG[id]], image: `${SITE}/assets/og-image.jpg`,
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       author: DEVELOPER_LD,
-      isPartOf: { '@type': 'WebSite', name: 'ChitPlay', url: `${SITE}/` },
+      isPartOf: { '@type': 'WebSite', name: 'CHITPLAY', url: `${SITE}/` },
     },
     {
       '@context': 'https://schema.org', '@type': 'FAQPage',
@@ -198,7 +200,7 @@ function pageFor(id) {
     },
     {
       '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'ChitPlay', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 1, name: 'CHITPLAY', item: `${SITE}/` },
         { '@type': 'ListItem', position: 2, name: 'Games', item: `${SITE}/games/` },
         { '@type': 'ListItem', position: 3, name: primary, item: url },
       ],
@@ -216,16 +218,16 @@ ${ANALYTICS}
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#140b07">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="ChitPlay">
+<meta property="og:site_name" content="CHITPLAY">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="${esc(primary)} – play online in 3D">
+<meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
 <meta property="og:image" content="${SITE}/assets/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${esc(primary)} – play online in 3D">
+<meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="${SITE}/assets/og-image.jpg">
 ${iconLinks('../../')}
@@ -253,7 +255,8 @@ button.btn{border:1px solid #6b4a2a;font:inherit;font-weight:700;cursor:pointer}
 </head>
 <body>
 <main>
-<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">ChitPlay</a> › <a href="../">Games</a> › ${esc(primary)}</nav>
+${logoLink('../../')}
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">CHITPLAY</a> › <a href="../">Games</a> › ${esc(primary)}</nav>
 <h1>${esc(primary)} — play online in 3D</h1>
 <p class="lead" style="margin-top:-4px">${esc(country)}'s chit game${localScript ? ` · <span lang="${LANG[id]}">${esc(localScript)}</span>` : ''}</p>
 <p class="lead">The 4-player paper chit game <strong>${esc(primary)}</strong>${sameName ? '' : ` (${esc(en.game)})`}, free in your browser. Four kids, four folded chits: the ${esc(guesserEn)} has to catch the ${esc(thiefEn)}.</p>
@@ -309,7 +312,7 @@ function hubPage() {
     ['Can I play a chit game online alone?', 'Yes. In ChitPlay three computer kids play with you, or you can just watch all four play.'],
   ];
   const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: hubFaq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
-  const title = 'All Chit Games: Raja Rani Chor Police, Mafia & More | ChitPlay';
+  const title = 'CHITPLAY: All Chit Games';
   const desc = 'Every version of the paper chit game in one place: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more. Rules and free 3D play.';
   return `<!DOCTYPE html>
 <html lang="en">
@@ -322,8 +325,8 @@ ${ANALYTICS}
 <link rel="canonical" href="${url}">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="ChitPlay">
-<meta property="og:title" content="All chit games – ChitPlay">
+<meta property="og:site_name" content="CHITPLAY">
+<meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
 <meta property="og:image" content="${SITE}/assets/og-image.jpg">
@@ -335,7 +338,7 @@ ${iconLinks('../')}
 </head>
 <body>
 <main>
-<p><a href="../">← ChitPlay</a></p>
+${logoLink('../')}
 <h1>Chit games from around the world</h1>
 <p>One game, many names. Pick yours and play it free in 3D.</p>
 <p><a class="btn" href="../">▶ Play now</a></p>
@@ -367,13 +370,13 @@ function infoPage(slug, title, desc, bodyHtml) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${ANALYTICS}
-<title>${esc(title)} – ChitPlay</title>
+<title>CHITPLAY: ${esc(title.replace(/ ChitPlay$/, ''))}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${SITE}/${slug}/">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="ChitPlay">
-<meta property="og:title" content="${esc(title)} – ChitPlay">
+<meta property="og:site_name" content="CHITPLAY">
+<meta property="og:title" content="CHITPLAY: ${esc(title.replace(/ ChitPlay$/, ''))}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${SITE}/${slug}/">
 <meta property="og:image" content="${SITE}/assets/og-image.jpg">
@@ -383,7 +386,8 @@ ${iconLinks('../')}
 </head>
 <body>
 <main>
-<p><a href="../">← Play ChitPlay</a></p>
+${logoLink('../')}
+<p><a href="../">← Play CHITPLAY</a></p>
 <h1>${esc(title)}</h1>
 ${bodyHtml}
 <footer>${footerLinks('../')} · Last updated ${TODAY}</footer>
@@ -422,9 +426,9 @@ const INFO = {
   privacy: ['Privacy Policy', 'How ChitPlay handles your data: no accounts, game data stored on your device, Google Analytics, cookies, advertising and your choices.', `
 <p>ChitPlay (www.chitplay.com) is a game that runs in your browser, developed by ${DEVELOPER}. This page explains what data it uses and the choices you have. Questions: ${MAILTO}.</p>
 <h2>Saved on your device</h2>
-<p>ChitPlay saves your settings (sound, voice, chat language, number of rounds), your win/match counts and your current match in your browser's local storage, so that a refresh doesn't lose your game. We don't receive this data, and you can delete it at any time by clearing your browser's site data. The game also picks a starting game from your device's timezone and language settings; that check happens on your device.</p>
+<p>ChitPlay saves your player name and settings (sound, voice, chat language, number of rounds), your win/match counts and your current match in your browser's local storage, so that a refresh doesn't lose your game. We don't receive this data, and you can delete it at any time by clearing your browser's site data. The game also picks a starting game from your device's timezone and language settings; that check happens on your device.</p>
 <h2>What we don't ask for</h2>
-<p>There are no accounts or sign-ups, and we don't ask for your name, email address or phone number to play. If you email us, we use your message and address only to reply.</p>
+<p>There are no accounts or sign-ups, and we don't ask for your email address or phone number. The player name you choose stays on your device, unless you use Nearby Play. If you email us, we use your message and address only to reply.</p>
 <h2>Google Analytics</h2>
 <p>We use Google Analytics 4, loaded through Google Tag Manager, to understand how the site is used, such as which pages and games are visited. It uses cookies and collects information such as pages viewed, approximate location, device and browser type, and the site that referred you. We use this information in aggregate to improve ChitPlay. You can install the <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener">Google Analytics opt-out browser add-on</a> to stop it.</p>
 <h2>Advertising and cookies</h2>
@@ -496,8 +500,8 @@ ${urls.map((u, i) => `  <url><loc>${u}</loc><lastmod>${TODAY}</lastmod><changefr
 `);
 writeFileSync(join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /archive/\nDisallow: /tests/\nDisallow: /tools/\n\n# Google AdSense crawler\nUser-agent: Mediapartners-Google\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
-  name: 'ChitPlay 3D – Raja Rani Chor Police & chit games',
-  short_name: 'ChitPlay',
+  name: 'CHITPLAY',
+  short_name: 'CHITPLAY',
   description: 'The paper chit game in 3D: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more.',
   start_url: './?source=pwa',
   scope: './',
@@ -516,17 +520,17 @@ writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
 
 // ── refresh the SEO blocks inside index.html ────────────────
 const mainNames = [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id].slice(0, 2)]))];
-const homeTitle = 'Raja Rani Chor Police Online – Free 3D Chit Game | ChitPlay';
-const homeDesc = 'Play the classic paper chit game free in 3D: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more. No download, works on any phone.';
+const homeTitle = 'CHITPLAY: Raja Rani Chor Police & Chit Games Online';
+const homeDesc = 'The paper chit game from your school days, free online: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more. No download needed.';
 const homeLd = [
-  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'ChitPlay', url: `${SITE}/`, inLanguage: 'en' },
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'CHITPLAY', alternateName: ['ChitPlay', 'chitplay.com'], url: `${SITE}/`, inLanguage: 'en' },
   {
-    '@context': 'https://schema.org', '@type': 'Organization', name: 'ChitPlay', url: `${SITE}/`, logo: `${SITE}/assets/icon-512.png`,
+    '@context': 'https://schema.org', '@type': 'Organization', name: 'CHITPLAY', url: `${SITE}/`, logo: `${SITE}/assets/icon-512.png`,
     email: CONTACT_EMAIL, founder: DEVELOPER_LD,
     contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: CONTACT_EMAIL, url: `${SITE}/contact/` },
   },
   {
-    '@context': 'https://schema.org', '@type': 'VideoGame', name: 'ChitPlay 3D – Raja Rani Chor Police',
+    '@context': 'https://schema.org', '@type': 'VideoGame', name: 'CHITPLAY',
     alternateName: mainNames, url: `${SITE}/`, description: homeDesc, author: DEVELOPER_LD,
     genre: ['Party game', 'Social deduction game', 'Paper chit game'], gamePlatform: 'Web browser',
     applicationCategory: 'Game', operatingSystem: 'Any', image: `${SITE}/assets/og-image.jpg`,
@@ -540,15 +544,15 @@ const head = `<!-- seo:head -->
   <link rel="canonical" href="${SITE}/" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="ChitPlay" />
-  <meta property="og:title" content="Raja Rani Chor Police – the chit game in 3D" />
+  <meta property="og:site_name" content="CHITPLAY" />
+  <meta property="og:title" content="${esc(homeTitle)}" />
   <meta property="og:description" content="${esc(homeDesc)}" />
   <meta property="og:url" content="${SITE}/" />
   <meta property="og:image" content="${SITE}/assets/og-image.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Raja Rani Chor Police – the chit game in 3D" />
+  <meta name="twitter:title" content="${esc(homeTitle)}" />
   <meta name="twitter:description" content="${esc(homeDesc)}" />
   <meta name="twitter:image" content="${SITE}/assets/og-image.jpg" />
   <script type="application/ld+json">${json(homeLd)}</script>

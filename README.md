@@ -1,4 +1,4 @@
-# ChitPlay 3D
+# CHITPLAY
 
 **The childhood chit game, from around the world.**
 
@@ -21,7 +21,7 @@ Then open `http://127.0.0.1:8000`.
 
 Players pick a game by its **name**, written in Latin letters so anyone can read it: Raja Rani Chor Police, Raja Wazir Chor Sipahi, Mafia Game, Jingcha Zhua Xiaotou, Cops and Robbers… There are no country or flag pickers. Every visit opens on the game of the country the player is in, and that game is listed first with a ⭐. Detection uses the device timezone, or the browser-language region when the timezone is hidden, with no permission and no network. Anywhere without its own game opens on **Cops and Robbers**.
 
-On phones: 🔄 switches to fullscreen landscape (Android; iPhone shows a "turn your phone" nudge). The screen stays awake during a match, and key moments give a short vibration.
+On phones: 🔄 switches to fullscreen landscape (Android; iPhone shows a "turn your phone" nudge). Phones held upright also get a clear rotate button on the start screen and a dismissible one during the match. The screen stays awake during a match, and key moments give a short vibration.
 
 **Home screen:** swipe the big game cards left or right (or use ‹ › and the arrow keys). Whichever card stops in the middle becomes the game, and the room, kids, roles and rules switch with it. Then tap **▶ Play** or **👀 Just Watch**, pick the rounds, and optionally a chat language. There are no flags anywhere.
 
@@ -50,15 +50,16 @@ Each room has its own floor and mat, a localised calendar, a ball (cricket, base
 
 - **Play:** you sit front-left. Your only actions are tapping to open your chit and, when you are the guesser, tapping the kid you suspect (name chips work too).
 - **Just Watch:** all four kids are computer players.
-- **Rounds:** choose 3, 5, 7, 10 or 20 on the start screen.
+- **Rounds:** choose 3, 5, 7, 10 or 20 on the start screen (7 by default).
 - **Fair turns:** the guessing role goes to whoever has had it the fewest times, picked at random among ties. Everyone gets turns, and the human always gets at least one per match.
-- **🤫 Cheat:** when you are the guesser, the Cheat button lets you secretly see one innocent suspect's role, which narrows your choice. There's a 35% chance someone notices ("Oye! Tu cheating kar raha hai!" / "Arre maine nahi kiya!") and you lose 100.
+- **Your name:** set on the start screen and remembered on this device (default **Avin**). It's your name in Play and Nearby Play; two players with one name become Avin and Avin 2.
+- **🤫 Cheat:** when you are the guesser, the Cheat button tries to peek at a chit, once a round, with a 50/50 chance of seeing it. If it works, one innocent suspect is cleared. Either way there's a 35% chance someone notices ("Oye! Tu cheating kar raha hai!" / "Arre maine nahi kiya!") and you lose 100. Computer guessers try it half the time.
 - **Chat language:** chosen on the start screen (🗣️ Chat), see *Language* above.
 - **End of match:** final standings with 🥇🥈🥉, awards (🕵️ Sharp Eye for the most catches, 🦊 Escape Artist for the thief who got away most; no award on a tie), and **📤 Share**. Share opens the phone's share sheet, or copies an "I scored … can you beat me?" message with a link to that game.
 - **Your stats:** wins, matches and best score from Play mode are kept on this device and shown on the home screen.
 - **Layout:** works on any screen, from 320px phones and landscape phones to tablets and big desktops (two-column start sheet in landscape, Play buttons first on small phones).
 - **Sound:** ceiling-fan hum while the power's on, thunder and rain for storm blackouts, crickets at night. Each kid's voice changes with the moment: excited, sad, scared, whispering or sly.
-- **Voices 🗣️:** kids speak their lines aloud in English with the browser's built-in speech voices, using an accent that suits the game where the device has one (Indian, British or American English). Each kid gets their own voice and a child-like pitch. If no voice is installed, the speech bubbles still work. Toggle with 🗣️ / 🤐.
+- **Voices 🗣️:** kids speak their lines aloud in English with the browser's built-in speech voices, using an accent that suits the game where the device has one (Indian, British or American English). Each kid gets their own voice and a child-like pitch. If no voice is installed, the speech bubbles still work. Off by default; toggle with 🤐 / 🗣️.
 - **Expressions:** each kid has eyes, brows and a mouth that change with their mood, plus situation animations (laugh, cry, shrug, deny, jump, sneak, wave) and emote bubbles (❗❓💢😂😭🤫).
 
 Before the result, roles are shown only when the rules make them public (the Raja's opening, the guesser's hat). Lines spoken before the result are role-neutral, so a bluffing thief sounds exactly like the royals.

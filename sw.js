@@ -3,7 +3,7 @@
  * - Everything else (versioned JS/CSS, three.js, icons): cache first,
  *   refreshed in the background.
  */
-const VERSION = 'chitplay-20261110-nearby3';
+const VERSION = 'chitplay-20261106-rotate';
 const CORE = [
   './',
   './index.html',
@@ -13,8 +13,8 @@ const CORE = [
   './src/styles/tokens.css?v=20261014-roles',
   './src/styles/base.css?v=20261014-roles',
   './src/styles/layout.css?v=20261014-roles',
-  './src/styles/world-3d.css?v=20261110-nearby3',
-  './src/app/bootstrap.js?v=20261110-nearby3',
+  './src/styles/world-3d.css?v=20261106-rotate',
+  './src/app/bootstrap.js?v=20261106-rotate',
   './src/vendor/three.chitplay.min.js',
 ];
 

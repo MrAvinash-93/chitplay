@@ -396,6 +396,45 @@ html.has-world .world-caption { top: calc(env(safe-area-inset-top, 0px) + 122px)
 .bachpan__suspect:active { transform: scale(.96); }
 
 /* Speech bubbles projected over the kids */
+/* above the room (.world3d, z-index 0, earlier in the page) and below all of the game's UI */
+.kid-tags { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+html:not(.has-world) .kid-tags { display: none; }
+.kid-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 45vw;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: rgba(15, 8, 4, .82);
+  border: 1px solid rgba(255, 210, 122, .35);
+  color: #ffe6b0;
+  font: 700 13px/1.3 var(--font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  will-change: transform;
+}
+.kid-tag[hidden], .kid-chit[hidden] { display: none; }
+.kid-chit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 84px;
+  max-width: 42vw;
+  padding: 6px 12px 7px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(180deg, #f6ecd2 0 15px, #c9d2df 15px 16px);
+  border: 1px solid #b08a5a;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .45);
+  white-space: nowrap;
+  will-change: transform;
+}
+.kid-chit span { font-size: 22px; line-height: 1.15; }
+.kid-chit strong { font: 800 15px/1.2 var(--font-body); letter-spacing: .03em; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .kid-bubbles { position: fixed; inset: 0; z-index: 15; pointer-events: none; overflow: hidden; }
 .kid-bubble {
   position: absolute;
@@ -542,6 +581,13 @@ html, body { overscroll-behavior: none; }          /* no accidental pull-to-refr
 .bachpan__howto { margin-left: 4px; color: #ffd27a; font-weight: 700; white-space: nowrap; }
 .bachpan__about { color: #f4e3c0; font-size: 13px; }
 .bachpan__about summary { cursor: pointer; text-align: center; opacity: .8; }
+.bachpan__logo { flex: none; width: 22px; height: 22px; margin-right: 7px; border-radius: 5px; }
+.bachpan__round-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bachpan__tagline { margin: 0 0 6px; text-align: center; color: #ffe6b0; font: italic 600 14px/1.3 Georgia, 'Times New Roman', serif; }
+.bachpan__field.bachpan__field--name { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; margin: 2px 0; color: #f4e3c0; font-weight: 700; font-size: 14px; }
+.bachpan__field--name span { flex: none; }
+.bachpan__field--name .bachpan__input { flex: 1 1 auto; width: auto; min-width: 0; max-width: 220px; min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+@media (max-height: 520px) and (orientation: landscape) { .bachpan__tagline { display: none; } }
 .bachpan__legal { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; margin-top: 6px; font-size: 12px; }
 .bachpan__legal a { color: #f4e3c0; opacity: .8; padding: 4px 2px; }
 .bachpan__about .seo-intro { padding: 8px 4px 0; }
@@ -890,6 +936,39 @@ html, body { overscroll-behavior: none; }          /* no accidental pull-to-refr
 .bachpan__rotatehint-phone { font-size: 24px; display: inline-block; animation: phoneTurn 1.6s ease-in-out infinite; }
 @keyframes phoneTurn { 0%, 20% { transform: rotate(0); } 50%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .bachpan__rotatehint-phone { animation: none; } }
+.bachpan__rotatebar, .bachpan__rotatepill { display: none; }
+.bachpan__rotatebar, .bachpan__rotatepill-go, .bachpan__rotatepill-close { font: inherit; font-weight: 700; color: #ffe6b0; cursor: pointer; }
+.bachpan__rotatebar, .bachpan__rotatepill-go { align-items: center; justify-content: center; gap: 8px; min-height: 44px; }
+.bachpan__rotatebar {
+  width: 100%;
+  margin-top: 8px;
+  flex: none;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 12px;
+  background: rgba(255, 210, 122, .12);
+  border: 1px solid rgba(255, 210, 122, .45);
+}
+.bachpan__rotatepill {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+  z-index: 25;
+  transform: translateX(-50%);
+  align-items: center;
+  max-width: calc(100vw - 24px);
+  border-radius: 14px;
+  background: rgba(15, 8, 4, .88);
+  border: 1px solid rgba(255, 210, 122, .45);
+}
+.bachpan__rotatepill-go { display: flex; padding: 4px 4px 4px 14px; font-size: 14px; white-space: nowrap; background: none; border: 0; }
+.bachpan__rotatepill-close { min-width: 44px; min-height: 44px; background: none; border: 0; opacity: .75; }
+@media (pointer: coarse) and (orientation: portrait) and (max-width: 600px) {
+  .bachpan__rotatebar { display: flex; }
+  .bachpan__rotatepill { display: flex; }
+}
+/* the start sheet has its own button; other sheets need the room at the bottom */
+.bachpan__sheet--show ~ .bachpan__rotatepill, .bachpan__rotatepill[hidden] { display: none; }
 .bachpan__gamecard:active { transform: scale(.97); }
 .bachpan__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; }
 

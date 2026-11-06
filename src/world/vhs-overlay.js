@@ -3,7 +3,7 @@
  * indicator and a 1998 date stamp. Pure CSS layer, pointer-events: none.
  */
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261014-profile-v4';
+import { settingsStore } from '../persistence/settings-store.js?v=20261106-rotate';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
