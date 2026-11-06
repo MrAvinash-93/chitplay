@@ -11,6 +11,10 @@ A 3D take on the classic four-player paper-chit game, for every age. Four charac
 - **✕ menu:** Pause (really stops the match, on every phone if the host pauses), Restart (solo), Quit.
 - **Cheat:** 70% unnoticed, and you see one innocent player's chit, never the thief's; sometimes with a close call. 30% caught: you see nothing, lose 100 and get one of 26 scenes that don't repeat until all have played.
 - **Toss:** anyone can throw the chits; after 5 seconds someone else does.
+- **Secrets:** only the finder says who they are. Your own chit stays in your corner after you open it (tap to hide it).
+- **💌 Messages:** emojis for the table and private lines for one person, picked from a list. You may lie. Computer players answer.
+- **📱 Single Phone:** 2 to 4 people pass one phone; a cover screen hides everything while it changes hands.
+- **Nearby rooms:** anyone in the room can change the game before a match or between matches. Back keeps you connected; only Disconnect leaves. A computer player takes over for anyone who is gone or doesn't choose within 30 seconds, and a player who rejoins gets their seat back at once.
 
 ## Quick start
 

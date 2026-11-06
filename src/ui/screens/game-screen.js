@@ -15,6 +15,7 @@ import {
   lookOf, cleanLook, randomLook, portraitSvg,
 } from '../../world/character-looks.js?v=20261107-cast';
 import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261107-cast';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../../world/table-talk.js?v=20261107-cast';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -31,6 +32,8 @@ const TOSS_WAIT_SECONDS = 5;
 const CLOSE_CALL_CHANCE = 0.35;   // an unnoticed peek sometimes still gets an "are you looking at my chit?"
 // a restart starts a new screen; this tells it to go straight into the match
 let pendingStart = null;
+let lastPassTable = null;         // who played on the single phone, for "play again" and restart
+const AWAY_SECONDS = 30;          // a player who doesn't choose in time gets a computer stand-in for that choice
 
 /** Fun forfeits for last place, for real people in a real room: all harmless, any age. */
 const FORFEITS = [
@@ -68,7 +71,7 @@ const UI = {
     nearby: '📶 Nearby Play', nearbySub: 'Friends on their own phones, up to 4 players',
     invite: '📤 Share invite link', inviteSub: 'WhatsApp, SMS, anywhere', inviteText: 'Join my CHITPLAY game! Code {code}', qrLabel: 'QR code to join this game',
     reconnecting: '📶 Reconnecting…', reconnectSub: 'Getting you back into the game. Keep this page open.',
-    backNext: 'You’re back! 🎉 You play again from the next round', rejoined: '{name} is back 🎉 Plays from the next round', rejoinFail: 'Couldn’t get back into that game 😕',
+    backNext: 'You’re back! 🎉 Your seat is yours again', rejoined: '{name} is back 🎉', rejoinFail: 'Couldn’t get back into that game 😕',
     host: '🏠 Host a game', hostSub: '{game} · {n} rounds', join: '🔗 Join a game', joinSub: 'Scan the QR code or enter the 6-digit code',
     yourName: 'Your name', hostName: 'Host', back: '‹ Back', connecting: 'Connecting…', codeIs: 'Game code',
     codeHelp: 'Friends scan this, open the invite link, or type the code in 📶 Nearby Play → 🔗 Join a game',
@@ -82,6 +85,13 @@ const UI = {
     againNearby: 'Same friends, new match', leave: '🚪 Leave', leaveSub: 'Back to the games', changeNearby: 'Closes this room',
     nearbyNote: 'Connecting needs internet for a moment; the game itself goes phone to phone.', points: 'points', noGl: '3D isn’t available on this device 😕',
     voiceOff: 'No voice for this language on this device, bubbles only',
+    pass: '📱 Single Phone', passSub: 'Pass one phone around, 2 to 4 people', passTitle: '📱 Single Phone', passHelp: 'Everyone sees their own chit in secret, then the finder takes the phone. Empty seats play by themselves.',
+    passCount: 'People', passName: 'Player {n}', passStart: '▶ Start', passTo: 'Pass the phone to {name}', passHide: 'Nobody else should look at the screen.', passChit: 'I’m {name}: show my chit', passFind: 'I’m {name}: time to find the {thief}',
+    myChit: 'Your chit: {emoji} {role}', myChitHidden: 'Your chit: tap to see',
+    talk: 'Send a message', talkEmoji: 'Send an emoji', talkEveryone: 'Everyone', talkPrivate: 'Private message', talkPrivateHelp: 'Only {name} sees this. You’re allowed to lie 😏', talkSent: '💌 Sent. Only {name} can see it', talkFrom: '🤫 {name}, only to you', talkReply: '💌 Reply',
+    emojiTo: '{from} {emoji} to {to}',
+    gameLabel: '🎮 Game', connected: '📶 Still connected', connectedSub: 'Room {code}. Friends are still in the room.', backToRoom: '‹ Back to the room', backToRoomSub: 'Nothing has changed', disconnect: '🔌 Disconnect', disconnectSub: 'Leave this room', disconnectHost: 'Closes the room for everyone', gameChanged: '🎮 Now playing: {game}',
+    botPlayed: '🤖 {name} was away: a computer player chose for them',
     menuTitle: 'Game menu', pause: '⏸ Pause game', resume: '▶ Resume game', restart: '🔁 Restart match', quit: '🚪 Quit game', backToGame: '‹ Back to the game',
     paused: '⏸ Game paused', pausedHost: '⏸ The host paused the game', pausedSub: 'Everything waits right where it stopped.',
     localPts: 'Local', nearbyPts: 'Nearby', chatOn: 'Conversation on', chatOff: 'Conversation off',
@@ -294,6 +304,25 @@ export function GameScreen({ transition }) {
     roundEl,
   ]);
   const scoreRow = el('div', { className: 'game__scores' });
+  /* What you drew stays in your corner once you've opened it; tap to hide it from anyone looking over your shoulder. */
+  const myChitEl = el('button', { className: 'game__mychit', type: 'button', onClick: () => { myChitOpen = !myChitOpen; paintMyChit(); } });
+  myChitEl.hidden = true;
+  let myChitRole = null, myChitOpen = true;
+  function paintMyChit() {
+    myChitEl.hidden = !myChitRole;
+    if (myChitRole) myChitEl.textContent = myChitOpen ? fmt(ui.myChit, { emoji: myChitRole.emoji, role: myChitRole.name }) : ui.myChitHidden;
+  }
+  function setMyChit(slot) {
+    myChitRole = slot ? country.roles[slot] : null;
+    myChitOpen = true;
+    paintMyChit();
+  }
+  const talkBtn = el('button', { className: 'game__talkbtn', type: 'button', attrs: { 'aria-label': ui.talk, title: ui.talk }, onClick: () => toggleTalk() }, ['💌']);
+  talkBtn.hidden = true;
+  const talkPanel = el('div', { className: 'game__talk' });
+  talkPanel.hidden = true;
+  const whisperEl = el('div', { className: 'game__whisper', attrs: { 'aria-live': 'polite' } });
+  whisperEl.hidden = true;
   const prompt = el('div', { className: 'game__prompt', attrs: { 'aria-live': 'polite' } });
   const toast = el('div', { className: 'game__toast', attrs: { 'aria-live': 'polite' } });
   const sheet = el('div', { className: 'game__sheet' });
@@ -405,7 +434,7 @@ export function GameScreen({ transition }) {
 
   const screen = el('div', { className: 'screen game', attrs: { 'aria-label': 'CHITPLAY' } }, [
     el('div', { className: 'game__top' }, [exitBtn, roundPill, el('div', { className: 'game__top-right' }, [rotateBtn, chatBtn, voiceBtn, soundBtn, profileBtn])]),
-    scoreRow, prompt, toast, rotateHint, sheet, rotatePill, overlay,
+    scoreRow, myChitEl, talkBtn, talkPanel, whisperEl, prompt, toast, rotateHint, sheet, rotatePill, overlay,
   ]);
   screen.addEventListener('pointerdown', (e) => { if (tapHandler && e.target === screen) tapHandler(e); });
 
@@ -416,10 +445,10 @@ export function GameScreen({ transition }) {
     players.forEach((p, i) => {
       const gain = gains?.[i];
       scoreRow.appendChild(el('div', {
-        className: `game__score${p.isHuman ? ' game__score--me' : ''}`,
+        className: `game__score${isMe(p) ? ' game__score--me' : ''}`,
         style: { '--chip': p.color },
       }, [
-        el('span', { className: 'game__score-name' }, [p.isHuman ? `${p.name} ⭐` : p.name]),
+        el('span', { className: 'game__score-name' }, [isMe(p) ? `${p.name} ⭐` : p.name]),
         el('span', { className: 'game__score-pts' }, [String(totals?.[i] ?? 0)]),
         gain ? el('span', { className: `game__gain${gain < 0 ? ' game__gain--neg' : ''}` }, [gain > 0 ? `+${gain}` : String(gain)]) : null,
       ]));
@@ -646,7 +675,7 @@ export function GameScreen({ transition }) {
         carousel,
         dots,
         el('div', { className: 'game__modes' }, [opt(ui.play, ui.playSub, 'play', !ticket?.left), opt(ui.watch, ui.watchSub, 'watch', false)]),
-        el('div', { className: 'game__modes game__modes--one' }, [opt(ui.nearby, ui.nearbySub, 'nearby', false)]),
+        el('div', { className: 'game__modes' }, [opt(ui.nearby, ui.nearbySub, 'nearby', false), opt(ui.pass, ui.passSub, 'pass', false)]),
         nameField(),
         el('div', { className: 'game__row' }, [rounds, chat]),
         details,
@@ -856,9 +885,11 @@ export function GameScreen({ transition }) {
     return new Promise((resolve) => {
       let pool = allowed.slice();
       let busy = false;
-      const h = HUMAN_SEAT;
+      const h = match.guesser;
+      let standIn = null;
       const done = (idx) => {
         if (busy || !pool.includes(idx)) return;
+        cancelLater(standIn);
         tapHandler = null;
         showPrompt('');
         noteOthers(h, '');
@@ -905,6 +936,17 @@ export function GameScreen({ transition }) {
       noteOthers(h, fmt(ui.choosing, { name: players[h].name }));
       S().clearTalk();
       tapHandler = (e) => done(world.story.actorAt(e.clientX, e.clientY));
+      // friends shouldn't wait forever for a host who walked away
+      if (isHost()) {
+        const away = () => {
+          if (busy) { standIn = later(2000, away); return; }
+          const text = fmt(ui.botPlayed, { name: players[h].name });
+          showToast(text, 3200);
+          tell({ t: 'toast', text, ms: 3200 });
+          done(pool[Math.floor(Math.random() * pool.length)]);
+        };
+        standIn = later(AWAY_SECONDS * 1000, away);
+      }
       renderChips();
     });
   }
@@ -936,12 +978,21 @@ export function GameScreen({ transition }) {
     noteOthers(seat, waitText);
     const cheatOk = canCheat && !match.cheated && allowed.some(s => s !== match.thief);
     return ask(seat, { t: 'accuse', allowed, text, canCheat: cheatOk }, 'accuse', {
-      timeout: 90000, allowed: allowed.slice(), canCheat: cheatOk, fallback,
+      timeout: AWAY_SECONDS * 1000, allowed: allowed.slice(), canCheat: cheatOk,
+      fallback: () => {
+        const note = fmt(ui.botPlayed, { name: players[seat].name });
+        showToast(note, 3200);
+        tell({ t: 'toast', text: note, ms: 3200 });
+        return fallback();
+      },
     }).then((idx) => { showPrompt(''); noteOthers(seat, ''); return idx; });
   }
 
   async function onGuestMessage(id, msg) {
     const seat = players.findIndex(p => p.remote === id);
+    if (msg.t === 'setGame') { if (!matchRunning && COUNTRIES[msg.game]) { changeRoomGame(msg.game); net.repaint?.(); } return; }
+    if (msg.t === 'emoji' && seat >= 0) { deliverEmoji(seat, msg.to, msg.i); return; }
+    if (msg.t === 'whisper' && seat >= 0) { deliverWhisper(seat, msg.to, msg.line); return; }
     if (msg.t === 'toss' && seat >= 0 && tossWait) { tossWait(seat); return; }
     const job = pending.get(seat);
     if (seat < 0 || !job) return;
@@ -968,12 +1019,10 @@ export function GameScreen({ transition }) {
 
   // a friend's phone dropped: a computer player takes their seat
   function onGuestLeave(id, name) {
-    const seat = players.findIndex(p => p.remote === id || p.back === id);
+    const seat = players.findIndex(p => p.remote === id);
     if (seat < 0) return;
-    const wasPlaying = players[seat].remote === id;
     players[seat].remote = null;
-    players[seat].back = null;
-    const job = wasPlaying ? pending.get(seat) : null;
+    const job = pending.get(seat);
     if (job) job.resolve(job.fallback());
     const text = fmt(ui.left, { name: players[seat].name || name });
     showToast(text, 3200);
@@ -987,13 +1036,14 @@ export function GameScreen({ transition }) {
     const seat = net.seats.findIndex(s => s.token === token);
     room.send(id, { t: 'lobby', rejoin: true, host: net.name, game: base.id, rounds: match?.rounds || 0, players: [] });
     if (seat < 0 || !match || !players[seat]) return;   // still starting: startMatch will include them
-    players[seat].back = id;
+    players[seat].remote = id;
     room.send(id, { t: 'start', rejoin: true, game: base.id, rounds: match.rounds, seat, players: seatList() });
     room.send(id, { t: 'story', m: 'begin', a: [] });
     if (dark) room.send(id, { t: 'story', m: dark, a: [dark === 'night'] });
     room.send(id, { t: 'round', text: roundEl.textContent });
     room.send(id, { t: 'scores', totals: match.totals });
     if (net.lastEnd) room.send(id, { t: 'end', ...net.lastEnd });
+    else if (match.roles.length && matchRunning) room.send(id, { t: 'peek', slot: match.slotOf(seat) });
     const text = fmt(ui.rejoined, { name: players[seat].name });
     showToast(text, 3200);
     players.forEach((p, i) => { if (i !== seat) tellSeat(i, { t: 'toast', text, ms: 3200 }); });
@@ -1052,6 +1102,10 @@ export function GameScreen({ transition }) {
     }));
     voiceBox.setCast(players.map(p => ({ gender: p.gender, age: p.look.age })));
     exitBtn.hidden = false;
+    matchRunning = true;
+    setMyChit(null);
+    setTalkAvailable(true);
+    armBackGuard();
     guestTotals = [0, 0, 0, 0];
     clear(sheet); sheet.className = 'game__sheet'; showPrompt('');
     voiceBox.setLanguages(country.voice);
@@ -1082,7 +1136,10 @@ export function GameScreen({ transition }) {
       case 'scores': guestTotals = m.totals.slice(); renderScores(m.gains); break;
       case 'toast': showToast(m.text, m.ms || 2600); break;
       case 'note': showPrompt(String(m.text || '')); break;
-      case 'peek': humanPeek(m.slot).then(() => net?.room.send({ t: 'peeked' })); haptic(25); break;
+      case 'peek': humanPeek(m.slot).then(() => { setMyChit(m.slot); net?.room.send({ t: 'peeked' }); }); haptic(25); break;
+      case 'newRound': setMyChit(null); break;
+      case 'game': changeRoomGame(m.game); break;
+      case 'whisper': showWhisper(m.from, m.line); break;
       case 'accuse': guestAccuse(m); break;
       case 'cheatResult': guestAsk?.cheatResult(m); break;
       case 'cheatDone': guestAsk?.cheatDone(); break;
@@ -1090,7 +1147,7 @@ export function GameScreen({ transition }) {
       case 'tossAsk': guestToss(m); break;
       case 'tossEnd': guestTossEnd?.(); break;
       case 'pause': holdTimers(!!m.on); if (m.on) showPaused(); else closeOverlay(); break;
-      case 'end': setRound(`🏆 ${ui.over}`); keepAwake(false); showEnd(m); break;
+      case 'end': setMyChit(null); setRound(`🏆 ${ui.over}`); keepAwake(false); showEnd(m); break;
       default: break;
     }
   }
@@ -1134,6 +1191,28 @@ export function GameScreen({ transition }) {
         sheet.append(...players.filter(Boolean));
       };
 
+      /** Back never drops the connection; only Disconnect leaves the room. */
+      function connectedPage(code, backToRoom, hostRoom) {
+        onLobbyPage = false;
+        lobbyBack = backToRoom;
+        page(
+          el('h2', { className: 'game__title' }, [ui.connected]),
+          el('p', { className: 'game__sub' }, [fmt(ui.connectedSub, { code: `${code.slice(0, 3)} ${code.slice(3)}` })]),
+          big(ui.backToRoom, ui.backToRoomSub, backToRoom, true),
+          big(ui.disconnect, hostRoom ? ui.disconnectHost : ui.disconnectSub, () => {
+            lobbyBack = null;
+            clearRejoin();
+            net?.room.close();
+            net = null;
+            keepAwake(false);
+            clearUrlJoin();
+            resolve('back');
+          }),
+        );
+      }
+      const gamePicker = () => el('label', { className: 'game__row-field' }, [el('span', {}, [ui.gameLabel]), gameSelect()]);
+      let onLobbyPage = false;
+
       function menu() {
         status.textContent = '';
         page(
@@ -1165,6 +1244,7 @@ export function GameScreen({ transition }) {
           net.seats = room.list.slice(0, 3).map(g => ({ token: g.token, name: g.name, gender: g.gender, look: g.look }));
           net.name = room.hostLabel;
           room.lock();
+          lobbyBack = null;
           // the host goes straight into the game, like everyone else
           clear(sheet);
           sheet.className = 'game__sheet';
@@ -1178,9 +1258,11 @@ export function GameScreen({ transition }) {
           onRejoin: (id, token) => onGuestBack(id, token),
         });
         room.hostName = name;
-        net = { role: 'host', room, name, seats: [], lastEnd: null };
+        net = { role: 'host', room, name, seats: [], lastEnd: null, repaint: () => paint() };
+        armBackGuard();
         const paint = () => {
           if (room.locked) return;   // the lobby is over: never paint it on friends' phones mid-match
+          subEl.textContent = fmt(ui.hostSub, { game: GAME_NAME_EN[base.id], n: rounds() });
           clear(list);
           const g = room.list;
           list.append(el('li', { className: 'game__lobby-me' }, [`⭐ ${room.hostLabel} ${ui.youHost}`]));
@@ -1193,19 +1275,30 @@ export function GameScreen({ transition }) {
           if (g.length) haptic(15);
           room.broadcast({ t: 'lobby', host: room.hostLabel, game: base.id, rounds: rounds(), players: [room.hostLabel, ...g.map(x => x.name)] });
         };
-        page(
-          el('h2', { className: 'game__title' }, [ui.host]),
-          el('p', { className: 'game__sub' }, [fmt(ui.hostSub, { game: GAME_NAME_EN[base.id], n: rounds() })]),
-          el('p', { className: 'game__codelabel' }, [ui.codeIs]),
-          codeEl,
-          qrBox,
-          el('p', { className: 'game__netnote' }, [ui.codeHelp]),
-          inviteBtn,
-          list,
-          status,
-          startBtn,
-          backBtn(() => { room.close(); net = null; menu(); }),
-        );
+        const subEl = el('p', { className: 'game__sub' });
+        const showLobby = () => {
+          lobbyBack = null;
+          page(
+            el('h2', { className: 'game__title' }, [ui.host]),
+            subEl,
+            gamePicker(),
+            el('p', { className: 'game__codelabel' }, [ui.codeIs]),
+            codeEl,
+            qrBox,
+            el('p', { className: 'game__netnote' }, [ui.codeHelp]),
+            inviteBtn,
+            list,
+            status,
+            startBtn,
+            backBtn(() => {
+              // before the room exists there is nothing to stay connected to
+              if (!room.code) { room.close(); net = null; menu(); return; }
+              connectedPage(room.code, showLobby, true);
+            }),
+          );
+          lobbyBack = () => (room.code ? connectedPage(room.code, showLobby, true) : null);
+        };
+        showLobby();
         paint();
         status.textContent = ui.connecting;
         try {
@@ -1231,10 +1324,11 @@ export function GameScreen({ transition }) {
       /** A friend's room: keeps playing what the host sends; a dropped connection tries to come back. */
       function guestRoom(code, token, name) {
         let started = false;
+        guestCode = code;
         return new NearbyGuest({
           onMessage: (m) => {
-            if (m.t === 'lobby') { if (!started && !m.rejoin) waitingPaint(m); return; }
-            if (m.t === 'start' && !started) { started = true; resolve('guest'); }
+            if (m.t === 'lobby') { if (!started && !m.rejoin) { lastLobby = m; if (onLobbyPage) waitingPaint(m); } return; }
+            if (m.t === 'start' && !started) { started = true; lobbyBack = null; resolve('guest'); }
             guestQueue(m);
           },
           onClose: (reason) => {
@@ -1405,17 +1499,25 @@ export function GameScreen({ transition }) {
         setTimeout(() => (prefill ? nameInput : codeInput).focus(), 60);
       }
 
+      let lastLobby = null, guestCode = '';
       function waitingPaint(m) {
+        lastLobby = m;
+        onLobbyPage = true;
+        armBackGuard();
         const g = COUNTRIES[m.game] ? m.game : base.id;
+        const goBack = () => connectedPage(guestCode, () => waitingPaint(lastLobby), false);
+        lobbyBack = goBack;
+        // set before the picker is built, so it shows the game the room is on
+        if (g !== base.id) changeRoomGame(g);
         page(
           el('h2', { className: 'game__title' }, [fmt(ui.joined, { host: m.host })]),
           el('p', { className: 'game__sub' }, [`${GAME_NAME_EN[g]} · ${m.rounds} rounds`]),
+          gamePicker(),
           el('ol', { className: 'game__lobby' }, m.players.map((n, i) => el('li', { className: 'on' }, [`${i === 0 ? '⭐' : '✅'} ${n}`]))),
           el('p', { className: 'game__netstatus' }, [ui.waitStart]),
-          backBtn(() => { net?.room.close(); net = null; clearRejoin(); menu(); }),
+          backBtn(goBack),
         );
         // the room behind the sheet shows the game the host picked
-        if (g !== base.id) { base = COUNTRIES[g]; country = localize(base, mode); world?.story?.setCountry(country); previewTable(); }
       }
 
       if (rejoin) rejoinPage(rejoin);
@@ -1487,7 +1589,6 @@ export function GameScreen({ transition }) {
   async function playRound(round, { resume = false } = {}) {
     const R = country.rules;
     // friends who came back during the last round get their seats again
-    players.forEach((p) => { if (p.back) { p.remote = p.back; p.back = null; } });
     setRound(fmt(ui.roundOf, { n: round, m: match.rounds }));
     // after a refresh the round is replayed with the very same chits (no re-rolling roles)
     if (!resume) match.startRound();
@@ -1499,6 +1600,8 @@ export function GameScreen({ transition }) {
       await narrate('doubleRound', {}, { wait: 2200 });
     }
 
+    setMyChit(null);
+    tell({ t: 'newRound' });
     // The chits wait in a pile until someone throws them
     S().gather();
     await sleep(650);
@@ -1519,7 +1622,11 @@ export function GameScreen({ transition }) {
       S().allLook(i);
       if (Math.random() < 0.55) say(i, 'pick', {}, { to: null, camera: 'none' });
       await sleep(1300);
-      if (players[i].isHuman) await humanPeek(match.slotOf(i));
+      if (players[i].isHuman) {
+        if (playMode === 'pass') await passPhone(i, ui.passChit);
+        await humanPeek(match.slotOf(i));
+        if (playMode !== 'pass') setMyChit(match.slotOf(i));
+      }
       else if (players[i].remote) await remotePeek(i, match.slotOf(i));
       else if (Math.random() < 0.6) {
         if (Math.random() < 0.4) S().emote(i, pickOne(['🤭', '😏', '😐', '🙄']), 1.6);
@@ -1563,18 +1670,11 @@ export function GameScreen({ transition }) {
       await sleep(500);
     }
 
-    // Classic opening: "Raja kaun?" … "Mera Wazir kaun?"
-    if (R.announce) {
-      const k = match.announcer;
-      S().showOne(k, R.announce);
-      S().emote(k, country.roles[R.announce].emoji, 2);
-      await sayWait(k, 'kingAnnounce');
-      await sayWait(k, 'askGuesser');
-      S().showOne(g, R.guesser);
-    }
+    // Only the finder says who they are; everyone else keeps a straight face
     S().investigate(g, guesserRole.acc);
     S().emote(g, '😎', 1.8);
     await sayWait(g, 'announce');
+    maybeBotWhisper(g);
     const nervousKid = pickOne(match.suspects());
     act(nervousKid, 'nervous', '💧');
     await sayWait(nervousKid, 'nervous');
@@ -1596,7 +1696,14 @@ export function GameScreen({ transition }) {
     if (Math.random() < 0.35) await narrate('parent', {}, { parent: true, wait: 1600 });
 
     // Russia: the Komissar's night check
+    let finderHasPhone = false;
+    const handToFinder = async () => {
+      if (playMode !== 'pass' || !local || finderHasPhone) return;
+      finderHasPhone = true;
+      await passPhone(g, fmt(ui.passFind, { name: '{name}', thief: country.roles.thief.name }));
+    };
     if (R.check) {
+      await handToFinder();   // the night check is secret
       sfx.play('crickets');
       await narrate('night', {}, { wait: 1800 });
       const c = match.nightCheck();
@@ -1658,6 +1765,7 @@ export function GameScreen({ transition }) {
     const guesses = [];
     const accusePrompt = fmt(ui.accuse, { icon: guesserRole.emoji, role: guesserRole.name, thief: country.roles.thief.name });
     if (human) {
+      await handToFinder();
       const pleader = pickOne(match.suspects());
       act(pleader, 'nervous');
       say(pleader, 'plead', {}, { camera: 'none' });
@@ -1819,7 +1927,7 @@ export function GameScreen({ transition }) {
       ui = uiFor();
       setRound(fmt(ui.roundOf, { n: saved.match.round, m: saved.match.rounds }));
       await ensureWorld();
-      await startMatch(saved.playMode === 'watch' ? 'watch' : 'play', saved);
+      await startMatch(['watch', 'pass'].includes(saved.playMode) ? saved.playMode : 'play', saved);
       return;
     }
     if (fromUrl) {
@@ -1838,6 +1946,13 @@ export function GameScreen({ transition }) {
         nearbyStart = { rejoin: back };
         pm = 'nearby';
       }
+      if (pm === 'pass') {
+        const table = await passSetup();
+        if (!alive) return;
+        if (!table) continue;
+        lastPassTable = table;
+        break;
+      }
       if (pm !== 'nearby') break;
       const r = await nearbyFlow(nearbyStart || {});
       nearbyStart = null;
@@ -1851,6 +1966,8 @@ export function GameScreen({ transition }) {
 
   async function startMatch(pm, saved = null) {
     playMode = pm;
+    matchRunning = true;
+    armBackGuard();
     clearSave();
     exitBtn.hidden = false;
     if (saved) {
@@ -1865,7 +1982,17 @@ export function GameScreen({ transition }) {
       const table = cast || makeCast();
       cast = null;
       players = table.map((p, i) => ({ name: p.name, gender: p.gender, look: { ...p.look, skin: country.theme.skins[i % country.theme.skins.length] }, color: SHIRTS[i], isHuman: false, remote: null }));
-      if (human) players[HUMAN_SEAT] = { ...players[HUMAN_SEAT], name: myName(), gender: profile.gender, look: profile.look, isHuman: true };
+      if (pm === 'pass') {
+        (lastPassTable || []).forEach((t, k) => {
+          const seat = (HUMAN_SEAT + k) % 4;
+          players[seat] = { ...players[seat], name: t.name, gender: t.gender, look: t.look, isHuman: true };
+        });
+        players.forEach((p, i) => {   // nobody sitting in shares a name with someone holding the phone
+          if (!p.isHuman && players.some((o, j) => j !== i && o.isHuman && o.name.toLowerCase() === p.name.toLowerCase())) {
+            p.name = pickOpponents(1, players.map(o => o.name))[0].name;
+          }
+        });
+      } else if (human) players[HUMAN_SEAT] = { ...players[HUMAN_SEAT], name: myName(), gender: profile.gender, look: profile.look, isHuman: true };
       // Nearby: friends take seats 0, 1, 2 in the order they joined; empty seats stay computer players
       if (pm === 'nearby' && isHost()) {
         players[HUMAN_SEAT].name = net.name;   // the name the friends already saw in the lobby
@@ -1906,13 +2033,15 @@ export function GameScreen({ transition }) {
     if (!alive) return;
     voiceBox.setLanguages(country.voice);
     voiceBox.setCast(players.map(p => ({ gender: p.gender, age: p.look.age })));
+    setMyChit(null);
+    setTalkAvailable(pm === 'play' || pm === 'nearby');
     sfx.fanStart();
     renderScores();
 
     S().setCountry(country);
     S().begin(players.map(p => ({
       name: p.name, look: p.look, color: p.color, isHuman: p.isHuman,
-      label: p.isHuman && p.name !== ui.you ? `${p.name} (${ui.you})` : p.name,
+      label: isMe(p) && p.name !== ui.you ? `${p.name} (${ui.you})` : p.name,
     })));
     if (voiceOn() && !voiceBox.available) showToast(ui.voiceOff, 3500);
     keepAwake(true);
@@ -1965,7 +2094,10 @@ export function GameScreen({ transition }) {
   /** The end-of-match sheet (same on the host and on every guest phone). */
   function showEnd({ w, totals, order, awards, rounds, game, catches, escapes, cheats, caughtCheats }) {
     const guest = net?.role === 'guest';
-    const me = players.findIndex(p => p.isHuman);
+    // on a shared phone the profile belongs to the seat that holds it
+    const me = playMode === 'pass' ? HUMAN_SEAT : players.findIndex(p => p.isHuman);
+    matchRunning = false;
+    setTalkAvailable(false);
     let progress = null;
     if (me >= 0) {
       progress = profile.recordMatch({
@@ -1977,11 +2109,11 @@ export function GameScreen({ transition }) {
     const lastPlace = order[order.length - 1];
     const MEDALS = ['🥇', '🥈', '🥉', '4'];
     const standings = el('ol', { className: 'game__standings' }, order.map((seat, place) => el('li', {
-      className: `game__standing${players[seat].isHuman ? ' game__standing--me' : ''}`,
+      className: `game__standing${isMe(players[seat]) ? ' game__standing--me' : ''}`,
       style: { '--chip': players[seat].color },
     }, [
       el('span', { className: 'game__medal' }, [MEDALS[place]]),
-      el('strong', {}, [players[seat].isHuman ? `${players[seat].name} (${ui.you})` : players[seat].name]),
+      el('strong', {}, [isMe(players[seat]) ? `${players[seat].name} (${ui.you})` : players[seat].name]),
       el('span', { className: 'game__pts' }, [String(totals[seat])]),
     ])));
     const awardRow = awards.length ? el('div', { className: 'game__awards' }, awards.map(a => el('span', { className: 'game__award' }, [
@@ -2007,10 +2139,11 @@ export function GameScreen({ transition }) {
     clear(sheet);
     sheet.className = 'game__sheet game__sheet--show game__sheet--start';
     sheet.append(
-      el('h2', { className: 'game__title' }, [players[w].isHuman ? ui.youWon : fmt(ui.won, { name: players[w].name })]),
+      el('h2', { className: 'game__title' }, [isMe(players[w]) ? ui.youWon : fmt(ui.won, { name: players[w].name })]),
       el('p', { className: 'game__sub' }, [`${GAME_NAME_EN[game]} · ${rounds} rounds${net ? ' · 📶 Nearby' : ''}`]),
       standings,
       ...(awardRow ? [awardRow] : []),
+      ...(net ? [el('label', { className: 'game__row-field' }, [el('span', {}, [ui.gameLabel]), gameSelect()])] : []),
       ...(progress ? [el('div', { className: 'game__progress' }, [
         el('strong', {}, [`${progress.after.icon} ${progress.after.title}`]),
         el('div', { className: 'game__bar' }, [el('span', { style: { width: `${Math.round(progress.after.progress * 100)}%` } })]),
@@ -2022,7 +2155,7 @@ export function GameScreen({ transition }) {
       ])] : []),
       el('div', { className: 'game__forfeit' }, [
         el('strong', {}, [fmt(ui.forfeit, { name: players[lastPlace].name })]),
-        el('span', {}, [fmt(ui.forfeitLine, { name: players[lastPlace].isHuman ? ui.you : players[lastPlace].name, text: pickOne(FORFEITS) })]),
+        el('span', {}, [fmt(ui.forfeitLine, { name: isMe(players[lastPlace]) ? ui.you : players[lastPlace].name, text: pickOne(FORFEITS) })]),
       ]),
       guest
         ? el('p', { className: 'game__stats' }, [ui.waitHostAgain])
@@ -2033,7 +2166,7 @@ export function GameScreen({ transition }) {
       el('button', {
         className: 'game__choice', type: 'button',
         onClick: () => { clearRejoin(); transition(GAME_PHASES.HOME); },
-      }, guest ? [el('strong', {}, [ui.leave]), el('span', {}, [ui.leaveSub])] : [el('strong', {}, [ui.change]), el('span', {}, [net ? ui.changeNearby : ui.changeSub])]),
+      }, net ? [el('strong', {}, [ui.disconnect]), el('span', {}, [guest ? ui.disconnectSub : ui.disconnectHost])] : [el('strong', {}, [ui.change]), el('span', {}, [ui.changeSub])]),
       shareBtn,
     );
   }
@@ -2055,6 +2188,252 @@ export function GameScreen({ transition }) {
       ? { name: myName(), look: profile.look }
       : { name: p.name, look: { ...p.look, skin: skins[i % skins.length] } })));
   }
+
+  const isMe = (p) => playMode !== 'pass' && !!p.isHuman;
+  let matchRunning = false;
+
+  /* ─── Single phone: the screen hides everything while it changes hands ─── */
+  function passPhone(seat, label) {
+    return new Promise((resolve) => {
+      const name = players[seat].name;
+      const cover = el('div', { className: 'game__pass' }, [
+        el('div', { className: 'game__pass-card' }, [
+          el('span', { className: 'game__pass-icon', attrs: { 'aria-hidden': 'true' } }, ['📱']),
+          el('h2', { className: 'game__title' }, [fmt(ui.passTo, { name })]),
+          el('p', { className: 'game__sub' }, [ui.passHide]),
+          el('button', {
+            className: 'game__choice game__choice--primary', type: 'button',
+            onClick: () => { haptic(15); sfx.play('select'); cover.remove(); resolve(); },
+          }, [el('strong', {}, [fmt(label, { name })])]),
+        ]),
+      ]);
+      screen.append(cover);
+    });
+  }
+  /** Who's holding the phone? Resolves with [{ name, gender, look }], or null for Back. */
+  function passSetup() {
+    return new Promise((resolve) => {
+      let count = lastPassTable?.length || 4;
+      const strangers = pickOpponents(3, [myName()]);
+      const names = [myName(), ...strangers.map(o => o.name)];
+      (lastPassTable || []).forEach((t, i) => { if (i) names[i] = t.name; });
+      const fields = el('div', { className: 'game__custom' });
+      const counts = el('div', { className: 'game__rounds' });
+      const paint = () => {
+        clear(fields);
+        for (let i = 0; i < count; i++) {
+          const input = el('input', {
+            className: 'game__input', value: names[i],
+            attrs: { type: 'text', maxlength: '12', 'aria-label': fmt(ui.passName, { n: i + 1 }), autocomplete: 'off' },
+          });
+          input.addEventListener('input', () => { input.value = cleanName(input.value); names[i] = input.value; });
+          fields.append(el('label', { className: 'game__row-field' }, [el('span', {}, [fmt(ui.passName, { n: i + 1 })]), input]));
+        }
+        [...counts.querySelectorAll('.game__pill')].forEach(b => b.classList.toggle('game__pill--on', b.dataset.n === String(count)));
+      };
+      counts.append(el('span', {}, [ui.passCount]), ...[2, 3, 4].map(n => el('button', {
+        className: 'game__pill', type: 'button', attrs: { 'data-n': String(n) },
+        onClick: () => { count = n; paint(); },
+      }, [String(n)])));
+      clear(sheet);
+      sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--nearby';
+      sheet.append(
+        el('h2', { className: 'game__title' }, [ui.passTitle]),
+        el('p', { className: 'game__sub' }, [ui.passHelp]),
+        counts,
+        fields,
+        el('button', {
+          className: 'game__choice game__choice--primary', type: 'button',
+          onClick: () => {
+            const clean = names.slice(0, count).map((n, i) => cleanName(n).trim() || fmt(ui.passName, { n: i + 1 }));
+            const lower = clean.map(n => n.toLowerCase());
+            const table = clean.map((n, i) => ({
+              // two people called Asha become Asha 1 and Asha 2, as in Nearby Play
+              name: lower.filter(x => x === lower[i]).length > 1 ? `${n.slice(0, 10)} ${i + 1}` : n,
+              gender: i === 0 ? profile.gender : strangers[i - 1].gender,
+              look: i === 0 ? profile.look : randomLook(strangers[i - 1].gender, country.theme.skins[i % country.theme.skins.length]),
+            }));
+            clear(sheet); sheet.className = 'game__sheet';
+            resolve(table);
+          },
+        }, [el('strong', {}, [ui.passStart])]),
+        el('button', { className: 'game__back', type: 'button', onClick: () => resolve(null) }, [ui.back]),
+      );
+      paint();
+    });
+  }
+
+  /* ─── Choosing the game for a Nearby room ─────────────── */
+  function gameSelect() {
+    const select = el('select', {
+      className: 'game__select game__gameselect', attrs: { 'aria-label': ui.gameLabel },
+      onChange: (e) => {
+        const id = e.target.value;
+        if (net?.role === 'guest') net.room.send({ t: 'setGame', game: id });
+        else { changeRoomGame(id); net?.repaint?.(); }
+      },
+    }, COUNTRY_ORDER.map(id => el('option', { attrs: { value: id } }, [GAME_NAME_EN[id]])));
+    select.value = base.id;
+    return select;
+  }
+  function changeRoomGame(id) {
+    if (!COUNTRIES[id] || id === base.id) return;
+    base = COUNTRIES[id];
+    country = localize(base, mode);
+    ui = uiFor();
+    voiceBox.setLanguages(country.voice);
+    world?.story?.setCountry(country);
+    loadPack(chatPack());
+    document.querySelectorAll('.game__gameselect').forEach((s) => { s.value = id; });
+    if (isHost()) net.room.broadcast({ t: 'game', game: id });
+    showToast(fmt(ui.gameChanged, { game: GAME_NAME_EN[id] }), 2200);
+  }
+
+  /* ─── Emojis for the table, private lines for one person ─ */
+  const mySeat = () => (net?.role === 'guest' ? net.seat : players.findIndex(p => p.isHuman));
+  const talkLang = () => (chatPack() === 'hinglish' || ['IN', 'PK', 'NP', 'BD'].includes(detected.id) ? 'hinglish' : 'english');
+  const talkVars = () => ({ thief: (talkLang() === 'hinglish' ? ROLE_LATIN[base.id]?.[3] : null) || country.roles.thief.name });
+  const lastSent = new Map();
+  /** One message a moment per seat, however fast someone taps. */
+  function allowed(seat) {
+    const now = Date.now();
+    if (now - (lastSent.get(seat) || 0) < 700) return false;
+    lastSent.set(seat, now);
+    return true;
+  }
+  const validSeat = (s) => Number.isInteger(s) && s >= 0 && s < players.length;
+  const isBot = (s) => !players[s].isHuman && !players[s].remote;
+
+  function setTalkAvailable(on) {
+    talkBtn.hidden = !on;
+    if (!on) closeTalk();
+  }
+  function closeTalk() {
+    talkPanel.hidden = true;
+    clear(talkPanel);
+  }
+  function toggleTalk(to = null) {
+    if (!talkPanel.hidden && to == null) { closeTalk(); return; }
+    openTalk(to);
+  }
+  function openTalk(to) {
+    const me = mySeat();
+    const seats = players.map((_, i) => i).filter(i => i !== me);
+    let target = validSeat(to) && to !== me ? to : seats[0];
+    let emojiTarget = null;
+    const chips = el('div', { className: 'game__talk-people' });
+    const help = el('p', { className: 'game__netnote' });
+    const paintChips = () => {
+      [...chips.children].forEach((c) => c.classList.toggle('game__seg-btn--on', Number(c.dataset.s) === target));
+      help.textContent = fmt(ui.talkPrivateHelp, { name: players[target].name });
+    };
+    seats.forEach(s => chips.append(el('button', {
+      className: 'game__seg-btn', type: 'button', attrs: { 'data-s': String(s) },
+      onClick: () => { target = s; emojiTarget = s; paintChips(); },
+    }, [players[s].name])));
+    clear(talkPanel);
+    talkPanel.hidden = false;
+    talkPanel.append(
+      el('div', { className: 'game__talk-head' }, [
+        el('strong', {}, [ui.talkEmoji]),
+        el('button', { className: 'game__talk-close', type: 'button', attrs: { 'aria-label': ui.close }, onClick: closeTalk }, ['✕']),
+      ]),
+      el('div', { className: 'game__talk-emojis' }, TALK_EMOJIS.map((e, i) => el('button', {
+        className: 'game__talk-emoji', type: 'button',
+        onClick: () => sendEmoji(emojiTarget, i),
+      }, [e]))),
+      el('strong', {}, [ui.talkPrivate]),
+      chips,
+      help,
+      el('div', { className: 'game__talk-lines' }, Array.from({ length: TALK_LINE_COUNT }, (_, i) => el('button', {
+        className: 'game__talk-line', type: 'button',
+        onClick: () => { sendWhisper(target, i); closeTalk(); },
+      }, [talkLine(i, talkLang(), talkVars())]))),
+    );
+    paintChips();
+  }
+  function sendEmoji(to, i) {
+    if (net?.role === 'guest') net.room.send({ t: 'emoji', to, i });
+    else deliverEmoji(mySeat(), to, i);
+    haptic(10);
+  }
+  function deliverEmoji(from, to, i) {
+    if (!isTalkEmoji(i) || !validSeat(from) || !allowed(from)) return;
+    const target = validSeat(to) && to !== from ? to : null;
+    S().emote(from, TALK_EMOJIS[i], 2.4);
+    sfx.play('select');
+    if (target != null) {
+      S().look(from, target);
+      const text = fmt(ui.emojiTo, { from: players[from].name, emoji: TALK_EMOJIS[i], to: players[target].name });
+      showToast(text, 2000);
+      tell({ t: 'toast', text, ms: 2000 });
+    }
+    // computer players react now and then
+    const bots = players.map((_, s) => s).filter(s => s !== from && isBot(s));
+    if (bots.length && Math.random() < 0.45) {
+      const who = target != null && isBot(target) ? target : pickOne(bots);
+      later(700 + Math.random() * 900, () => { if (alive && matchRunning) S().emote(who, pickOne(TALK_EMOJIS), 2.2); });
+    }
+  }
+  function sendWhisper(to, line) {
+    if (net?.role === 'guest') net.room.send({ t: 'whisper', to, line });
+    else deliverWhisper(mySeat(), to, line);
+    showToast(fmt(ui.talkSent, { name: players[to].name }), 2200);
+    haptic(10);
+  }
+  /** The host's phone only passes it along: nothing appears on any screen but the recipient's. */
+  function deliverWhisper(from, to, line) {
+    if (!validSeat(from) || !validSeat(to) || from === to || !talkLine(line, 'english') || !allowed(from)) return;
+    if (players[to].isHuman) showWhisper(from, line);
+    else if (players[to].remote) tellSeat(to, { t: 'whisper', from, line });
+    else if (Math.random() < 0.75) {
+      // a computer player answers, truthfully or not
+      later(1200 + Math.random() * 1500, () => { if (alive && matchRunning) deliverWhisper(to, from, pickLine()); });
+    }
+  }
+  const pickLine = () => Math.floor(Math.random() * TALK_LINE_COUNT);
+  function showWhisper(from, line) {
+    const text = talkLine(line, talkLang(), talkVars());
+    if (!text || !players[from]) return;
+    clear(whisperEl);
+    whisperEl.hidden = false;
+    whisperEl.append(
+      el('small', {}, [fmt(ui.talkFrom, { name: players[from].name })]),
+      el('span', {}, [text]),
+      el('button', { className: 'game__talk-reply', type: 'button', onClick: () => { whisperEl.hidden = true; openTalk(from); } }, [ui.talkReply]),
+    );
+    haptic([15, 30, 15]);
+    audioManager.play('select');
+    clearTimeout(whisperEl._t);
+    whisperEl._t = setTimeout(() => { whisperEl.hidden = true; }, 7000);
+  }
+  /** Sometimes a computer player tries to get into a real player's head. */
+  function maybeBotWhisper(g) {
+    if (playMode === 'pass' || playMode === 'watch' || Math.random() > 0.45) return;
+    const bots = players.map((_, s) => s).filter(isBot);
+    const people = players.map((_, s) => s).filter(s => !isBot(s));
+    if (!bots.length || !people.length) return;
+    const to = people.includes(g) ? g : pickOne(people);
+    later(1500 + Math.random() * 2500, () => { if (alive && matchRunning) deliverWhisper(pickOne(bots), to, pickLine()); });
+  }
+
+  /* ─── The phone's Back gesture opens the menu; it doesn't throw you out of a game ─── */
+  let backGuard = false;
+  let lobbyBack = null;
+  function armBackGuard() {
+    if (backGuard) return;
+    backGuard = true;
+    try { history.pushState({ chitplay: 'guard' }, ''); } catch { backGuard = false; }
+  }
+  const onPopState = () => {
+    if (!alive || !backGuard) return;
+    backGuard = false;
+    if (!overlay.hidden && !paused) closeOverlay();
+    else if (lobbyBack) lobbyBack();
+    else if (!exitBtn.hidden && overlay.hidden) openMenu();
+    if (match || net) armBackGuard();
+  };
+  window.addEventListener('popstate', onPopState);
 
   /* ─── ✕ menu ──────────────────────────────────────────── */
   const isSolo = () => !net;
@@ -2088,6 +2467,7 @@ export function GameScreen({ transition }) {
   const menuBtn = (label, onClick, cls = '') => el('button', { className: `game__choice ${cls}`, type: 'button', onClick }, [el('strong', {}, [label])]);
   function openMenu() {
     if (isSolo()) holdTimers(true);
+    closeTalk();
     clear(overlay);
     overlay.hidden = false;
     screen.classList.add('game--overlay');
@@ -2101,7 +2481,7 @@ export function GameScreen({ transition }) {
         holdTimers(false);
         transition(GAME_PHASES.HOME);
       }) : null,
-      menuBtn(ui.quit, quitGame),
+      menuBtn(net ? ui.disconnect : ui.quit, quitGame),
       menuBtn(`👤 ${ui.profile}`, () => openProfile({ fromMenu: true })),
       el('button', {
         className: 'game__back', type: 'button',
@@ -2320,6 +2700,8 @@ export function GameScreen({ transition }) {
       sfx.fanStop();
       keepAwake(false);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('popstate', onPopState);
+      clearTimeout(whisperEl._t);
       onModeChange = null;
       net?.room.close();
       net = null;

@@ -64,9 +64,9 @@ const M = await import('data:text/javascript;base64,' + Buffer.from(readFileSync
 // "How to play" in the way people search for it locally (Latin letters where that is how people type)
 const LOCAL_HOWTO = {
   IN: ['hi-Latn', 'Raja Rani Chor Police kaise khele', 'Chaar log, chaar parchiyan: Raja, Rani, Chor aur Police. Parchiyan mod ke beech me daalo, sab ek-ek uthao aur chupke se dekho. Police bolta hai "Main Police hoon!" aur use Chor pakadna hota hai. Sahi pakda to Police ko 500 milte hain aur Chor ko 0. Galat pakda to Chor ko 500 milte hain aur Police ko 0. Raja ko 1000 aur Rani ko 800 milte hain. Jitne round chaho khelo, sabse zyada points wala jeetta hai.'],
-  PK: ['ur-Latn', 'Raja Wazir Chor Sipahi kaise khelein', 'Chaar parchiyan: Raja, Wazir, Chor aur Sipahi. Sab ek-ek parchi uthate hain. Raja apni parchi dikha kar kehta hai "Mera Wazir kaun?" Wazir samne aata hai aur usay baqi do mein se Chor pehchanna hota hai. Sahi pehchana to Wazir ko 800, ghalat hua to Chor ko 800 aur Wazir ko 0. Raja ko 1000 aur Sipahi ko 500 milte hain.'],
-  NP: ['ne-Latn', 'Raja Mantri Chor Sipahi kasari khelne', 'Char ota chit: Raja, Mantri, Chor ra Sipahi. Sabai le euta chit tanchhan. Raja le "Mero Mantri ko ho?" bhanchha, ani Mantri le baki dui madhye Chor chinnu parchha. Sahi bhaye Mantri lai 800, galat bhaye Chor lai 800 ra Mantri lai 0. Raja lai 1000 ra Sipahi lai 500.'],
-  BD: ['bn-Latn', 'Raja Mantri Chor Police kivabe khelbo', 'Charti chirkut: Raja, Mantri, Chor ar Police. Sobai ekta kore chirkut tule chupi chupi dekhe. Raja bole "Amar Police kothay?", tarpor Police baki duijoner moddhe Chor khuje ber kore. Thik dhorle Police pay 500, bhul hole Chor pay 500 ar Police shunno. Raja pay 1000, Mantri pay 800.'],
+  PK: ['ur-Latn', 'Raja Wazir Chor Sipahi kaise khelein', 'Chaar parchiyan: Raja, Wazir, Chor aur Sipahi. Sab ek-ek parchi uthate hain. Sirf Wazir samne aata hai, baqi koi apni parchi nahi batata. Usay baqi teen mein se Chor pehchanna hota hai. Sahi pehchana to Wazir ko 800, ghalat hua to Chor ko 800 aur Wazir ko 0. Raja ko 1000 aur Sipahi ko 500 milte hain.'],
+  NP: ['ne-Latn', 'Raja Mantri Chor Sipahi kasari khelne', 'Char ota chit: Raja, Mantri, Chor ra Sipahi. Sabai le euta chit tanchhan. Mantri matra aafno parichaya dinchha, ani baki tin madhye Chor chinnu parchha. Sahi bhaye Mantri lai 800, galat bhaye Chor lai 800 ra Mantri lai 0. Raja lai 1000 ra Sipahi lai 500.'],
+  BD: ['bn-Latn', 'Raja Mantri Chor Police kivabe khelbo', 'Charti chirkut: Raja, Mantri, Chor ar Police. Sobai ekta kore chirkut tule chupi chupi dekhe. Shudhu Police nijer porichoy dey, ar baki tin joner moddhe Chor khuje ber kore. Thik dhorle Police pay 500, bhul hole Chor pay 500 ar Police shunno. Raja pay 1000, Mantri pay 800.'],
   JP: ['ja', '殿様と泥棒の遊び方', '四枚の紙に殿様・家老・岡っ引き・泥棒と書いて、たたんで一枚ずつ引きます。岡っ引きが名乗り出て、泥棒が誰かを当てます。ヒントで一人は無実とわかります。当たれば岡っ引きに500点、外れたら泥棒に1000点。'],
   KR: ['ko', '마피아 게임 하는 법 (쪽지 버전)', '네 장의 쪽지에 시민, 의사, 경찰, 마피아를 적어 한 장씩 뽑아요. 밤에 마피아가 한 명을 공격하고 의사는 한 명을 살릴 수 있어요. 경찰이 마피아를 맞히면 500점, 틀리면 마피아가 1000점을 가져가요.'],
   CN: ['zh', '警察抓小偷怎么玩', '四张纸条：皇帝、宰相、警察、小偷，折好后每人抽一张。警察亮明身份，要找出谁是小偷。抓对了，警察得500分，小偷还要罚200分给警察；抓错了，小偷得1000分。'],
@@ -87,8 +87,7 @@ function scoringExample(base) {
     return m.resolve([accuse]).points;
   };
   const g = SLOTS.indexOf(base.rules.guesser);
-  const ann = base.rules.announce ? SLOTS.indexOf(base.rules.announce) : -1;
-  const wrong = [0, 1, 2].find(s => s !== g && s !== ann);
+  const wrong = [0, 1, 2].find(s => s !== g);
   return { caught: run(3), missed: run(wrong), guesserSeat: g, wrongSeat: wrong };
 }
 
@@ -139,9 +138,7 @@ function pageFor(id) {
   }).join('');
   const steps = [
     `Four players each draw a folded paper chit. Each chit hides one role: ${SLOTS.map(s => en.roles[s].name).join(', ')}.`,
-    base.rules.announce
-      ? `The ${en.roles[base.rules.announce].name} reveals first and calls for the ${guesserEn}.`
-      : `The ${guesserEn} reveals their chit. Everyone else keeps a straight face.`,
+    `The ${guesserEn} reveals their chit. Nobody else says who they are: everyone keeps a straight face.`,
     `The ${guesserEn} studies the faces and accuses one player of being the ${thiefEn}.`,
     `Everyone opens their chit and scores: ${en.ruleText}`,
     'Play 3, 5, 7, 10 or 20 rounds. The highest total wins.',
@@ -149,11 +146,12 @@ function pageFor(id) {
   const faq = [
     [`How do you play ${primary}?`, `${steps.join(' ')}`],
     [`Is ${primary} free to play online?`, `Yes. ChitPlay is free, runs in any modern browser on phone or computer, and needs no download or sign-up.`],
-    [`How many players does ${primary} need?`, `The classic game needs exactly four players. In CHITPLAY you can play with three computer players, invite up to three friends on their own phones, or just watch.`],
+    [`How many players does ${primary} need?`, `The classic game needs exactly four players. In CHITPLAY you can play with three computer players, invite up to three friends on their own phones, pass a single phone around, or just watch.`],
     [`Is ${primary} only for children?`, `No. Children, teenagers, parents and grandparents all play it. It takes a minute to learn, and bluffing is just as much fun at any age.`],
     [`Is ${primary} a good indoor game?`, `Yes. On paper all you need is a page and a pen, so it works at home, in a classroom, on a train or during a power cut. Online you only need a phone.`],
     [`What are the roles in ${primary}?`, `${SLOTS.map(s => `${en.roles[s].name} (${local.roles[s].name})`).join(', ')}.`],
     [`What is ${primary} also called?`, `${aka.join(', ')}.`],
+    [`Can we play ${primary} on one phone?`, `Yes. Choose Single Phone and pass it around: each person secretly opens their own chit, then the ${guesserEn} takes the phone to make the catch. Two to four people can play.`],
     [`Can I play ${primary} on my phone?`, `Yes. ChitPlay works on Android and iPhone browsers. Tap 🔄 to play in landscape, and add it to your home screen to play like an app, even offline.`],
     [`Which languages can I play ${primary} in?`, 'The game and the voices are in English. The players\' chat bubbles can also be shown in Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese, Korean, Chinese, Russian, German, French, Portuguese or Spanish, all written in Latin letters.'],
     [`How do you make the chits for ${primary} at home?`, `Tear a page into four slips, write ${SLOTS.map(s => en.roles[s].name).join(', ')} on them with the points, fold them and shuffle. Or print the ready-made chits on this page.`],
@@ -170,7 +168,6 @@ function pageFor(id) {
     : base.rules.fine ? `Catching the ${thiefEn} also earns you their 200 fine, so it's worth taking your time.`
     : base.rules.steal ? `If the ${thiefEn} escapes they also steal 300 from the ${en.roles.king.name}, so even royals want them caught.`
     : base.rules.finalDouble ? `The last round counts double. A comeback is always possible.`
-    : base.rules.announce ? `Once the ${en.roles[base.rules.announce].name} is revealed, it's a 50/50 between the last two. Study them closely.`
     : `A wrong guess swaps your points with the ${thiefEn}'s, so think before you point.`;
   const tips = [
     `As the ${thiefEn}: act exactly like everyone else. Don't over-explain and don't go too quiet.`,
@@ -532,7 +529,7 @@ const INFO = {
 <h2>Visitors in the EEA, UK and Switzerland</h2>
 <p>For visitors from these regions, analytics and advertising cookies are off by default and are used only if you give consent. You may have rights under local law to access, correct or delete personal data, or to object to its use. Email us to make a request; we hold almost nothing that identifies you, and data held by Google can be managed through the links above.</p>
 <h2>Nearby Play</h2>
-<p>Nearby Play is optional and only connects when you host or join a game. To find each other, the phones contact the free PeerJS connection service (peerjs.com), which sees your IP address and a temporary game code. The game then runs directly between the phones; if a direct connection isn't possible, its messages may pass through PeerJS's relay server. The name, gender and character you chose are shown to the other players in that game. CHITPLAY doesn't store any of this.</p>
+<p>Nearby Play is optional and only connects when you host or join a game. To find each other, the phones contact the free PeerJS connection service (peerjs.com), which sees your IP address and a temporary game code. The game then runs directly between the phones; if a direct connection isn't possible, its messages may pass through PeerJS's relay server. The name, gender and character you chose are shown to the other players in that game. Emojis and private messages are chosen from fixed lists, so no free text is sent; a private message passes through the host's phone without being shown there. CHITPLAY doesn't store any of this.</p>
 <h2>Voices</h2>
 <p>The characters' voices use your browser's built-in speech synthesis. Depending on your browser and operating system, text may be processed by the speech service built into it.</p>
 <h2>Children</h2>

@@ -75,14 +75,13 @@ export class Match {
   slotOf(seat) { return this.roles[seat]; }
   roleOf(seat) { return this.country.roles[this.roles[seat]]; }
   get guesser() { return this.seatOf(this.rules.guesser); }
-  get announcer() { return this.rules.announce ? this.seatOf(this.rules.announce) : -1; }
   get thief() { return this.seatOf('thief'); }
   get isFinal() { return this.round >= this.rounds; }
   get multiplier() { return this.rules.finalDouble && this.isFinal ? 2 : 1; }
 
   /** Seats the guesser may still accuse. */
   suspects() {
-    return [0, 1, 2, 3].filter(s => s !== this.guesser && s !== this.announcer && !this.cleared.includes(s));
+    return [0, 1, 2, 3].filter(s => s !== this.guesser && !this.cleared.includes(s));
   }
 
   /** Japan: clear one innocent suspect. */

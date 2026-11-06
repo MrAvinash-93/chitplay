@@ -2,6 +2,9 @@ import { describe, it, expect } from './harness.js';
 import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName } from '../src/world/names.js?v=20261107-cast';
 import { PRESETS, cleanLook, lookOf, portraitSvg, AGES } from '../src/world/character-looks.js?v=20261107-cast';
 import { profile, rankFor, RANKS } from '../src/persistence/profile-store.js?v=20261107-cast';
+import { COUNTRIES } from '../src/world/countries.js?v=20261107-cast';
+import { Match } from '../src/world/match.js?v=20261107-cast';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261107-cast';
 
 describe('Names', () => {
   it('keeps letters and spaces only', () => {
@@ -51,6 +54,38 @@ describe('Characters', () => {
     expect(l.age).toBe('adult');
     expect(l.color).toBe('#123456');
     expect(portraitSvg({ hairColor: '"><img src=x onerror=alert(1)>' }).includes('onerror')).toBe(false);
+  });
+});
+
+describe('No role announcements', () => {
+  it('in every game, nobody but the finder is revealed: three suspects', () => {
+    for (const [id, c] of Object.entries(COUNTRIES)) {
+      expect(c.rules.announce === undefined || c.rules.announce === null).toBe(true);
+      const m = new Match(c, 4, 3);
+      m.startRound();
+      expect(m.suspects().length).toBe(3);
+      expect(!!id).toBe(true);
+    }
+  });
+});
+
+describe('Table talk', () => {
+  it('has lines and emojis, and refuses anything else', () => {
+    expect(TALK_LINE_COUNT >= 20).toBe(true);
+    expect(TALK_EMOJIS.length >= 12).toBe(true);
+    expect(talkLine(0, 'hinglish', { thief: 'Chor' }).includes('Chor')).toBe(true);
+    expect(talkLine(0, 'english', { thief: 'Thief' }).includes('Thief')).toBe(true);
+    expect(talkLine(999, 'english')).toBe(null);
+    expect(talkLine('<b>', 'english')).toBe(null);
+    expect(isTalkEmoji(0)).toBe(true);
+    expect(isTalkEmoji(99)).toBe(false);
+  });
+  it('no line says which role the sender holds', () => {
+    for (let i = 0; i < TALK_LINE_COUNT; i++) {
+      for (const lang of ['english', 'hinglish']) {
+        expect(/\{(king|queen|det)\}|\b(king|queen|raja|rani)\b/i.test(talkLine(i, lang))).toBe(false);
+      }
+    }
   });
 });
 

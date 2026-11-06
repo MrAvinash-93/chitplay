@@ -52,6 +52,8 @@ export const CHAT_LANGUAGES = [
   { id: 'portuguese', label: 'Português' },
   { id: 'spanish', label: 'Español' },
 ];
+const BLUFF_KEYS = new Set(['nervous', 'plead', 'alibi', 'accusedReply']);
+const ROLE_CLAIM = /\{(king|queen|det|guesser)\}/;
 const PACKS = {};
 const EMPTY = { prefixes: [], lines: {} };
 
@@ -136,7 +138,8 @@ export class Dialogue {
   }
 
   pick(pack, key, vars) {
-    const cores = pack.lines[key];
+    // nobody but the finder says who they are, not even as a bluff
+    const cores = BLUFF_KEYS.has(key) ? pack.lines[key]?.filter(c => !ROLE_CLAIM.test(c)) : pack.lines[key];
     if (!cores?.length) return null;
     const prefixes = pack.prefixes || [];
     // least-used cores first, random order within the same use count

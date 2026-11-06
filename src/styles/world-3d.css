@@ -1028,6 +1028,45 @@ html:has(.game--overlay) .player-bubbles, html:has(.game--overlay) .world-captio
 .game__hall strong { color: #ffd27a; margin-right: 6px; }
 .game__danger { min-height: 42px; padding: 8px 12px; border-radius: 10px; background: rgba(170, 40, 30, .18); border: 2px solid #c8553e; color: #ffd7cc; font-weight: 700; cursor: pointer; }
 
+/* ─── Your chit, messages, single phone ──────────────────────── */
+.game__mychit {
+  position: fixed; left: 10px; top: calc(env(safe-area-inset-top, 0px) + 112px); z-index: 20; max-width: 46vw; padding: 6px 10px; border-radius: 4px; cursor: pointer;
+  background: repeating-linear-gradient(180deg, #f6ecd2 0 15px, #c9d2df 15px 16px); border: 1px solid #b08a5a; color: #3a2a18; font: 800 12.5px/1.25 var(--font-body); text-align: left; transform: rotate(-1.2deg);
+}
+.game__talkbtn {
+  position: fixed; left: 10px; top: calc(env(safe-area-inset-top, 0px) + 158px); z-index: 20; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 21px; line-height: 1;
+  background: rgba(15, 8, 4, .78); border: 2px solid #ffd27a;
+}
+.game__mychit[hidden], .game__talkbtn[hidden], .game__talk[hidden], .game__whisper[hidden] { display: none; }
+.game__talk {
+  position: fixed; left: 10px; top: calc(env(safe-area-inset-top, 0px) + 58px); bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); z-index: 30; display: flex; flex-direction: column; gap: 7px;
+  width: min(360px, calc(100vw - 20px)); padding: 12px; border-radius: 14px; background: rgba(20, 10, 5, .96); border: 2px solid rgba(255, 210, 122, .55); color: #fff3d6; font-size: 14px;
+}
+.game__talk-head { display: flex; justify-content: space-between; align-items: center; }
+.game__talk-close { width: 34px; height: 34px; border-radius: 8px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 230, 176, .3); color: #ffe6b0; cursor: pointer; }
+.game__talk-emojis { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; flex: none; }
+.game__talk-emoji { aspect-ratio: 1; min-height: 32px; padding: 0; border: 0; border-radius: 8px; background: rgba(255, 255, 255, .07); font-size: 19px; cursor: pointer; }
+.game__talk-people { display: flex; gap: 5px; flex: none; }
+.game__talk-people .game__seg-btn { min-width: 0; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game__talk .game__netnote { margin: 0; }
+.game__talk-lines { display: flex; flex-direction: column; gap: 5px; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.game__talk-line { flex: none; padding: 9px 11px; border-radius: 10px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 230, 176, .2); color: #fff3d6; text-align: left; font-size: 13.5px; cursor: pointer; }
+.game__whisper {
+  position: fixed; right: 10px; top: calc(env(safe-area-inset-top, 0px) + 112px); z-index: 24; display: flex; flex-direction: column; gap: 3px; width: min(250px, 62vw); padding: 9px 11px; border-radius: 12px;
+  background: #2a1745; border: 2px solid #c9a0ff; color: #f6ecff; font-weight: 700; font-size: 14px; animation: sheetUp .25s ease-out;
+}
+.game__whisper small { color: #d9c2ff; font-weight: 600; font-size: 11.5px; }
+.game__talk-reply { align-self: flex-end; margin-top: 2px; padding: 3px 9px; border-radius: 99px; background: rgba(255, 255, 255, .13); border: 0; color: #fff; font-size: 12px; cursor: pointer; }
+.game__pass {
+  position: fixed; inset: 0; z-index: 19; display: grid; place-items: center; padding: 16px; background: #140b07;
+}
+.game__pass-card { display: flex; flex-direction: column; gap: 10px; width: min(400px, 100%); text-align: center; }
+.game__pass-icon { font-size: 54px; line-height: 1; animation: tossNudge 1.2s ease-in-out infinite; }
+.game__pass .game__choice { text-align: center; }
+.game--overlay .game__talk, .game--overlay .game__whisper { visibility: hidden; }
+/* speech bubbles live above the game's layer: keep them off the message panel and the hand-over screen */
+html:has(.game__talk:not([hidden])) .player-bubbles, html:has(.game__pass) .player-bubbles, html:has(.game__pass) .world-caption { visibility: hidden; }
+
 /* ─── The toss, the forfeit, the QR scanner ───────────────────── */
 .game__toss {
   display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 230px; padding: 12px 22px; border-radius: 14px;
