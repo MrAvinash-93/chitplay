@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChitPlay Test Suite</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0a0612;
+      color: #f5f0ff;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { color: #f0c040; }
+    h2 { color: #b8a8d9; font-size: 1.1rem; margin-top: 24px; }
+    .test {
+      padding: 6px 10px;
+      margin: 4px 0;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .test--pass { background: rgba(67,160,71,0.12); color: #81c784; }
+    .test--fail { background: rgba(229,57,53,0.15); color: #ef9a9a; }
+    .test-summary {
+      padding: 12px;
+      background: rgba(212,160,23,0.15);
+      border-radius: 8px;
+      font-weight: bold;
+      color: #f0c040;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+    }
+    .test-suite { margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <h1>ChitPlay Test Suite</h1>
+  <div id="test-results"></div>
+
+  <script type="module">
+    import './role-assignment.test.js';
+    import './scoring.test.js';
+    import './state-machine.test.js';
+    import './persistence.test.js?v=20261014-profile-v4';
+    import { runReport } from './harness.js';
+
+    // Give dynamic imports a tick to register
+    setTimeout(runReport, 100);
+  </script>
+</body>
+</html>

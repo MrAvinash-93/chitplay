@@ -1,0 +1,979 @@
+/* ─── 3D bachpan room backdrop ─────────────────────────────────── */
+.world3d {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: block;
+  z-index: 0;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.world3d[hidden] { display: none; }
+
+html.has-world body { background: #140b07; }
+html.has-world #app { z-index: 1; }
+
+/* Turn the flat 2D backdrop into a soft scrim so the room shows through */
+html.has-world #app::before {
+  background:
+    radial-gradient(ellipse 75% 55% at 50% 48%, rgba(14,7,4,.18), rgba(10,5,3,.62) 78%, rgba(6,3,2,.85) 100%),
+    linear-gradient(180deg, rgba(10,5,3,.45) 0%, transparent 22%, transparent 70%, rgba(10,5,3,.6) 100%);
+  background-size: auto;
+}
+html.has-world #app::after { opacity: .1; }
+
+/* Text sitting straight on the scene gets a little lift */
+html.has-world .home__title,
+html.has-world .home__tagline,
+html.has-world .screen__heading,
+html.has-world .role-reveal__instruction,
+html.has-world .role-handoff__body p,
+html.has-world .detective-handoff__body p {
+  text-shadow: 0 2px 0 rgba(0,0,0,.55), 0 0 18px rgba(0,0,0,.65);
+}
+
+.home__nostalgia {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 12px;
+  border: 2px dashed rgba(244, 214, 157, .55);
+  border-radius: 999px;
+  color: #f4d69d;
+  background: rgba(20, 10, 5, .55);
+  font-size: var(--fs-xs);
+  letter-spacing: .06em;
+  transform: rotate(-1.5deg);
+}
+
+/* "Light chali gayi" caption */
+.world-caption {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  left: 50%;
+  z-index: 40;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: rgba(10, 6, 3, .78);
+  color: #ffe6b0;
+  font: 700 13px/1.2 var(--font-mono);
+  letter-spacing: .05em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -8px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.world-caption--show { opacity: 1; transform: translate(-50%, 0); }
+html:not(.has-world) .world-caption { display: none; }
+
+/* ─── 3D Bachpan Mode ──────────────────────────────────────────── */
+.home__bachpan {
+  background: linear-gradient(180deg, #ff9a3d, #e0572a);
+  border-color: #ffd27a;
+  color: #fff8e6;
+  text-shadow: 0 2px 0 rgba(90, 30, 0, .45);
+  box-shadow: 0 4px 0 #8a2f12, 0 0 24px rgba(255, 140, 60, .45);
+  animation: bachpanGlow 2.4s ease-in-out infinite;
+}
+@keyframes bachpanGlow { 50% { box-shadow: 0 4px 0 #8a2f12, 0 0 36px rgba(255, 170, 80, .7); } }
+
+/* the room is the game here, so keep the scrim very light */
+html.has-world #app::before {
+  background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 60%, rgba(8,4,2,.55) 100%);
+}
+html .vhs__hud { display: none !important; }
+
+.bachpan__sheet--start {
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+  width: min(520px, calc(100vw - 24px));
+}
+.bachpan__flags {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+  gap: 6px;
+}
+.bachpan__flag--home { position: relative; }
+.bachpan__flag--home::after {
+  content: '📍';
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  font-size: 12px;
+}
+.bachpan__where {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #f4e3c0;
+  font-size: 13px;
+}
+.bachpan__link {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 210, 122, .6);
+  color: #ffd27a;
+  background: transparent;
+  font-size: 12px;
+}
+.bachpan__top-right { display: flex; gap: 6px; pointer-events: auto; }
+.bachpan__toast {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 168px);
+  z-index: 23;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(40, 18, 60, .92);
+  border: 2px solid #c9a0ff;
+  color: #f6ecff;
+  font-weight: 700;
+  text-align: center;
+  transform: translate(-50%, -8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.bachpan__toast--show { opacity: 1; transform: translate(-50%, 0); }
+.bachpan__cheat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #5a2a8a, #3a1660);
+  border: 2px dashed #c9a0ff;
+  color: #f6ecff;
+  animation: cheatWobble 2.2s ease-in-out infinite;
+}
+.bachpan__cheat strong { font-size: 15px; }
+.bachpan__cheat span { font-size: 11px; opacity: .8; }
+@keyframes cheatWobble { 50% { transform: rotate(-2deg) translateY(-2px); } }
+.bachpan__rounds { flex-wrap: wrap; }
+/* keep the "who is the thief?" prompt clear of the suspect chips + cheat button */
+.bachpan:has(.bachpan__sheet--chips) .bachpan__prompt { bottom: calc(env(safe-area-inset-bottom, 0px) + 168px); }
+@media (max-width: 480px) {
+  .bachpan:has(.bachpan__sheet--chips) .bachpan__prompt { bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); }
+}
+.bachpan__flag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .06);
+  border: 2px solid transparent;
+  color: #f4e3c0;
+  font-size: 11px;
+  line-height: 1.15;
+}
+.bachpan__flag-img { width: 36px; height: 24px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,.5); object-fit: contain; }
+.bachpan__flag-inline { display: inline-block; width: 24px; height: 16px; margin-right: 8px; vertical-align: -2px; border-radius: 2px; object-fit: contain; }
+.bachpan__round { display: inline-flex; align-items: center; }
+html.has-world .world-caption { top: calc(env(safe-area-inset-top, 0px) + 122px); }
+.bachpan__flag--on { border-color: #ffd27a; background: rgba(255, 210, 122, .18); color: #fff; }
+.bachpan__game { color: #fff3d6; font-size: 18px; margin-top: 4px; }
+.bachpan__roles { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.bachpan__role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  border: 2px solid var(--chip, #ffd27a);
+  color: #fff3d6;
+  font-weight: 700;
+  font-size: 13px;
+}
+.bachpan__role small { opacity: .7; font-weight: 400; font: 11px var(--font-mono); }
+.bachpan__role em { font-style: normal; font-weight: 400; font-size: 11px; opacity: .65; margin-left: -2px; }
+.bachpan__role em::before { content: '('; }
+.bachpan__role em::after { content: ')'; }
+.bachpan__rounds { display: flex; align-items: center; justify-content: center; gap: 8px; color: #f4e3c0; }
+.bachpan__pill {
+  min-width: 40px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  border: 2px solid rgba(255, 230, 176, .25);
+  color: #fff3d6;
+  font: 700 14px var(--font-mono);
+}
+.bachpan__pill--on { border-color: #ffd27a; background: rgba(255, 210, 122, .22); }
+.bachpan__modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bachpan__gain--neg { color: #ff7d7d; }
+.bachpan__chit--open strong { color: var(--role, #3a2a18); }
+@media (max-width: 420px) {
+  .bachpan__modes { grid-template-columns: 1fr; }
+  .bachpan__flag { font-size: 10px; }
+}
+
+.bachpan {
+  position: relative;
+  max-width: none;
+  padding: 0;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.bachpan__top {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: 12px;
+  right: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.bachpan__exit {
+  pointer-events: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(15, 8, 4, .7);
+  color: #ffe6b0;
+  font-size: 18px;
+  border: 2px solid rgba(255, 230, 176, .35);
+}
+.bachpan__round {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(15, 8, 4, .72);
+  color: #ffe6b0;
+  font: 700 14px/1.2 var(--font-mono);
+  letter-spacing: .06em;
+}
+.bachpan__scores {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 58px);
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 24px);
+  pointer-events: none;
+}
+.bachpan__score {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 68px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgba(15, 8, 4, .72);
+  border-bottom: 3px solid var(--chip, #ffd27a);
+  color: #fff3d6;
+}
+.bachpan__score--me { box-shadow: 0 0 0 2px #ffd27a; }
+.bachpan__score-name { font-size: 11px; opacity: .85; white-space: nowrap; }
+.bachpan__score-pts { font: 700 15px/1.2 var(--font-mono); }
+.bachpan__gain {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  color: #7dff9a;
+  font: 700 14px var(--font-mono);
+  text-shadow: 0 2px 0 rgba(0,0,0,.6);
+  animation: gainPop 2.2s ease-out forwards;
+}
+@keyframes gainPop {
+  0% { transform: translate(-50%, -6px) scale(.6); opacity: 0; }
+  15% { transform: translate(-50%, 4px) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, 22px) scale(1); opacity: 0; }
+}
+
+.bachpan__prompt {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+  z-index: 21;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(20, 30, 70, .88);
+  border: 2px solid #8fb4ff;
+  color: #eaf1ff;
+  font-weight: 700;
+  text-align: center;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.bachpan__prompt--show { opacity: 1; animation: promptPulse 1.4s ease-in-out infinite; }
+@keyframes promptPulse { 50% { box-shadow: 0 0 22px rgba(143, 180, 255, .6); } }
+
+.bachpan__sheet {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  z-index: 22;
+  display: none;
+  width: min(420px, calc(100vw - 32px));
+  transform: translateX(-50%);
+}
+.bachpan__sheet--show { display: flex; flex-direction: column; gap: 10px; animation: sheetUp .3s ease-out; }
+.bachpan__sheet--start {
+  top: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(20, 10, 5, .86);
+  border: 2px solid rgba(255, 210, 122, .5);
+  text-align: center;
+}
+.bachpan__sheet--chips { flex-direction: row; justify-content: center; flex-wrap: wrap; }
+@keyframes sheetUp { from { opacity: 0; margin-bottom: -20px; } }
+
+.bachpan__title { color: #ffd27a; font-size: 26px; }
+.bachpan__sub { color: #f4e3c0; opacity: .85; margin-bottom: 4px; }
+.bachpan__choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .08);
+  border: 2px solid rgba(255, 230, 176, .3);
+  color: #fff3d6;
+  text-align: left;
+}
+.bachpan__choice strong { font-size: 18px; }
+.bachpan__choice span { font-size: 13px; opacity: .8; }
+.bachpan__choice--primary {
+  background: linear-gradient(180deg, #ff9a3d, #e0572a);
+  border-color: #ffd27a;
+}
+.bachpan__choice:active { transform: translateY(2px); }
+
+.bachpan__chit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 15px, rgba(70,110,190,.35) 15px 16px),
+    #f3ead2;
+  color: #3a2a18;
+  box-shadow: 0 6px 0 #8a6a3a, 0 12px 24px rgba(0,0,0,.5);
+  transform: rotate(-1.5deg);
+  animation: chitWiggle 1.6s ease-in-out infinite;
+}
+.bachpan__chit strong { font-size: 20px; }
+.bachpan__chit em { font-size: 12px; opacity: .7; }
+.bachpan__chit-emoji { font-size: 40px; line-height: 1; }
+.bachpan__chit--open { animation: chitOpen .45s ease-out; transform: rotate(0); }
+.bachpan__chit--king strong { color: #9a6a09; }
+.bachpan__chit--queen strong { color: #9f3269; }
+.bachpan__chit--detective strong { color: #23617a; }
+.bachpan__chit--thief strong { color: #9b2435; }
+@keyframes chitWiggle { 50% { transform: rotate(1.5deg) translateY(-3px); } }
+@keyframes chitOpen { from { transform: scaleY(.2); } to { transform: scaleY(1); } }
+
+.bachpan__suspect {
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(15, 8, 4, .82);
+  border: 3px solid var(--chip, #ffd27a);
+  color: #fff3d6;
+  font-weight: 700;
+  font-size: 16px;
+}
+.bachpan__suspect:active { transform: scale(.96); }
+
+/* Speech bubbles projected over the kids */
+.kid-bubbles { position: fixed; inset: 0; z-index: 15; pointer-events: none; overflow: hidden; }
+.kid-bubble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: min(240px, 60vw);
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #fffdf4;
+  color: #2a1a0c;
+  font: 700 14px/1.3 var(--font-body);
+  box-shadow: 0 3px 0 rgba(0,0,0,.25), 0 6px 14px rgba(0,0,0,.35);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .18s ease;
+  white-space: normal;
+}
+.kid-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  border: 10px solid transparent;
+  border-top-color: #fffdf4;
+  border-bottom: 0;
+  transform: translateX(-50%);
+}
+.kid-bubble--show { opacity: 1; }
+.kid-bubble--0 { border: 2px solid #d4a017; }
+.kid-bubble--1 { border: 2px solid #e91e63; }
+.kid-bubble--2 { border: 2px solid #2196f3; }
+.kid-bubble--3 { border: 2px solid #43a047; }
+html:not(.story-mode) .kid-bubbles { display: none; }
+
+@media (max-width: 480px) {
+  .bachpan__score { min-width: 0; flex: 1; padding: 4px 6px; }
+  .kid-bubble { font-size: 12.5px; padding: 6px 10px; }
+}
+
+/* ─── VHS camcorder overlay ────────────────────────────────────── */
+.vhs {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  overflow: hidden;
+  display: none;
+}
+html.has-vhs .vhs { display: block; }
+
+.vhs__tint {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 85% 75% at 50% 50%, transparent 55%, rgba(30, 10, 0, .5) 100%),
+    rgba(255, 140, 60, .035);
+}
+
+.vhs__grain {
+  position: absolute;
+  inset: -50%;
+  opacity: .085;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: vhsGrain .6s steps(5) infinite;
+}
+
+.vhs__scan {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.13) 0 1px, transparent 1px 3px);
+}
+
+.vhs__track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12%;
+  height: 10%;
+  opacity: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg, transparent, rgba(255,255,255,.12) 40%, rgba(255,255,255,.2) 50%, transparent);
+  filter: blur(.6px);
+}
+.vhs__track--run { animation: vhsTrack .55s ease-in 1; }
+
+.vhs__hud {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  left: calc(env(safe-area-inset-left, 0px) + 16px);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  color: #f7f7f2;
+  font: 700 13px/1.25 var(--font-mono);
+  letter-spacing: .1em;
+  text-shadow: 2px 2px 0 rgba(0,0,0,.65), 0 0 6px rgba(255,255,255,.45);
+  opacity: .85;
+}
+html[data-phase="HOME"] .vhs__hud,
+html[data-phase="GAME_OVER"] .vhs__hud { display: flex; }
+@media (min-width: 900px) {
+  .vhs__hud { display: flex; }
+}
+
+.vhs__rec { display: flex; align-items: center; gap: 6px; }
+.vhs__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff2a2a;
+  box-shadow: 0 0 8px #ff2a2a;
+  animation: vhsBlink 1.2s steps(1) infinite;
+}
+
+@keyframes vhsGrain {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-6%, 4%); }
+  40%  { transform: translate(5%, -7%); }
+  60%  { transform: translate(-3%, -4%); }
+  80%  { transform: translate(7%, 6%); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes vhsBlink { 50% { opacity: 0; } }
+@keyframes vhsTrack {
+  0%   { top: -12%; opacity: .9; }
+  100% { top: 105%; opacity: .4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vhs__grain, .vhs__dot, .vhs__track--run { animation: none; }
+}
+
+/* ─── Production polish ────────────────────────────────────────── */
+html, body { overscroll-behavior: none; }          /* no accidental pull-to-refresh */
+.bachpan, .kid-bubbles, .bachpan__top { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.bachpan__exit, .bachpan__lang, .bachpan__choice, .bachpan__suspect, .bachpan__cheat, .bachpan__flag, .bachpan__pill, .bachpan__seg-btn {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .08s ease, filter .12s ease;
+}
+.bachpan__choice:active, .bachpan__suspect:active, .bachpan__flag:active, .bachpan__pill:active { transform: scale(.97); filter: brightness(1.1); }
+.bachpan button:focus-visible, .bachpan a:focus-visible, .bachpan summary:focus-visible { outline: 3px solid #ffd27a; outline-offset: 2px; }
+.bachpan__aka { color: #f4e3c0; opacity: .75; font-size: 12px; text-align: center; }
+.bachpan__howto { margin-left: 4px; color: #ffd27a; font-weight: 700; white-space: nowrap; }
+.bachpan__about { color: #f4e3c0; font-size: 13px; }
+.bachpan__about summary { cursor: pointer; text-align: center; opacity: .8; }
+.bachpan__legal { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; margin-top: 6px; font-size: 12px; }
+.bachpan__legal a { color: #f4e3c0; opacity: .8; padding: 4px 2px; }
+.bachpan__about .seo-intro { padding: 8px 4px 0; }
+
+/* the static, crawlable intro (shown as-is without JS, moved into the start sheet with JS) */
+.seo-intro { max-width: 760px; margin: 0 auto; padding: 24px 16px; color: #f4e3c0; position: relative; z-index: 1; }
+.seo-intro h1 { font-size: 20px; color: #ffd27a; margin-bottom: 6px; }
+.seo-intro h2 { font-size: 15px; margin: 12px 0 4px; }
+.seo-intro ul { list-style: disc; padding-left: 18px; }
+.seo-intro li { margin: 3px 0; }
+.seo-intro a { color: #ffd27a; }
+.bachpan__about .seo-intro h1 { font-size: 16px; }
+
+/* ─── Language switch + voice hint ─────────────────────────────── */
+.bachpan__lang {
+  pointer-events: auto;
+  height: 40px;
+  max-width: 132px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: rgba(15, 8, 4, .7);
+  border: 2px solid rgba(255, 230, 176, .35);
+  color: #ffe6b0;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bachpan__lang[hidden] { display: none; }
+.bachpan__seg {
+  display: inline-flex;
+  align-self: center;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 230, 176, .25);
+}
+.bachpan__seg-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: #f4e3c0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.bachpan__seg-btn--on { background: #ffd27a; color: #2a1606; }
+.bachpan__voice { color: #f4e3c0; opacity: .7; font-size: 11px; text-align: center; overflow-wrap: anywhere; }
+.bachpan__voice:empty { display: none; }
+
+/* ─── Responsive: every screen, every orientation ─────────────── */
+.bachpan__top { gap: 8px; }
+.bachpan__round {
+  min-width: 0;
+  max-width: calc(100vw - 220px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bachpan__score { min-width: 0; }
+.bachpan__score-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.world-caption { max-width: calc(100vw - 32px); white-space: normal; text-align: center; }
+.kid-bubble { font-size: clamp(12px, 0.9vw + 8px, 15px); max-width: min(240px, 46vw); }
+.bachpan__sheet--start { padding: clamp(12px, 3vw, 22px); gap: clamp(6px, 1.4vh, 12px); }
+.bachpan__title { font-size: clamp(20px, 4vw, 28px); }
+.bachpan__sub { font-size: clamp(12px, 1.2vw + 8px, 15px); }
+.bachpan__sheet--chips { gap: 8px; }
+
+/* phones */
+@media (max-width: 480px) {
+  .bachpan__top { left: 8px; right: 8px; }
+  .bachpan__exit, .bachpan__lang { height: 36px; }
+  .bachpan__exit { width: 36px; font-size: 16px; }
+  .bachpan__lang { max-width: 92px; padding: 0 8px; font-size: 12px; }
+  .bachpan__round { max-width: calc(100vw - 196px); font-size: 12px; padding: 5px 10px; }
+  .bachpan__scores { top: calc(env(safe-area-inset-top, 0px) + 52px); gap: 4px; width: calc(100vw - 16px); }
+  .bachpan__score-name { font-size: 10px; }
+  .bachpan__score-pts { font-size: 13px; }
+  .bachpan__suspect { padding: 10px 14px; font-size: 15px; }
+  .bachpan__cheat { padding: 6px 10px; }
+  .bachpan__toast { top: calc(env(safe-area-inset-top, 0px) + 110px); font-size: 13px; }
+  html.has-world .world-caption { top: calc(env(safe-area-inset-top, 0px) + 104px); font-size: 12px; }
+  .bachpan__chit strong { font-size: 18px; }
+  .bachpan__seg-btn { padding: 5px 10px; font-size: 12px; }
+}
+
+/* tiny phones (iPhone SE 1st gen, small Androids) */
+@media (max-width: 360px) {
+  .bachpan__flags { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 4px; }
+  .bachpan__flag { font-size: 9px; padding: 4px 1px; }
+  .bachpan__flag-img { width: 30px; height: 20px; }
+  .bachpan__role { font-size: 11px; padding: 3px 8px; }
+  .bachpan__choice strong { font-size: 16px; }
+  .bachpan__lang { max-width: 72px; }
+  .bachpan__round { max-width: calc(100vw - 176px); }
+}
+
+/* short landscape phones: everything gets tighter vertically */
+@media (max-height: 520px) and (orientation: landscape) {
+  .bachpan__top { top: calc(env(safe-area-inset-top, 0px) + 6px); }
+  .bachpan__exit, .bachpan__lang { height: 32px; }
+  .bachpan__exit { width: 32px; font-size: 15px; }
+  .bachpan__round { font-size: 12px; padding: 4px 10px; }
+  .bachpan__scores { top: calc(env(safe-area-inset-top, 0px) + 44px); }
+  .bachpan__score { padding: 2px 8px; }
+  .bachpan__score-name { font-size: 10px; }
+  .bachpan__score-pts { font-size: 13px; }
+  .bachpan__sheet--start {
+    top: calc(env(safe-area-inset-top, 0px) + 44px);
+    bottom: 8px;
+    transform: translateX(-50%);
+    max-height: calc(100dvh - 52px);
+    width: min(760px, calc(100vw - 24px));
+  }
+  .bachpan__flags { grid-template-columns: repeat(7, 1fr); }
+  .bachpan__flag { padding: 3px 1px; font-size: 9px; }
+  .bachpan__flag-img { width: 28px; height: 19px; }
+  .bachpan__title { font-size: 18px; }
+  .bachpan__game { font-size: 15px; }
+  .bachpan__sub { font-size: 12px; }
+  .bachpan__choice { padding: 8px 12px; }
+  .bachpan__choice strong { font-size: 15px; }
+  .bachpan__sheet { bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); }
+  .bachpan__prompt { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); font-size: 13px; padding: 6px 12px; }
+  .bachpan:has(.bachpan__sheet--chips) .bachpan__prompt { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
+  .bachpan__sheet--chips { flex-wrap: nowrap; width: auto; max-width: calc(100vw - 24px); }
+  .bachpan__suspect { padding: 6px 12px; font-size: 14px; }
+  .bachpan__cheat { flex-direction: row; gap: 6px; padding: 6px 10px; }
+  .bachpan__chit { padding: 10px; }
+  .bachpan__chit-emoji { font-size: 28px; }
+  .bachpan__toast { top: calc(env(safe-area-inset-top, 0px) + 84px); font-size: 13px; padding: 6px 12px; }
+  html.has-world .world-caption { top: calc(env(safe-area-inset-top, 0px) + 80px); }
+  .kid-bubble { font-size: 12px; padding: 5px 9px; }
+}
+
+/* phones: put Play / Watch right under the title so nobody has to scroll for them */
+
+/* landscape phones: one tight column, Play/Watch side by side, games as a strip */
+@media (max-height: 520px) and (orientation: landscape) {
+  .bachpan__sheet--start { gap: 8px; }
+  .bachpan__sheet--start .bachpan__modes { grid-template-columns: 1fr 1fr; }
+  .bachpan__sheet--start .bachpan__choice span { display: none; }
+  .bachpan__sheet--start .bachpan__roles { gap: 4px; }
+}
+
+/* ─── Game picker (game names only) ────────────────────────────── */
+.bachpan__games {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding: 2px 2px 6px;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+.bachpan__games::-webkit-scrollbar { display: none; }
+.bachpan__gamecard {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 210px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  scroll-snap-align: center;
+  background: rgba(20, 10, 5, .55);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent, #7fae95) 32%, transparent), rgba(255, 255, 255, .03) 70%),
+    rgba(20, 10, 5, .55);
+  border: 2px solid rgba(255, 230, 176, .14);
+  color: #f4e3c0;
+  text-align: left;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.bachpan__gamecard-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .3);
+  background: color-mix(in srgb, var(--accent2, #d4a017) 30%, rgba(0, 0, 0, .35));
+  font-size: 22px;
+  line-height: 1;
+}
+.bachpan__gamecard-text { display: flex; flex-direction: column; min-width: 0; }
+.bachpan__gamecard-text strong {
+  font-size: 14px;
+  line-height: 1.2;
+  padding-right: 10px;              /* room for the ⭐ */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;            /* long names wrap to two lines instead of being cut */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bachpan__gamecard-text small { font-size: 11px; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bachpan__gamecard-star { position: absolute; top: 4px; right: 6px; font-size: 11px; }
+.bachpan__gamecard--on {
+  border-color: #ffd27a;
+  background: rgba(60, 30, 10, .75);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent, #7fae95) 45%, transparent), rgba(255, 138, 61, .18) 80%),
+    rgba(30, 14, 6, .7);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 210, 122, .4), 0 6px 18px rgba(0, 0, 0, .35);
+}
+
+/* ─── Game carousel: swipe to the next game ─────────────────────── */
+.bachpan__carouselwrap { position: relative; margin: 0 -6px; }
+.bachpan__carousel {
+  --cw: min(70vw, 270px);
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 10px calc((100% - var(--cw)) / 2) 6px;
+  outline: none;
+}
+.bachpan__carousel::-webkit-scrollbar { display: none; }
+.bachpan__bigcard {
+  position: relative;
+  flex: 0 0 var(--cw);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 150px;
+  padding: 18px 14px 14px;
+  border-radius: 20px;
+  border: 2px solid rgba(255, 230, 176, .16);
+  background: rgba(30, 14, 6, .7);
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent, #7fae95) 55%, transparent), transparent 70%),
+    linear-gradient(180deg, rgba(40, 20, 8, .55), rgba(20, 10, 5, .85));
+  color: #fff3d6;
+  text-align: center;
+  transform: scale(.88);
+  opacity: .55;
+  transition: transform .25s ease, opacity .25s ease, border-color .25s, box-shadow .25s;
+}
+.bachpan__bigcard--on {
+  transform: scale(1);
+  opacity: 1;
+  border-color: #ffd27a;
+  box-shadow: 0 0 0 1px rgba(255, 210, 122, .35), 0 10px 28px rgba(0, 0, 0, .45);
+}
+.bachpan__bigcard-icon {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  font-size: 34px;
+  line-height: 1;
+  background: rgba(0, 0, 0, .3);
+  background: color-mix(in srgb, var(--accent2, #d4a017) 34%, rgba(0, 0, 0, .35));
+}
+.bachpan__bigcard-name { font-family: var(--font-display, serif); font-size: 21px; line-height: 1.15; color: #ffd27a; }
+.bachpan__bigcard-roles { font-size: 12px; opacity: .8; }
+.bachpan__bigcard-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 210, 122, .2);
+  color: #ffd27a;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bachpan__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  margin-top: -19px;
+  border-radius: 50%;
+  background: rgba(15, 8, 4, .8);
+  border: 1px solid rgba(255, 230, 176, .35);
+  color: #ffe6b0;
+  font-size: 24px;
+  line-height: 1;
+}
+.bachpan__arrow--prev { left: 2px; }
+.bachpan__arrow--next { right: 2px; }
+.bachpan__dots { display: flex; justify-content: center; gap: 5px; margin-top: -2px; }
+.bachpan__dots span { width: 6px; height: 6px; border-radius: 999px; background: rgba(255, 230, 176, .3); transition: width .2s, background .2s; }
+.bachpan__dots span.on { width: 18px; background: #ffd27a; }
+.bachpan__chosen { display: flex; flex-direction: column; gap: 8px; }
+.bachpan__chatlang { display: inline-flex; align-items: center; gap: 8px; color: #f4e3c0; font-size: 14px; }
+.bachpan__select {
+  padding: 6px 30px 6px 12px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 230, 176, .3);
+  background: rgba(15, 8, 4, .7) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23ffd27a'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: #fff3d6;
+  font: 700 13px var(--font-body);
+  appearance: none;
+  -webkit-appearance: none;
+}
+.bachpan__select option { background: #24140c; color: #fff3d6; }
+@media (pointer: coarse) { .bachpan__arrow { width: 32px; height: 32px; margin-top: -16px; font-size: 20px; opacity: .85; } }
+@media (max-height: 520px) and (orientation: landscape) {
+  .bachpan__carousel { --cw: min(40vw, 240px); padding-top: 4px; }
+  .bachpan__bigcard { min-height: 96px; padding: 10px; flex-direction: row; gap: 10px; }
+  .bachpan__bigcard-icon { width: 42px; height: 42px; font-size: 24px; border-radius: 12px; }
+  .bachpan__bigcard-name { font-size: 16px; }
+  .bachpan__bigcard-roles { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .bachpan__carousel { scroll-behavior: auto; } .bachpan__bigcard { transition: none; } }
+
+/* rotate button + "turn your phone" nudge (touch screens only) */
+.bachpan__rotate[hidden] { display: none; }
+.bachpan__rotatehint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(15, 8, 4, .88);
+  border: 1px solid rgba(255, 210, 122, .45);
+  color: #ffe6b0;
+  font-weight: 700;
+  font-size: 14px;
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+}
+.bachpan__rotatehint--show { opacity: 1; transform: translate(-50%, 0); }
+.bachpan__rotatehint-phone { font-size: 24px; display: inline-block; animation: phoneTurn 1.6s ease-in-out infinite; }
+@keyframes phoneTurn { 0%, 20% { transform: rotate(0); } 50%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .bachpan__rotatehint-phone { animation: none; } }
+.bachpan__gamecard:active { transform: scale(.97); }
+.bachpan__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; }
+
+/* big screens: show every game name at once instead of a scrolling strip */
+@media (min-width: 900px) and (min-height: 700px) {
+  .bachpan__sheet--start { width: 640px; }
+  .bachpan__games { flex-wrap: wrap; overflow: visible; mask-image: none; -webkit-mask-image: none; }
+  .bachpan__gamecard { flex: 1 1 calc(33% - 8px); width: auto; padding: 8px 10px; gap: 8px; }
+  .bachpan__gamecard-icon { width: 34px; height: 34px; font-size: 19px; }
+  .bachpan__gamecard-text strong { font-size: 13px; }
+}
+/* landscape phones: slimmer cards in the strip */
+@media (max-height: 520px) and (orientation: landscape) {
+  .bachpan__gamecard { width: 180px; padding: 6px 10px; gap: 8px; }
+  .bachpan__gamecard-icon { width: 30px; height: 30px; font-size: 17px; border-radius: 9px; }
+  .bachpan__gamecard-text strong { font-size: 13px; }
+}
+@media (max-width: 360px) {
+  .bachpan__gamecard { width: 180px; }
+}
+.bachpan__sheet--start .bachpan__title { text-align: center; line-height: 1.15; }
+.bachpan__about p { margin: 6px 0; }
+@media (min-width: 1600px) {
+  .bachpan__score { min-width: 90px; padding: 6px 12px; }
+  .bachpan__score-pts { font-size: 18px; }
+  .kid-bubble { max-width: 300px; }
+}
+
+/* ─── End of match: standings, awards, stats ───────────────────── */
+.bachpan__standings { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 6px; }
+.bachpan__standing {
+  display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, .06);
+  border-left: 4px solid var(--chip, #ffd27a); color: #f6ead2;
+}
+.bachpan__standing--me { background: rgba(255, 210, 122, .16); }
+.bachpan__medal { font-size: 20px; text-align: center; font-weight: 700; color: #d4c2a0; }
+.bachpan__standing strong { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bachpan__pts { font-variant-numeric: tabular-nums; font-weight: 700; color: #ffd27a; }
+.bachpan__awards { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.bachpan__award {
+  display: flex; flex-direction: column; align-items: center; padding: 6px 14px;
+  border-radius: 12px; border: 1px solid rgba(255, 210, 122, .35); background: rgba(0, 0, 0, .2); color: #f4e3c0; font-size: 13px;
+}
+.bachpan__award strong { font-size: 14px; color: #ffd27a; }
+.bachpan__stats { margin: 0; text-align: center; font-size: 13px; color: #d4c2a0; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .bachpan__standings { grid-template-columns: 1fr 1fr; }
+  .bachpan__standing { padding: 5px 10px; }
+}
+/* ─── Nearby Play lobby ────────────────────────────────────────── */
+.bachpan__modes--one { grid-template-columns: 1fr !important; }
+.bachpan__modes--one .bachpan__choice { border-style: dashed; }
+.bachpan__choice:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.4); }
+.bachpan__field { display: grid; gap: 4px; color: #f4e3c0; font-size: 13px; }
+.bachpan__input {
+  width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid rgba(255, 210, 122, .45); background: rgba(0, 0, 0, .35); color: #fff8e6;
+  font: inherit; font-size: 17px; outline: none;
+}
+.bachpan__input:focus { border-color: #ffd27a; box-shadow: 0 0 0 3px rgba(255, 210, 122, .25); }
+.bachpan__input--code { text-align: center; font-size: 30px; letter-spacing: .18em; font-variant-numeric: tabular-nums; font-weight: 700; }
+.bachpan__codelabel { margin: 0; text-align: center; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: #d4c2a0; }
+.bachpan__code {
+  text-align: center; font-size: clamp(38px, 11vw, 56px); font-weight: 800; letter-spacing: .12em;
+  font-variant-numeric: tabular-nums; color: #ffd27a; line-height: 1.1; user-select: all;
+}
+.bachpan__qr { display: flex; justify-content: center; }
+.bachpan__qr:empty { display: none; }
+.bachpan__qr svg { width: min(44vw, 168px); height: auto; border-radius: 10px; }
+.bachpan__lobby { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.bachpan__lobby li {
+  padding: 9px 12px; border-radius: 10px; background: rgba(255, 255, 255, .05); color: #d4c2a0;
+  border: 1px dashed rgba(255, 255, 255, .15); font-size: 15px;
+}
+.bachpan__lobby li.on, .bachpan__lobby .bachpan__lobby-me { color: #fff8e6; border-style: solid; border-color: rgba(255, 210, 122, .35); background: rgba(255, 210, 122, .1); }
+.bachpan__netstatus { margin: 0; min-height: 1.3em; text-align: center; color: #ffd27a; font-size: 14px; }
+.bachpan__netstatus:empty { display: none; }
+.bachpan__netnote { margin: 0; text-align: center; color: #d4c2a0; font-size: 12px; opacity: .85; }
+.bachpan__back {
+  align-self: center; padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .2);
+  background: transparent; color: #f4e3c0; font: inherit; font-size: 14px; cursor: pointer;
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .bachpan__code { font-size: 34px; }
+  .bachpan__lobby { grid-template-columns: 1fr 1fr; }
+}

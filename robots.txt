@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /archive/
+Disallow: /tests/
+Disallow: /tools/
+
+Sitemap: https://www.chitplay.com/sitemap.xml
