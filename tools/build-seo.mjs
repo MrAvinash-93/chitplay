@@ -10,13 +10,20 @@
  * Usage:  node tools/build-seo.mjs [https://www.chitplay.com]
  * (Run it again whenever a game, name or rule changes.)
  */
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = (process.argv[2] || process.env.SITE_URL || 'https://www.chitplay.com').replace(/\/+$/, '');
 const TODAY = new Date().toISOString().slice(0, 10);
+
+// AdSense publisher id: from the command line once, then remembered through ads.txt
+const ADS_TXT = join(ROOT, 'ads.txt');
+const SAVED_PUB = existsSync(ADS_TXT) ? (readFileSync(ADS_TXT, 'utf8').match(/pub-\d{10,20}/)?.[0] || '') : '';
+const PUB = (process.argv[3] || process.env.ADSENSE_PUB || SAVED_PUB).trim();
+const HAS_ADS = /^pub-\d{10,20}$/.test(PUB);
+const ADSENSE_TAG = HAS_ADS ? `\n<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-${PUB}" crossorigin="anonymous"></script>` : '';
 
 const CONTACT_EMAIL = 'chitplaygame@gmail.com';
 const DEVELOPER = 'Mr Avinash';
@@ -37,7 +44,7 @@ const ANALYTICS = `<!-- analytics -->
   gtag('consent', 'default', ${consentArg('denied', CONSENT_REGIONS)});
   gtag('js', new Date());
 </script>
-<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KRTTSTQQ"></script>
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KRTTSTQQ"></script>${ADSENSE_TAG}
 <!-- /analytics -->`;
 
 const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
@@ -469,10 +476,10 @@ for (const [slug, [title, desc, body]] of Object.entries(INFO)) {
   writeFileSync(join(ROOT, slug, 'index.html'), infoPage(slug, title, desc, body));
 }
 
-// ads.txt, once you have an AdSense publisher id:  node tools/build-seo.mjs <site> pub-1234567890123456
-const PUB = (process.argv[3] || process.env.ADSENSE_PUB || '').trim();
-if (/^pub-\d{10,20}$/.test(PUB)) {
-  writeFileSync(join(ROOT, 'ads.txt'), `google.com, ${PUB}, DIRECT, f08c47fec0942fa0\n`);
+// ads.txt + the AdSense tag on every page, once you have a publisher id:
+//   node tools/build-seo.mjs https://www.chitplay.com pub-1234567890123456
+if (HAS_ADS) {
+  writeFileSync(ADS_TXT, `google.com, ${PUB}, DIRECT, f08c47fec0942fa0\n`);
   console.log(`ads.txt written for ${PUB}`);
 }
 
@@ -487,7 +494,7 @@ writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 ${urls.map((u, i) => `  <url><loc>${u}</loc><lastmod>${TODAY}</lastmod><changefreq>monthly</changefreq><priority>${i === 0 ? '1.0' : i === 1 ? '0.9' : '0.8'}</priority></url>`).join('\n')}
 </urlset>
 `);
-writeFileSync(join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /archive/\nDisallow: /tests/\nDisallow: /tools/\n\nSitemap: ${SITE}/sitemap.xml\n`);
+writeFileSync(join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /archive/\nDisallow: /tests/\nDisallow: /tools/\n\n# Google AdSense crawler\nUser-agent: Mediapartners-Google\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
   name: 'ChitPlay 3D – Raja Rani Chor Police & chit games',
   short_name: 'ChitPlay',

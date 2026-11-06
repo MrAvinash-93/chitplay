@@ -4,4 +4,8 @@ Disallow: /archive/
 Disallow: /tests/
 Disallow: /tools/
 
+# Google AdSense crawler
+User-agent: Mediapartners-Google
+Allow: /
+
 Sitemap: https://www.chitplay.com/sitemap.xml
