@@ -24,7 +24,8 @@ const ADS_TXT = join(ROOT, 'ads.txt');
 const SAVED_PUB = existsSync(ADS_TXT) ? (readFileSync(ADS_TXT, 'utf8').match(/pub-\d{10,20}/)?.[0] || '') : '';
 const PUB = (process.argv[3] || process.env.ADSENSE_PUB || SAVED_PUB).trim();
 const HAS_ADS = /^pub-\d{10,20}$/.test(PUB);
-const ADSENSE_TAG = HAS_ADS ? `\n<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-${PUB}" crossorigin="anonymous"></script>` : '';
+// both ways AdSense verifies a site: the meta tag and the ad code itself
+const ADSENSE_TAG = HAS_ADS ? `\n<meta name="google-adsense-account" content="ca-${PUB}">\n<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-${PUB}" crossorigin="anonymous"></script>` : '';
 
 const CONTACT_EMAIL = 'chitplaygame@gmail.com';
 const DEVELOPER = 'Mr Avinash';

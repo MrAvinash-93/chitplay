@@ -8,13 +8,13 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261107-2046';
+import { settingsStore } from '../persistence/settings-store.js?v=20261107-2116';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261107-2046';
-import { lookOf, lookKey } from './character-looks.js?v=20261107-2046';
-import { buildRoomDetails } from './room-details.js?v=20261107-2046';
-import { COUNTRIES } from './countries.js?v=20261107-2046';
-import * as Themes from './themes.js?v=20261107-2046';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261107-2116';
+import { lookOf, lookKey } from './character-looks.js?v=20261107-2116';
+import { buildRoomDetails } from './room-details.js?v=20261107-2116';
+import { COUNTRIES } from './countries.js?v=20261107-2116';
+import * as Themes from './themes.js?v=20261107-2116';
 
 const TAU = Math.PI * 2;
 
