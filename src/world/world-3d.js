@@ -8,13 +8,13 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261107-cast';
+import { settingsStore } from '../persistence/settings-store.js?v=20261107-1752';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261107-cast';
-import { lookOf, lookKey } from './character-looks.js?v=20261107-cast';
-import { buildRoomDetails } from './room-details.js?v=20261107-cast';
-import { COUNTRIES } from './countries.js?v=20261107-cast';
-import * as Themes from './themes.js?v=20261107-cast';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261107-1752';
+import { lookOf, lookKey } from './character-looks.js?v=20261107-1752';
+import { buildRoomDetails } from './room-details.js?v=20261107-1752';
+import { COUNTRIES } from './countries.js?v=20261107-1752';
+import * as Themes from './themes.js?v=20261107-1752';
 
 const TAU = Math.PI * 2;
 
@@ -178,12 +178,16 @@ function createWorld() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
 
-  /* Graphics levels. "ultra" draws at up to 3840 × 2160 on a screen that has those pixels. */
+  /*
+   * Graphics levels. "low" (shown as Light) is the default: it is what keeps the game smooth on
+   * any phone. "ultra" draws at up to 3840 × 2160 on a screen that has those pixels.
+   * shadowEvery / tvEvery: draw the shadows and the TV's static only on every Nth frame.
+   */
   const QUALITY = [
-    { name: 'low', maxHeight: 720, dpr: 1, shadow: 1024, texture: 2, dust: false, frameMs: 1000 / 30 },
-    { name: 'medium', maxHeight: 1080, dpr: 1.5, shadow: 1024, texture: 2, dust: true, frameMs: 1000 / 45 },
-    { name: 'high', maxHeight: 1440, dpr: 2, shadow: 2048, texture: 3, dust: true, frameMs: 1000 / 60 },
-    { name: 'ultra', maxHeight: 2160, dpr: 3, shadow: 4096, texture: 4, dust: true, frameMs: 1000 / 60 },
+    { name: 'low', maxHeight: 720, dpr: 1, shadow: 768, texture: 1, dust: false, frameMs: 1000 / 30, shadowEvery: 3, tvEvery: 8, tvLight: false },
+    { name: 'medium', maxHeight: 1080, dpr: 1.5, shadow: 1024, texture: 2, dust: true, frameMs: 1000 / 45, shadowEvery: 2, tvEvery: 4, tvLight: true },
+    { name: 'high', maxHeight: 1440, dpr: 2, shadow: 2048, texture: 3, dust: true, frameMs: 1000 / 60, shadowEvery: 1, tvEvery: 2, tvLight: true },
+    { name: 'ultra', maxHeight: 2160, dpr: 3, shadow: 4096, texture: 4, dust: true, frameMs: 1000 / 60, shadowEvery: 1, tvEvery: 2, tvLight: true },
   ];
   const levelNamed = (name) => QUALITY.findIndex(q => q.name === name);
   const coarse = window.matchMedia?.('(pointer: coarse)').matches;
@@ -196,11 +200,11 @@ function createWorld() {
     return physicalHeight >= 1800 ? levelNamed('ultra') : levelNamed('high');
   }
   // ?quality=ultra (or the choice in the profile) fixes the level; "auto" steps down when frames run slow
-  let graphicsChoice = new URLSearchParams(location.search).get('quality') || settingsStore.get('graphics') || 'auto';
+  let graphicsChoice = new URLSearchParams(location.search).get('quality') || settingsStore.get('graphics') || 'low';
   if (levelNamed(graphicsChoice) < 0) graphicsChoice = 'auto';
   let quality = graphicsChoice === 'auto' ? automaticLevel() : levelNamed(graphicsChoice);
   Themes.setTextureDetail(QUALITY[quality].texture, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
-  setCharacterDetail(QUALITY[quality].texture / 4);
+  setCharacterDetail(Math.max(0.5, QUALITY[quality].texture / 4));
 
   const scene = new THREE.Scene();
   const BG = new THREE.Color('#1a0e09');
@@ -706,12 +710,38 @@ function createWorld() {
     const d = narrow ? 1.35 : 1.0;
     return { pos: [S.x + tDir.x * d, S.y + 0.06, S.z + tDir.z * d], look: [S.x, S.y - 0.05, S.z], orbit: 0, exact: true };
   };
-  // the head high in the frame, the profile panel below it
+  /*
+   * The whole character, centred in whatever part of the screen the panel leaves free, at every
+   * screen size. The camera stays on the character and the picture itself slides over (a view
+   * offset), so this holds whether the panel sits below the character or beside it.
+   */
+  let portraitPanel = null;
+  const viewOffset = { x: 0, y: 0, on: false };
+  const portraitEye = new THREE.Vector3();
   const portraitFraming = (seat) => () => {
-    const H = actors[seat].headWorld(tA);
-    tDir.set(MAT_CENTER.x - H.x, 0, MAT_CENTER.z - H.z).normalize();
-    const d = camera.aspect < 0.8 ? 1.75 : 1.05;
-    return { pos: [H.x + tDir.x * d, H.y + 0.03, H.z + tDir.z * d], look: [H.x, H.y - (camera.aspect < 0.8 ? 0.34 : 0.1), H.z], orbit: 0, exact: true };
+    const W = window.innerWidth || 1, H = window.innerHeight || 1;
+    const r = portraitPanel?.isConnected ? portraitPanel.getBoundingClientRect() : null;
+    let freeW = W, freeH = H, cx = W / 2, cy = H / 2;
+    if (r) {
+      if (r.height > H * 0.8 && r.width < W * 0.8) { freeW = Math.max(120, r.left); cx = freeW / 2; }
+      else { freeH = Math.max(120, r.top); cy = freeH / 2; }
+    }
+    const head = actors[seat].headWorld(tA);
+    const top = head.y + 0.2;
+    // a short gap shows head and shoulders; anything roomier shows the whole seated body
+    const span = freeH / H < 0.55 ? 0.72 : top + 0.04;
+    const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
+    const d = Math.min(3.3, Math.max(span * H / (0.86 * freeH * fovK), 0.95 * H / (0.92 * freeW * fovK)));
+    tDir.set(MAT_CENTER.x - head.x, 0, MAT_CENTER.z - head.z).normalize();
+    const lookY = top - span / 2;
+    const ox = Math.round(W / 2 - cx), oy = Math.round(H / 2 - cy);
+    if (!viewOffset.on || viewOffset.x !== ox || viewOffset.y !== oy) {
+      Object.assign(viewOffset, { x: ox, y: oy, on: true });
+      camera.setViewOffset(W, H, ox, oy, W, H);
+    }
+    const pos = [head.x + tDir.x * d, lookY + 0.14, head.z + tDir.z * d];
+    actors[seat].lookAt(portraitEye.set(...pos));
+    return { pos, look: [head.x, lookY, head.z], orbit: 0, exact: true };
   };
 
   function startGuesserScan(guesser, acc = 'cap') {
@@ -794,7 +824,7 @@ function createWorld() {
     // TV
     tvLight.intensity = (1.2 + Math.random() * 0.4 * motion) * power;
     tvScreenMat.color.setScalar(power);
-    if (power > 0.05 && (tvFrame++ % 2 === 0) && (motion || tvFrame < 3)) updateTv();
+    if (power > 0.05 && (tvFrame++ % QUALITY[quality].tvEvery === 0) && (motion || tvFrame < 3)) updateTv();
 
     // Lattu spin + precession
     topSpin.rotation.y += (reduced ? 3 : 32) * dt;
@@ -879,6 +909,9 @@ function createWorld() {
   function applyQuality() {
     const q = QUALITY[quality];
     dust.visible = q.dust;
+    tvLight.visible = q.tvLight;
+    sun.shadow.autoUpdate = q.shadowEvery === 1;
+    sun.shadow.needsUpdate = true;
     if (sun.shadow.mapSize.x !== q.shadow) {
       sun.shadow.mapSize.set(q.shadow, q.shadow);
       sun.shadow.map?.dispose();
@@ -907,16 +940,22 @@ function createWorld() {
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
     const aspect = W / H;
-    distMul = aspect < 1.25 ? Math.min(1.55, Math.max(1, 1.2 / aspect)) : 1;
+    // upright screens: far enough back that all four players stay in the picture
+    distMul = aspect < 1.25 ? Math.min(2.1, Math.max(1, 1.2 / aspect)) : 1;
     scene.fog.near = 7 * distMul;
     scene.fog.far = 15 * distMul;
   }
 
+  // a big sheet covers the room: nobody will miss the extra frames, and the battery will thank us
+  const CALM_MS = 1000 / 20;
+  let calm = false, frameNo = 0;
   function frame(now) {
     rafId = requestAnimationFrame(frame);
-    if (now - lastRender < QUALITY[quality].frameMs - 2) return;
-    watchPerformance(now - lastRender, now);
+    const q = QUALITY[quality];
+    if (now - lastRender < (calm ? Math.max(CALM_MS, q.frameMs) : q.frameMs) - 2) return;
+    if (!calm) watchPerformance(now - lastRender, now);
     lastRender = now;
+    if (q.shadowEvery > 1 && frameNo++ % q.shadowEvery === 0) sun.shadow.needsUpdate = true;
     const dt = paused ? 0 : Math.min(0.1, (now - last) / 1000);
     last = now;
     time += dt;
@@ -977,6 +1016,57 @@ function createWorld() {
     bubbleLayer.appendChild(b);
     return { el: b, until: 0, typer: 0 };
   });
+  const fxLayer = document.createElement('div');
+  fxLayer.className = 'emoji-fx';
+  fxLayer.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(fxLayer);
+  const fxTransform = (x, y, scale, turn = 0) => `translate(${x.toFixed(0)}px, ${y.toFixed(0)}px) translate(-50%, -50%) scale(${scale}) rotate(${turn}deg)`;
+  /** Where a player's head is on the screen, kept inside it when the camera has moved in close. */
+  function headOnScreen(i) {
+    const W = window.innerWidth, H = window.innerHeight;
+    actors[i].headWorld(proj);
+    proj.y += 0.16;
+    proj.project(camera);
+    if (proj.z > 1) return { x: W / 2, y: H * 0.3 };
+    return {
+      x: Math.max(36, Math.min(W - 36, (proj.x + 1) / 2 * W)),
+      y: Math.max(56, Math.min(H - 56, (1 - proj.y) / 2 * H)),
+    };
+  }
+  function burstEmoji(at, symbol) {
+    for (let n = 0; n < 7; n++) {
+      const bit = document.createElement('span');
+      bit.className = 'emoji-fx__bit';
+      bit.textContent = symbol;
+      fxLayer.appendChild(bit);
+      const angle = (n / 7) * Math.PI * 2 + Math.random() * 0.5;
+      const reach = 44 + Math.random() * 34;
+      bit.animate([
+        { transform: fxTransform(at.x, at.y, 0.5), opacity: 1 },
+        { transform: fxTransform(at.x + Math.cos(angle) * reach, at.y + Math.sin(angle) * reach + 14, 0.9, angle * 60), opacity: 0 },
+      ], { duration: 560, easing: 'cubic-bezier(.15,.7,.4,1)', fill: 'both' }).onfinish = () => bit.remove();
+    }
+  }
+  function flyEmoji(from, to, symbol, delay) {
+    const a = headOnScreen(from), b = headOnScreen(to);
+    const one = document.createElement('span');
+    one.className = 'emoji-fx__one';
+    one.textContent = symbol;
+    fxLayer.appendChild(one);
+    const arc = Math.min(a.y, b.y) - Math.min(110, window.innerHeight * 0.14);
+    one.animate([
+      { transform: fxTransform(a.x, a.y, 0.5, -24), opacity: 0 },
+      { transform: fxTransform(a.x + (b.x - a.x) * 0.12, a.y + (arc - a.y) * 0.3, 1, -14), opacity: 1, offset: 0.14 },
+      { transform: fxTransform((a.x + b.x) / 2, arc, 1.5, 12), opacity: 1, offset: 0.55 },
+      { transform: fxTransform(b.x, b.y, 1.15, 0), opacity: 1 },
+    ], { duration: 640, delay, easing: 'ease-in-out', fill: 'both' }).onfinish = () => {
+      one.remove();
+      burstEmoji(b, symbol);
+      actors[to].emote(symbol, 2);
+      actors[to].mood('worried', 1.4);
+      audioManager.play('chit-unfold');
+    };
+  }
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const proj = new THREE.Vector3();
@@ -1127,7 +1217,7 @@ function createWorld() {
       slowMs = 0;
       warmUntil = performance.now() + 2500;
       Themes.setTextureDetail(QUALITY[quality].texture);
-      setCharacterDetail(QUALITY[quality].texture / 4);
+      setCharacterDetail(Math.max(0.5, QUALITY[quality].texture / 4));
       themeCache.forEach(t => t.dispose());
       themeCache.clear();
       applyQuality();
@@ -1140,7 +1230,21 @@ function createWorld() {
     },
     setLook(i, look) { actors[i]?.setLook(look); },
     lookKeyOf: lookKey,
-    portrait(seat) { portraitShot = seat == null ? null : portraitFraming(seat); },
+    /** Show one seat alone, beside or above the given panel. portrait(null) puts everything back. */
+    portrait(seat, panel = null) {
+      const on = seat != null;
+      if (!on && !portraitShot) return;
+      portraitPanel = panel;
+      portraitShot = on ? portraitFraming(seat) : null;
+      actors.forEach((a, i) => { a.root.visible = !on || i === seat; });
+      if (!on) {
+        actors.forEach(a => a.lookAt(MAT_CENTER));
+        viewOffset.on = false;
+        camera.clearViewOffset();
+      }
+      snapCamera = true;
+    },
+    setCalm(on) { calm = !!on; },
     setPaused(on) { paused = !!on; },
     begin(list) {
       story.active = true;
@@ -1161,6 +1265,7 @@ function createWorld() {
       story.active = false;
       html.classList.remove('story-mode');
       bubbles.forEach(b => { clearInterval(b.typer); b.el.classList.remove('player-bubble--show'); });
+      fxLayer.replaceChildren();
       timeline = [];
       talkShot = null;
       resetActors();
@@ -1228,6 +1333,16 @@ function createWorld() {
     hold(i) { actors[i].holdChit(true); actors[i].setPose('hold'); actors[i].lookAt(MAT_CENTER); },
     pose(i, name) { actors[i]?.setPose(name); },
     emote(i, symbol, sec = 2) { actors[i]?.emote(symbol, sec); },
+    /** An emoji from one player's head to another's (to everyone when `to` is null), seen on every phone. */
+    throwEmoji(from, to, symbol) {
+      if (!actors[from] || !story.active) return;
+      actors[from].emote(symbol, 1.4);
+      const targets = to == null ? actors.map((_, i) => i).filter(i => i !== from) : [to].filter(i => actors[i]);
+      targets.forEach((i, n) => {
+        if (reduced) actors[i].emote(symbol, 2);
+        else flyEmoji(from, i, symbol, n * 90);
+      });
+    },
     mood(i, name, sec = 2.5) { actors[i]?.mood(name, sec); },
     // one player sneaks a look at another's chit
     sneak(i, j) {

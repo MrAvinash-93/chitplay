@@ -11,10 +11,10 @@ const DEFAULTS = Object.freeze({
   hapticsEnabled: true,
   world3d: true,
   chatEnabled: true,
-  graphics: 'auto',
+  graphics: 'low',       // "Light": smooth on every phone; higher levels are one choice away in the profile
   playerName: 'Avin',
   voiceEnabled: false,
-  defaultsVersion: 2,
+  defaultsVersion: 3,
 });
 
 let current = { ...DEFAULTS };
@@ -28,9 +28,13 @@ function load() {
     current = { ...DEFAULTS, ...stored };
     // settings saved under the old defaults move to the new ones once; later choices stick
     if (stored.defaultsVersion !== DEFAULTS.defaultsVersion) {
-      if (/^Player-/.test(current.playerName || '')) current.playerName = DEFAULTS.playerName;
-      if (current.matchRounds === 5) current.matchRounds = DEFAULTS.matchRounds;
-      current.voiceEnabled = DEFAULTS.voiceEnabled;
+      if ((stored.defaultsVersion || 0) < 2) {
+        if (/^Player-/.test(current.playerName || '')) current.playerName = DEFAULTS.playerName;
+        if (current.matchRounds === 5) current.matchRounds = DEFAULTS.matchRounds;
+        current.voiceEnabled = DEFAULTS.voiceEnabled;
+      }
+      // "auto" was the old default, not a choice; someone who picked High or 4K keeps it
+      if (current.graphics === 'auto') current.graphics = DEFAULTS.graphics;
       current.defaultsVersion = DEFAULTS.defaultsVersion;
       save();
     }

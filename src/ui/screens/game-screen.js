@@ -1,21 +1,23 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261107-cast';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261107-cast';
-import { profile, BADGES } from '../../persistence/profile-store.js?v=20261107-cast';
+import { GAME_PHASES } from '../../app/config.js?v=20261107-1752';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261107-1752';
+import { profile, BADGES } from '../../persistence/profile-store.js?v=20261107-1752';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261107-cast';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261107-cast';
-import { Dialogue, loadPack, CHAT_LANGUAGES } from '../../world/dialogue.js?v=20261107-cast';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261107-cast';
-import { voiceBox } from '../../world/voice.js?v=20261107-cast';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken } from '../../net/nearby.js?v=20261107-cast';
-import { cleanName, pickOpponents } from '../../world/names.js?v=20261107-cast';
+import { loadWorld } from '../../world/world-loader.js?v=20261107-1752';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261107-1752';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261107-1752';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261107-1752';
+import { voiceBox } from '../../world/voice.js?v=20261107-1752';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken } from '../../net/nearby.js?v=20261107-1752';
+import { cleanName, pickOpponents } from '../../world/names.js?v=20261107-1752';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg,
-} from '../../world/character-looks.js?v=20261107-cast';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261107-cast';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../../world/table-talk.js?v=20261107-cast';
+} from '../../world/character-looks.js?v=20261107-1752';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261107-1752';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../../world/table-talk.js?v=20261107-1752';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261107-1752';
+import { iconSvg } from '../icons.js?v=20261107-1752';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -28,6 +30,7 @@ const SHIRTS = ['#d4a017', '#e91e63', '#2196f3', '#43a047'];
 const CANCEL = Symbol('cancel');
 const ROUND_OPTIONS = [3, 5, 7, 10, 20];
 const DEFAULT_ROUNDS = 7;
+const LANGUAGE_TAGS = { en: 'en', hinglish: 'hi-Latn', urdu: 'ur-Latn', nepali: 'ne-Latn', bangla: 'bn-Latn', romaji: 'ja-Latn', korean_roman: 'ko-Latn', pinyin: 'zh-Latn', russian_latin: 'ru-Latn', german: 'de', french: 'fr', portuguese: 'pt', spanish: 'es' };
 const TOSS_WAIT_SECONDS = 5;
 const CLOSE_CALL_CHANCE = 0.35;   // an unnoticed peek sometimes still gets an "are you looking at my chit?"
 // a restart starts a new screen; this tells it to go straight into the match
@@ -35,76 +38,6 @@ let pendingStart = null;
 let lastPassTable = null;         // who played on the single phone, for "play again" and restart
 const AWAY_SECONDS = 30;          // a player who doesn't choose in time gets a computer stand-in for that choice
 
-/** Fun forfeits for last place, for real people in a real room: all harmless, any age. */
-const FORFEITS = [
-  'sing one line of your favourite old song', 'do your best impression of a strict teacher', 'tell the most embarrassing thing from your school days',
-  'speak like a news anchor until the next match ends', 'make everyone laugh in 20 seconds', 'do ten sit-ups while saying the alphabet',
-  'walk like a penguin across the room', 'say something nice about each player', 'dance for 15 seconds with no music',
-  'act out your favourite film scene', 'bring everyone a glass of water', 'name five of your old classmates in 10 seconds',
-  'do your best villain laugh', 'clap only with your eyes closed for the next round', 'tell a joke, even a very bad one',
-  'hold your ears and do five squats', 'recite a school poem you still remember', 'tell the story of your first best friend',
-  'talk without using the word "no" for the next five minutes', 'draw a portrait of the winner in 30 seconds', 'copy the winner’s voice for one minute',
-  'say the 7 times table quickly', 'pretend to be a cricket commentator for a minute', 'hum a tune until someone guesses it',
-];
-
-
-const UI = {
-  en: {
-    roundOf: 'Round {n} / {m}', aka: 'Also called', howto: '📖 How to play', resumed: '👋 Welcome back! Carrying on with round {n}', loading: 'Loading the 3D room…', you: 'You', play: '▶ Play', playSub: 'Take your seat at the table',
-    watch: '👀 Just Watch', watchSub: 'Four computer players play on their own', rounds: 'Rounds',
-    chit: 'Your chit has arrived!', chitTap: 'Tap to open it, don’t show anyone 🤫', youAre: 'You are the {role}!', close: 'Tap to close',
-    accuse: '{icon} You are the {role}! Who is the {thief}? Tap a player', second: 'One more chance! Pick another player',
-    cheat: '🤫 Cheat', cheatSub: 'Peek at a chit: 70% nobody notices', peekResult: 'Psst… {name} is the {role} {emoji}. Not the {thief}!',
-    aiPeeked: '🤫 {name} sneaked a look at {other}’s chit!', caught: 'Caught! −{n} 😬', caughtYou: 'Caught! −{n} 😬 You saw nothing. Choose from all {c}',
-    safe: 'Nobody noticed 😏',
-    nightClear: '🌙 Night check: {name} is innocent', nightThief: '🌙 Night check: {name} is the {thief}! 😱',
-    over: 'Match over!', won: '{name} wins! 🏆', youWon: 'You win! 🎉', again: '🔁 Play again', againSub: 'Same game, new match',
-    change: '🎮 Change game', changeSub: 'Swipe to another game',
-    sharpEye: '🕵️ Sharp Eye', sharpEyeSub: '{n} catches', escape: '🦊 Escape Artist', escapeSub: 'got away {n}×',
-    share: '📤 Share', shareSub: 'Challenge a friend', copied: 'Link copied! 📋',
-    tagline: 'Four paper chits. One thief. Just like the old days.',
-    indoorTitle: '🏠 Indoor Games', indoorSub: 'For school, home, or anywhere with four people. ⭐ keeps your games at the front.',
-    pinned: '⭐ Pinned', yourGame: '📍 Your country', pinAdd: 'Pin this game', pinRemove: 'Unpin this game',
-    rankLine: '{icon} {title} · {pts} points{streak}', streak: ' · 🔥 {n}-day streak',
-    tossTitle: '🎲 Toss the chits!', tossSub: 'Or someone else will in {n}s', tossSubGuest: 'First to tap throws them, {n}s left', tossing: '{name} tossed the chits',
-    rejoinBtn: '🔁 Rejoin your game', rejoinSub: 'Back to the game you left · code {code}',
-    nearby: '📶 Nearby Play', nearbySub: 'Friends on their own phones, up to 4 players',
-    invite: '📤 Share invite link', inviteSub: 'WhatsApp, SMS, anywhere', inviteText: 'Join my CHITPLAY game! Code {code}', qrLabel: 'QR code to join this game',
-    reconnecting: '📶 Reconnecting…', reconnectSub: 'Getting you back into the game. Keep this page open.',
-    backNext: 'You’re back! 🎉 Your seat is yours again', rejoined: '{name} is back 🎉', rejoinFail: 'Couldn’t get back into that game 😕',
-    host: '🏠 Host a game', hostSub: '{game} · {n} rounds', join: '🔗 Join a game', joinSub: 'Scan the QR code or enter the 6-digit code',
-    yourName: 'Your name', hostName: 'Host', back: '‹ Back', connecting: 'Connecting…', codeIs: 'Game code',
-    codeHelp: 'Friends scan this, open the invite link, or type the code in 📶 Nearby Play → 🔗 Join a game',
-    waiting: '⏳ Waiting for a friend…', bot: '🤖 Computer player', youHost: '(you, host)',
-    startN: '▶ Start with {n} players', startNeedOne: 'At least one friend has to join', cancel: '✕ Close room',
-    enterCode: '6-digit code', joinBtn: '🔗 Join', joined: '✅ Joined {host}’s game', waitStart: 'Waiting for the host to start…',
-    scanQr: '📷 Scan QR code', scanHint: 'Point the camera at the code on your friend’s phone', scanPhoto: '📷 Take a photo of the QR code',
-    scanNoCode: 'No game code in that picture. Try again, closer and steady.', scanNoCamera: 'The camera didn’t open here. Take a photo of the code instead.', scanCancel: '✕ Stop scanning',
-    hostLeft: 'The host closed the game 👋', lostConn: 'Connection lost 📶', left: '{name} left, a computer player takes over',
-    choosing: '⏳ {name} is choosing…', waitHostAgain: 'Waiting for the host to start the next match…',
-    againNearby: 'Same friends, new match', leave: '🚪 Leave', leaveSub: 'Back to the games', changeNearby: 'Closes this room',
-    nearbyNote: 'Connecting needs internet for a moment; the game itself goes phone to phone.', points: 'points', noGl: '3D isn’t available on this device 😕',
-    voiceOff: 'No voice for this language on this device, bubbles only',
-    pass: '📱 Single Phone', passSub: 'Pass one phone around, 2 to 4 people', passTitle: '📱 Single Phone', passHelp: 'Everyone sees their own chit in secret, then the finder takes the phone. Empty seats play by themselves.',
-    passCount: 'People', passName: 'Player {n}', passStart: '▶ Start', passTo: 'Pass the phone to {name}', passHide: 'Nobody else should look at the screen.', passChit: 'I’m {name}: show my chit', passFind: 'I’m {name}: time to find the {thief}',
-    myChit: 'Your chit: {emoji} {role}', myChitHidden: 'Your chit: tap to see',
-    talk: 'Send a message', talkEmoji: 'Send an emoji', talkEveryone: 'Everyone', talkPrivate: 'Private message', talkPrivateHelp: 'Only {name} sees this. You’re allowed to lie 😏', talkSent: '💌 Sent. Only {name} can see it', talkFrom: '🤫 {name}, only to you', talkReply: '💌 Reply',
-    emojiTo: '{from} {emoji} to {to}',
-    gameLabel: '🎮 Game', connected: '📶 Still connected', connectedSub: 'Room {code}. Friends are still in the room.', backToRoom: '‹ Back to the room', backToRoomSub: 'Nothing has changed', disconnect: '🔌 Disconnect', disconnectSub: 'Leave this room', disconnectHost: 'Closes the room for everyone', gameChanged: '🎮 Now playing: {game}',
-    botPlayed: '🤖 {name} was away: a computer player chose for them',
-    menuTitle: 'Game menu', pause: '⏸ Pause game', resume: '▶ Resume game', restart: '🔁 Restart match', quit: '🚪 Quit game', backToGame: '‹ Back to the game',
-    paused: '⏸ Game paused', pausedHost: '⏸ The host paused the game', pausedSub: 'Everything waits right where it stopped.',
-    localPts: 'Local', nearbyPts: 'Nearby', chatOn: 'Conversation on', chatOff: 'Conversation off',
-    profile: 'Your profile', profileBtn: 'Your profile', gender: 'Gender', male: 'Male', female: 'Female', nameHelp: 'Letters only: no numbers or symbols.',
-    character: 'Choose a character', custom: 'Make your own', age: 'Age', hair: 'Hair', hairColor: 'Hair colour', skin: 'Skin', eyes: 'Eyes', outfit: 'Clothes', color1: 'Main colour', color2: 'Second colour', pants: 'Bottoms', glasses: 'Glasses', facial: 'Facial hair', headwear: 'On the head', bindi: 'Bindi',
-    score: 'Your score', matches: 'Matches', wins: 'Wins', totalPts: 'Points', best: 'Best', nextRank: '{pts} points to {title}', topRank: 'The highest rank there is!',
-    badges: 'Badges', hall: 'Best matches on this device', noHall: 'Finish a match to get on this list.',
-    resetScore: '🗑️ Reset score', resetSure: 'Tap again to erase your points, rank and badges', resetDone: 'Score reset',
-    graphics: 'Graphics', gAuto: 'Auto (recommended)', gLow: 'Low (fastest)', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (for strong devices)',
-    done: '✓ Done', rankUp: '{icon} New rank: {title}!', newBadge: '{icon} Badge: {name}!', gained: '+{n} rank points', hallPlace: '🏅 #{n} in your best matches',
-    forfeit: '🎲 Forfeit for {name}', forfeitLine: 'If you’re in the same room: {name} has to {text}.',
-  },
-};
 // How each kind of line should sound
 const EMOTION = {
   intro: 'excited', introReply: 'happy', deal: 'happy', waiting: 'neutral', banter: 'happy', pick: 'happy', peek: 'whisper',
@@ -116,7 +49,7 @@ const EMOTION = {
   checkThief: 'excited', checkClear: 'neutral', hint: 'sly', alibi: 'neutral', fine: 'happy', penalty: 'sad',
   steal: 'excited', missOnce: 'sad', secondTry: 'angry',
 };
-const fmt = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+const fmt = (s, v) => String(s).replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
 
 /** Share the game (native share sheet on phones, clipboard elsewhere). */
 async function shareGame({ title, text, url }) {
@@ -257,12 +190,12 @@ export function GameScreen({ transition }) {
   let base = start.country;                 // the raw edition
   let pinned = start.pinned;
   const detected = start.detected;
-  const mode = 'en';                        // menus, rules and voices are always English
-  // the players' chat can be read in the player's own language (Latin letters); English by default
-  let chatLang = CHAT_LANGUAGES.some(l => l.id === settingsStore.get('chatLang')) ? settingsStore.get('chatLang') : 'en';
-  const chatPack = () => (chatLang === 'en' ? country.lang : chatLang);
+  const mode = 'en';                        // role names and rules stay in the game's own English text
+  // the whole game can be read in the player's language (Latin letters); English by default
+  let lang = isLanguage(settingsStore.get('chatLang')) ? settingsStore.get('chatLang') : 'en';
+  const chatPack = () => (lang === 'en' ? country.lang : lang);
   let country = localize(base, mode);       // the edition as shown in the current text mode
-  const uiFor = () => UI.en;
+  const uiFor = () => strings();
   let ui = uiFor();
   let players = [];        // { name, gender, look, color, isHuman (this phone), remote (a friend's phone id) }
   let cast = null;         // who sits at the table before the match starts
@@ -317,7 +250,7 @@ export function GameScreen({ transition }) {
     myChitOpen = true;
     paintMyChit();
   }
-  const talkBtn = el('button', { className: 'game__talkbtn', type: 'button', attrs: { 'aria-label': ui.talk, title: ui.talk }, onClick: () => toggleTalk() }, ['💌']);
+  const talkBtn = el('button', { className: 'game__talkbtn', type: 'button', html: iconSvg('chatDots'), onClick: () => toggleTalk() });
   talkBtn.hidden = true;
   const talkPanel = el('div', { className: 'game__talk' });
   talkPanel.hidden = true;
@@ -326,43 +259,85 @@ export function GameScreen({ transition }) {
   const prompt = el('div', { className: 'game__prompt', attrs: { 'aria-live': 'polite' } });
   const toast = el('div', { className: 'game__toast', attrs: { 'aria-live': 'polite' } });
   const sheet = el('div', { className: 'game__sheet' });
-  const iconBtn = (label, text, onClick) => el('button', { className: 'game__exit', type: 'button', attrs: { 'aria-label': label }, onClick }, [text]);
+  const iconBtn = (iconName, onClick, cls = '') => el('button', { className: `game__exit ${cls}`, type: 'button', html: iconSvg(iconName), onClick });
+  const setIcon = (btn, iconName) => { btn.innerHTML = iconSvg(iconName); };
   const overlay = el('div', { className: 'game__overlay', attrs: { role: 'dialog', 'aria-modal': 'true' } });
   overlay.hidden = true;
-  const exitBtn = iconBtn('Game menu', '✕', () => openMenu());
+  const exitBtn = iconBtn('menu', () => openMenu());
   exitBtn.hidden = true;
-  const profileBtn = iconBtn(ui.profileBtn, '👤', () => openProfile());
+  const profileBtn = el('button', { className: 'game__exit game__profilebtn', type: 'button', onClick: () => openProfile() });
+  const paintProfileBtn = () => { profileBtn.innerHTML = portraitSvg(profile.look); };
+  const langBtn = el('button', { className: 'game__exit game__langbtn', type: 'button', onClick: () => openLanguage() });
+  const paintLangBtn = () => {
+    langBtn.innerHTML = iconSvg('globe');
+    langBtn.append(el('span', {}, [LANGUAGES.find(l => l.id === lang)?.short || 'EN']));
+  };
+
+  /* The three on/off switches: in the top bar, and again in the profile's settings */
   const chatOn = () => settingsStore.get('chatEnabled') !== false;
-  const chatBtn = iconBtn('Toggle conversation', chatOn() ? '💬' : '🔕', () => {
-    const next = !chatOn();
+  const voiceOn = () => settingsStore.get('voiceEnabled') !== false;
+  const soundOn = () => !!settingsStore.get('soundEnabled');
+  function setChat(next) {
     settingsStore.set('chatEnabled', next);
-    chatBtn.textContent = next ? '💬' : '🔕';
     showToast(next ? ui.chatOn : ui.chatOff, 1600);
     if (!next) { voiceBox.stop(); world?.story?.clearTalk(); }
-  });
-  chatBtn.title = ui.chatOn;
-  const soundBtn = iconBtn('Toggle sound', settingsStore.get('soundEnabled') ? '🔊' : '🔇', () => {
-    const next = !settingsStore.get('soundEnabled');
+    paintSwitches();
+  }
+  function setSound(next) {
     settingsStore.set('soundEnabled', next);
     audioManager.setEnabled(next);
     if (next) { audioManager.unlock(); sfx.play('select'); }
-    soundBtn.textContent = next ? '🔊' : '🔇';
-  });
-  const voiceOn = () => settingsStore.get('voiceEnabled') !== false;
-  const voiceBtn = iconBtn('Toggle voices', voiceOn() ? '🗣️' : '🤐', () => {
-    const next = !voiceOn();
+    paintSwitches();
+  }
+  function setVoice(next) {
     settingsStore.set('voiceEnabled', next);
     voiceBox.setEnabled(next);
-    voiceBtn.textContent = next ? '🗣️' : '🤐';
-  });
+    paintSwitches();
+  }
+  const chatBtn = iconBtn('chat', () => setChat(!chatOn()));
+  const soundBtn = iconBtn('sound', () => setSound(!soundOn()));
+  const voiceBtn = iconBtn('mic', () => setVoice(!voiceOn()));
+  function paintSwitches() {
+    setIcon(chatBtn, chatOn() ? 'chat' : 'chatOff');
+    setIcon(soundBtn, soundOn() ? 'sound' : 'soundOff');
+    setIcon(voiceBtn, voiceOn() ? 'mic' : 'micOff');
+    [[chatBtn, chatOn()], [soundBtn, soundOn()], [voiceBtn, voiceOn()]].forEach(([b, on]) => {
+      b.setAttribute('aria-pressed', String(on));
+      b.classList.toggle('game__exit--off', !on);
+    });
+  }
   voiceBox.setEnabled(voiceOn());
 
   /* ─── Mobile comfort: rotate to landscape, keep the screen awake, haptics ─── */
   const isTouch = window.matchMedia?.('(pointer: coarse)').matches;
   const isLandscape = () => window.matchMedia('(orientation: landscape)').matches;
-  const rotateBtn = iconBtn('Rotate to landscape', '🔄', () => toggleLandscape());
-  rotateBtn.classList.add('game__rotate');
+  const rotateBtn = iconBtn('rotate', () => toggleLandscape(), 'game__rotate');
   rotateBtn.hidden = !isTouch;
+
+  /* On small screens the switches fold away behind one button, so the top bar never overflows */
+  const toolsBox = el('div', { className: 'game__tools' }, [rotateBtn, chatBtn, voiceBtn, soundBtn]);
+  const toolsBtn = iconBtn('sliders', () => toolsBox.classList.toggle('game__tools--open'), 'game__toolsbtn');
+
+  /** Every label on the always-visible controls, for the first paint and after a language change. */
+  function paintHud() {
+    const label = (b, text) => { b.setAttribute('aria-label', text); b.title = text; };
+    label(exitBtn, ui.menuTitle);
+    label(profileBtn, ui.profile);
+    label(langBtn, ui.language);
+    label(chatBtn, ui.chatLabel);
+    label(soundBtn, ui.soundLabel);
+    label(voiceBtn, ui.voiceLabel);
+    label(rotateBtn, ui.rotateLabel);
+    label(toolsBtn, ui.moreLabel);
+    label(talkBtn, ui.talk);
+    paintLangBtn();
+    paintProfileBtn();
+    paintSwitches();
+    rotateTurnEl.textContent = ui.rotateTurn;
+    rotateGoLabel.textContent = ui.rotateBig;
+    rotateCloseBtn.setAttribute('aria-label', ui.rotateHide);
+    paintMyChit();
+  }
   async function toggleLandscape() {
     haptic(15);
     // window.screen: a local `screen` element below hides the global one in this function
@@ -382,23 +357,25 @@ export function GameScreen({ transition }) {
       if (!isLandscape()) showRotateHint(true);
     }
   }
+  const rotateTurnEl = el('span', {});
   const rotateHint = el('div', { className: 'game__rotatehint', attrs: { 'aria-live': 'polite' } }, [
-    el('span', { className: 'game__rotatehint-phone', attrs: { 'aria-hidden': 'true' } }, ['📱']),
-    el('span', {}, ['Turn your phone sideways. If it stays upright, turn off rotation lock.']),
+    el('span', { className: 'game__rotatehint-phone', attrs: { 'aria-hidden': 'true' }, html: iconSvg('phone') }),
+    rotateTurnEl,
   ]);
   // shown by CSS only on phone-sized touch screens held upright
-  const ROTATE_LABEL = 'Rotate for a bigger view';
+  const rotateGoLabel = el('span', {});
+  const rotateCloseBtn = el('button', {
+    className: 'game__rotatepill-close', type: 'button', html: iconSvg('close'),
+    onClick: () => {
+      rotatePill.hidden = true;
+      try { sessionStorage.setItem('chitplay.rotatePillHidden', '1'); } catch {}
+    },
+  });
   const rotatePill = el('div', { className: 'game__rotatepill' }, [
     el('button', { className: 'game__rotatepill-go', type: 'button', onClick: () => toggleLandscape() }, [
-      el('span', { className: 'game__rotatehint-phone', attrs: { 'aria-hidden': 'true' } }, ['📱']), ROTATE_LABEL,
+      el('span', { className: 'game__rotatehint-phone', attrs: { 'aria-hidden': 'true' }, html: iconSvg('phone') }), rotateGoLabel,
     ]),
-    el('button', {
-      className: 'game__rotatepill-close', type: 'button', attrs: { 'aria-label': 'Hide the rotate option' },
-      onClick: () => {
-        rotatePill.hidden = true;
-        try { sessionStorage.setItem('chitplay.rotatePillHidden', '1'); } catch {}
-      },
-    }, ['✕']),
+    rotateCloseBtn,
   ]);
   try { rotatePill.hidden = sessionStorage.getItem('chitplay.rotatePillHidden') === '1'; } catch {}
   function showRotateHint(on) {
@@ -432,11 +409,35 @@ export function GameScreen({ transition }) {
   }
 
 
+  const topBar = el('div', { className: 'game__top' }, [
+    exitBtn, roundPill, scoreRow,
+    el('div', { className: 'game__top-right' }, [langBtn, toolsBox, toolsBtn, profileBtn]),
+  ]);
+  // the prompt, the chips and the rotate pill stack at the bottom, so they can never overlap
+  const dock = el('div', { className: 'game__dock' }, [prompt, sheet, rotatePill]);
   const screen = el('div', { className: 'screen game', attrs: { 'aria-label': 'CHITPLAY' } }, [
-    el('div', { className: 'game__top' }, [exitBtn, roundPill, el('div', { className: 'game__top-right' }, [rotateBtn, chatBtn, voiceBtn, soundBtn, profileBtn])]),
-    scoreRow, myChitEl, talkBtn, talkPanel, whisperEl, prompt, toast, rotateHint, sheet, rotatePill, overlay,
+    topBar, myChitEl, talkBtn, whisperEl, toast, dock, talkPanel, rotateHint, overlay,
   ]);
   screen.addEventListener('pointerdown', (e) => { if (tapHandler && e.target === screen) tapHandler(e); });
+
+  // whatever sits under the top bar follows its real height, whichever way the phone is held
+  const hudObserver = new ResizeObserver(() => {
+    const zoom = parseFloat(getComputedStyle(screen).zoom) || 1;
+    document.documentElement.style.setProperty('--hud-h', `${Math.ceil(topBar.getBoundingClientRect().bottom / zoom)}px`);
+  });
+  hudObserver.observe(topBar);
+
+  // a tap anywhere else closes the small pop-ups; the tap still does what it was going to do
+  const onOutsideTap = (e) => {
+    if (toolsBox.classList.contains('game__tools--open') && !toolsBox.contains(e.target) && !toolsBtn.contains(e.target)) toolsBox.classList.remove('game__tools--open');
+    if (!talkPanel.hidden && !talkPanel.contains(e.target) && !talkBtn.contains(e.target)) closeTalk();
+  };
+  document.addEventListener('pointerdown', onOutsideTap, true);
+
+  // while a big sheet covers the room there's no need to draw it at full speed
+  const syncCalm = () => world?.story?.setCalm(sheet.classList.contains('game__sheet--start'));
+  const calmObserver = new MutationObserver(syncCalm);
+  calmObserver.observe(sheet, { attributes: true, attributeFilter: ['class'] });
 
   function renderScores(gains = null) {
     clear(scoreRow);
@@ -542,7 +543,7 @@ export function GameScreen({ transition }) {
     await sleep(wait);
   }
   // In a Nearby match every 3D story call is replayed on the friends' phones too
-  const LOCAL_ONLY = new Set(['actorAt', 'country', 'active', 'preview', 'setLook', 'portrait', 'setPaused', 'chitsOnMat', 'sinceCut', 'lookKeyOf', 'quality', 'graphics', 'setGraphics']);
+  const LOCAL_ONLY = new Set(['actorAt', 'country', 'active', 'preview', 'setLook', 'portrait', 'setPaused', 'setCalm', 'chitsOnMat', 'sinceCut', 'lookKeyOf', 'quality', 'graphics', 'setGraphics']);
   let mirror = null;
   let dark = null;   // 'power' or 'night' while the room is dark, so a returning phone matches it
   const S = () => {
@@ -570,202 +571,221 @@ export function GameScreen({ transition }) {
   /* ─── Start sheet: swipe through the games, then play ─── */
   function chooseSetup() {
     return new Promise((resolve) => {
-      // your pinned games first, then your own country's game
-      const order = [...new Set([...profile.pins.filter(id => COUNTRIES[id]), detected.id, ...COUNTRY_ORDER])];
-      setRound('CHITPLAY');
-      clear(sheet);
-      sheet.className = 'game__sheet game__sheet--show game__sheet--start';
+      // a language change rebuilds the sheet in place, on the same game
+      let onKey = null;
+      function build() {
+        if (onKey) document.removeEventListener('keydown', onKey);
+        // your pinned games first, then your own country's game
+        const order = [...new Set([...profile.pins.filter(id => COUNTRIES[id]), detected.id, ...COUNTRY_ORDER])];
+        setRound('CHITPLAY');
+        clear(sheet);
+        sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--home';
 
-      // 1) The game carousel: one big card per game, swipe (or ‹ ›) to the next
-      const cards = new Map();
-      const pinPainters = [];
-      const track = el('div', { className: 'game__carousel', attrs: { role: 'listbox', 'aria-label': 'Choose a game', tabindex: '0' } },
-        order.map((id) => {
-          const g = COUNTRIES[id];
-          const badge = el('span', { className: 'game__bigcard-badge' });
-          const star = el('button', {
-            className: 'game__star', type: 'button',
-            onClick: (e) => {
-              e.stopPropagation();
-              profile.togglePin(id);
-              haptic(10);
-              paintPin();
-            },
-          });
-          const paintPin = () => {
-            const on = profile.isPinned(id);
-            star.textContent = on ? '⭐' : '☆';
-            star.classList.toggle('game__star--on', on);
-            star.setAttribute('aria-label', on ? ui.pinRemove : ui.pinAdd);
-            star.setAttribute('aria-pressed', String(on));
-            badge.textContent = on ? ui.pinned : id === detected.id ? ui.yourGame : '';
-            badge.hidden = !badge.textContent;
-          };
-          pinPainters.push(paintPin);
-          const card = el('div', {
-            className: 'game__bigcard',
-            style: { '--accent': g.theme.wall[1], '--accent2': g.roles.king.color },
-            attrs: { role: 'option', 'aria-label': GAME_NAME_EN[id], 'data-id': id, tabindex: '0' },
-            onClick: () => { if (id !== base.id) centerOn(id, true); },
-          }, [
-            star,
-            badge,
-            el('span', { className: 'game__bigcard-icon', attrs: { 'aria-hidden': 'true' } }, [GAME_ICON[id]]),
-            el('strong', { className: 'game__bigcard-name' }, [GAME_NAME_EN[id]]),
-            el('span', { className: 'game__bigcard-roles' }, [(ROLE_LATIN[id] || []).join(' · ')]),
-          ]);
-          paintPin();
-          cards.set(id, card);
-          return card;
-        }));
-      const arrow = (dir, label) => el('button', {
-        className: `game__arrow game__arrow--${dir < 0 ? 'prev' : 'next'}`, type: 'button',
-        attrs: { 'aria-label': label }, onClick: () => step(dir),
-      }, [dir < 0 ? '‹' : '›']);
-      const dots = el('div', { className: 'game__dots', attrs: { 'aria-hidden': 'true' } }, order.map(id => el('span', { attrs: { 'data-id': id } })));
-      const carousel = el('div', { className: 'game__carouselwrap' }, [arrow(-1, 'Previous game'), track, arrow(1, 'Next game')]);
+        // 1) The game carousel: one big card per game, swipe (or ‹ ›) to the next
+        const cards = new Map();
+        const track = el('div', { className: 'game__carousel', attrs: { role: 'listbox', 'aria-label': ui.chooseGame, tabindex: '0' } },
+          order.map((id) => {
+            const g = COUNTRIES[id];
+            const badge = el('span', { className: 'game__bigcard-badge' });
+            const star = el('button', {
+              className: 'game__star', type: 'button',
+              onClick: (e) => {
+                e.stopPropagation();
+                profile.togglePin(id);
+                haptic(10);
+                paintPin();
+              },
+            });
+            const paintPin = () => {
+              const on = profile.isPinned(id);
+              star.innerHTML = iconSvg(on ? 'starOn' : 'star');
+              star.classList.toggle('game__star--on', on);
+              star.setAttribute('aria-label', on ? ui.pinRemove : ui.pinAdd);
+              star.setAttribute('aria-pressed', String(on));
+              badge.textContent = on ? ui.pinned : id === detected.id ? ui.yourGame : '';
+              badge.hidden = !badge.textContent;
+            };
+            const card = el('div', {
+              className: 'game__bigcard',
+              style: { '--accent': g.theme.wall[1], '--accent2': g.roles.king.color },
+              attrs: { role: 'option', 'aria-label': GAME_NAME_EN[id], 'data-id': id, tabindex: '0' },
+              onClick: () => { if (id !== base.id) centerOn(id, true); },
+            }, [
+              star,
+              badge,
+              el('span', { className: 'game__bigcard-icon', attrs: { 'aria-hidden': 'true' } }, [GAME_ICON[id]]),
+              el('strong', { className: 'game__bigcard-name' }, [GAME_NAME_EN[id]]),
+              el('span', { className: 'game__bigcard-roles' }, [(ROLE_LATIN[id] || []).join(' · ')]),
+            ]);
+            paintPin();
+            cards.set(id, card);
+            return card;
+          }));
+        const arrow = (dir, label) => el('button', {
+          className: `game__arrow game__arrow--${dir < 0 ? 'prev' : 'next'}`, type: 'button',
+          attrs: { 'aria-label': label }, html: iconSvg(dir < 0 ? 'left' : 'right'), onClick: () => step(dir),
+        });
+        const dots = el('div', { className: 'game__dots', attrs: { 'aria-hidden': 'true' } }, order.map(id => el('span', { attrs: { 'data-id': id } })));
+        const carousel = el('div', { className: 'game__carouselwrap' }, [arrow(-1, ui.prevGame), track, arrow(1, ui.nextGame)]);
 
-      // 2) Everything about the chosen game (re-filled on every swipe)
-      const details = el('div', { className: 'game__chosen' });
+        // 2) Everything about the chosen game (re-filled on every swipe)
+        const details = el('div', { className: 'game__chosen' });
 
-      // 3) Start buttons + options (built once)
-      const opt = (label, sub, value, primary) => el('button', {
-        className: `game__choice${primary ? ' game__choice--primary' : ''}`, type: 'button',
-        onClick: () => {
+        // 3) Start buttons + options (built once)
+        const leave = (value) => {
           audioManager.unlock(); sfx.play('select'); haptic(15);
           // the game you choose moves to the front of your Indoor Games, with a star
-          if (value !== 'rejoin') profile.pin(base.id);
+          if (value !== 'rejoin' && value !== 'scan') profile.pin(base.id);
           document.removeEventListener('keydown', onKey);
           sheet.className = 'game__sheet'; onModeChange = null; resolve(value);
-        },
-      }, [el('strong', {}, [label]), el('span', {}, [sub])]);
-      const roundsNow = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS);
-      const rounds = el('div', { className: 'game__rounds' }, [
-        el('span', {}, [ui.rounds]),
-        ...ROUND_OPTIONS.map(n => el('button', {
-          className: `game__pill${n === roundsNow() ? ' game__pill--on' : ''}`, type: 'button', attrs: { 'data-n': String(n) },
-          onClick: () => {
-            settingsStore.set('matchRounds', n);
-            rounds.querySelectorAll('.game__pill').forEach(p => p.classList.toggle('game__pill--on', p.dataset.n === String(n)));
-          },
-        }, [String(n)])),
-      ]);
-      const chatSelect = el('select', {
-        className: 'game__select', attrs: { 'aria-label': 'Chat language' },
-        onChange: (e) => { chatLang = e.target.value; settingsStore.set('chatLang', chatLang); loadPack(chatPack()); },
-      }, CHAT_LANGUAGES.map(l => el('option', { attrs: { value: l.id, ...(l.id === chatLang ? { selected: 'selected' } : {}) } }, [l.label])));
-      const chat = el('label', { className: 'game__chatlang' }, [el('span', {}, ['🗣️ Chat']), chatSelect]);
+        };
+        const bigPlay = (iconName, label, sub, value) => el('button', {
+          className: 'game__choice game__choice--primary game__choice--icon', type: 'button', onClick: () => leave(value),
+        }, [
+          el('span', { className: 'game__choice-ico', html: iconSvg(iconName) }),
+          el('span', { className: 'game__choice-text' }, [el('strong', {}, [label]), el('span', {}, [sub])]),
+        ]);
+        const tile = (iconName, label, sub, value) => el('button', {
+          className: 'game__tile', type: 'button', attrs: { title: sub }, onClick: () => leave(value),
+        }, [el('span', { className: 'game__tile-ico', html: iconSvg(iconName) }), el('span', { className: 'game__tile-label' }, [label])]);
 
-      const rankBtn = el('button', { className: 'game__rankline', type: 'button', onClick: () => openProfile() });
-      rankRefresh = () => {
-        const rank = profile.rank;
-        rankBtn.textContent = fmt(ui.rankLine, {
-          icon: rank.icon, title: rank.title, pts: profile.all.points.toLocaleString('en'),
-          streak: profile.streak > 1 ? fmt(ui.streak, { n: profile.streak }) : '',
-        });
-      };
-      rankRefresh();
-      const ticket = loadRejoin();
-      sheet.append(
-        ...(ticket?.left ? [el('div', { className: 'game__modes game__modes--one' }, [opt(ui.rejoinBtn, fmt(ui.rejoinSub, { code: ticket.code }), 'rejoin', true)])] : []),
-        el('p', { className: 'game__tagline' }, [ui.tagline]),
-        rankBtn,
-        el('h2', { className: 'game__category' }, [ui.indoorTitle]),
-        el('p', { className: 'game__category-sub' }, [ui.indoorSub]),
-        carousel,
-        dots,
-        el('div', { className: 'game__modes' }, [opt(ui.play, ui.playSub, 'play', !ticket?.left), opt(ui.watch, ui.watchSub, 'watch', false)]),
-        el('div', { className: 'game__modes' }, [opt(ui.nearby, ui.nearbySub, 'nearby', false), opt(ui.pass, ui.passSub, 'pass', false)]),
-        nameField(),
-        el('div', { className: 'game__row' }, [rounds, chat]),
-        details,
-        el('button', { className: 'game__rotatebar', type: 'button', onClick: () => toggleLandscape() }, [
-          el('span', { className: 'game__rotatehint-phone', attrs: { 'aria-hidden': 'true' } }, ['📱']), ROTATE_LABEL,
-        ]),
-      );
+        const roundsNow = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS);
+        const rounds = el('div', { className: 'game__rounds' }, [
+          el('span', { className: 'game__rounds-label' }, [ui.rounds]),
+          ...ROUND_OPTIONS.map(n => el('button', {
+            className: `game__pill${n === roundsNow() ? ' game__pill--on' : ''}`, type: 'button', attrs: { 'data-n': String(n) },
+            onClick: () => {
+              settingsStore.set('matchRounds', n);
+              rounds.querySelectorAll('.game__pill').forEach(p => p.classList.toggle('game__pill--on', p.dataset.n === String(n)));
+            },
+          }, [String(n)])),
+        ]);
 
-      function fillDetails() {
-        clear(details);
-        const roles = el('div', { className: 'game__roles' }, ['king', 'queen', 'detective', 'thief'].map((slot, i) => {
-          const r = country.roles[slot];
-          const own = ROLE_LATIN[base.id]?.[i] || r.name;
-          const meaning = own.toLowerCase() === r.name.toLowerCase() ? null : r.name;
-          return el('span', { className: 'game__role', style: { '--chip': r.color } }, [
-            `${r.emoji} ${own}`, meaning ? el('em', {}, [meaning]) : null,
-            el('small', {}, [slot === 'thief' ? '0 / ?' : String(r.points)]),
-          ]);
-        }));
-        details.append(
-          el('h2', { className: 'game__title sr-only' }, [country.game]),
-          roles,
-          el('details', { className: 'game__about' }, [
-            el('summary', {}, [ui.howto || '📖 How to play']),
-            el('p', { className: 'game__sub' }, [country.ruleText]),
-            el('p', { className: 'game__aka' }, [
-              `${(GAME_AKA[base.id] || []).slice(0, 5).join(' · ')} · `,
-              el('a', { className: 'game__howto', attrs: { href: `games/${GAME_SLUGS[base.id]}/` } }, ['→']),
-            ]),
-            seoIntro,
+        // who you are: your character, name and rank, one tap from your profile
+        const playerFace = el('span', { className: 'game__avatar' });
+        const playerName = el('strong', {});
+        const playerRank = el('span', {});
+        const playerCard = el('button', { className: 'game__playercard', type: 'button', attrs: { 'aria-label': ui.profile }, onClick: () => openProfile() }, [
+          playerFace,
+          el('span', { className: 'game__playercard-text' }, [playerName, playerRank]),
+          el('span', { className: 'game__playercard-go', html: iconSvg('right') }),
+        ]);
+        rankRefresh = () => {
+          const rank = profile.rank;
+          playerFace.innerHTML = portraitSvg(profile.look);
+          playerName.textContent = profile.name;
+          playerRank.textContent = `${rank.icon} ${fmt(ui.rankLine, {
+            title: rankTitle(rank), pts: profile.all.points.toLocaleString('en'),
+            streak: profile.streak > 1 ? fmt(ui.streak, { n: profile.streak }) : '',
+          })}`;
+        };
+        rankRefresh();
+
+        const ticket = loadRejoin();
+        const pick = el('div', { className: 'game__home-pick' }, [
+          el('p', { className: 'game__tagline' }, [ui.tagline]),
+          el('h2', { className: 'game__category' }, [ui.indoorTitle]),
+          carousel,
+          dots,
+        ]);
+        const go = el('div', { className: 'game__home-go' }, [
+          playerCard,
+          ...(ticket?.left ? [bigPlay('restart', ui.rejoinBtn, fmt(ui.rejoinSub, { code: ticket.code }), 'rejoin')] : []),
+          bigPlay('play', ui.play, ui.playSub, 'play'),
+          el('div', { className: 'game__tiles' }, [
+            tile('eye', ui.watch, ui.watchSub, 'watch'),
+            tile('wifi', ui.nearby, ui.nearbySub, 'nearby'),
+            tile('phone', ui.pass, ui.passSub, 'pass'),
+            tile('qr', ui.scanJoin, ui.scanSub, 'scan'),
           ]),
-          // always visible, so visitors and ad-network reviewers can find these pages
-          el('nav', { className: 'game__legal', attrs: { 'aria-label': 'About ChitPlay' } }, [
-            ['about/', 'About'], ['contact/', 'Contact'], ['privacy/', 'Privacy'], ['terms/', 'Terms'],
-          ].map(([href, label]) => el('a', { attrs: { href } }, [label]))),
-        );
-      }
+          rounds,
+        ]);
+        sheet.append(pick, go, details);
 
-      function select(id) {
-        base = COUNTRIES[id];
-        country = localize(base, mode);
-        ui = uiFor();
-        voiceBox.setLanguages(country.voice);
-        // the start sheet shows instantly; the 3D room catches up when it's loaded
-        world?.story?.setCountry(country, { soon: true });
-        previewTable();
-        // a plain visit keeps its clean / address: analytics counts a rewrite as a second page view
-        if (base.id !== detected.id || new URLSearchParams(location.search).has('game')) {
-          setUrlGame(base);
-          document.title = `CHITPLAY: ${GAME_NAME_EN[base.id].replace(':', '')}`;
+        function fillDetails() {
+          clear(details);
+          const roles = el('div', { className: 'game__roles' }, ['king', 'queen', 'detective', 'thief'].map((slot, i) => {
+            const r = country.roles[slot];
+            const own = ROLE_LATIN[base.id]?.[i] || r.name;
+            const meaning = own.toLowerCase() === r.name.toLowerCase() ? null : r.name;
+            return el('span', { className: 'game__role', style: { '--chip': r.color } }, [
+              `${r.emoji} ${own}`, meaning ? el('em', {}, [meaning]) : null,
+              el('small', {}, [slot === 'thief' ? '0 / ?' : String(r.points)]),
+            ]);
+          }));
+          details.append(
+            el('h2', { className: 'game__title sr-only' }, [country.game]),
+            roles,
+            el('details', { className: 'game__about' }, [
+              el('summary', {}, [el('span', { html: iconSvg('book') }), ui.howto]),
+              el('p', { className: 'game__sub' }, [country.ruleText]),
+              el('p', { className: 'game__aka' }, [
+                `${(GAME_AKA[base.id] || []).slice(0, 5).join(' · ')} · `,
+                el('a', { className: 'game__howto', attrs: { href: `games/${GAME_SLUGS[base.id]}/` } }, ['→']),
+              ]),
+              seoIntro,
+            ]),
+            // always visible, so visitors and ad-network reviewers can find these pages
+            el('nav', { className: 'game__legal', attrs: { 'aria-label': ui.about } }, [
+              ['about/', ui.about], ['contact/', ui.contact], ['privacy/', ui.privacy], ['terms/', ui.terms],
+            ].map(([href, label]) => el('a', { attrs: { href } }, [label]))),
+          );
         }
-        loadPack(chatPack());
-        cards.forEach((c, cid) => { c.classList.toggle('game__bigcard--on', cid === id); c.setAttribute('aria-selected', String(cid === id)); });
-        dots.querySelectorAll('span').forEach(d => d.classList.toggle('on', d.dataset.id === id));
-        fillDetails();
-      }
 
-      function centerOn(id, smooth) {
-        const card = cards.get(id);
-        if (!card) return;
-        // 'instant', not 'auto': the track's CSS is scroll-behavior:smooth, and a slow opening glide
-        // would let the scroll handler below pick a card it merely passes through
-        track.scrollTo({ left: card.offsetLeft - (track.clientWidth - card.clientWidth) / 2, behavior: smooth ? 'smooth' : 'instant' });
-        if (!smooth) select(id);
-      }
-      function step(dir) {
-        const i = order.indexOf(base.id);
-        const next = order[(i + dir + order.length) % order.length];
-        haptic(10);
-        centerOn(next, true);
-      }
-      // whichever card ends up in the middle after a swipe becomes the game
-      let scrollTimer = 0;
-      track.addEventListener('scroll', () => {
-        clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(() => {
-          const mid = track.scrollLeft + track.clientWidth / 2;
-          let best = null, bestD = Infinity;
-          cards.forEach((c, id) => { const d = Math.abs(c.offsetLeft + c.clientWidth / 2 - mid); if (d < bestD) { bestD = d; best = id; } });
-          if (best && best !== base.id) { sfx.play('select'); haptic(8); select(best); }
-        }, 110);
-      }, { passive: true });
-      const onKey = (e) => {
-        if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
-        if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
-      };
-      document.addEventListener('keydown', onKey);
+        function select(id) {
+          base = COUNTRIES[id];
+          country = localize(base, mode);
+          ui = uiFor();
+          voiceBox.setLanguages(country.voice);
+          // the start sheet shows instantly; the 3D room catches up when it's loaded
+          world?.story?.setCountry(country, { soon: true });
+          previewTable();
+          // a plain visit keeps its clean / address: analytics counts a rewrite as a second page view
+          if (base.id !== detected.id || new URLSearchParams(location.search).has('game')) {
+            setUrlGame(base);
+            document.title = `CHITPLAY: ${GAME_NAME_EN[base.id].replace(':', '')}`;
+          }
+          loadPack(chatPack());
+          cards.forEach((c, cid) => { c.classList.toggle('game__bigcard--on', cid === id); c.setAttribute('aria-selected', String(cid === id)); });
+          dots.querySelectorAll('span').forEach(d => d.classList.toggle('on', d.dataset.id === id));
+          fillDetails();
+        }
 
-      onModeChange = () => select(base.id);
-      requestAnimationFrame(() => centerOn(base.id, false));
+        function centerOn(id, smooth) {
+          const card = cards.get(id);
+          if (!card) return;
+          // 'instant', not 'auto': the track's CSS is scroll-behavior:smooth, and a slow opening glide
+          // would let the scroll handler below pick a card it merely passes through
+          track.scrollTo({ left: card.offsetLeft - (track.clientWidth - card.clientWidth) / 2, behavior: smooth ? 'smooth' : 'instant' });
+          if (!smooth) select(id);
+        }
+        function step(dir) {
+          const i = order.indexOf(base.id);
+          const next = order[(i + dir + order.length) % order.length];
+          haptic(10);
+          centerOn(next, true);
+        }
+        // whichever card ends up in the middle after a swipe becomes the game
+        let scrollTimer = 0;
+        track.addEventListener('scroll', () => {
+          clearTimeout(scrollTimer);
+          scrollTimer = setTimeout(() => {
+            const mid = track.scrollLeft + track.clientWidth / 2;
+            let best = null, bestD = Infinity;
+            cards.forEach((c, id) => { const d = Math.abs(c.offsetLeft + c.clientWidth / 2 - mid); if (d < bestD) { bestD = d; best = id; } });
+            if (best && best !== base.id) { sfx.play('select'); haptic(8); select(best); }
+          }, 110);
+        }, { passive: true });
+        onKey = (e) => {
+          if (e.target?.matches?.('input, select, textarea')) return;
+          if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+          if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+        };
+        document.addEventListener('keydown', onKey);
+        requestAnimationFrame(() => centerOn(base.id, false));
+      }
+      onModeChange = build;
+      build();
     });
   }
 
@@ -1169,23 +1189,42 @@ export function GameScreen({ transition }) {
     input.addEventListener('blur', () => { if (!cleanName(input.value).trim()) input.value = myName(); else input.value = myName(); });
     return input;
   }
-  const nameField = () => el('label', { className: 'game__field game__field--name' }, [el('span', {}, [ui.yourName]), nameInputEl()]);
   /**
    * Resolves 'host' (room open, Start pressed), 'guest' (joined; the host drives from here) or 'back'.
    * Opens on the normal menu, on the join page for an invite link (code) or on "Reconnecting…" (rejoin).
    */
-  function nearbyFlow({ code: linkCode = null, rejoin = null } = {}) {
+  function nearbyFlow({ code: linkCode = null, rejoin = null, scan = false } = {}) {
     return new Promise((resolve) => {
       const nameInput = nameInputEl();
       const nameNow = () => myName();
       const joinExtras = () => ({ gender: profile.gender, look: profile.look });
       const rounds = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS);
-      const big = (label, sub, onClick, primary) => el('button', {
-        className: `game__choice${primary ? ' game__choice--primary' : ''}`, type: 'button', onClick,
-      }, [el('strong', {}, [label]), el('span', {}, [sub])]);
-      const backBtn = (fn) => el('button', { className: 'game__back', type: 'button', onClick: fn }, [ui.back]);
+      const big = (label, sub, onClick, primary, iconName = null) => el('button', {
+        className: `game__choice${primary ? ' game__choice--primary' : ''}${iconName ? ' game__choice--icon' : ''}`, type: 'button', onClick,
+      }, [
+        iconName ? el('span', { className: 'game__choice-ico', html: iconSvg(iconName) }) : null,
+        el('span', { className: 'game__choice-text' }, [el('strong', {}, [label]), el('span', {}, [sub])]),
+      ]);
+      const backBtn = (fn) => el('button', { className: 'game__back', type: 'button', onClick: fn }, [el('span', { html: iconSvg('left') }), ui.back]);
       const status = el('p', { className: 'game__netstatus', attrs: { 'aria-live': 'polite' } });
+      /** The room's QR code, filling the screen, so friends can scan it from across the table. */
+      function showBigQr(code) {
+        screen.querySelector('.game__qrbig')?.remove();
+        import('../../net/qr.js?v=20261107-1752').then(({ qrSvg }) => {
+          const svg = qrSvg(inviteUrl(code), ui.qrLabel);
+          if (!svg) return;
+          const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
+            el('strong', {}, [ui.scanMe]),
+            svg,
+            el('span', { className: 'game__code' }, [`${code.slice(0, 3)} ${code.slice(3)}`]),
+            el('small', {}, [ui.tapClose]),
+          ]);
+          screen.append(box);
+          box.focus();
+        }).catch(() => {});
+      }
       const page = (...players) => {
+        screen.querySelector('.game__qrbig')?.remove();
         clear(sheet);
         sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--nearby';
         sheet.append(...players.filter(Boolean));
@@ -1198,7 +1237,7 @@ export function GameScreen({ transition }) {
         page(
           el('h2', { className: 'game__title' }, [ui.connected]),
           el('p', { className: 'game__sub' }, [fmt(ui.connectedSub, { code: `${code.slice(0, 3)} ${code.slice(3)}` })]),
-          big(ui.backToRoom, ui.backToRoomSub, backToRoom, true),
+          big(ui.backToRoom, ui.backToRoomSub, backToRoom, true, 'left'),
           big(ui.disconnect, hostRoom ? ui.disconnectHost : ui.disconnectSub, () => {
             lobbyBack = null;
             clearRejoin();
@@ -1219,8 +1258,9 @@ export function GameScreen({ transition }) {
           el('h2', { className: 'game__title' }, [ui.nearby]),
           el('p', { className: 'game__sub' }, [ui.nearbySub]),
           el('label', { className: 'game__field' }, [el('span', {}, [ui.yourName]), nameInput]),
-          big(ui.host, fmt(ui.hostSub, { game: GAME_NAME_EN[base.id], n: rounds() }), hostLobby, true),
-          big(ui.join, ui.joinSub, () => joinPage()),
+          big(ui.host, fmt(ui.hostSub, { game: GAME_NAME_EN[base.id], n: rounds() }), hostLobby, true, 'home'),
+          big(ui.scanQr, ui.scanSub, () => joinPage(null, true), false, 'qr'),
+          big(ui.join, ui.joinSub, () => joinPage(), false, 'wifi'),
           el('p', { className: 'game__netnote' }, [ui.nearbyNote]),
           backBtn(() => resolve('back')),
         );
@@ -1230,7 +1270,7 @@ export function GameScreen({ transition }) {
         const name = nameNow();
         const codeEl = el('div', { className: 'game__code', attrs: { 'aria-label': ui.codeIs } }, ['······']);
         const list = el('ol', { className: 'game__lobby' });
-        const qrBox = el('div', { className: 'game__qr' });
+        const qrBox = el('button', { className: 'game__qr', type: 'button', onClick: () => { if (room.code) showBigQr(room.code); } });
         const inviteSub = el('span', {}, [ui.inviteSub]);
         const inviteBtn = el('button', { className: 'game__choice', type: 'button', onClick: async () => {
           const r = await shareGame({ title: 'ChitPlay', text: fmt(ui.inviteText, { code: room.code }), url: inviteUrl(room.code) });
@@ -1308,7 +1348,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261107-cast').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261107-1752').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -1316,7 +1356,7 @@ export function GameScreen({ transition }) {
           if (net?.room !== room) return;
           room.close();
           net = null;
-          status.textContent = nearbyError(e);
+          status.textContent = ui[nearbyError(e)];
           codeEl.textContent = '✕';
         }
       }
@@ -1359,7 +1399,7 @@ export function GameScreen({ transition }) {
         page(
           el('h2', { className: 'game__title' }, [ui.reconnecting]),
           el('p', { className: 'game__sub' }, [ui.reconnectSub]),
-          el('button', { className: 'game__back', type: 'button', onClick: leave }, [ui.leave]),
+          el('button', { className: 'game__back', type: 'button', onClick: leave }, [ui.disconnect]),
         );
         keepAwake(true);
         (async () => {
@@ -1389,7 +1429,7 @@ export function GameScreen({ transition }) {
         })();
       }
 
-      function joinPage(prefill = null) {
+      function joinPage(prefill = null, autoScan = false) {
         nameNow();
         const codeInput = el('input', {
           className: 'game__input game__input--code',
@@ -1427,76 +1467,112 @@ export function GameScreen({ transition }) {
           } catch (e) {
             if (net?.room !== room) return;
             net = null;
-            status.textContent = nearbyError(e);
+            status.textContent = ui[nearbyError(e)];
             busy = false;
             go.disabled = false;
           }
         }
-        /* Scan the host's QR code: live camera where the browser allows it, a photo everywhere else */
+        /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
+        const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
+        // loaded now, because phones only open the photo picker straight after a tap
+        const scanner = import('../../net/qr-scan.js?v=20261107-1752');
+        let scanMod = null;
+        scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });
-        let stopScan = null;
-        let photoOnly = false;
+        let camera = null;
+        let photoOnly = !liveCamera();
         const useCode = (code) => {
-          codeInput.value = `${code.slice(0, 3)} ${code.slice(3)}`;
+          const shown = `${code.slice(0, 3)} ${code.slice(3)}`;
+          codeInput.value = shown;
           haptic([20, 30, 20]);
           closeScan();
           connect();
+          status.textContent = fmt(ui.scanFound, { code: shown });
         };
+        const sayOther = () => { if (status.textContent !== ui.scanOther) status.textContent = ui.scanOther; };
         function closeScan() {
-          stopScan?.();
-          stopScan = null;
+          camera?.stop();
+          camera = null;
+          lobbyBack = null;
           clear(scanBox);
+          paintScanBtn();
           scanBox.append(scanBtn);
         }
-        const photoInput = el('input', { attrs: { type: 'file', accept: 'image/*', capture: 'environment', 'aria-label': ui.scanPhoto } });
+        const photoInput = el('input', { attrs: { type: 'file', accept: 'image/*', 'aria-label': ui.scanPhoto } });
         photoInput.hidden = true;
         photoInput.addEventListener('change', async () => {
           const file = photoInput.files?.[0];
           if (!file) return;
-          status.textContent = ui.connecting;
+          status.textContent = ui.scanReading;
           try {
-            const { codeFromPhoto } = await import('../../net/qr-scan.js?v=20261107-cast');
-            const code = await codeFromPhoto(file);
-            if (code) { useCode(code); return; }
-            status.textContent = ui.scanNoCode;
+            const { codeFromPhoto } = await scanner;
+            const found = await codeFromPhoto(file);
+            if (found.code) { photoInput.value = ''; useCode(found.code); return; }
+            status.textContent = found.other ? ui.scanOther : ui.scanNoCode;
           } catch { status.textContent = ui.scanNoCode; }
           photoInput.value = '';
         });
+        const pickPicture = (fromCamera) => {
+          if (fromCamera) photoInput.setAttribute('capture', 'environment');
+          else photoInput.removeAttribute('capture');
+          photoInput.click();
+        };
+        async function openCamera() {
+          const { startCameraScan } = scanMod || await scanner;
+          const video = el('video', { className: 'game__scan-video', attrs: { playsinline: '', muted: '' } });
+          let lightOn = false;
+          const light = el('button', { className: 'game__scan-light', type: 'button', onClick: () => {
+            lightOn = !lightOn;
+            light.classList.toggle('game__scan-light--on', lightOn);
+            camera?.setTorch(lightOn);
+          } }, [ui.scanLight]);
+          light.hidden = true;
+          clear(scanBox);
+          scanBox.append(
+            el('div', { className: 'game__scanview' }, [video, el('div', { className: 'game__scanframe', attrs: { 'aria-hidden': 'true' } }, [el('i')]), light]),
+            el('p', { className: 'game__netnote' }, [ui.scanHint]),
+            el('button', { className: 'game__back', type: 'button', onClick: closeScan }, [ui.scanCancel]),
+          );
+          status.textContent = '';
+          // the phone's Back closes the camera, not the game
+          armBackGuard();
+          lobbyBack = closeScan;
+          const mine = startCameraScan(video, useCode, sayOther);
+          camera = mine;
+          try {
+            const info = await mine.ready;
+            if (camera === mine && info?.torch) light.hidden = false;
+          } catch (e) {
+            if (camera !== mine) return;
+            photoOnly = true;
+            closeScan();
+            status.textContent = e?.name === 'NotAllowedError' ? ui.scanDenied : ui.scanNoCamera;
+          }
+        }
         const scanBtn = el('button', {
-          className: 'game__choice', type: 'button',
-          onClick: async () => {
-            const { canUseCamera, startCameraScan } = await import('../../net/qr-scan.js?v=20261107-cast');
-            if (!canUseCamera() || photoOnly) { photoInput.click(); return; }
-            const video = el('video', { className: 'game__scan-video', attrs: { playsinline: '', muted: '' } });
-            clear(scanBox);
-            scanBox.append(
-              video,
-              el('p', { className: 'game__netnote' }, [ui.scanHint]),
-              el('button', { className: 'game__back', type: 'button', onClick: closeScan }, [ui.scanCancel]),
-            );
-            try {
-              stopScan = await startCameraScan(video, useCode);
-            } catch {
-              closeScan();
-              status.textContent = ui.scanNoCamera;
-              scanBtn.querySelector('strong').textContent = ui.scanPhoto;
-              photoOnly = true;
-            }
-          },
-        }, [el('strong', {}, [ui.scanQr]), el('span', {}, [ui.scanHint])]);
+          className: 'game__choice game__choice--primary', type: 'button',
+          onClick: () => { if (photoOnly) pickPicture(true); else openCamera().catch(() => { status.textContent = ui.scanNoCamera; }); },
+        }, [el('strong', {}), el('span', {})]);
+        function paintScanBtn() {
+          scanBtn.querySelector('strong').textContent = photoOnly ? ui.scanPhoto : ui.scanQr;
+          scanBtn.querySelector('span').textContent = photoOnly ? ui.scanPhotoSub : ui.scanHint;
+        }
+        paintScanBtn();
         scanBox.append(scanBtn);
         page(
           el('h2', { className: 'game__title' }, [ui.join]),
           scanBox,
+          el('button', { className: 'game__back', type: 'button', onClick: () => pickPicture(false) }, [ui.scanGallery]),
           photoInput,
           // an invite link skips the menu, so the name is asked here
           prefill ? el('label', { className: 'game__field' }, [el('span', {}, [ui.yourName]), nameInput]) : null,
           el('label', { className: 'game__field' }, [el('span', {}, [ui.enterCode]), codeInput]),
           status,
           go,
-          backBtn(() => { stopScan?.(); net?.room.close(); net = null; clearUrlJoin(); menu(); }),
+          backBtn(() => { camera?.stop(); camera = null; lobbyBack = null; net?.room.close(); net = null; clearUrlJoin(); menu(); }),
         );
-        setTimeout(() => (prefill ? nameInput : codeInput).focus(), 60);
+        if (autoScan && !photoOnly) openCamera().catch(() => { status.textContent = ui.scanNoCamera; });
+        else setTimeout(() => (prefill ? nameInput : codeInput).focus(), 60);
       }
 
       let lastLobby = null, guestCode = '';
@@ -1511,10 +1587,11 @@ export function GameScreen({ transition }) {
         if (g !== base.id) changeRoomGame(g);
         page(
           el('h2', { className: 'game__title' }, [fmt(ui.joined, { host: m.host })]),
-          el('p', { className: 'game__sub' }, [`${GAME_NAME_EN[g]} · ${m.rounds} rounds`]),
+          el('p', { className: 'game__sub' }, [fmt(ui.hostSub, { game: GAME_NAME_EN[g], n: m.rounds })]),
           gamePicker(),
           el('ol', { className: 'game__lobby' }, m.players.map((n, i) => el('li', { className: 'on' }, [`${i === 0 ? '⭐' : '✅'} ${n}`]))),
           el('p', { className: 'game__netstatus' }, [ui.waitStart]),
+          m.players.length < 4 && guestCode ? big(ui.showQr, ui.showQrSub, () => showBigQr(guestCode), false, 'qr') : null,
           backBtn(goBack),
         );
         // the room behind the sheet shows the game the host picked
@@ -1522,6 +1599,7 @@ export function GameScreen({ transition }) {
 
       if (rejoin) rejoinPage(rejoin);
       else if (linkCode) joinPage(linkCode);
+      else if (scan) joinPage(null, true);
       else menu();
     });
   }
@@ -1890,10 +1968,16 @@ export function GameScreen({ transition }) {
 
   let worldReady = null;
   async function run() {
+    if (lang !== 'en') {
+      if (await useLanguage(lang)) { ui = uiFor(); document.documentElement.lang = LANGUAGE_TAGS[lang] || 'en'; } else lang = 'en';
+      if (!alive) return;
+    }
+    paintHud();
     // the 3D room loads in the background; the start screen doesn't wait for it
     worldReady = loadWorld().then((w) => {
       world = w;
       if (w?.story && alive && !match) { w.story.setCountry(country); previewTable(); }
+      syncCalm();
       return w;
     });
     loadPack('english');               // every language falls back to it for rule-specific moments
@@ -1940,6 +2024,10 @@ export function GameScreen({ transition }) {
     for (;;) {
       pm = nearbyStart ? 'nearby' : await chooseSetup();
       if (!alive) return;
+      if (pm === 'scan') {
+        nearbyStart = { scan: true };
+        pm = 'nearby';
+      }
       if (pm === 'rejoin') {
         const back = loadRejoin();
         if (!back) continue;
@@ -2104,7 +2192,7 @@ export function GameScreen({ transition }) {
         mode: net ? 'nearby' : 'local', won: w === me, score: totals[me], catches: catches?.[me] || 0, escapes: escapes?.[me] || 0,
         cheats: cheats?.[me] || 0, caught: caughtCheats?.[me] || 0, game, rounds,
       });
-      if (progress.rankedUp) { sfx.play('victory'); showToast(fmt(ui.rankUp, { icon: progress.after.icon, title: progress.after.title }), 4200); }
+      if (progress.rankedUp) { sfx.play('victory'); showToast(fmt(ui.rankUp, { icon: progress.after.icon, title: rankTitle(progress.after) }), 4200); }
     }
     const lastPlace = order[order.length - 1];
     const MEDALS = ['🥇', '🥈', '🥉', '4'];
@@ -2122,51 +2210,54 @@ export function GameScreen({ transition }) {
     ]))) : null;
     const shareMsg = el('span', {}, [ui.shareSub]);
     const shareBtn = el('button', {
-      className: 'game__choice', type: 'button',
+      className: 'game__choice game__choice--icon', type: 'button',
       onClick: async () => {
         const url = new URL(location.href);
         url.search = `?game=${GAME_SLUGS[game]}`; url.hash = '';
         const score = me >= 0 ? totals[me] : totals[w];
-        const text = me >= 0
-          ? `I scored ${score} in ${GAME_NAME_EN[game]}${w === me ? ' and won 🏆' : ''}! Can you beat me?`
-          : `Play ${GAME_NAME_EN[game]} online, free!`;
+        const text = fmt(me < 0 ? ui.sharePlay : w === me ? ui.shareWon : ui.shareScore, { score, game: GAME_NAME_EN[game] });
         const r = await shareGame({ title: `${GAME_NAME_EN[game]} – ChitPlay`, text, url: url.toString() });
         if (r === 'copied') shareMsg.textContent = ui.copied;
         else if (r === 'failed') shareMsg.textContent = url.toString();   // at least show the link to copy by hand
       },
-    }, [el('strong', {}, [ui.share]), shareMsg]);
+    }, [el('span', { className: 'game__choice-ico', html: iconSvg('share') }), el('span', { className: 'game__choice-text' }, [el('strong', {}, [ui.share]), shareMsg])]);
 
     clear(sheet);
     sheet.className = 'game__sheet game__sheet--show game__sheet--start';
     sheet.append(
       el('h2', { className: 'game__title' }, [isMe(players[w]) ? ui.youWon : fmt(ui.won, { name: players[w].name })]),
-      el('p', { className: 'game__sub' }, [`${GAME_NAME_EN[game]} · ${rounds} rounds${net ? ' · 📶 Nearby' : ''}`]),
+      el('p', { className: 'game__sub' }, [`${fmt(ui.hostSub, { game: GAME_NAME_EN[game], n: rounds })}${net ? ` · ${ui.nearbyPts}` : ''}`]),
       standings,
       ...(awardRow ? [awardRow] : []),
       ...(net ? [el('label', { className: 'game__row-field' }, [el('span', {}, [ui.gameLabel]), gameSelect()])] : []),
       ...(progress ? [el('div', { className: 'game__progress' }, [
-        el('strong', {}, [`${progress.after.icon} ${progress.after.title}`]),
+        el('strong', {}, [`${progress.after.icon} ${rankTitle(progress.after)}`]),
         el('div', { className: 'game__bar' }, [el('span', { style: { width: `${Math.round(progress.after.progress * 100)}%` } })]),
         el('span', {}, [[
           fmt(ui.gained, { n: progress.gained.toLocaleString('en') }),
           progress.place ? fmt(ui.hallPlace, { n: progress.place }) : '',
-          ...progress.newBadges.map(b => fmt(ui.newBadge, { icon: b.icon, name: b.name })),
+          ...progress.newBadges.map(b => fmt(ui.newBadge, { icon: b.icon, name: badgeText(b).name })),
         ].filter(Boolean).join(' · ')]),
       ])] : []),
       el('div', { className: 'game__forfeit' }, [
         el('strong', {}, [fmt(ui.forfeit, { name: players[lastPlace].name })]),
-        el('span', {}, [fmt(ui.forfeitLine, { name: isMe(players[lastPlace]) ? ui.you : players[lastPlace].name, text: pickOne(FORFEITS) })]),
+        el('span', {}, [fmt(ui.forfeitLine, { name: isMe(players[lastPlace]) ? ui.you : players[lastPlace].name, text: pickOne(forfeits()) })]),
       ]),
       guest
         ? el('p', { className: 'game__stats' }, [ui.waitHostAgain])
         : el('button', {
-          className: 'game__choice game__choice--primary', type: 'button',
+          className: 'game__choice game__choice--primary game__choice--icon', type: 'button',
           onClick: () => { sheet.className = 'game__sheet'; startMatch(playMode).catch(onError); },
-        }, [el('strong', {}, [ui.again]), el('span', {}, [net ? ui.againNearby : ui.againSub])]),
+        }, [el('span', { className: 'game__choice-ico', html: iconSvg('restart') }), el('span', { className: 'game__choice-text' }, [el('strong', {}, [ui.again]), el('span', {}, [net ? ui.againNearby : ui.againSub])])]),
       el('button', {
-        className: 'game__choice', type: 'button',
+        className: 'game__choice game__choice--icon', type: 'button',
         onClick: () => { clearRejoin(); transition(GAME_PHASES.HOME); },
-      }, net ? [el('strong', {}, [ui.disconnect]), el('span', {}, [guest ? ui.disconnectSub : ui.disconnectHost])] : [el('strong', {}, [ui.change]), el('span', {}, [ui.changeSub])]),
+      }, [
+        el('span', { className: 'game__choice-ico', html: iconSvg(net ? 'exit' : 'home') }),
+        el('span', { className: 'game__choice-text' }, net
+          ? [el('strong', {}, [ui.disconnect]), el('span', {}, [guest ? ui.disconnectSub : ui.disconnectHost])]
+          : [el('strong', {}, [ui.change]), el('span', {}, [ui.changeSub])]),
+      ]),
       shareBtn,
     );
   }
@@ -2198,7 +2289,7 @@ export function GameScreen({ transition }) {
       const name = players[seat].name;
       const cover = el('div', { className: 'game__pass' }, [
         el('div', { className: 'game__pass-card' }, [
-          el('span', { className: 'game__pass-icon', attrs: { 'aria-hidden': 'true' } }, ['📱']),
+          el('span', { className: 'game__pass-icon', attrs: { 'aria-hidden': 'true' }, html: iconSvg('phone') }),
           el('h2', { className: 'game__title' }, [fmt(ui.passTo, { name })]),
           el('p', { className: 'game__sub' }, [ui.passHide]),
           el('button', {
@@ -2238,7 +2329,7 @@ export function GameScreen({ transition }) {
       clear(sheet);
       sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--nearby';
       sheet.append(
-        el('h2', { className: 'game__title' }, [ui.passTitle]),
+        el('h2', { className: 'game__title' }, [ui.pass]),
         el('p', { className: 'game__sub' }, [ui.passHelp]),
         counts,
         fields,
@@ -2257,7 +2348,7 @@ export function GameScreen({ transition }) {
             resolve(table);
           },
         }, [el('strong', {}, [ui.passStart])]),
-        el('button', { className: 'game__back', type: 'button', onClick: () => resolve(null) }, [ui.back]),
+        el('button', { className: 'game__back', type: 'button', onClick: () => resolve(null) }, [el('span', { html: iconSvg('left') }), ui.back]),
       );
       paint();
     });
@@ -2291,8 +2382,8 @@ export function GameScreen({ transition }) {
 
   /* ─── Emojis for the table, private lines for one person ─ */
   const mySeat = () => (net?.role === 'guest' ? net.seat : players.findIndex(p => p.isHuman));
-  const talkLang = () => (chatPack() === 'hinglish' || ['IN', 'PK', 'NP', 'BD'].includes(detected.id) ? 'hinglish' : 'english');
-  const talkVars = () => ({ thief: (talkLang() === 'hinglish' ? ROLE_LATIN[base.id]?.[3] : null) || country.roles.thief.name });
+  // in the player's own language the thief keeps this game's own name (Chor, Dorobō…)
+  const talkVars = () => ({ thief: (lang !== 'en' ? ROLE_LATIN[base.id]?.[3] : null) || country.roles.thief.name });
   const lastSent = new Map();
   /** One message a moment per seat, however fast someone taps. */
   function allowed(seat) {
@@ -2310,69 +2401,96 @@ export function GameScreen({ transition }) {
   }
   function closeTalk() {
     talkPanel.hidden = true;
+    talkBtn.classList.remove('game__talkbtn--open');
     clear(talkPanel);
   }
   function toggleTalk(to = null) {
     if (!talkPanel.hidden && to == null) { closeTalk(); return; }
     openTalk(to);
   }
+  let talkTab = 'emoji';
+  /** Opens on what you used last; sending anything closes it, and the same button opens it again. */
   function openTalk(to) {
     const me = mySeat();
     const seats = players.map((_, i) => i).filter(i => i !== me);
-    let target = validSeat(to) && to !== me ? to : seats[0];
-    let emojiTarget = null;
-    const chips = el('div', { className: 'game__talk-people' });
-    const help = el('p', { className: 'game__netnote' });
-    const paintChips = () => {
-      [...chips.children].forEach((c) => c.classList.toggle('game__seg-btn--on', Number(c.dataset.s) === target));
-      help.textContent = fmt(ui.talkPrivateHelp, { name: players[target].name });
-    };
-    seats.forEach(s => chips.append(el('button', {
-      className: 'game__seg-btn', type: 'button', attrs: { 'data-s': String(s) },
-      onClick: () => { target = s; emojiTarget = s; paintChips(); },
-    }, [players[s].name])));
+    let tab = validSeat(to) ? 'msg' : talkTab;
+    let target = validSeat(to) && to !== me ? to : null;   // null: everyone (emoji only)
+    const body = el('div', { className: 'game__talk-body' });
+    const tabs = el('div', { className: 'game__talk-tabs', attrs: { role: 'tablist' } });
+    const tabBtn = (id, iconName, label) => el('button', {
+      className: 'game__talktab', type: 'button', attrs: { role: 'tab', 'data-tab': id },
+      onClick: () => { tab = id; talkTab = id; paint(); },
+    }, [el('span', { html: iconSvg(iconName) }), label]);
+    tabs.append(tabBtn('emoji', 'smile', ui.talkEmoji), tabBtn('msg', 'chatDots', ui.talkMsg));
+
+    function paint() {
+      [...tabs.children].forEach((b) => {
+        const on = b.dataset.tab === tab;
+        b.classList.toggle('game__talktab--on', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      clear(body);
+      // a private line always goes to one person
+      if (tab === 'msg' && target == null) target = seats[0];
+      const chips = el('div', { className: 'game__talk-people' }, [
+        ...(tab === 'emoji' ? [[null, ui.talkEveryone]] : []),
+        ...seats.map(s => [s, players[s].name]),
+      ].map(([s, label]) => el('button', {
+        className: `game__seg-btn${s === target ? ' game__seg-btn--on' : ''}`, type: 'button',
+        style: s == null ? {} : { '--chip': players[s].color },
+        onClick: () => { target = s; paint(); },
+      }, [label])));
+      body.append(el('span', { className: 'game__talk-label' }, [ui.talkTo]), chips);
+      if (tab === 'emoji') {
+        body.append(el('div', { className: 'game__talk-emojis' }, TALK_EMOJIS.map((e, i) => el('button', {
+          className: 'game__talk-emoji', type: 'button', attrs: { 'aria-label': e },
+          onClick: () => { sendEmoji(target, i); closeTalk(); },
+        }, [e]))));
+      } else {
+        body.append(
+          el('p', { className: 'game__netnote' }, [fmt(ui.talkPrivateHelp, { name: players[target].name })]),
+          el('div', { className: 'game__talk-lines' }, Array.from({ length: TALK_LINE_COUNT }, (_, i) => el('button', {
+            className: 'game__talk-line', type: 'button',
+            onClick: () => { sendWhisper(target, i); closeTalk(); },
+          }, [talkLine(i, talkVars())]))),
+        );
+      }
+    }
     clear(talkPanel);
     talkPanel.hidden = false;
+    talkBtn.classList.add('game__talkbtn--open');
     talkPanel.append(
       el('div', { className: 'game__talk-head' }, [
-        el('strong', {}, [ui.talkEmoji]),
-        el('button', { className: 'game__talk-close', type: 'button', attrs: { 'aria-label': ui.close }, onClick: closeTalk }, ['✕']),
+        tabs,
+        el('button', { className: 'game__talk-close', type: 'button', attrs: { 'aria-label': ui.backToGame }, html: iconSvg('close'), onClick: closeTalk }),
       ]),
-      el('div', { className: 'game__talk-emojis' }, TALK_EMOJIS.map((e, i) => el('button', {
-        className: 'game__talk-emoji', type: 'button',
-        onClick: () => sendEmoji(emojiTarget, i),
-      }, [e]))),
-      el('strong', {}, [ui.talkPrivate]),
-      chips,
-      help,
-      el('div', { className: 'game__talk-lines' }, Array.from({ length: TALK_LINE_COUNT }, (_, i) => el('button', {
-        className: 'game__talk-line', type: 'button',
-        onClick: () => { sendWhisper(target, i); closeTalk(); },
-      }, [talkLine(i, talkLang(), talkVars())]))),
+      body,
     );
-    paintChips();
+    paint();
   }
   function sendEmoji(to, i) {
     if (net?.role === 'guest') net.room.send({ t: 'emoji', to, i });
     else deliverEmoji(mySeat(), to, i);
     haptic(10);
   }
+  /** Everyone at the table sees it fly: from the sender's head to whoever it was meant for. */
   function deliverEmoji(from, to, i) {
     if (!isTalkEmoji(i) || !validSeat(from) || !allowed(from)) return;
     const target = validSeat(to) && to !== from ? to : null;
-    S().emote(from, TALK_EMOJIS[i], 2.4);
+    const symbol = TALK_EMOJIS[i];
+    S().throwEmoji(from, target, symbol);
     sfx.play('select');
-    if (target != null) {
-      S().look(from, target);
-      const text = fmt(ui.emojiTo, { from: players[from].name, emoji: TALK_EMOJIS[i], to: players[target].name });
-      showToast(text, 2000);
-      tell({ t: 'toast', text, ms: 2000 });
-    }
-    // computer players react now and then
+    if (target != null) S().look(from, target);
+    const text = target != null
+      ? fmt(ui.emojiTo, { from: players[from].name, emoji: symbol, to: players[target].name })
+      : fmt(ui.emojiAll, { from: players[from].name, emoji: symbol });
+    showToast(text, 2000);
+    tell({ t: 'toast', text, ms: 2000 });
+    // computer players sometimes throw one back
     const bots = players.map((_, s) => s).filter(s => s !== from && isBot(s));
     if (bots.length && Math.random() < 0.45) {
       const who = target != null && isBot(target) ? target : pickOne(bots);
-      later(700 + Math.random() * 900, () => { if (alive && matchRunning) S().emote(who, pickOne(TALK_EMOJIS), 2.2); });
+      later(1000 + Math.random() * 1000, () => { if (alive && matchRunning) S().throwEmoji(who, from, pickOne(TALK_EMOJIS)); });
     }
   }
   function sendWhisper(to, line) {
@@ -2383,7 +2501,7 @@ export function GameScreen({ transition }) {
   }
   /** The host's phone only passes it along: nothing appears on any screen but the recipient's. */
   function deliverWhisper(from, to, line) {
-    if (!validSeat(from) || !validSeat(to) || from === to || !talkLine(line, 'english') || !allowed(from)) return;
+    if (!validSeat(from) || !validSeat(to) || from === to || !talkLine(line) || !allowed(from)) return;
     if (players[to].isHuman) showWhisper(from, line);
     else if (players[to].remote) tellSeat(to, { t: 'whisper', from, line });
     else if (Math.random() < 0.75) {
@@ -2393,7 +2511,7 @@ export function GameScreen({ transition }) {
   }
   const pickLine = () => Math.floor(Math.random() * TALK_LINE_COUNT);
   function showWhisper(from, line) {
-    const text = talkLine(line, talkLang(), talkVars());
+    const text = talkLine(line, talkVars());
     if (!text || !players[from]) return;
     clear(whisperEl);
     whisperEl.hidden = false;
@@ -2457,14 +2575,17 @@ export function GameScreen({ transition }) {
       el('span', { className: 'game__avatar', html: portraitSvg(profile.look) }),
       el('div', { className: 'game__card-text' }, [
         el('strong', {}, [profile.name]),
-        el('span', {}, [`${rank.icon} ${rank.title}`]),
+        el('span', {}, [`${rank.icon} ${rankTitle(rank)}`]),
         el('span', { className: 'game__card-points' }, [
           `${ui.localPts}: ${st.local.points.toLocaleString('en')} · ${ui.nearbyPts}: ${st.nearby.points.toLocaleString('en')}`,
         ]),
       ]),
     ]);
   };
-  const menuBtn = (label, onClick, cls = '') => el('button', { className: `game__choice ${cls}`, type: 'button', onClick }, [el('strong', {}, [label])]);
+  const menuBtn = (label, onClick, cls = '', iconName = null) => el('button', { className: `game__choice game__choice--row ${cls}`, type: 'button', onClick }, [
+    iconName ? el('span', { className: 'game__choice-ico', html: iconSvg(iconName) }) : null,
+    el('strong', {}, [label]),
+  ]);
   function openMenu() {
     if (isSolo()) holdTimers(true);
     closeTalk();
@@ -2474,19 +2595,19 @@ export function GameScreen({ transition }) {
     overlay.append(el('div', { className: 'game__panel' }, [
       el('h2', { className: 'game__title' }, [ui.menuTitle]),
       scoreCard(),
-      canPause() ? menuBtn(ui.pause, () => pauseGame(), 'game__choice--primary') : null,
+      canPause() ? menuBtn(ui.pause, () => pauseGame(), 'game__choice--primary', 'pause') : null,
       isSolo() && match ? menuBtn(ui.restart, () => {
         clearSave();
         pendingStart = { mode: playMode, game: base.id };
         holdTimers(false);
         transition(GAME_PHASES.HOME);
-      }) : null,
-      menuBtn(net ? ui.disconnect : ui.quit, quitGame),
-      menuBtn(`👤 ${ui.profile}`, () => openProfile({ fromMenu: true })),
+      }, '', 'restart') : null,
+      menuBtn(net ? ui.disconnect : ui.quit, quitGame, '', 'exit'),
+      menuBtn(ui.profile, () => openProfile({ fromMenu: true }), '', 'user'),
       el('button', {
         className: 'game__back', type: 'button',
         onClick: () => { closeOverlay(); if (isSolo()) holdTimers(false); },
-      }, [ui.backToGame]),
+      }, [el('span', { html: iconSvg('left') }), ui.backToGame]),
     ].filter(Boolean)));
   }
   function pauseGame() {
@@ -2506,29 +2627,76 @@ export function GameScreen({ transition }) {
         closeOverlay();
         holdTimers(false);
         tell({ t: 'pause', on: false });
-      }, 'game__choice--primary'),
-      menuBtn(ui.quit, quitGame),
+      }, 'game__choice--primary', 'play'),
+      menuBtn(ui.quit, quitGame, '', 'exit'),
     ].filter(Boolean)));
   }
 
+  /* ─── Language: one tap on the globe, available everywhere ── */
+  async function changeLanguage(id) {
+    if (!isLanguage(id) || id === lang) return true;
+    if (!(await useLanguage(id))) return false;
+    lang = id;
+    settingsStore.set('chatLang', id);
+    ui = uiFor();
+    document.documentElement.lang = LANGUAGE_TAGS[id] || 'en';
+    await loadPack(chatPack());
+    paintHud();
+    if (!match) setRound('CHITPLAY');
+    else if (matchRunning) setRound(fmt(ui.roundOf, { n: match.round, m: match.rounds }));
+    onModeChange?.();
+    return true;
+  }
+  function openLanguage() {
+    const inMatch = !!match && matchRunning;
+    const hold = inMatch && isSolo() && !paused;
+    if (hold) holdTimers(true);
+    closeTalk();
+    clear(overlay);
+    overlay.hidden = false;
+    screen.classList.add('game--overlay');
+    const finish = () => {
+      closeOverlay();
+      if (hold) holdTimers(false);
+    };
+    overlay.append(el('div', { className: 'game__panel game__panel--lang' }, [
+      el('div', { className: 'game__panel-head' }, [
+        el('span', { className: 'game__panel-ico', html: iconSvg('globe') }),
+        el('h2', { className: 'game__title' }, [ui.language]),
+        el('button', { className: 'game__panel-close', type: 'button', attrs: { 'aria-label': ui.backToGame }, html: iconSvg('close'), onClick: finish }),
+      ]),
+      el('p', { className: 'game__netnote' }, [ui.languageHelp]),
+      el('div', { className: 'game__langs', attrs: { role: 'radiogroup', 'aria-label': ui.language } }, LANGUAGES.map(l => el('button', {
+        className: `game__langopt${l.id === lang ? ' game__langopt--on' : ''}`, type: 'button',
+        attrs: { role: 'radio', 'aria-checked': String(l.id === lang) },
+        onClick: async () => {
+          haptic(10);
+          const ok = await changeLanguage(l.id);
+          finish();
+          if (!ok) showToast(ui.errNetwork, 2600);
+        },
+      }, [el('span', {}, [l.label]), l.id === lang ? el('span', { html: iconSvg('check') }) : null]))),
+    ]));
+  }
+
   /* ─── Profile ─────────────────────────────────────────── */
+  let profileTab = 'character';
   function openProfile({ fromMenu = false } = {}) {
     const inMatch = !!match && !!players.length;
     // a live preview only on your own seat, and only when nobody else is watching that seat
     const canPreview = !net && (!inMatch || playMode === 'play');
     if (inMatch && isSolo() && !paused) holdTimers(true);
+    closeTalk();
     clear(overlay);
     overlay.hidden = false;
     screen.classList.add('game--overlay', ...(canPreview ? ['game--profile'] : []));
-    if (canPreview) world?.story?.portrait(HUMAN_SEAT);
 
     const applyLook = (look) => {
       const saved = profile.setLook(look);
       if (canPreview) world?.story?.setLook(HUMAN_SEAT, { ...saved, gender: profile.gender });
       paintPicker();
-      avatar.innerHTML = portraitSvg(profile.look);
+      paintProfileBtn();
     };
-    const avatar = el('span', { className: 'game__avatar', html: portraitSvg(profile.look) });
     const seg = (options, current, onPick) => {
       const box = el('div', { className: 'game__seg' });
       const paint = (v) => [...box.children].forEach(c => c.classList.toggle('game__seg-btn--on', c.dataset.v === v));
@@ -2544,20 +2712,24 @@ export function GameScreen({ transition }) {
       profile.setGender(g);
       applyLook({ ...profile.look, gender: g });
     });
+    const row = (label, control) => el('label', { className: 'game__row-field' }, [el('span', {}, [label]), control]);
+
+    /* character */
     const presetGrid = el('div', { className: 'game__presets', attrs: { role: 'listbox', 'aria-label': ui.character } });
     function paintPicker() {
       [...presetGrid.children].forEach(c => c.classList.toggle('game__preset--on', c.dataset.id === profile.look.id));
     }
-    [...PRESETS].forEach((p) => {
+    PRESETS.forEach((p) => {
+      const name = lookName(p.id, p.label);
       presetGrid.append(el('button', {
-        className: 'game__preset', type: 'button', attrs: { 'data-id': p.id, 'aria-label': p.label },
+        className: 'game__preset', type: 'button', attrs: { 'data-id': p.id, 'aria-label': name, title: name },
         onClick: () => {
           profile.setGender(p.gender);
           genderSeg.paintValue(p.gender);
           applyLook(lookOf(p.id));
           refreshCustom();
         },
-      }, [el('span', { html: portraitSvg(lookOf(p.id)) }), el('small', {}, [p.label])]));
+      }, [el('span', { className: 'game__preset-face', html: portraitSvg(lookOf(p.id)) }), el('small', {}, [name])]));
     });
 
     /* make your own */
@@ -2571,14 +2743,10 @@ export function GameScreen({ transition }) {
         applyLook({ ...profile.look, [key]: c, id: 'custom' });
       },
     })));
-    const choose = (list, key) => {
-      const select = el('select', {
-        className: 'game__select', attrs: { 'aria-label': key },
-        onChange: (e) => applyLook({ ...profile.look, [key]: e.target.value, id: 'custom' }),
-      }, list.map(o => el('option', { attrs: { value: o.id, ...(profile.look[key] === o.id ? { selected: 'selected' } : {}) } }, [o.label])));
-      return select;
-    };
-    const row = (label, control) => el('label', { className: 'game__row-field' }, [el('span', {}, [label]), control]);
+    const choose = (list, key) => el('select', {
+      className: 'game__select', attrs: { 'aria-label': key },
+      onChange: (e) => applyLook({ ...profile.look, [key]: e.target.value, id: 'custom' }),
+    }, list.map(o => el('option', { attrs: { value: o.id, ...(profile.look[key] === o.id ? { selected: 'selected' } : {}) } }, [lookName(o.id, o.label)])));
     function refreshCustom() {
       clear(customBox);
       const bindi = el('input', { attrs: { type: 'checkbox', ...(profile.look.bindi ? { checked: 'checked' } : {}) } });
@@ -2604,9 +2772,9 @@ export function GameScreen({ transition }) {
       const num = (n) => n.toLocaleString('en');
       scoreBox.append(
         el('div', { className: 'game__progress' }, [
-          el('strong', {}, [`${rank.icon} ${rank.title}`]),
+          el('strong', {}, [`${rank.icon} ${rankTitle(rank)}`]),
           el('div', { className: 'game__bar' }, [el('span', { style: { width: `${Math.round(rank.progress * 100)}%` } })]),
-          el('span', {}, [rank.next ? fmt(ui.nextRank, { pts: num(rank.next.at - all.points), title: rank.next.title }) : ui.topRank]),
+          el('span', {}, [rank.next ? fmt(ui.nextRank, { pts: num(rank.next.at - all.points), title: rankTitle({ ...rank.next, index: rank.index + 1 }) }) : ui.topRank]),
         ]),
         el('table', { className: 'game__table' }, [
           el('thead', {}, [el('tr', {}, [cell(''), cell(ui.localPts), cell(ui.nearbyPts)])]),
@@ -2617,8 +2785,9 @@ export function GameScreen({ transition }) {
         el('h3', { className: 'game__h3' }, [ui.badges]),
         el('div', { className: 'game__badges' }, BADGES.map((b) => {
           const on = profile.badges.includes(b.id);
-          return el('span', { className: `game__badge${on ? ' game__badge--on' : ''}`, attrs: { title: `${b.name}: ${b.hint}` } }, [
-            el('b', {}, [b.icon]), el('small', {}, [b.name]),
+          const t = badgeText(b);
+          return el('span', { className: `game__badge${on ? ' game__badge--on' : ''}`, attrs: { title: `${t.name}: ${t.hint}` } }, [
+            el('b', {}, [b.icon]), el('small', {}, [t.name]),
           ]);
         })),
         el('h3', { className: 'game__h3' }, [ui.hall]),
@@ -2640,47 +2809,93 @@ export function GameScreen({ transition }) {
         armed = false;
         resetBtn.textContent = ui.resetScore;
         paintScore();
+        rankRefresh?.();
         showToast(ui.resetDone, 1800);
       },
     }, [ui.resetScore]);
-    const nameInput = nameInputEl();
+
+    /* settings */
+    const currentGraphics = world?.story?.graphics || settingsStore.get('graphics') || 'low';
     const graphics = el('select', {
       className: 'game__select', attrs: { 'aria-label': ui.graphics },
       onChange: (e) => { settingsStore.set('graphics', e.target.value); world?.story?.setGraphics(e.target.value); },
-    }, [['auto', ui.gAuto], ['low', ui.gLow], ['medium', ui.gMedium], ['high', ui.gHigh], ['ultra', ui.gUltra]].map(([v, label]) => {
-      const current = world?.story?.graphics || settingsStore.get('graphics') || 'auto';
-      return el('option', { attrs: { value: v, ...(current === v ? { selected: 'selected' } : {}) } }, [label]);
-    }));
-
-    overlay.append(el('div', { className: 'game__panel game__panel--profile' }, [
-      el('div', { className: 'game__card' }, [avatar, el('h2', { className: 'game__title' }, [ui.profile])]),
-      row(ui.yourName, nameInput),
-      el('p', { className: 'game__netnote' }, [ui.nameHelp]),
-      row(ui.gender, genderSeg),
-      el('h3', { className: 'game__h3' }, [ui.character]),
-      presetGrid,
-      el('details', { className: 'game__about' }, [el('summary', {}, [`🎨 ${ui.custom}`]), customBox]),
-      el('h3', { className: 'game__h3' }, [ui.score]),
-      scoreBox,
-      resetBtn,
+    }, [['low', ui.gLow], ['auto', ui.gAuto], ['medium', ui.gMedium], ['high', ui.gHigh], ['ultra', ui.gUltra]].map(([v, label]) => (
+      el('option', { attrs: { value: v, ...(currentGraphics === v ? { selected: 'selected' } : {}) } }, [label])
+    )));
+    const languageSelect = el('select', {
+      className: 'game__select', attrs: { 'aria-label': ui.language },
+      onChange: async (e) => {
+        await changeLanguage(e.target.value);
+        // the panel is written in the old language: draw it again in the new one
+        openProfile({ fromMenu });
+      },
+    }, LANGUAGES.map(l => el('option', { attrs: { value: l.id, ...(l.id === lang ? { selected: 'selected' } : {}) } }, [l.label])));
+    const toggle = (iconName, iconOff, label, isOn, set) => {
+      const ico = el('span', { className: 'game__switch-ico' });
+      const input = el('input', { attrs: { type: 'checkbox', role: 'switch', ...(isOn() ? { checked: 'checked' } : {}) } });
+      const paint = () => { ico.innerHTML = iconSvg(input.checked ? iconName : iconOff); };
+      input.addEventListener('change', () => { set(input.checked); paint(); });
+      paint();
+      return el('label', { className: 'game__switch' }, [ico, el('span', {}, [label]), input, el('i', { attrs: { 'aria-hidden': 'true' } })]);
+    };
+    const settingsBox = el('div', { className: 'game__custom' }, [
+      row(ui.language, languageSelect),
+      el('p', { className: 'game__netnote' }, [ui.languageHelp]),
       row(ui.graphics, graphics),
-      el('button', {
-        className: 'game__choice game__choice--primary', type: 'button',
-        onClick: () => {
-          screen.classList.remove('game--profile');
-          world?.story?.portrait(null);
-          previewTable();
-          if (fromMenu) { openMenu(); return; }
-          closeOverlay();
-          if (inMatch && isSolo()) holdTimers(false);
-          rankRefresh?.();
-        },
-      }, [el('strong', {}, [ui.done])]),
-    ]));
+      el('p', { className: 'game__netnote' }, [ui.graphicsHelp]),
+      toggle('sound', 'soundOff', ui.soundLabel, soundOn, setSound),
+      toggle('mic', 'micOff', ui.voiceLabel, voiceOn, setVoice),
+      toggle('chat', 'chatOff', ui.chatLabel, chatOn, setChat),
+    ]);
+
+    /* one thing at a time: the panel never grows, only the tab's own content scrolls */
+    const TABS = [
+      ['character', 'user', ui.character, () => [genderSeg, presetGrid]],
+      ['look', 'palette', ui.custom, () => [customBox]],
+      ['score', 'trophy', ui.score, () => [scoreBox, resetBtn]],
+      ['settings', 'sliders', ui.settings, () => [settingsBox]],
+    ];
+    const tabBody = el('div', { className: 'game__tabbody', attrs: { role: 'tabpanel' } });
+    const tabBar = el('div', { className: 'game__tabs', attrs: { role: 'tablist' } }, TABS.map(([id, iconName, label]) => el('button', {
+      className: 'game__tab', type: 'button', attrs: { role: 'tab', 'data-tab': id, title: label },
+      onClick: () => { profileTab = id; showTab(); },
+    }, [el('span', { html: iconSvg(iconName) }), el('small', {}, [label])])));
+    function showTab() {
+      [...tabBar.children].forEach((b) => {
+        const on = b.dataset.tab === profileTab;
+        b.classList.toggle('game__tab--on', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      clear(tabBody);
+      tabBody.append(...TABS.find(t => t[0] === profileTab)[3]());
+      tabBody.scrollTop = 0;
+    }
+
+    const finish = () => {
+      screen.classList.remove('game--profile');
+      world?.story?.portrait(null);
+      previewTable();
+      if (fromMenu) { openMenu(); return; }
+      closeOverlay();
+      if (inMatch && isSolo()) holdTimers(false);
+      rankRefresh?.();
+    };
+    const panel = el('div', { className: 'game__panel game__panel--profile' }, [
+      el('div', { className: 'game__pfhead' }, [
+        el('label', { className: 'game__pfname' }, [el('small', {}, [ui.yourName]), nameInputEl()]),
+        el('button', { className: 'game__panel-close', type: 'button', attrs: { 'aria-label': ui.done }, html: iconSvg('close'), onClick: finish }),
+      ]),
+      tabBar,
+      tabBody,
+      el('button', { className: 'game__choice game__choice--primary game__choice--done', type: 'button', onClick: finish }, [el('strong', {}, [ui.done])]),
+    ]);
+    overlay.append(panel);
+    // the character stands in whatever part of the screen the panel leaves free
+    if (canPreview) world?.story?.portrait(HUMAN_SEAT, panel);
+    showTab();
     paintPicker();
   }
   let rankRefresh = null;
-
   function onError(e) {
     if (e !== CANCEL) console.error('[ChitPlay3D]', e);
   }
@@ -2703,6 +2918,10 @@ export function GameScreen({ transition }) {
       window.removeEventListener('popstate', onPopState);
       clearTimeout(whisperEl._t);
       onModeChange = null;
+      hudObserver.disconnect();
+      calmObserver.disconnect();
+      document.removeEventListener('pointerdown', onOutsideTap, true);
+      world?.story?.setCalm(false);
       net?.room.close();
       net = null;
       world?.story?.end();

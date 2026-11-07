@@ -4,6 +4,7 @@
  */
 
 const results = [];
+const pending = [];
 let currentSuite = null;
 
 export function describe(name, fn) {
@@ -17,7 +18,14 @@ export function it(name, fn) {
   const suite = currentSuite || { name: 'Ungrouped', tests: [] };
   if (!currentSuite) results.push(suite);
   try {
-    fn();
+    const result = fn();
+    if (result && typeof result.then === 'function') {
+      // an async test: the report waits for it
+      const test = { name, passed: false, error: 'still running' };
+      suite.tests.push(test);
+      pending.push(result.then(() => { test.passed = true; test.error = undefined; }, (err) => { test.error = err.message || String(err); }));
+      return;
+    }
     suite.tests.push({ name, passed: true });
   } catch (err) {
     suite.tests.push({ name, passed: false, error: err.message || String(err) });
@@ -57,9 +65,10 @@ export function expect(actual) {
   };
 }
 
-export function runReport() {
+export async function runReport() {
   const root = document.getElementById('test-results');
   if (!root) return;
+  await Promise.allSettled(pending);
   let total = 0, passed = 0;
   root.innerHTML = '';
   for (const suite of results) {

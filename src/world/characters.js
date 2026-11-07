@@ -7,7 +7,7 @@
  * to show, and only after the result is public.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { lookKey, OUTFITS } from './character-looks.js?v=20261107-cast';
+import { lookKey, OUTFITS } from './character-looks.js?v=20261107-1752';
 
 const TAU = Math.PI * 2;
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));

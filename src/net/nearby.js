@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName } from '../world/names.js?v=20261107-cast';
-import { cleanLook } from '../world/character-looks.js?v=20261107-cast';
+import { cleanName } from '../world/names.js?v=20261107-1752';
+import { cleanLook } from '../world/character-looks.js?v=20261107-1752';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=1.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261107-1752.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -40,17 +40,16 @@ export const isCode = (c) => /^\d{6}$/.test(String(c || ''));
 export const newToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 /** Friendly reason for a PeerJS / network failure. */
+/** The text key (src/i18n) that explains a connection failure to the player. */
 export function nearbyError(e) {
   const type = e?.type || e?.message;
-  if (type === 'peer-unavailable' || type === 'no-room') return 'No game with this code. Check the 6 digits on the host’s phone.';
-  if (type === 'full') return 'This game is full (4 players).';
-  if (type === 'started') return 'This game has already started. Ask the host to start a new one.';
-  if (type === 'browser-incompatible') return 'This browser can’t do Nearby Play. Try Chrome or Safari.';
-  if (type === 'timeout') return 'Couldn’t connect. Make sure both phones are online and try again.';
-  if (type === 'load' || type === 'network' || type === 'server-error' || type === 'socket-error' || type === 'socket-closed') {
-    return 'Couldn’t reach the connection service. Nearby Play needs internet to connect.';
-  }
-  return 'Something went wrong while connecting. Try again.';
+  if (type === 'peer-unavailable' || type === 'no-room') return 'errNoRoom';
+  if (type === 'full') return 'errFull';
+  if (type === 'started') return 'errStarted';
+  if (type === 'browser-incompatible') return 'errBrowser';
+  if (type === 'timeout') return 'errTimeout';
+  if (type === 'load' || type === 'network' || type === 'server-error' || type === 'socket-error' || type === 'socket-closed') return 'errNetwork';
+  return 'errOther';
 }
 
 /** Register with the broker; a stalled network fails instead of hanging on "Connecting…". */

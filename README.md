@@ -6,14 +6,15 @@ A 3D take on the classic four-player paper-chit game, for every age. Four charac
 
 ## Profile, rank and characters
 
-- **👤 Profile:** name (letters only), gender, 24 ready-made characters or your own (age, hair, skin, eyes, clothes, glasses, facial hair, headwear), and the graphics level (Auto, Low, Medium, High, 4K). A random name that fits your country is picked on your first visit.
+- **Profile:** tap your character in the top bar. The character stands in whatever part of the screen the panel leaves free, and the panel has four tabs: Character (24 ready-made people), Look (age, hair, skin, eyes, clothes, glasses, facial hair, headwear), Score, and Settings (language, graphics, sound, voices, conversation). A random name that fits your country is picked on your first visit.
 - **Score:** solo and Nearby points are kept apart. Lifetime points set your rank, and there are badges, a play streak and your best matches. Everything stays on the device, and **Reset score** erases it.
 - **✕ menu:** Pause (really stops the match, on every phone if the host pauses), Restart (solo), Quit.
 - **Cheat:** 70% unnoticed, and you see one innocent player's chit, never the thief's; sometimes with a close call. 30% caught: you see nothing, lose 100 and get one of 26 scenes that don't repeat until all have played.
 - **Toss:** anyone can throw the chits; after 5 seconds someone else does.
 - **Secrets:** only the finder says who they are. Your own chit stays in your corner after you open it (tap to hide it).
-- **💌 Messages:** emojis for the table and private lines for one person, picked from a list. You may lie. Computer players answer.
+- **Messages:** the round button on the right opens emojis and private lines, picked from a list. An emoji flies from your head to the player you chose (or to everyone), bursts on arrival and shows on every phone. Sending closes the panel; the same button opens it again. You may lie. Computer players answer, and sometimes throw an emoji back.
 - **📱 Single Phone:** 2 to 4 people pass one phone; a cover screen hides everything while it changes hands.
+- **Scan to join:** one tile on the first page. Live camera on HTTPS, or a photo or saved screenshot of the code anywhere. Tap the host's QR to fill the screen; friends already in the room can show it too.
 - **Nearby rooms:** anyone in the room can change the game before a match or between matches. Back keeps you connected; only Disconnect leaves. A computer player takes over for anyone who is gone or doesn't choose within 30 seconds, and a player who rejoins gets their seat back at once.
 
 ## Quick start
@@ -33,11 +34,11 @@ Then open `http://127.0.0.1:8000`.
 
 Players pick a game by its **name**, written in Latin letters so anyone can read it: Raja Rani Chor Police, Raja Wazir Chor Sipahi, Mafia Game, Jingcha Zhua Xiaotou, Cops and Robbers… There are no country or flag pickers. Every visit opens on the game of the country the player is in, and that game is listed first with a ⭐. Detection uses the device timezone, or the browser-language region when the timezone is hidden, with no permission and no network. Anywhere without its own game opens on **Cops and Robbers**.
 
-On phones: 🔄 switches to fullscreen landscape (Android; iPhone shows a "turn your phone" nudge). Phones held upright also get a clear rotate button on the start screen and a dismissible one during the match. The screen stays awake during a match, and key moments give a short vibration.
+On phones: the rotate button (under the sliders icon on small screens) switches to fullscreen landscape on Android; iPhone shows a "turn your phone" nudge. Phones held upright get a dismissible rotate pill during the match. The screen stays awake during a match, and key moments give a short vibration.
 
-**Home screen:** swipe the big game cards left or right (or use ‹ › and the arrow keys). Whichever card stops in the middle becomes the game, and the room, players, roles and rules switch with it. Then tap **▶ Play** or **👀 Just Watch**, pick the rounds, and optionally a chat language. There are no flags anywhere.
+**Home screen:** swipe the big game cards left or right (or use the arrows and arrow keys). Whichever card stops in the middle becomes the game, and the room, players, roles and rules switch with it. Then tap **Play**, or one of the tiles (Just Watch, Nearby Play, Single Phone, Scan to join). There are no flags anywhere.
 
-**Language:** menus, rules and voices are always **English**. The players' chat bubbles are English by default, and **🗣️ Chat** lets each player read them in their own language, always written in Latin letters: Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese (Romaji), Korean (Romanized), Chinese (Pinyin), Russian (Latin), Deutsch, Français, Português or Español. Any language works with any game. Moments a language doesn't have yet (game-specific rules) borrow the game's English line, so nobody goes quiet. Each game keeps its own role names, such as Raja (King), Chor (Thief) or Huángdì (Emperor). Each edition changes the role names, points, who guesses, a rule twist, the players' names and the room.
+**Language:** the game starts in **English**. Tap the globe in the top bar to switch the menus, profile, messages and the players' chat to Hinglish, Roman Urdu, Roman Nepali, Roman Bangla, Japanese (Romaji), Korean (Romanized), Chinese (Pinyin), Russian (Latin), Deutsch, Français, Português or Español, always in Latin letters. Each language is one file of about 13 KB in `src/i18n/`, fetched only if someone picks it; anything missing falls back to English. Still English in every language: the voices, each game's rule text, and the SEO pages. On a Nearby match, messages the host's phone sends (such as "X left") appear in the host's language. Moments a chat pack doesn't have yet (game-specific rules) borrow the game's English line, so nobody goes quiet. Each game keeps its own role names, such as Raja (King), Chor (Thief) or Huángdì (Emperor). Each edition changes the role names, points, who guesses, a rule twist, the players' names and the room.
 
 | Country | Game | Roles (points) | Rule twist |
 |---|---|---|---|
@@ -64,14 +65,13 @@ Each room has its own floor and mat, a localised calendar, a ball (cricket, base
 - **Just Watch:** all four players are computer players.
 - **Rounds:** choose 3, 5, 7, 10 or 20 on the start screen (7 by default).
 - **Fair turns:** the guessing role goes to whoever has had it the fewest times, picked at random among ties. Everyone gets turns, and the human always gets at least one per match.
-- **Your name:** set on the start screen and remembered on this device (default **Avin**). It's your name in Play and Nearby Play; two players with one name become Avin and Avin 2.
-- **🤫 Cheat:** when you are the guesser, the Cheat button tries to peek at a chit, once a round, with a 50/50 chance of seeing it. If it works, one innocent suspect is cleared. Either way there's a 35% chance someone notices ("Oye! Tu cheating kar raha hai!" / "Arre maine nahi kiya!") and you lose 100. Computer guessers try it half the time.
-- **Chat language:** chosen on the start screen (🗣️ Chat), see *Language* above.
+- **Your name:** set in your profile and remembered on this device. It's your name in Play and Nearby Play; two players with one name become Avin and Avin 2.
+- **Language:** the globe in the top bar, or Settings in your profile; see *Language* above.
 - **End of match:** final standings with 🥇🥈🥉, awards (🕵️ Sharp Eye for the most catches, 🦊 Escape Artist for the thief who got away most; no award on a tie), and **📤 Share**. Share opens the phone's share sheet, or copies an "I scored … can you beat me?" message with a link to that game.
 - **Your stats:** wins, matches and best score from Play mode are kept on this device and shown on the home screen.
-- **Layout:** works on any screen, from 320px phones and landscape phones to tablets and big desktops (two-column start sheet in landscape, Play buttons first on small phones).
+- **Layout:** works on any screen, from 320px phones and landscape phones to tablets and 2560px desktops. The top bar wraps instead of overflowing, what sits under it follows its real height, and a panel never grows past the screen: only its middle scrolls.
 - **Sound:** ceiling-fan hum while the power's on, thunder and rain for storm blackouts, crickets at night. Each player's voice changes with the moment: excited, sad, scared, whispering or sly.
-- **Voices 🗣️:** players speak their lines aloud in English with the browser's built-in speech voices, using an accent that suits the game where the device has one (Indian, British or American English). Each character gets a voice and pitch that suit their age. If no voice is installed, the speech bubbles still work. Off by default; toggle with 🤐 / 🗣️.
+- **Voices:** players speak their lines aloud in English with the browser's built-in speech voices, using an accent that suits the game where the device has one (Indian, British or American English). Each character gets a voice and pitch that suit their age. If no voice is installed, the speech bubbles still work. Off by default; toggle with the microphone icon.
 - **Expressions:** each player has eyes, brows and a mouth that change with their mood, plus situation animations (laugh, cry, shrug, deny, jump, sneak, wave) and emote bubbles (❗❓💢😂😭🤫).
 
 Before the result, roles are shown only when the rules make them public (the Raja's opening, the guesser's hat). Lines spoken before the result are role-neutral, so a bluffing thief sounds exactly like the royals.
@@ -82,9 +82,18 @@ Every language pack (`src/world/lines/*.js`) has many lines per moment plus shor
 
 ## Deploy on GitHub Pages
 
-There is no build step: the repo itself is the website.
+There is no build step: the repo itself is the website. Every update is two steps:
 
-The live site is **https://www.chitplay.com** (domain bought at Spaceship).
+```bash
+node tools/release.mjs
+git add -A && git commit -m "What changed" && git push
+```
+
+`tools/release.mjs` stamps a new version on every file, so players' phones fetch the update instead of keeping the old copy. It also stops with an error if something would break only once it's live: GitHub Pages treats capital letters as different and Windows doesn't, so a wrong-case import works on your PC and fails for everybody else. GitHub Pages publishes within a minute or two of the push.
+
+No git on this PC? Run the same `node tools/release.mjs`, then upload the changed files on github.com (**Add file → Upload files**). The whole project is about 2 MB, well under the 25 MB upload limit.
+
+The live site is **https://www.chitplay.com** (domain bought at Spaceship). First-time setup only:
 
 1. Push the project to a GitHub repository.
 2. In the repository, open **Settings → Pages**, set **Source: Deploy from a branch**, choose **Branch: main**, folder **/ (root)**, and save. The `CNAME` file in the repo sets the custom domain.
@@ -116,7 +125,7 @@ A match is saved locally (in `localStorage`) at the start of every round, after 
 
 - The start screen appears immediately. three.js and the 3D room load in the background.
 - Only the dialogue pack for the language being played is downloaded.
-- The 3D room renders at a low internal resolution at 30 fps. On slow devices it lowers its own quality (resolution, then shadows and dust) instead of stuttering.
+- **Light graphics by default:** 30 fps, one pixel per screen pixel up to 720p, 512 px room textures, smaller shadows redrawn every third frame, the TV's static every eighth frame, no dust and one light less. While a big sheet covers the room it drops to 20 fps. Medium, High and 4K are one choice away in Settings; **Auto** picks a level for the device and lowers it if frames run slow.
 - In production a service worker (`sw.js`) makes repeat visits instant and lets the game run offline. It's disabled on localhost/LAN so edits show up straight away.
 
 ## SEO
@@ -156,6 +165,9 @@ src/world/world-3d.js    the 3D room, camera, lighting, power cuts, story API
 src/world/players.js        the players' rig, poses and accessories
 src/world/themes.js      per-game room textures
 src/ui/screens/game-screen.js  start screen + the match director
+src/ui/icons.js          the icon set (inline SVG, no icon font)
+src/i18n/                the game's text: en.js is built in, the others load when picked
+tools/release.mjs        run before every push: version stamp + checks for the live site
 src/net/nearby.js        Nearby Play rooms: up to 4 phones over WebRTC (PeerJS), joined with a 6-digit code
 ```
 

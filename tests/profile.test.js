@@ -1,10 +1,13 @@
 import { describe, it, expect } from './harness.js';
-import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName } from '../src/world/names.js?v=20261107-cast';
-import { PRESETS, cleanLook, lookOf, portraitSvg, AGES } from '../src/world/character-looks.js?v=20261107-cast';
-import { profile, rankFor, RANKS } from '../src/persistence/profile-store.js?v=20261107-cast';
-import { COUNTRIES } from '../src/world/countries.js?v=20261107-cast';
-import { Match } from '../src/world/match.js?v=20261107-cast';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261107-cast';
+import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName } from '../src/world/names.js?v=20261107-1752';
+import { PRESETS, cleanLook, lookOf, portraitSvg, AGES } from '../src/world/character-looks.js?v=20261107-1752';
+import { profile, rankFor, RANKS } from '../src/persistence/profile-store.js?v=20261107-1752';
+import { COUNTRIES } from '../src/world/countries.js?v=20261107-1752';
+import { Match } from '../src/world/match.js?v=20261107-1752';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261107-1752';
+import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261107-1752';
+import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261107-1752';
+import EN from '../src/i18n/en.js?v=20261107-1752';
 
 describe('Names', () => {
   it('keeps letters and spaces only', () => {
@@ -73,19 +76,52 @@ describe('Table talk', () => {
   it('has lines and emojis, and refuses anything else', () => {
     expect(TALK_LINE_COUNT >= 20).toBe(true);
     expect(TALK_EMOJIS.length >= 12).toBe(true);
-    expect(talkLine(0, 'hinglish', { thief: 'Chor' }).includes('Chor')).toBe(true);
-    expect(talkLine(0, 'english', { thief: 'Thief' }).includes('Thief')).toBe(true);
-    expect(talkLine(999, 'english')).toBe(null);
-    expect(talkLine('<b>', 'english')).toBe(null);
+    expect(talkLine(0, { thief: 'Thief' }).includes('Thief')).toBe(true);
+    expect(talkLine(999)).toBe(null);
+    expect(talkLine('<b>')).toBe(null);
     expect(isTalkEmoji(0)).toBe(true);
     expect(isTalkEmoji(99)).toBe(false);
   });
-  it('no line says which role the sender holds', () => {
-    for (let i = 0; i < TALK_LINE_COUNT; i++) {
-      for (const lang of ['english', 'hinglish']) {
-        expect(/\{(king|queen|det)\}|\b(king|queen|raja|rani)\b/i.test(talkLine(i, lang))).toBe(false);
+  it('every language has every line, and no line says which role the sender holds', async () => {
+    for (const l of LANGUAGES) {
+      expect(await useLanguage(l.id)).toBe(true);
+      for (let i = 0; i < TALK_LINE_COUNT; i++) {
+        const line = talkLine(i, { thief: 'XTHIEFX' });
+        expect(typeof line === 'string' && line.length > 0).toBe(true);
+        expect(/\{\w+\}|\b(king|queen|raja|rani)\b/i.test(line)).toBe(false);
       }
     }
+    await useLanguage('en');
+  });
+});
+
+describe('Languages', () => {
+  it('every language fills the same blanks as English, and stays in Latin letters', async () => {
+    const holes = (s) => (String(s).match(/\{\w+\}/g) || []).sort().join();
+    for (const l of LANGUAGES) {
+      await useLanguage(l.id);
+      const ui = strings();
+      for (const [k, v] of Object.entries(EN.ui)) {
+        expect(typeof ui[k] === 'string' && holes(ui[k]) === holes(v)).toBe(true);
+        expect(/[Ѐ-ӿऀ-৿؀-ۿ぀-ヿ一-鿿가-힯]/.test(ui[k])).toBe(false);
+      }
+    }
+    await useLanguage('en');
+  });
+});
+
+describe('Scan to join', () => {
+  it('finds the room code in an invite link or in plain digits', () => {
+    expect(joinCodeFrom('https://www.chitplay.com/?join=123456')).toBe('123456');
+    expect(joinCodeFrom('http://192.168.1.5:8765/?join=004321&x=1')).toBe('004321');
+    expect(joinCodeFrom('123 456')).toBe('123456');
+  });
+  it('turns down every other QR code', () => {
+    expect(joinCodeFrom('https://example.com/')).toBe(null);
+    expect(joinCodeFrom('https://example.com/?join=abc')).toBe(null);
+    expect(joinCodeFrom('12345')).toBe(null);
+    expect(joinCodeFrom('')).toBe(null);
+    expect(joinCodeFrom(null)).toBe(null);
   });
 });
 
