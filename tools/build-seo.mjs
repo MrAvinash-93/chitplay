@@ -48,7 +48,7 @@ const ANALYTICS = `<!-- analytics -->
 <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KRTTSTQQ"></script>${ADSENSE_TAG}
 <!-- /analytics -->`;
 
-const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
+const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}how-to-play/">How to play</a> · <a href="${up}strategy/">Strategy</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
 const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src="${up}assets/logo.png" alt="CHITPLAY" width="180" height="31" style="display:block"></a>`;
 const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
 <link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
@@ -396,6 +396,47 @@ const TOPICS = {
       ['Can it be played online with classmates?', 'Yes. One person hosts in CHITPLAY and the others join by QR code, invite link or a 6-digit code. Up to four people can play.'],
     ],
   },
+  'how-to-play': {
+    title: 'How to Play the Chit Game', h1: 'How to play the chit game: a complete guide',
+    desc: 'Step-by-step rules of the four-chit game (Raja Rani Chor Police, Mafia, Cops and Robbers): the roles, a full example round, scoring, and how to play on paper or online.',
+    intro: 'The chit game is one of the simplest party games there is: four folded slips of paper, one secret each, and one person who has to work out who is lying. This guide explains every step, walks through a complete round with real scores, and shows how the same game works in CHITPLAY on a phone or computer.',
+    sections: [
+      ['The four roles', 'Every round uses four chits. The names change from country to country, but the jobs stay the same. The King (Raja, Mayor, Tonosama) holds the most points, usually 1000. The Queen (Rani, Wazir, Mantri, Banker) holds 800. The guesser, most often the Police (Sipahi, Sheriff, Bobby), holds 500 and has one task: name the Thief. The Thief (Chor, Robber, Dorobo, Mafia) starts with nothing and tries to stay hidden. In a few editions the guessing job belongs to a different role, for example the Wazir in Raja Wazir Chor Sipahi.'],
+      ['Setting up', 'You need four players and four slips of paper of the same size. Write one role and its points on each slip, fold them the same way so nobody can tell them apart, shake them in your hands and drop them on the floor or a table. Agree on the number of rounds before you start: five or seven rounds make a good match, and twenty make a long evening.'],
+      ['One round, step by step', 'First, everyone picks a chit and reads it without letting anyone else see. Second, the guesser announces themselves, so everyone knows who is hunting. Third, the other three keep a straight face while the guesser studies them, asks questions and listens to the table talk. Fourth, the guesser points at one person. Finally, everybody opens their chit and the scores are written down.'],
+      ['How scoring works', 'If the guesser names the Thief correctly, the guesser keeps their points and the Thief scores nothing. If the guess is wrong, the classic rule says the guesser and the Thief swap: the guesser scores nothing and the Thief takes the guesser’s points. The King and Queen always keep their own points. After the last round the totals are added up and the highest score wins.'],
+      ['A complete example', 'Asha draws the King, Ben the Queen, Chetan the Police and Divya the Thief. Chetan announces he is the Police. Ben laughs too quickly and Chetan points at him. Ben opens his chit: Queen. The guess is wrong, so the points swap. Asha scores 1000, Ben 800, Chetan 0 and Divya, the Thief who stayed calm, scores 500. In the next round the chits are shuffled again, so everybody has a new role and a new chance.'],
+      ['Regional twists', 'Many countries add a rule of their own. In some editions one innocent player is cleared before the guess. In others a witness gives a tip that is right most of the time, the guesser gets a second try for half points, or a caught Thief pays a fine. Each game page on CHITPLAY explains its own rules in full, with a scoring example.'],
+      ['Playing it in CHITPLAY', 'Open www.chitplay.com, choose your edition and press Play. Computer players fill the empty seats, bluff, react and talk, so you can play alone. Single Phone mode passes one phone around a room, and Nearby Play lets up to four people join from their own phones with a 6-digit code or a QR code. Your chit stays private on your own screen, the scores are kept for you, and the game remembers your rank between visits.'],
+      ['Printable chits', 'To play on paper, write King 1000, Queen 800, Police 500 and Thief 0 on four slips. If your family grew up with different names, use those: the game is the same. Keep a score sheet with one column per player and one row per round, and agree on a light-hearted forfeit for last place before the first round.'],
+    ],
+    faq: [
+      ['How many players do you need?', 'Exactly four chits are used, so four players is the classic game. With fewer people, CHITPLAY adds computer players to the empty seats.'],
+      ['How long does a game take?', 'A round takes about a minute. A five-round match takes five to ten minutes.'],
+      ['Who is the guesser?', 'Whoever draws the guessing chit in that round, usually the Police. Because the chits are shuffled every round, everyone gets a turn.'],
+      ['Is it a gambling game?', 'No. The points are only a score for the match. Nothing is bought, bet or won, and the game is free.'],
+    ],
+  },
+  'strategy': {
+    title: 'Chit Game Strategy and Tips', h1: 'Chit game strategy: how to catch the Thief and how to hide',
+    desc: 'Tips for every role in Raja Rani Chor Police and the other chit games: reading faces, bluffing, the odds of a guess, and how to stay hidden as the Thief.',
+    intro: 'The chit game looks like pure luck, but good players win far more often than chance allows. The draw is random; what happens after it is all about people. These tips come from how the game is actually played, at home and in CHITPLAY, and work for every edition.',
+    sections: [
+      ['Know the odds', 'With three suspects, a guess made without any clue is right one time in three. Every clue that clears one person improves the odds to one in two. That is why a cleared suspect, a witness or a careful look is worth so much: it turns a coin-flip into a likely catch. Over a long match, a guesser who reads the table even a little better than chance will finish far ahead.'],
+      ['As the guesser: watch first, talk second', 'In the first seconds after the chits are opened, people react before they think. Watch for the person who looks at their chit twice, folds it unusually fast, or suddenly becomes very interested in something else. Then ask simple questions and listen to how people answer, not to what they say. A Thief often answers a little too quickly or makes a joke to move attention away.'],
+      ['As the guesser: use what the rules give you', 'If your edition clears an innocent player or gives you a witness, use it before you decide. In CHITPLAY you can also try to peek once a round: most of the time you see one innocent chit, but if you are noticed you lose 100 points, so it is a gamble best saved for rounds where you have no clue at all.'],
+      ['As the Thief: be ordinary', 'The best disguise is to behave exactly as you did in the last round. Don’t go silent and don’t suddenly talk a lot. If you usually joke, keep joking. Look at the guesser when they look at you, then look away naturally. Pointing at someone else can work, but only if you sound like you are guessing, not accusing.'],
+      ['As the King or Queen: stir things up', 'Your points are safe whatever happens, so you can make the round fun. Act a little guilty to pull suspicion towards you, or defend someone you are sure is innocent. Every wrong guess costs the guesser points, so a good King or Queen can quietly decide who wins the match.'],
+      ['Reading a table you know', 'Families and old friends have tells that only show up after a few rounds: the cousin who always laughs, the friend who touches their ear. Keep a mental note of how each person behaves when they are innocent, so you notice the change when they are not.'],
+      ['Table talk in CHITPLAY', 'In CHITPLAY you can send emojis and short fixed messages to other players. A private message can be a bluff: “It’s not me, check Riya” might be true, or it might be the Thief. Computer players use the same tricks, and they are not always honest either.'],
+      ['Playing a long match', 'Points add up across rounds, so one big catch does not decide the match. If you are behind near the end, rounds where you are the guesser are your chance to catch up; if you are ahead, a careful guess is better than a risky peek.'],
+    ],
+    faq: [
+      ['Is the chit game only luck?', 'The draw is luck, but the guess is skill. Reading faces and using clues makes a guesser right far more often than one time in three.'],
+      ['How do you hide as the Thief?', 'Behave exactly as you did in the previous rounds. Changes in behaviour give you away more than anything you say.'],
+      ['What should the King and Queen do?', 'Their points are safe, so they can bluff freely to confuse the guesser and make the round more exciting.'],
+    ],
+  },
 };
 function topicPage(slug, t) {
   const url = `${SITE}/${slug}/`;
@@ -527,7 +568,7 @@ const INFO = {
 <p>ChitPlay may show advertising to keep the game free. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads to users based on their visits to this site and/or other sites on the Internet. You can opt out of personalised advertising by visiting <a href="https://www.google.com/settings/ads" rel="nofollow noopener">Google Ads Settings</a> or <a href="https://www.aboutads.info/choices/" rel="nofollow noopener">www.aboutads.info</a>.</p>
 <p>Read <a href="https://policies.google.com/technologies/partner-sites" rel="nofollow noopener">how Google uses information from sites that use its services</a>. A cookie is a small file a website stores in your browser; you can block or delete cookies in your browser settings, and the game will still work.</p>
 <h2>Visitors in the EEA, UK and Switzerland</h2>
-<p>For visitors from these regions, analytics and advertising cookies are off by default and are used only if you give consent. You may have rights under local law to access, correct or delete personal data, or to object to its use. Email us to make a request; we hold almost nothing that identifies you, and data held by Google can be managed through the links above.</p>
+<p>For visitors from these regions, analytics and advertising cookies are off by default and are used only if you give consent. When ads are shown, the consent message comes from Google's certified consent management platform; you can change or withdraw your choice at any time from the privacy settings link it adds to the page. You may have rights under local law to access, correct or delete personal data, or to object to its use. Email us to make a request; we hold almost nothing that identifies you, and data held by Google can be managed through the links above.</p>
 <h2>Nearby Play</h2>
 <p>Nearby Play is optional and only connects when you host or join a game. To find each other, the phones contact the free PeerJS connection service (peerjs.com), which sees your IP address and a temporary game code. The game then runs directly between the phones; if a direct connection isn't possible, its messages may pass through PeerJS's relay server. The name, gender and character you chose are shown to the other players in that game. Emojis and private messages are chosen from fixed lists, so no free text is sent; a private message passes through the host's phone without being shown there. CHITPLAY doesn't store any of this.</p>
 <h2>Voices</h2>
@@ -657,7 +698,7 @@ const body = `<!-- seo:body -->
     <ul>
 ${COUNTRY_ORDER.map(id => `      <li><a href="games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)}) — ${esc(GAME_AKA[id].filter(a => a !== GAME_NAME_EN[id]).slice(0, 2).join(', '))}</li>`).join('\n')}
     </ul>
-    <p><a href="games/">All chit games and rules</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
+    <p><a href="games/">All chit games and rules</a> · <a href="how-to-play/">How to play (full guide)</a> · <a href="strategy/">Strategy and tips</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
   </section>
   <!-- /seo:body -->`;
 let index = readFileSync(join(ROOT, 'index.html'), 'utf8');
