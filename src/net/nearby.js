@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName } from '../world/names.js?v=20261107-2116';
-import { cleanLook } from '../world/character-looks.js?v=20261107-2116';
+import { cleanName } from '../world/names.js?v=20261108-0613';
+import { cleanLook } from '../world/character-looks.js?v=20261108-0613';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261107-2116.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0613.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };

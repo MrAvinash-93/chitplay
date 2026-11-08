@@ -50,9 +50,10 @@ const ANALYTICS = `<!-- analytics -->
 <!-- /analytics -->`;
 
 const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}how-to-play/">How to play</a> · <a href="${up}strategy/">Strategy</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
-const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src="${up}assets/logo.png" alt="CHITPLAY" width="180" height="31" style="display:block"></a>`;
-const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
-<link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
+const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src="${up}assets/logo.png" alt="ChitPlay" width="180" height="31" style="display:block"></a>`;
+const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
+<link rel="icon" href="${up}favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="${up}assets/icon-192.png">`;
 
 const src = readFileSync(join(ROOT, 'src/world/countries.js'), 'utf8');
@@ -111,9 +112,10 @@ function pageFor(id) {
   // the name in the country's own script (राजा रानी चोर पुलिस, 警察抓小偷…) helps people searching there
   const localScript = aka.find(a => /[^\u0000-ɏ\s'’&,.:()-]/.test(a)) || (local.game !== primary ? local.game : null);
   const country = base.name;
-  const seoName = primary.replace(':', '');
-  const title = `CHITPLAY: ${seoName}`;
-  const desc = `Play ${primary}${localScript ? ` (${localScript})` : ''} free online: the indoor chit game for all ages. The ${guesserEn} must catch the ${thiefEn}. Rules and printable chits.`;
+  // India searches both names: Raja Rani Chor Police and (Raja Rani) Chor Sipahi
+  const seoName = id === 'IN' ? 'Raja Rani Chor Police (Chor Sipahi)' : primary.replace(':', '');
+  const title = `${seoName} – Play Free Online | ChitPlay`;
+  const desc = `Play ${primary}${localScript ? ` (${localScript})` : ''} free on ChitPlay, the 3D chit game for all ages. The ${guesserEn} must catch the ${thiefEn}: rules, scoring and printable chits.`;
   const lh = LOCAL_HOWTO[id];
   const ex = scoringExample(base);
   const castName = (i) => base.cast[i];
@@ -184,7 +186,7 @@ function pageFor(id) {
       countryOfOrigin: { '@type': 'Country', name: country },
       gamePlatform: 'Web browser', applicationCategory: 'Game', operatingSystem: 'Any',
       numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 }, playMode: ['https://schema.org/SinglePlayer', 'https://schema.org/MultiPlayer'],
-      inLanguage: ['en', LANG[id]], image: `${SITE}/assets/og-image.jpg`,
+      inLanguage: ['en', LANG[id]], image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/og-image.jpg`],
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       author: DEVELOPER_LD,
       isPartOf: { '@type': 'WebSite', name: 'CHITPLAY', url: `${SITE}/` },
@@ -219,7 +221,7 @@ ${ANALYTICS}
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#140b07">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="CHITPLAY">
+<meta property="og:site_name" content="ChitPlay">
 <meta property="og:locale" content="en_US">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
@@ -257,10 +259,11 @@ button.btn{border:1px solid #6b4a2a;font:inherit;font-weight:700;cursor:pointer}
 <body>
 <main>
 ${logoLink('../../')}
-<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">CHITPLAY</a> › <a href="../">Games</a> › ${esc(primary)}</nav>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">ChitPlay</a> › <a href="../">Games</a> › ${esc(primary)}</nav>
 <h1>${esc(primary)}: play the indoor chit game online</h1>
 <p class="lead" style="margin-top:-4px">${esc(country)}'s chit game${localScript ? ` · <span lang="${LANG[id]}">${esc(localScript)}</span>` : ''}</p>
 <p class="lead">The 4-player paper chit game <strong>${esc(primary)}</strong>${sameName ? '' : ` (${esc(en.game)})`}, free in your browser for all ages. Four players, four folded chits: the ${esc(guesserEn)} has to catch the ${esc(thiefEn)}.</p>
+<img src="../../assets/chitplay-game.jpg" alt="${esc(primary)} in ChitPlay: four players at the chit game in a 3D room" width="1200" height="675" loading="lazy" decoding="async" style="width:100%;height:auto;border-radius:12px">
 <div class="cta"><a class="btn" href="${playEn}">▶ Play ${esc(primary)} now</a></div>
 <h2>Also known as</h2>
 <ul class="aka">${aka.map(a => `<li>${esc(a)}</li>`).join('')}</ul>
@@ -313,7 +316,7 @@ function hubPage() {
     ['Can I play a chit game online alone?', 'Yes. In CHITPLAY three computer players sit with you. You can also invite up to three friends on their own phones, or just watch.'],
   ];
   const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: hubFaq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
-  const title = 'CHITPLAY: All Chit Games';
+  const title = 'All Chit Games and Rules | ChitPlay';
   const desc = 'Every version of the paper chit game in one place: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more. Rules and free 3D play.';
   return `<!DOCTYPE html>
 <html lang="en">
@@ -326,7 +329,7 @@ ${ANALYTICS}
 <link rel="canonical" href="${url}">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="CHITPLAY">
+<meta property="og:site_name" content="ChitPlay">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
@@ -441,10 +444,10 @@ const TOPICS = {
 };
 function topicPage(slug, t) {
   const url = `${SITE}/${slug}/`;
-  const title = `CHITPLAY: ${t.title}`;
+  const title = `${t.title} | ChitPlay`;
   const items = COUNTRY_ORDER.map(id => `<li><a href="../games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)})</li>`).join('');
   const ld = [
-    { '@context': 'https://schema.org', '@type': 'Article', headline: t.h1, description: t.desc, url, image: `${SITE}/assets/og-image.jpg`, author: DEVELOPER_LD, publisher: { '@type': 'Organization', name: 'CHITPLAY', logo: { '@type': 'ImageObject', url: `${SITE}/assets/icon-512.png` } }, dateModified: TODAY },
+    { '@context': 'https://schema.org', '@type': 'Article', headline: t.h1, description: t.desc, url, image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/og-image.jpg`], author: DEVELOPER_LD, publisher: { '@type': 'Organization', name: 'ChitPlay', logo: { '@type': 'ImageObject', url: `${SITE}/assets/icon-512.png` } }, dateModified: TODAY },
     { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: t.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
     { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'CHITPLAY', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: t.title, item: url }] },
   ];
@@ -459,7 +462,7 @@ ${ANALYTICS}
 <link rel="canonical" href="${url}">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:type" content="article">
-<meta property="og:site_name" content="CHITPLAY">
+<meta property="og:site_name" content="ChitPlay">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(t.desc)}">
 <meta property="og:url" content="${url}">
@@ -476,6 +479,7 @@ ${iconLinks('../')}
 <main>
 ${logoLink('../')}
 <h1>${esc(t.h1)}</h1>
+<img src="../assets/chitplay-game.jpg" alt="ChitPlay: four players at the chit game in a 3D room" width="1200" height="675" loading="lazy" decoding="async" style="width:100%;height:auto;border-radius:12px">
 <p>${esc(t.intro)}</p>
 <p><a class="btn" href="../">▶ Play free now</a></p>
 ${t.sections.map(([h, p]) => `<h2>${esc(h)}</h2>\n<p>${esc(p)}</p>`).join('\n')}
@@ -502,13 +506,13 @@ function infoPage(slug, title, desc, bodyHtml) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${ANALYTICS}
-<title>CHITPLAY: ${esc(title.replace(/ ChitPlay$/, ''))}</title>
+<title>${esc(/ChitPlay$/.test(title) ? title : `${title} | ChitPlay`)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${SITE}/${slug}/">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="CHITPLAY">
-<meta property="og:title" content="CHITPLAY: ${esc(title.replace(/ ChitPlay$/, ''))}">
+<meta property="og:site_name" content="ChitPlay">
+<meta property="og:title" content="${esc(/ChitPlay$/.test(title) ? title : `${title} | ChitPlay`)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${SITE}/${slug}/">
 <meta property="og:image" content="${SITE}/assets/og-image.jpg">
@@ -653,21 +657,23 @@ writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
 }, null, 2));
 
 // ── refresh the SEO blocks inside index.html ────────────────
-const mainNames = [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id].slice(0, 2)]))];
-const homeTitle = 'CHITPLAY: Raja Rani Chor Police & Indoor Chit Games Online';
-const homeDesc = 'The indoor chit game for all ages, free online: Raja Rani Chor Police, Raja Mantri Chor Sipahi, Mafia, Cops and Robbers and more. No download needed.';
+const mainNames = [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id].slice(0, 4)]))];
+// ChitPlay is the name people should see; the title carries the names the game is searched by in each country
+const homeTitle = 'ChitPlay – Raja Rani Chor Police, Chor Sipahi & Cops and Robbers Online';
+const homeDesc = 'Play ChitPlay free: Raja Rani Chor Police (Chor Sipahi), Mafia and Cops and Robbers in 3D. Draw a chit, bluff and catch the thief. No download.';
 const homeLd = [
-  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'CHITPLAY', alternateName: ['ChitPlay', 'chitplay.com'], url: `${SITE}/`, inLanguage: 'en' },
+  // Google's site name comes from this block on the home page: https://developers.google.com/search/docs/appearance/site-names
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'ChitPlay', alternateName: ['CHITPLAY', 'Chit Play'], url: `${SITE}/`, inLanguage: 'en' },
   {
-    '@context': 'https://schema.org', '@type': 'Organization', name: 'CHITPLAY', url: `${SITE}/`, logo: `${SITE}/assets/icon-512.png`,
+    '@context': 'https://schema.org', '@type': 'Organization', name: 'ChitPlay', url: `${SITE}/`, logo: `${SITE}/assets/icon-512.png`,
     email: CONTACT_EMAIL, founder: DEVELOPER_LD,
     contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: CONTACT_EMAIL, url: `${SITE}/contact/` },
   },
   {
-    '@context': 'https://schema.org', '@type': 'VideoGame', name: 'CHITPLAY',
+    '@context': 'https://schema.org', '@type': 'VideoGame', name: 'ChitPlay',
     alternateName: mainNames, url: `${SITE}/`, description: homeDesc, author: DEVELOPER_LD,
     genre: ['Party game', 'Social deduction game', 'Paper chit game', 'Indoor game'], audience: { '@type': 'PeopleAudience', suggestedMinAge: 6 }, gamePlatform: 'Web browser',
-    applicationCategory: 'Game', operatingSystem: 'Any', image: `${SITE}/assets/og-image.jpg`,
+    applicationCategory: 'Game', operatingSystem: 'Any', image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/og-image.jpg`],
     numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 },
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   },
@@ -678,13 +684,14 @@ const head = `<!-- seo:head -->
   <link rel="canonical" href="${SITE}/" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="CHITPLAY" />
+  <meta property="og:site_name" content="ChitPlay" />
   <meta property="og:title" content="${esc(homeTitle)}" />
   <meta property="og:description" content="${esc(homeDesc)}" />
   <meta property="og:url" content="${SITE}/" />
   <meta property="og:image" content="${SITE}/assets/og-image.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="ChitPlay: four players at a chit game in a 3D room" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(homeTitle)}" />
   <meta name="twitter:description" content="${esc(homeDesc)}" />
@@ -693,8 +700,10 @@ const head = `<!-- seo:head -->
   <!-- /seo:head -->`;
 const body = `<!-- seo:body -->
   <section class="seo-intro" aria-label="About ChitPlay">
-    <h1>Raja Rani Chor Police: the indoor chit game for all ages</h1>
-    <p>CHITPLAY is the 4-player paper chit game, free in your browser for children, teenagers, parents and grandparents alike. Draw a folded chit, keep a straight face, and let the Police (or Sipahi, Wazir, Sheriff…) catch the Thief.</p>
+    <h1>ChitPlay: Raja Rani Chor Police (Chor Sipahi) online, the chit game for all ages</h1>
+    <img src="assets/chitplay-game.jpg" alt="ChitPlay: four players at the Raja Rani Chor Police chit game in a 3D room" width="1200" height="675" loading="lazy" decoding="async" style="width:100%;height:auto;border-radius:12px">
+    <p>ChitPlay is the 4-player paper chit game, free in your browser for players of every age. Draw a folded chit, keep a straight face, and let the Police (or Sipahi, Wazir, Sheriff…) catch the Thief.</p>
+    <p>The same game has many names: Raja Rani Chor Police and Raja Rani Chor Sipahi in India, Raja Mantri Chor Sipahi in Nepal, Raja Wazir Chor Sipahi in Pakistan, Chor Police in Bangladesh, Mafia in Korea and Russia, Cops and Robbers in the USA and UK, Räuber und Gendarm in Germany. ChitPlay has all of them, each with its own rules.</p>
     <h2>Every version of the game</h2>
     <ul>
 ${COUNTRY_ORDER.map(id => `      <li><a href="games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)}) — ${esc(GAME_AKA[id].filter(a => a !== GAME_NAME_EN[id]).slice(0, 2).join(', '))}</li>`).join('\n')}
