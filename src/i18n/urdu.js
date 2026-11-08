@@ -1,6 +1,12 @@
 /** Roman Urdu. */
 export default {
   ui: {
+    classicRules: "Chit uthayein: Raja, Rani, Sipahi ya Chor. Sipahi ko Chor dhoondna hai. Sahi guess par Sipahi ke 500 points; ghalat par woh Chor ko mil jate hain. Raja 1000 aur Rani 800 hamesha.",
+    houseRules: "House rules (izafi twist)",
+    house_hint: "Guess se pehle aik begunah saaf ho jata hai",
+    house_secondChance: "Dusra guess, aadhe points ke liye",
+    house_penalty: "Ghalat guess par Sipahi ke -200, Chor ko 1000",
+    house_fine: "Pakra gaya Chor 200 ka jurmana deta hai",
     partyGames: "Aik phone wale party games",
     onlineCountry: "Pehle {country} ke players dhoond rahe hain…",
     onlineWorld: "Duniya bhar mein players dhoond rahe hain…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Public tables tak rasai nahi hui. Internet check kar ke dobara koshish karein.",
     onlineRetry: "Dobara koshish",
     onlineSeat: "⏳ Player ka intezar…",
-    voiceChat: "Doston ke sath voice chat",
-    voiceChatOn: "Voice chat on: jo dost on karein ge woh aap ko sunein ge, aap unhein.",
-    voiceChatOff: "Voice chat off",
-    voiceChatDenied: "Microphone nahi mila: baat karne ke liye browser mein ijazat dein.",
     rewards: "Inamaat",
     coins: "coins",
     dailyShort: "Rozana {n}/3",

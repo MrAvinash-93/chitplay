@@ -1,6 +1,12 @@
 /** Roman Nepali. */
 export default {
   ui: {
+    classicRules: "Chit tannus: Raja, Mantri, Sipahi wa Chor. Sipahi le Chor khojnu parchha. Sahi bhaye Sipahi ko 500; galat bhaye Chor lai. Raja 1000 ra Mantri 800 sadhai.",
+    houseRules: "House rules (thap twist)",
+    house_hint: "Guess agadi euta nirdosh saaf hunchha",
+    house_secondChance: "Dosro guess, aadha point",
+    house_penalty: "Galat guess ma Sipahi -200, Chor lai 1000",
+    house_fine: "Samatieko Chor le 200 jariwana tirchha",
     partyGames: "Euta phone ka party games",
     onlineCountry: "Pahile {country} ka players khojdai…",
     onlineWorld: "Sansar bhar players khojdai…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Public table samma pugna sakiyena. Internet check garera feri prayas garnus.",
     onlineRetry: "Feri prayas",
     onlineSeat: "⏳ Player ko parkhai…",
-    voiceChat: "Saathi sanga voice chat",
-    voiceChatOn: "Voice chat on: on garne saathi le tapailai sunchhan, tapai unlai.",
-    voiceChatOff: "Voice chat off",
-    voiceChatDenied: "Microphone bhetiyena: kura garna browser ma anumati dinus.",
     rewards: "Puraskar",
     coins: "coins",
     dailyShort: "Dainik {n}/3",

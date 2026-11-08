@@ -1,6 +1,12 @@
 /** Roman Bangla. */
 export default {
   ui: {
+    classicRules: "Chit tolo: Raja, Mantri, Police ba Chor. Police ke Chor khujte hobe. Thik hole Police 500 pay; bhul hole Chor pay. Raja 1000 ar Mantri 800 shob shomoy.",
+    houseRules: "House rules (bishesh niyom)",
+    house_hint: "Guess er age ekjon nirdosh baad jay",
+    house_secondChance: "Ditiyo guess, ordhek point",
+    house_penalty: "Bhul guess e Police -200, Chor 1000",
+    house_fine: "Dhora pora Chor 200 jorimana dey",
     partyGames: "Ek phone er party games",
     onlineCountry: "Age {country} er players khujchhi…",
     onlineWorld: "Sara bishwe players khujchhi…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Public table e pouchano gelo na. Internet dekhe abar cheshta koro.",
     onlineRetry: "Abar cheshta",
     onlineSeat: "⏳ Player er opekkha…",
-    voiceChat: "Bondhuder sathe voice chat",
-    voiceChatOn: "Voice chat on: je bondhura on korbe tara tomake shunbe, tumi taderke.",
-    voiceChatOff: "Voice chat off",
-    voiceChatDenied: "Microphone nei: kotha bolte browser e anumoti dao.",
     rewards: "Puroshkar",
     coins: "coins",
     dailyShort: "Daily {n}/3",

@@ -458,14 +458,13 @@ ${iconLinks('../')}
 <body>
 <main>
 ${logoLink('../')}
-<h1>Chit games from around the world</h1>
-<p>One indoor game, many names. Pick yours and play it free, at any age. Looking for ideas? See <a href="../indoor-games/">indoor games for four people</a> and <a href="../school-games/">paper games for school</a>.</p>
+<h1>ChitPlay games</h1>
+<p>Free games to play with friends and family, at any age. Looking for ideas? See <a href="../indoor-games/">indoor games for four people</a> and <a href="../school-games/">paper games for school</a>.</p>
+<h2>Cops and Robbers (Raja Rani Chor Police) in 3D</h2>
+<p>The four-chit game of bluffing, known by many names around the world. <a href="cops-and-robbers/">Rules and every name →</a></p>
 <p><a class="btn" href="../">▶ Play now</a></p>
-<ol>${items}</ol>
 <h2>Party games for one phone</h2>
 <ul>${PARTY.map(g => `<li><a href="${g.slug}/">${esc(g.name)}</a>: ${g.players} players, ${g.time}</li>`).join('')}</ul>
-<h2>Roles in every version</h2>
-<div class="wrap"><table><thead><tr><th>Game</th><th>Country</th><th>Roles</th><th>Who guesses</th></tr></thead><tbody>${table}</tbody></table></div>
 <h2>Questions</h2>
 ${hubFaq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
 <footer style="margin-top:40px;font-size:13px;color:#d4c2a0">${footerLinks('../')} · © ${TODAY.slice(0, 4)} ChitPlay</footer>
@@ -476,10 +475,97 @@ ${hubFaq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p><
 }
 
 // ── write the pages ─────────────────────────────────────────
+// ── One game: /games/cops-and-robbers/ is the page; every other name's old URL redirects to it ──
+const MAIN_SLUG = 'cops-and-robbers';
+const MAIN_URL = `${SITE}/games/${MAIN_SLUG}/`;
+const NAMES_BY_COUNTRY = COUNTRY_ORDER.map(id => ({ id, country: COUNTRIES[id].name, name: GAME_NAME_EN[id], aka: GAME_AKA[id].filter(a => a !== GAME_NAME_EN[id]).slice(0, 2), roles: (ROLE_LATIN[id] || []).join(', ') }));
+function mainGamePage() {
+  const title = 'Cops and Robbers (Raja Rani Chor Police) – Play Free Online | ChitPlay';
+  const desc = 'Cops and Robbers, also called Raja Rani Chor Police, Chor Sipahi, Mafia or Räuber und Gendarm: the 4-player chit game. Full rules, scoring, house rules and free online play.';
+  const names = NAMES_BY_COUNTRY.map(n => `<tr><td>${esc(n.country)}</td><td><strong>${esc(n.name)}</strong>${n.aka.length ? `<br><small>${esc(n.aka.join(' · '))}</small>` : ''}</td><td>${esc(n.roles)}</td></tr>`).join('');
+  const faq = [
+    ['Is Raja Rani Chor Police the same game as Cops and Robbers?', 'Yes. It is the same four-chit game. India calls it Raja Rani Chor Police or Chor Sipahi, Pakistan Raja Wazir Chor Sipahi, Nepal Raja Mantri Chor Sipahi, the USA and UK Cops and Robbers, Germany Räuber und Gendarm, and so on. ChitPlay plays it under the name of the language you choose.'],
+    ['How many players do you need?', 'Four chits are used, so four players. In ChitPlay computer players fill any empty seats, so you can play alone or with one to three friends.'],
+    ['How many points is each chit worth?', 'King 1000, Queen 800, Police 500 and Thief 0. The Police keeps 500 for catching the Thief; a wrong guess gives those 500 to the Thief.'],
+    ['What are house rules?', 'Twists from other countries that you can switch on: an innocent player cleared before the guess (Japan), a second guess for half points (USA), a 200-point penalty for a wrong guess (UK) and a 200-point fine for a caught thief (China).'],
+    ['Can I play it online with friends?', 'Yes. Use Nearby Play to make a room and share the 6-digit code, QR code or invite link, or press Play Online to sit with players from around the world.'],
+  ];
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'VideoGame', name: 'Cops and Robbers', alternateName: [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id]]))], url: MAIN_URL, description: desc, image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/og-image.jpg`], author: DEVELOPER_LD, genre: ['Party game', 'Social deduction game', 'Paper chit game'], gamePlatform: 'Web browser', applicationCategory: 'Game', numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 }, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } },
+    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'ChitPlay', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: 'Games', item: `${SITE}/games/` }, { '@type': 'ListItem', position: 3, name: 'Cops and Robbers', item: MAIN_URL }] },
+  ];
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${ANALYTICS}
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${MAIN_URL}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChitPlay">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${MAIN_URL}">
+<meta property="og:image" content="${SITE}/assets/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+${iconLinks('../../')}
+<script type="application/ld+json">${json(ld)}</script>
+<style>body{margin:0;background:#140b07;color:#f6ead2;font:17px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(28px,6vw,40px);line-height:1.2}h2{font-size:21px;margin-top:28px}.btn{display:inline-block;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6}.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:15px}td,th{border-bottom:1px solid #3a2616;padding:8px;text-align:left;vertical-align:top}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}footer{margin-top:40px;font-size:13px;color:#d4c2a0}</style>
+</head>
+<body>
+<main>
+${logoLink('../../')}
+<nav aria-label="Breadcrumb"><a href="../../">ChitPlay</a> › <a href="../">Games</a> › Cops and Robbers</nav>
+<h1>Cops and Robbers: the chit game also called Raja Rani Chor Police</h1>
+<img src="../../assets/chitplay-game.jpg" alt="Cops and Robbers (Raja Rani Chor Police) in ChitPlay: four players at the chit game in a 3D room" width="1200" height="675" loading="lazy" decoding="async" style="width:100%;height:auto;border-radius:12px">
+<p>Four folded chits, four players, one thief. The same game is played all over the world under different names: <strong>Raja Rani Chor Police</strong> and <strong>Chor Sipahi</strong> in India, <strong>Raja Wazir Chor Sipahi</strong> in Pakistan, <strong>Raja Mantri Chor Sipahi</strong> in Nepal, <strong>Cops and Robbers</strong> in the USA and UK, <strong>Räuber und Gendarm</strong> in Germany. ChitPlay plays it free in your browser, in 3D, under the name of the language you pick.</p>
+<p><a class="btn" href="../../">▶ Play Cops and Robbers now</a></p>
+<h2>How to play</h2>
+<ol><li>Four chits are folded and thrown down: King (1000), Queen (800), Police (500) and Thief (0).</li><li>Each player picks one and reads it secretly.</li><li>The Police says who they are and has to find the Thief among the other three.</li><li>The Police names a suspect, then everyone opens their chit.</li><li>Right guess: the Police keeps 500 and the Thief gets 0. Wrong guess: the Thief takes the Police's 500. King and Queen always keep their points.</li><li>Play as many rounds as you like; the highest total wins.</li></ol>
+<h2>Example round</h2>
+<div class="wrap"><table><thead><tr><th>Player</th><th>Chit</th><th>Police guesses right</th><th>Police guesses wrong</th></tr></thead><tbody><tr><td>Asha</td><td>King</td><td>1000</td><td>1000</td></tr><tr><td>Ben</td><td>Queen</td><td>800</td><td>800</td></tr><tr><td>Chetan</td><td>Police</td><td>500</td><td>0</td></tr><tr><td>Divya</td><td>Thief</td><td>0</td><td>500</td></tr></tbody></table></div>
+<h2>House rules from around the world</h2>
+<ul><li><strong>Japan:</strong> one innocent player is cleared before the Police guesses.</li><li><strong>USA:</strong> a second guess for half the points.</li><li><strong>UK:</strong> a wrong guess costs the Police 200 and the Thief escapes with 1000.</li><li><strong>China:</strong> a caught Thief pays a 200-point fine.</li></ul>
+<p>Switch them on under <em>How to play</em> on the ChitPlay start screen.</p>
+<h2>Its name in every country</h2>
+<div class="wrap"><table><thead><tr><th>Country</th><th>Name</th><th>Roles</th></tr></thead><tbody>${names}</tbody></table></div>
+<h2>Play it on paper</h2>
+<p>Tear a page into four equal slips, write King 1000, Queen 800, Police 500 and Thief 0 (or the names you grew up with), fold them the same way and toss them down. Keep a score sheet with one column per player.</p>
+<h2>Questions</h2>
+${faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
+<p>More: <a href="../../how-to-play/">full guide</a> · <a href="../../strategy/">strategy and tips</a> · <a href="../../party/">party games for one phone</a></p>
+<footer>${footerLinks('../../')} · © ${TODAY.slice(0, 4)} ChitPlay</footer>
+</main>
+</body>
+</html>
+`;
+}
+/** An old URL of the same game: tells search engines and browsers to go to the main page. */
+function redirectPage(id) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${esc(GAME_NAME_EN[id])} is Cops and Robbers | ChitPlay</title>
+<link rel="canonical" href="${MAIN_URL}">
+<meta name="robots" content="noindex, follow">
+<meta http-equiv="refresh" content="0; url=../${MAIN_SLUG}/">
+<script>location.replace('../${MAIN_SLUG}/' + location.hash);</script>
+</head>
+<body style="background:#140b07;color:#f6ead2;font:17px system-ui,sans-serif;padding:24px">
+<p>${esc(GAME_NAME_EN[id])} is the same game as <a style="color:#ffd27a" href="../${MAIN_SLUG}/">Cops and Robbers (Raja Rani Chor Police)</a>.</p>
+</body>
+</html>
+`;
+}
 for (const id of COUNTRY_ORDER) {
   const dir = join(ROOT, 'games', GAME_SLUGS[id]);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'index.html'), pageFor(id));
+  writeFileSync(join(dir, 'index.html'), GAME_SLUGS[id] === MAIN_SLUG ? mainGamePage() : redirectPage(id));
 }
 writeFileSync(join(ROOT, 'games', 'index.html'), hubPage());
 
@@ -601,8 +687,8 @@ ${logoLink('../')}
 <p>${esc(t.intro)}</p>
 <p><a class="btn" href="../">▶ Play free now</a></p>
 ${t.sections.map(([h, p]) => `<h2>${esc(h)}</h2>\n<p>${esc(p)}</p>`).join('\n')}
-<h2>Pick the version you grew up with</h2>
-<ul class="others">${items}</ul>
+<h2>Play it now</h2>
+<p><a href="../games/cops-and-robbers/">Cops and Robbers</a>, also known as Raja Rani Chor Police, Chor Sipahi, Mafia or Räuber und Gendarm: one game, every name.</p>
 <h2>Questions</h2>
 ${t.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
 <footer>${footerLinks('../')} · © ${TODAY.slice(0, 4)} CHITPLAY</footer>
@@ -696,8 +782,6 @@ const INFO = {
 <p>Nearby Play is optional and only connects when you host or join a game. To find each other, the phones contact the free PeerJS connection service (peerjs.com), which sees your IP address and a temporary game code. The game then runs directly between the phones; if a direct connection isn't possible, its messages may pass through PeerJS's relay server. The name, gender and character you chose are shown to the other players in that game. Emojis and private messages are chosen from fixed lists, so no free text is sent; a private message passes through the host's phone without being shown there. CHITPLAY doesn't store any of this.</p>
 <h2>Play Online (random players)</h2>
 <p>Play Online is optional. It seats you at a public table with other players through the same free PeerJS connection service as Nearby Play. The other players see your player name, your character and how many points you scored this week; a name containing a swear word is shown to them as "Player". Messages at the table are only emojis and lines from a fixed list, so nobody can send you typed text. CHITPLAY keeps a short list of the players you met this week, with their points, on your device only, to show the weekly table.</p>
-<h2>Voice chat (friends only)</h2>
-<p>In a Nearby Play room you join by code, QR code or invite link, you can switch on voice chat. It is off until you switch it on, and it is never available at public tables with strangers. Your browser asks for permission to use the microphone. Your voice goes directly from your phone to the phones of the friends in that room who also switched it on (through PeerJS's relay server only when a direct connection isn't possible). It is not recorded or stored, and the microphone stops when you switch voice chat off or leave the room.</p>
 <h2>Coins, challenges and rewards</h2>
 <p>Coins, daily challenges, hats and colours are kept in your browser's local storage like the rest of your profile. Coins are earned by playing; they can't be bought with money and have no value outside the game.</p>
 <h2>Voices</h2>
@@ -714,8 +798,8 @@ const INFO = {
 <p>Points, coins and the hats or colours you unlock in ChitPlay are only for fun. They can't be bought with real money, have no cash value and can't be exchanged or transferred. ChitPlay involves no real-money play, no paid random items and no gambling.</p>
 <h2>Fair use</h2>
 <p>You may play and share links to ChitPlay freely. Please don't copy the site, its artwork or its code to republish it as your own, try to disrupt the service, or tamper with or generate invalid clicks on any ads.</p>
-<h2>Nearby Play, Play Online and voice chat</h2>
-<p>The name you enter is shown to the people in your game, including strangers at public tables. Please don't use offensive names or names that aren't yours to use. Be kind in voice chat; it is only for friends who join your room, and you can switch it off at any time.</p>
+<h2>Nearby Play and Play Online</h2>
+<p>The name you enter is shown to the people in your game, including strangers at public tables. Please don't use offensive names or names that aren't yours to use.</p>
 <h2>Content</h2>
 <p>Game names such as Raja Rani Chor Police, Mafia or Cops and Robbers are traditional names for a public-domain game. The characters, the room and the dialogue in CHITPLAY are original. If you believe something here infringes your rights, please <a href="../contact/">contact us</a>.</p>
 <h2>Advertising and links</h2>
@@ -754,7 +838,7 @@ const HOST = new URL(SITE).hostname;
 if (HOST.endsWith('github.io')) rmSync(join(ROOT, 'CNAME'), { force: true });
 else writeFileSync(join(ROOT, 'CNAME'), `${HOST}\n`);
 
-const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), ...COUNTRY_ORDER.map(id => `${SITE}/games/${GAME_SLUGS[id]}/`), `${SITE}/party/`, ...PARTY.map(g => `${SITE}/games/${g.slug}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`)];
+const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), MAIN_URL, `${SITE}/party/`, ...PARTY.map(g => `${SITE}/games/${g.slug}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`)];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u, i) => `  <url><loc>${u}</loc><lastmod>${TODAY}</lastmod><changefreq>monthly</changefreq><priority>${i === 0 ? '1.0' : i === 1 ? '0.9' : '0.8'}</priority></url>`).join('\n')}
@@ -828,10 +912,8 @@ const body = `<!-- seo:body -->
     <img src="assets/chitplay-game.jpg" alt="ChitPlay: four players at the Raja Rani Chor Police chit game in a 3D room" width="1200" height="675" loading="lazy" decoding="async" style="width:100%;height:auto;border-radius:12px">
     <p>ChitPlay is the 4-player paper chit game, free in your browser for players of every age. Draw a folded chit, keep a straight face, and let the Police (or Sipahi, Wazir, Sheriff…) catch the Thief.</p>
     <p>The same game has many names: Raja Rani Chor Police and Raja Rani Chor Sipahi in India, Raja Mantri Chor Sipahi in Nepal, Raja Wazir Chor Sipahi in Pakistan, Chor Police in Bangladesh, Mafia in Korea and Russia, Cops and Robbers in the USA and UK, Räuber und Gendarm in Germany. ChitPlay has all of them, each with its own rules.</p>
-    <h2>Every version of the game</h2>
-    <ul>
-${COUNTRY_ORDER.map(id => `      <li><a href="games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)}) — ${esc(GAME_AKA[id].filter(a => a !== GAME_NAME_EN[id]).slice(0, 2).join(', '))}</li>`).join('\n')}
-    </ul>
+    <h2>One game, many names</h2>
+    <p><a href="games/cops-and-robbers/">Cops and Robbers</a> is played as ${esc(COUNTRY_ORDER.map(id => GAME_NAME_EN[id]).filter(n => n !== 'Cops and Robbers').join(', '))}. Pick your language and the game takes your name for it.</p>
     <p><a href="games/">All chit games and rules</a> · <a href="how-to-play/">How to play (full guide)</a> · <a href="strategy/">Strategy and tips</a> · <a href="party/">Party games for one phone</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
   </section>
   <!-- /seo:body -->`;

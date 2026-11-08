@@ -545,8 +545,6 @@ html:has(.game__sheet--start) .player-bubbles { display: none; }
 .game__buy--on { background: var(--gold); color: #2a1608; }
 .game__lock { flex: none; font-size: 18px; opacity: .8; }
 .game__swatch--big { display: block; width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .35); }
-.game__voicechat--on { border-color: #7be08f; color: #7be08f; box-shadow: 0 0 0 2px rgba(123, 224, 143, .35); }
-.game__voice-audio { display: none; }
 
 /* big moments: police siren, special emojis, confetti */
 .fx-siren { position: fixed; inset: 0; pointer-events: none; animation: fxSiren .38s steps(1) 5; box-shadow: inset 0 0 0 0 transparent; }
@@ -567,3 +565,9 @@ html:has(.game__sheet--start) .player-bubbles { display: none; }
 .game__talk-emoji--locked { filter: grayscale(.85); opacity: .6; }
 .game__talk-emoji small { position: absolute; right: 1px; bottom: 0; font-size: 10px; }
 .game__shopemoji { font-size: 28px; line-height: 1; }
+
+/* one game: house rules */
+.game__house { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; padding: 8px 10px; border-radius: 11px; background: var(--tile); border: 1.5px solid var(--tile-line); }
+.game__house strong { color: var(--gold); font-size: 13.5px; }
+.game__house-rule { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.35; }
+.game__house-rule input { flex: none; width: 18px; height: 18px; margin-top: 1px; accent-color: #ffb547; }

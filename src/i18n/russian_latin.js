@@ -1,6 +1,12 @@
 /** Russian, transliterated. */
 export default {
   ui: {
+    classicRules: "Tyanite zapisku: Mirny, Doktor, Komissar ili Mafiya. Komissar ishchet Mafiyu. Ugadal: Komissaru 500; oshibsya: ikh poluchaet Mafiya. Mirny 1000 i Doktor 800 vsegda svoi.",
+    houseRules: "Domashnie pravila (po zhelaniyu)",
+    house_hint: "Pered dogadkoi odin nevinovnyi otkryt",
+    house_secondChance: "Vtoraya popytka za polovinu ochkov",
+    house_penalty: "Oshibka stoit Komissaru 200, Mafiya poluchaet 1000",
+    house_fine: "Poimannaya Mafiya platit shtraf 200",
     partyGames: "Igry dlya kompanii na odnom telefone",
     onlineCountry: "Snachala ishchem igrokov iz strany {country}…",
     onlineWorld: "Ishchem igrokov po vsemu miru…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Ne udalos podklyuchitsya k obshchim stolam. Proverte internet i poprobuite snova.",
     onlineRetry: "Poprobovat snova",
     onlineSeat: "⏳ Zhdem igroka…",
-    voiceChat: "Golosovoi chat s druzyami",
-    voiceChatOn: "Golosovoi chat vkl: druzya, kotorye ego vklyuchat, slyshat vas, a vy ikh.",
-    voiceChatOff: "Golosovoi chat vykl",
-    voiceChatDenied: "Net mikrofona: razreshite ego v brauzere.",
     rewards: "Nagrady",
     coins: "monet",
     dailyShort: "Den {n}/3",

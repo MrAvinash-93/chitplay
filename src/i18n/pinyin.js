@@ -1,6 +1,12 @@
 /** Chinese in Pinyin. */
 export default {
   ui: {
+    classicRules: "Chou zhitiao: Huangdi, Zaixiang, Jingcha huo Xiaotou. Jingcha yao zhaochu Xiaotou. Cai dui Jingcha de 500 fen; cai cuo zhe fen gui Xiaotou. Huangdi 1000, Zaixiang 800 yongyuan bu bian.",
+    houseRules: "Fangjian guize (ke xuan)",
+    house_hint: "Cai zhiqian xian paichu yi ge wugu de ren",
+    house_secondChance: "Di er ci cai, ban fen",
+    house_penalty: "Cai cuo Jingcha -200, Xiaotou +1000",
+    house_fine: "Bei zhuadao de Xiaotou fa 200",
     partyGames: "Yi bu shouji de juhui youxi",
     onlineCountry: "Xian zhao {country} de wanjia…",
     onlineWorld: "Zheng zai quan shijie zhao wanjia…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Lian bu shang gonggong zhuozi. Qing jiancha wangluo hou zai shi.",
     onlineRetry: "Zai shi yici",
     onlineSeat: "⏳ Deng wanjia…",
-    voiceChat: "He pengyou yuyin liaotian",
-    voiceChatOn: "Yuyin liaotian kai: kaiqi de pengyou neng tingjian ni, ni ye neng tingjian tamen.",
-    voiceChatOff: "Yuyin liaotian guan",
-    voiceChatDenied: "Meiyou maikefeng: qing zai liulanqi li yunxu.",
     rewards: "Jiangli",
     coins: "jinbi",
     dailyShort: "Meiri {n}/3",

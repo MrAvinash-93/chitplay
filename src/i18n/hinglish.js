@@ -1,6 +1,12 @@
 /** Hinglish (Hindi in Latin letters). */
 export default {
   ui: {
+    classicRules: "Chit uthao: Raja, Rani, Police ya Chor. Police ko Chor dhoondhna hai. Sahi guess par Police ke 500 points; galat par woh Chor ko mil jaate hain. Raja 1000 aur Rani 800 hamesha.",
+    houseRules: "House rules (extra twists)",
+    house_hint: "Guess se pehle ek nirdosh saaf ho jaata hai",
+    house_secondChance: "Doosra guess, aadhe points ke liye",
+    house_penalty: "Galat guess par Police ke -200, Chor ko 1000",
+    house_fine: "Pakda gaya Chor 200 ka jurmana deta hai",
     partyGames: "Ek phone wale party games",
     onlineCountry: "Pehle {country} ke players dhoondh rahe hain…",
     onlineWorld: "Duniya bhar mein players dhoondh rahe hain…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Public tables tak nahi pahunch paye. Internet check karke dobara try karo.",
     onlineRetry: "Dobara try karo",
     onlineSeat: "⏳ Player ka intezaar…",
-    voiceChat: "Doston ke saath voice chat",
-    voiceChatOn: "Voice chat on: jo dost on karenge woh aapko sunenge, aap unko.",
-    voiceChatOff: "Voice chat off",
-    voiceChatDenied: "Microphone nahi mila: baat karne ke liye browser mein allow karo.",
     rewards: "Rewards",
     coins: "coins",
     dailyShort: "Daily {n}/3",

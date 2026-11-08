@@ -1,6 +1,12 @@
 /** Korean, romanized. */
 export default {
   ui: {
+    classicRules: "Jongi-reul ppobeuseyo: Simin, Uisa, Gyeongchal, Mafia. Gyeongchal-i Mafia-reul chajayo. Matchumyeon Gyeongchal 500, teullimyeon Mafia-ga gajyeoyo. Simin 1000, Uisa 800-eun hangsang.",
+    houseRules: "Hauseu rul (seontaek)",
+    house_hint: "Chuchuk jeone museon han myeong-i balkyeojyeoyo",
+    house_secondChance: "Ban jeomsu-ro du beonjjae chuchuk",
+    house_penalty: "Teullimyeon Gyeongchal -200, Mafia +1000",
+    house_fine: "Japhin Mafia-neun beolgeum 200",
     partyGames: "Hanaui pon-euro paati geim",
     onlineCountry: "Meonjeo {country} peulleieo chatneun jung…",
     onlineWorld: "Jeon segye peulleieo chatneun jung…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Gonggae teibeul-e yeongyeol-hal su eopseoyo. Yeongyeol-eul hwagin hago dasi sido-haseyo.",
     onlineRetry: "Dasi sido",
     onlineSeat: "⏳ Peulleieo gidaryeo jung…",
-    voiceChat: "Chingu-wa eumseong chaeting",
-    voiceChatOn: "Eumseong chaeting ON: ON-han chingu-wa seoro deullimnida.",
-    voiceChatOff: "Eumseong chaeting OFF",
-    voiceChatDenied: "Maikeu-ga eopseoyo: malharyeomyeon beuraujeo-eseo heoyong-haseyo.",
     rewards: "Bosang",
     coins: "koin",
     dailyShort: "Ilil {n}/3",

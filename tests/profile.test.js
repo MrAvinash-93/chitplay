@@ -1,13 +1,13 @@
 import { describe, it, expect } from './harness.js';
-import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName, politeName } from '../src/world/names.js?v=20261108-0833';
-import { PRESETS, cleanLook, lookOf, portraitSvg, AGES, FANCY_HATS } from '../src/world/character-looks.js?v=20261108-0833';
-import { profile, rankFor, RANKS, challengesFor, COINS } from '../src/persistence/profile-store.js?v=20261108-0833';
-import { COUNTRIES } from '../src/world/countries.js?v=20261108-0833';
-import { Match } from '../src/world/match.js?v=20261108-0833';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261108-0833';
-import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261108-0833';
-import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261108-0833';
-import EN from '../src/i18n/en.js?v=20261108-0833';
+import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName, politeName } from '../src/world/names.js?v=20261108-0848';
+import { PRESETS, cleanLook, lookOf, portraitSvg, AGES, FANCY_HATS } from '../src/world/character-looks.js?v=20261108-0848';
+import { profile, rankFor, RANKS, challengesFor, COINS } from '../src/persistence/profile-store.js?v=20261108-0848';
+import { COUNTRIES, asOneGame, editionFor } from '../src/world/countries.js?v=20261108-0848';
+import { Match } from '../src/world/match.js?v=20261108-0848';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261108-0848';
+import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261108-0848';
+import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261108-0848';
+import EN from '../src/i18n/en.js?v=20261108-0848';
 
 describe('Names', () => {
   it('keeps letters and spaces only', () => {
@@ -196,5 +196,26 @@ describe('Coins, challenges and rewards', () => {
     expect(politeName('Fuckboy')).toBe('Player');
     expect(politeName('Mc')).toBe('Player');
     expect(politeName('Mcdonald')).toBe('Mcdonald');
+  });
+});
+
+describe('One game', () => {
+  it('is Cops and Robbers in English and takes each language\'s own name, always with classic points', () => {
+    const en = asOneGame(editionFor('en'), 'en');
+    expect(en.game).toBe('Cops and Robbers');
+    expect(en.roles.king.points).toBe(1000);
+    expect(en.roles.thief.points).toBe(0);
+    expect(en.rules.guesser).toBe('detective');
+    expect(en.rules.onWrong).toBe('swap');
+    const hi = asOneGame(editionFor('hinglish'), 'hinglish');
+    expect(hi.game).toBe('Raja Rani Chor Police');
+    expect(hi.roles.detective.name).toBe('Police');
+    const de = asOneGame(editionFor('german'), 'german', ['hint', 'penalty']);
+    expect(de.game).toBe('Räuber und Gendarm');
+    expect(de.rules.hint).toBe(true);
+    expect(de.rules.onWrong).toBe('penalty');
+    // the classic rules apply even where the old edition had others (Korea's night, Pakistan's Wazir guessing)
+    expect(asOneGame(editionFor('korean_roman'), 'korean_roman').rules.night === undefined).toBe(true);
+    expect(asOneGame(editionFor('urdu'), 'urdu').rules.guesser).toBe('detective');
   });
 });

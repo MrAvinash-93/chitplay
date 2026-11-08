@@ -473,3 +473,43 @@ export function detectCountryInfo() {
 export function detectCountry() {
   return detectCountryInfo().id;
 }
+
+
+/* ─── One game ────────────────────────────────────────────────
+ * Every edition above is the same chit game under a different name. The game shows ONE game:
+ * "Cops and Robbers" in English, and the name people know in each other language. The language
+ * also picks the room, the voices and the table talk (the edition below); the rules are the
+ * classic ones everywhere, plus any house rules the players switch on.
+ */
+export const EDITION_FOR = { en: 'US', hinglish: 'IN', urdu: 'PK', nepali: 'NP', bangla: 'BD', romaji: 'JP', korean_roman: 'KR', pinyin: 'CN', russian_latin: 'RU', german: 'DE', french: 'FR', portuguese: 'BR', spanish: 'MX' };
+export const ONE_GAME_NAMES = {
+  en: 'Cops and Robbers', hinglish: 'Raja Rani Chor Police', urdu: 'Raja Rani Chor Sipahi', nepali: 'Raja Mantri Chor Sipahi', bangla: 'Raja Mantri Chor Police',
+  romaji: 'Tonosama to Dorobo', korean_roman: 'Mafia Game', pinyin: 'Jingcha Zhua Xiaotou', russian_latin: 'Mafiya', german: 'Räuber und Gendarm',
+  french: 'Gendarmes et Voleurs', portuguese: 'Polícia e Ladrão', spanish: 'Policías y Ladrones',
+};
+const ONE_GAME_ROLES = {
+  en: ['King', 'Queen', 'Police', 'Thief'], hinglish: ['Raja', 'Rani', 'Police', 'Chor'], urdu: ['Raja', 'Rani', 'Sipahi', 'Chor'],
+  nepali: ['Raja', 'Mantri', 'Sipahi', 'Chor'], bangla: ['Raja', 'Mantri', 'Police', 'Chor'], romaji: ['Tonosama', 'Karō', 'Okappiki', 'Dorobō'],
+  korean_roman: ['Simin', 'Uisa', 'Gyeongchal', 'Mafia'], pinyin: ['Huángdì', 'Zǎixiàng', 'Jǐngchá', 'Xiǎotōu'], russian_latin: ['Mirny', 'Doktor', 'Komissar', 'Mafiya'],
+  german: ['König', 'Königin', 'Gendarm', 'Räuber'], french: ['Roi', 'Reine', 'Gendarme', 'Voleur'], portuguese: ['Rei', 'Rainha', 'Polícia', 'Ladrão'], spanish: ['Rey', 'Reina', 'Policía', 'Ladrón'],
+};
+/** Twists from other countries, off by default. */
+export const HOUSE_RULES = ['hint', 'secondChance', 'penalty', 'fine'];
+export const oneGameName = (lang) => ONE_GAME_NAMES[lang] || ONE_GAME_NAMES.en;
+export const editionFor = (lang) => COUNTRIES[EDITION_FOR[lang]] || COUNTRIES.US;
+export function asOneGame(edition, lang, house = []) {
+  const names = ONE_GAME_ROLES[lang] || ONE_GAME_ROLES.en;
+  const points = [1000, 800, 500, 0];
+  const roles = {};
+  SLOT_ORDER.forEach((slot, i) => { roles[slot] = { ...edition.roles[slot], name: names[i], points: points[i] }; });
+  const h = new Set(house);
+  const rules = {
+    guesser: 'detective',
+    onWrong: h.has('penalty') ? 'penalty' : 'swap',
+    ...(h.has('penalty') ? { penalty: 200, escape: 1000 } : {}),
+    ...(h.has('hint') ? { hint: true } : {}),
+    ...(h.has('secondChance') ? { secondChance: true } : {}),
+    ...(h.has('fine') ? { fine: 200 } : {}),
+  };
+  return { ...edition, game: oneGameName(lang), roles, rules, house: [...h] };
+}

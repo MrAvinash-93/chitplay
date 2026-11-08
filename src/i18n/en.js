@@ -1,6 +1,12 @@
 /** English: the default language, and the fallback for anything another language doesn't have. */
 export default {
   ui: {
+    classicRules: "Draw a chit: King, Queen, Police or Thief. The Police has to find the Thief. A right guess keeps the Police’s 500 points; a wrong one gives them to the Thief. King 1000 and Queen 800 always keep theirs.",
+    houseRules: "House rules (optional twists)",
+    house_hint: "One innocent player is cleared before the guess",
+    house_secondChance: "A second guess for half the points",
+    house_penalty: "A wrong guess costs the Police 200 and the Thief gets 1000",
+    house_fine: "A caught Thief pays a 200 fine",
     partyGames: "Party games for one phone",
     onlineCountry: "Looking for players from {country} first…",
     onlineWorld: "Looking for players worldwide…",
@@ -82,7 +88,7 @@ export default {
     online: 'Play Online', onlineSub: 'Random players from anywhere', onlineTitle: 'Play Online', onlineSearching: 'Looking for players at the public tables…', onlineTrying: 'Checking table {n}…',
     onlineNote: "Players see your name and character. Empty seats are filled by computer players. Messages are only emojis and fixed lines.", onlineWaiting: "Finding players… starting in {n}s",
     onlineStarting: 'Starting in {n}s', onlineNobody: 'Nobody else is online right now. Keep waiting, or play with computer players.', onlineSolo: 'Play with computer players', onlineSoloSub: 'Start a match now',
-    onlineJoined: 'You sat down at {host}’s table', onlineNoTable: 'Couldn’t reach the public tables. Check your connection and try again.', onlineRetry: 'Try again', voiceChat: 'Voice chat with friends', voiceChatOn: 'Voice chat on: friends who switch it on hear you, and you hear them.', voiceChatOff: 'Voice chat off', voiceChatDenied: 'No microphone: allow it in your browser to talk.', onlineSeat: '⏳ Waiting for a player…',
+    onlineJoined: 'You sat down at {host}’s table', onlineNoTable: 'Couldn’t reach the public tables. Check your connection and try again.', onlineRetry: 'Try again', onlineSeat: '⏳ Waiting for a player…',
     rewards: 'Rewards', coins: 'coins', dailyShort: 'Daily {n}/3', dailyTitle: 'Daily challenges', dailyBonus: 'All three: +{n} bonus coins', dailyNew: 'New challenges in {h}h {m}m',
     weekTitle: 'This week', weekNote: 'You and the players you met online or with Nearby Play, by points this week.', weekEmpty: 'Play online or with Nearby Play to see other players here.',
     hats: 'Special hats', colours: 'Special colours', wear: 'Wear', takeOff: 'Take off', wearing: 'Wearing', owned: 'Yours', colourOwned: 'Yours: pick it under Look', forCoins: 'Buy with coins',

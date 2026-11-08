@@ -1,6 +1,12 @@
 /** Português (Brasil). */
 export default {
   ui: {
+    classicRules: "Pegue um papel: Rei, Rainha, Polícia ou Ladrão. A Polícia tem que achar o Ladrão. Acertou: a Polícia fica com 500; errou: eles vão para o Ladrão. Rei 1000 e Rainha 800 sempre ficam com os seus.",
+    houseRules: "Regras da casa (opcionais)",
+    house_hint: "Um inocente é revelado antes do palpite",
+    house_secondChance: "Um segundo palpite por metade dos pontos",
+    house_penalty: "Errar custa 200 à Polícia e o Ladrão ganha 1000",
+    house_fine: "Ladrão pego paga multa de 200",
     partyGames: "Jogos de festa num só celular",
     onlineCountry: "Procurando primeiro jogadores de {country}…",
     onlineWorld: "Procurando jogadores no mundo todo…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Não deu para alcançar as mesas públicas. Verifique a conexão e tente de novo.",
     onlineRetry: "Tentar de novo",
     onlineSeat: "⏳ Esperando um jogador…",
-    voiceChat: "Chat de voz com amigos",
-    voiceChatOn: "Chat de voz ligado: amigos que ligarem ouvem você, e você a eles.",
-    voiceChatOff: "Chat de voz desligado",
-    voiceChatDenied: "Sem microfone: permita no navegador para falar.",
     rewards: "Recompensas",
     coins: "moedas",
     dailyShort: "Diário {n}/3",

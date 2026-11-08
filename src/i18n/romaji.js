@@ -1,6 +1,12 @@
 /** Japanese in Romaji. */
 export default {
   ui: {
+    classicRules: "Kami o hiku: Tonosama, Karō, Okappiki ka Dorobō. Okappiki wa Dorobō o sagasu. Atareba Okappiki ga 500, hazureba Dorobō no mono. Tonosama 1000, Karō 800 wa itsumo.",
+    houseRules: "Hausu ruuru (opushon)",
+    house_hint: "Suisoku no mae ni hitori no muzai ga wakaru",
+    house_secondChance: "Hanbun no pointo de nidome no suisoku",
+    house_penalty: "Hazureru to Okappiki -200, Dorobō +1000",
+    house_fine: "Tsukamatta Dorobō wa 200 no bakkin",
     partyGames: "Hitotsu no sumaho de paatii geemu",
     onlineCountry: "Mazu {country} no pureiyaa o sagashite imasu…",
     onlineWorld: "Sekaijuu de pureiyaa o sagashite imasu…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Kookai teeburu ni tsunagarimasen deshita. Setsuzoku o kakunin shite mou ichido.",
     onlineRetry: "Mou ichido",
     onlineSeat: "⏳ Pureiyaa o matte imasu…",
-    voiceChat: "Tomodachi to boisu chatto",
-    voiceChatOn: "Boisu chatto ON: ON ni shita tomodachi to otagai ni kikoemasu.",
-    voiceChatOff: "Boisu chatto OFF",
-    voiceChatDenied: "Maiku ga arimasen: hanasu ni wa burauza de kyoka shite kudasai.",
     rewards: "Gohoubi",
     coins: "koin",
     dailyShort: "Mainichi {n}/3",

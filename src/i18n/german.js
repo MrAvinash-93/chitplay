@@ -1,6 +1,12 @@
 /** Deutsch. */
 export default {
   ui: {
+    classicRules: "Zieh einen Zettel: König, Königin, Gendarm oder Räuber. Der Gendarm muss den Räuber finden. Richtig geraten: 500 Punkte für den Gendarm; falsch: sie gehen an den Räuber. König 1000 und Königin 800 behalten ihre immer.",
+    houseRules: "Hausregeln (optionale Extras)",
+    house_hint: "Vor dem Raten wird ein Unschuldiger entlastet",
+    house_secondChance: "Ein zweiter Versuch für halbe Punkte",
+    house_penalty: "Falsch geraten kostet den Gendarm 200, der Räuber bekommt 1000",
+    house_fine: "Ein gefasster Räuber zahlt 200 Strafe",
     partyGames: "Partyspiele für ein Handy",
     onlineCountry: "Suche zuerst Spieler aus {country}…",
     onlineWorld: "Suche Spieler weltweit…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Die öffentlichen Tische sind nicht erreichbar. Prüfe die Verbindung und versuch es nochmal.",
     onlineRetry: "Nochmal versuchen",
     onlineSeat: "⏳ Warte auf einen Spieler…",
-    voiceChat: "Sprachchat mit Freunden",
-    voiceChatOn: "Sprachchat an: Freunde, die ihn einschalten, hören dich und du sie.",
-    voiceChatOff: "Sprachchat aus",
-    voiceChatDenied: "Kein Mikrofon: erlaube es im Browser, um zu sprechen.",
     rewards: "Belohnungen",
     coins: "Münzen",
     dailyShort: "Täglich {n}/3",

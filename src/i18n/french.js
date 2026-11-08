@@ -1,6 +1,12 @@
 /** Français. */
 export default {
   ui: {
+    classicRules: "Tire un papier : Roi, Reine, Gendarme ou Voleur. Le Gendarme doit trouver le Voleur. Bonne réponse : il garde ses 500 points ; mauvaise : ils vont au Voleur. Le Roi (1000) et la Reine (800) gardent toujours les leurs.",
+    houseRules: "Règles maison (en option)",
+    house_hint: "Un innocent est mis hors de cause avant de deviner",
+    house_secondChance: "Un second essai pour la moitié des points",
+    house_penalty: "Une erreur coûte 200 au Gendarme, le Voleur gagne 1000",
+    house_fine: "Un Voleur attrapé paie une amende de 200",
     partyGames: "Jeux de soirée sur un seul téléphone",
     onlineCountry: "On cherche d’abord des joueurs de {country}…",
     onlineWorld: "Recherche de joueurs dans le monde entier…",
@@ -37,10 +43,6 @@ export default {
     onlineNoTable: "Impossible de joindre les tables publiques. Vérifie ta connexion et réessaie.",
     onlineRetry: "Réessayer",
     onlineSeat: "⏳ En attente d’un joueur…",
-    voiceChat: "Chat vocal entre amis",
-    voiceChatOn: "Chat vocal activé : les amis qui l’activent t’entendent, et toi aussi.",
-    voiceChatOff: "Chat vocal désactivé",
-    voiceChatDenied: "Pas de micro : autorise-le dans le navigateur pour parler.",
     rewards: "Récompenses",
     coins: "pièces",
     dailyShort: "Jour {n}/3",

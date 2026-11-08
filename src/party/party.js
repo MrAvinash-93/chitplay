@@ -4,7 +4,7 @@
  * Plain DOM, no 3D, no network: light enough for any phone. Secrets are shown only to the player
  * holding the phone, behind a "pass the phone" screen.
  */
-import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261108-0833';
+import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261108-0848';
 
 export const GAMES = [
   { slug: 'who-is-the-spy', name: 'Who Is the Spy?', icon: '🕵️', min: 4, max: 10, minutes: '10–20', blurb: 'Everyone gets the same secret word, except the spy. Give clues, find the spy.' },

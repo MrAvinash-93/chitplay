@@ -1,24 +1,23 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261108-0833';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261108-0833';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261108-0833';
+import { GAME_PHASES } from '../../app/config.js?v=20261108-0848';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261108-0848';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261108-0848';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261108-0833';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261108-0833';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261108-0833';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261108-0833';
-import { voiceBox } from '../../world/voice.js?v=20261108-0833';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261108-0833';
-import { cleanName, pickOpponents, politeName } from '../../world/names.js?v=20261108-0833';
+import { loadWorld } from '../../world/world-loader.js?v=20261108-0848';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261108-0848';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261108-0848';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261108-0848';
+import { voiceBox } from '../../world/voice.js?v=20261108-0848';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261108-0848';
+import { cleanName, pickOpponents, politeName } from '../../world/names.js?v=20261108-0848';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261108-0833';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261108-0833';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261108-0833';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261108-0833';
-import { iconSvg } from '../icons.js?v=20261108-0833';
-import { VoiceChat } from '../../net/voice.js?v=20261108-0833';
+} from '../../world/character-looks.js?v=20261108-0848';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261108-0848';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261108-0848';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261108-0848';
+import { iconSvg } from '../icons.js?v=20261108-0848';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -195,7 +194,10 @@ export function GameScreen({ transition }) {
   // the whole game can be read in the player's language (Latin letters); English by default
   let lang = isLanguage(settingsStore.get('chatLang')) ? settingsStore.get('chatLang') : 'en';
   const chatPack = () => (lang === 'en' ? country.lang : lang);
-  let country = localize(base, mode);       // the edition as shown in the current text mode
+  base = editionFor(lang);                  // one game: the language picks its name, room and voices
+  const houseRules = () => (settingsStore.get('houseRules') || []).filter(r => HOUSE_RULES.includes(r));
+  const oneGame = (b) => asOneGame(localize(b, mode), lang, houseRules());
+  let country = oneGame(base);              // the game as played: classic rules + house rules
   const uiFor = () => strings();
   let ui = uiFor();
   let players = [];        // { name, gender, look, color, isHuman (this phone), remote (a friend's phone id) }
@@ -267,48 +269,6 @@ export function GameScreen({ transition }) {
   const exitBtn = iconBtn('menu', () => openMenu());
   exitBtn.hidden = true;
   const profileBtn = el('button', { className: 'game__exit game__profilebtn', type: 'button', onClick: () => openProfile() });
-  /* Voice chat: friends in a Nearby room only (never strangers), off until you switch it on */
-  let voiceChat = null;
-  const voiceRoster = new Set();      // the host's list of phones with voice on (peer ids)
-  const voicePeers = new Map();       // the host's guest id -> peer id
-  const voiceChatBtn = el('button', { className: 'game__exit game__voicechat', type: 'button', html: iconSvg('headset'), onClick: () => toggleVoiceChat() });
-  voiceChatBtn.hidden = true;
-  const voiceAllowed = () => !!(net && !net.public && net.room?.peer && !net.room.closed);
-  function paintVoiceChat() {
-    // the room is gone: the microphone goes off with it
-    if (voiceChat && (!voiceAllowed() || net.room.peer !== voiceChat.peer)) { voiceChat.destroy(); voiceChat = null; voiceRoster.clear(); voicePeers.clear(); }
-    voiceChatBtn.hidden = !voiceAllowed();
-    const on = !!voiceChat?.on;
-    voiceChatBtn.classList.toggle('game__exit--off', !on);
-    voiceChatBtn.classList.toggle('game__voicechat--on', on);
-    voiceChatBtn.setAttribute('aria-pressed', String(on));
-    voiceChatBtn.setAttribute('aria-label', ui.voiceChat);
-    voiceChatBtn.title = ui.voiceChat;
-  }
-  const voiceTimer = setInterval(paintVoiceChat, 1000);
-  function hostVoice(peerId, on) {
-    if (!net || net.role !== 'host' || net.public || !peerId) return;
-    if (on) voiceRoster.add(peerId); else voiceRoster.delete(peerId);
-    const ids = [...voiceRoster];
-    net.room.broadcast({ t: 'voiceRoster', ids });
-    voiceChat?.setRoster(ids);
-  }
-  async function toggleVoiceChat() {
-    if (!voiceAllowed()) return;
-    const peer = net.room.peer;
-    if (!voiceChat || voiceChat.peer !== peer) { voiceChat?.destroy(); voiceChat = new VoiceChat(peer); }
-    if (voiceChat.on) {
-      voiceChat.stop();
-      if (net.role === 'guest') net.room.send({ t: 'voice', on: false }); else hostVoice(voiceChat.id, false);
-      showToast(ui.voiceChatOff, 1800);
-    } else {
-      try { await voiceChat.start(); } catch { showToast(ui.voiceChatDenied, 3200); paintVoiceChat(); return; }
-      if (!voiceAllowed()) { voiceChat.stop(); return; }
-      if (net.role === 'guest') net.room.send({ t: 'voice', on: true }); else hostVoice(voiceChat.id, true);
-      showToast(ui.voiceChatOn, 2600);
-    }
-    paintVoiceChat();
-  }
   const paintProfileBtn = () => { profileBtn.innerHTML = portraitSvg(profile.look); };
   const langBtn = el('button', { className: 'game__exit game__langbtn', type: 'button', onClick: () => openLanguage() });
   const paintLangBtn = () => {
@@ -454,7 +414,7 @@ export function GameScreen({ transition }) {
 
   const topBar = el('div', { className: 'game__top' }, [
     exitBtn, roundPill, scoreRow,
-    el('div', { className: 'game__top-right' }, [voiceChatBtn, langBtn, toolsBox, toolsBtn, profileBtn]),
+    el('div', { className: 'game__top-right' }, [langBtn, toolsBox, toolsBtn, profileBtn]),
   ]);
   // the prompt, the chips and the rotate pill stack at the bottom, so they can never overlap
   const dock = el('div', { className: 'game__dock' }, [prompt, sheet, rotatePill]);
@@ -619,7 +579,7 @@ export function GameScreen({ transition }) {
       function build() {
         if (onKey) document.removeEventListener('keydown', onKey);
         // your pinned games first, then your own country's game
-        const order = [...new Set([...profile.pins.filter(id => COUNTRIES[id]), detected.id, ...COUNTRY_ORDER])];
+        const order = [base.id];   // one game (its name follows the language)
         setRound('CHITPLAY');
         clear(sheet);
         sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--home';
@@ -657,8 +617,8 @@ export function GameScreen({ transition }) {
               star,
               badge,
               el('span', { className: 'game__bigcard-icon', attrs: { 'aria-hidden': 'true' } }, [GAME_ICON[id]]),
-              el('strong', { className: 'game__bigcard-name' }, [GAME_NAME_EN[id]]),
-              el('span', { className: 'game__bigcard-roles' }, [(ROLE_LATIN[id] || []).join(' · ')]),
+              el('strong', { className: 'game__bigcard-name' }, [country.game]),
+              el('span', { className: 'game__bigcard-roles' }, [['king', 'queen', 'detective', 'thief'].map(r => country.roles[r].name).join(' · ')]),
             ]);
             paintPin();
             cards.set(id, card);
@@ -669,7 +629,7 @@ export function GameScreen({ transition }) {
           attrs: { 'aria-label': label }, html: iconSvg(dir < 0 ? 'left' : 'right'), onClick: () => step(dir),
         });
         const dots = el('div', { className: 'game__dots', attrs: { 'aria-hidden': 'true' } }, order.map(id => el('span', { attrs: { 'data-id': id } })));
-        const carousel = el('div', { className: 'game__carouselwrap' }, [arrow(-1, ui.prevGame), track, arrow(1, ui.nextGame)]);
+        const carousel = el('div', { className: 'game__carouselwrap game__carouselwrap--one' }, order.length > 1 ? [arrow(-1, ui.prevGame), track, arrow(1, ui.nextGame)] : [track]);
 
         // 2) Everything about the chosen game (re-filled on every swipe)
         const details = el('div', { className: 'game__chosen' });
@@ -785,10 +745,24 @@ export function GameScreen({ transition }) {
             roles,
             el('details', { className: 'game__about' }, [
               el('summary', {}, [el('span', { html: iconSvg('book') }), ui.howto]),
-              el('p', { className: 'game__sub' }, [country.ruleText]),
+              el('p', { className: 'game__sub' }, [ui.classicRules]),
+              el('div', { className: 'game__house' }, [
+                el('strong', {}, [ui.houseRules]),
+                ...HOUSE_RULES.map(r => {
+                  const box = el('input', { attrs: { type: 'checkbox', ...(houseRules().includes(r) ? { checked: 'checked' } : {}) } });
+                  box.addEventListener('change', () => {
+                    const next = new Set(houseRules());
+                    if (box.checked) next.add(r); else next.delete(r);
+                    settingsStore.set('houseRules', [...next]);
+                    country = oneGame(base);
+                    fillDetails();
+                  });
+                  return el('label', { className: 'game__house-rule' }, [box, el('span', {}, [ui[`house_${r}`]])]);
+                }),
+              ]),
               el('p', { className: 'game__aka' }, [
                 `${(GAME_AKA[base.id] || []).slice(0, 5).join(' · ')} · `,
-                el('a', { className: 'game__howto', attrs: { href: `games/${GAME_SLUGS[base.id]}/` } }, ['→']),
+                el('a', { className: 'game__howto', attrs: { href: 'games/cops-and-robbers/' } }, ['→']),
               ]),
               seoIntro,
             ]),
@@ -801,7 +775,7 @@ export function GameScreen({ transition }) {
 
         function select(id) {
           base = COUNTRIES[id];
-          country = localize(base, mode);
+          country = oneGame(base);
           ui = uiFor();
           voiceBox.setLanguages(country.voice);
           // the start sheet shows instantly; the 3D room catches up when it's loaded
@@ -1077,11 +1051,6 @@ export function GameScreen({ transition }) {
 
   async function onGuestMessage(id, msg) {
     const seat = players.findIndex(p => p.remote === id);
-    if (msg.t === 'voice') {
-      const g = net?.room.guests.get(id);
-      if (g && !net.public) { voicePeers.set(id, g.conn.peer); hostVoice(g.conn.peer, !!msg.on); }
-      return;
-    }
     if (msg.t === 'setGame') { if (!net?.public && !matchRunning && COUNTRIES[msg.game]) { changeRoomGame(msg.game); net.repaint?.(); } return; }
     if (msg.t === 'emoji' && seat >= 0) { deliverEmoji(seat, msg.to, msg.i); return; }
     if (msg.t === 'whisper' && seat >= 0) { deliverWhisper(seat, msg.to, msg.line); return; }
@@ -1111,7 +1080,6 @@ export function GameScreen({ transition }) {
 
   // a friend's phone dropped: a computer player takes their seat
   function onGuestLeave(id, name) {
-    if (voicePeers.has(id)) { hostVoice(voicePeers.get(id), false); voicePeers.delete(id); }
     const seat = players.findIndex(p => p.remote === id);
     if (seat < 0) return;
     players[seat].remote = null;
@@ -1186,7 +1154,7 @@ export function GameScreen({ transition }) {
 
   function guestStart(m) {
     base = COUNTRIES[m.game] || COUNTRIES.US;
-    country = localize(base, mode);
+    country = oneGame(base);
     ui = uiFor();
     net.seat = m.seat;
     players = m.players.map((p, i) => ({
@@ -1213,7 +1181,7 @@ export function GameScreen({ transition }) {
     switch (m.t) {
       case 'start': guestStart(m); if (m.rejoin) showToast(ui.backNext, 4200); break;
       case 'story': {
-        if (m.m === 'setCountry') { st.setCountry(localize(COUNTRIES[m.a[0]] || base, mode)); break; }
+        if (m.m === 'setCountry') { st.setCountry(oneGame(COUNTRIES[m.a[0]] || base)); break; }
         if (m.m === 'begin') {
           // the host's own labels say "(You)" about the host, so each phone writes its own
           st.begin(players.map(p => ({ name: p.name, look: p.look, color: p.color, isHuman: p.isHuman, label: `${p.bot ? '🤖 ' : p.flair ? `${p.flair} ` : ''}${p.isHuman ? `${p.name} (${ui.you})` : p.name}` })));
@@ -1284,7 +1252,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261108-0833').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261108-0848').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -1323,7 +1291,7 @@ export function GameScreen({ transition }) {
           }),
         );
       }
-      const gamePicker = () => el('label', { className: 'game__row-field' }, [el('span', {}, [ui.gameLabel]), gameSelect()]);
+      const gamePicker = () => null;   // one game: nothing to pick
       let onLobbyPage = false;
 
       function menu() {
@@ -1499,7 +1467,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261108-0833').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261108-0848').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -1595,7 +1563,6 @@ export function GameScreen({ transition }) {
         guestCode = code;
         return new NearbyGuest({
           onMessage: (m) => {
-            if (m.t === 'voiceRoster') { voiceChat?.setRoster(m.ids); return; }
             if (m.t === 'lobby') { if (!started && !m.rejoin) { lastLobby = m; if (onLobbyPage) waitingPaint(m); } return; }
             if (m.t === 'start' && !started) { started = true; lobbyBack = null; resolve('guest'); }
             guestQueue(m);
@@ -1704,7 +1671,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261108-0833');
+        const scanner = import('../../net/qr-scan.js?v=20261108-0848');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });
@@ -2224,7 +2191,7 @@ export function GameScreen({ transition }) {
       const p = pendingStart;
       pendingStart = null;
       base = COUNTRIES[p.game] || base;
-      country = localize(base, mode);
+      country = oneGame(base);
       ui = uiFor();
       await ensureWorld();
       await startMatch(p.mode);
@@ -2243,7 +2210,7 @@ export function GameScreen({ transition }) {
     const fromUrl = readUrlGame();
     if (saved && (!fromUrl || fromUrl.country.id === saved.country)) {
       base = COUNTRIES[saved.country];
-      country = localize(base, mode);
+      country = oneGame(base);
       ui = uiFor();
       setRound(fmt(ui.roundOf, { n: saved.match.round, m: saved.match.rounds }));
       await ensureWorld();
@@ -2252,7 +2219,7 @@ export function GameScreen({ transition }) {
     }
     if (fromUrl) {
       base = fromUrl.country;
-      country = localize(base, mode);
+      country = oneGame(base);
       ui = uiFor();
     }
 
@@ -2304,7 +2271,7 @@ export function GameScreen({ transition }) {
         name: String(p.name).slice(0, 16), gender: p.gender === 'f' ? 'f' : 'm', look: cleanLook(p.look, p.look?.id),
         color: SHIRTS[i], isHuman: !!p.isHuman,
       }));
-      match = Match.restore(base, saved.match);
+      match = Match.restore(country, saved.match);
     } else {
       const human = pm === 'play' || pm === 'nearby';
       // new strangers at the table every match; the ones on the start screen play the first one
@@ -2342,7 +2309,7 @@ export function GameScreen({ transition }) {
         });
       }
       const rounds = ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS;
-      match = new Match(base, 4, rounds, { humanSeat: pm === 'play' || pm === 'nearby' ? HUMAN_SEAT : -1 });
+      match = new Match(country, 4, rounds, { humanSeat: pm === 'play' || pm === 'nearby' ? HUMAN_SEAT : -1 });
       if (isHost()) {
         pending.clear();
         players.forEach((p, seat) => {
@@ -2675,7 +2642,7 @@ export function GameScreen({ transition }) {
   function changeRoomGame(id) {
     if (!COUNTRIES[id] || id === base.id) return;
     base = COUNTRIES[id];
-    country = localize(base, mode);
+    country = oneGame(base);
     ui = uiFor();
     voiceBox.setLanguages(country.voice);
     world?.story?.setCountry(country);
@@ -2960,6 +2927,15 @@ export function GameScreen({ transition }) {
     lang = id;
     settingsStore.set('chatLang', id);
     ui = uiFor();
+    // the one game takes this language's name, room and voices (not mid-match, not in a room)
+    if (!match && !net) {
+      base = editionFor(id);
+      country = oneGame(base);
+      voiceBox.setLanguages(country.voice);
+      world?.story?.setCountry(country);
+      cast = null;
+      previewTable();
+    }
     document.documentElement.lang = LANGUAGE_TAGS[id] || 'en';
     await loadPack(chatPack());
     paintHud();
@@ -3336,9 +3312,6 @@ export function GameScreen({ transition }) {
     onEnter() { run().catch(onError); },
     onExit() {
       alive = false;
-      clearInterval(voiceTimer);
-      voiceChat?.destroy();
-      voiceChat = null;
       tapHandler = null;
       tasks.forEach(task => clearTimeout(task.timer));
       tasks.clear();
