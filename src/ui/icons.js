@@ -41,6 +41,10 @@ const PATHS = {
   trash: '<path d="M4.500 7h15M9.500 7V4.500h5V7M6.500 7l1 13h9l1-13M10 11v5.500M14 11v5.500"/>',
   book: '<path d="M4 5.500c3-1.500 5.500-1.500 8 0 2.500-1.500 5-1.500 8 0v14c-3-1.500-5.500-1.500-8 0-2.500-1.500-5-1.500-8 0zM12 5.500v14"/>',
   home: '<path d="M4 11l8-7 8 7M6 9.500V20h12V9.500"/>',
+  gift: '<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M3 9h18M12 9v11M12 9c-1.5-3.5-6-4.5-6-1.5 0 1.500 2.500 1.500 6 1.500zM12 9c1.500-3.500 6-4.500 6-1.500 0 1.500-2.500 1.500-6 1.500z"/>',
+  coin: '<circle cx="12" cy="12" r="8.500"/><circle cx="12" cy="12" r="5.500"/><path d="M12 9.500v5"/>',
+  headset: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13.500" width="4" height="6" rx="1.500"/><rect x="17" y="13.500" width="4" height="6" rx="1.500"/>',
+  target: '<circle cx="12" cy="12" r="8.500"/><circle cx="12" cy="12" r="4.500"/><circle cx="12" cy="12" r="1"/>',
 };
 
 /** SVG markup for an icon. Decorative by default: the button around it carries the label. */

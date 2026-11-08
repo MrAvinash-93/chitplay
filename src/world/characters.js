@@ -7,7 +7,7 @@
  * to show, and only after the result is public.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { lookKey, OUTFITS } from './character-looks.js?v=20261108-0613';
+import { lookKey, OUTFITS, isFancyHat } from './character-looks.js?v=20261108-0738';
 
 const TAU = Math.PI * 2;
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
@@ -1044,8 +1044,18 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
       wear.rotation.x = Math.PI / 2 - 0.3;
       wear.position.set(0, 0.046, -0.004);
     }
+    // a special hat (earned or bought): the role hats, in a set of its own made only when first needed
+    Object.values(lookHats || {}).forEach(g => { g.visible = false; });
+    if (isFancyHat(l.headwear)) {
+      if (!lookHats) {
+        lookHats = buildAccessories();
+        Object.values(lookHats).forEach(g => head.add(g));
+      }
+      wear = lookHats[l.headwear] || null;
+    }
     if (wear) wearVisible();
   }
+  let lookHats = null;
   let openShape = null;
   let activeAcc = null;
   const wearVisible = () => { if (wear) wear.visible = !activeAcc; };

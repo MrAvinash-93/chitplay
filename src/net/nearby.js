@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName } from '../world/names.js?v=20261108-0613';
-import { cleanLook } from '../world/character-looks.js?v=20261108-0613';
+import { cleanName, politeName } from '../world/names.js?v=20261108-0738';
+import { cleanLook } from '../world/character-looks.js?v=20261108-0738';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0613.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0738.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -35,6 +35,15 @@ export function loadPeer() {
 }
 
 export const randomCode = () => String(Math.floor(100000 + Math.random() * 900000));
+
+/**
+ * Online play with strangers: a few public tables with fixed names. Whoever gets a free name first
+ * hosts that table; everyone after joins it until it's full or started, then tries the next one.
+ * The free PeerJS broker guarantees only one phone can hold a name, so no server of our own is needed.
+ */
+export const PUBLIC_TABLES = 8;
+export const publicCode = (n) => `public-${n}`;
+export const isPublicCode = (c) => /^public-[1-9]\d?$/.test(String(c || ''));
 export const isCode = (c) => /^\d{6}$/.test(String(c || ''));
 /** A phone's private ticket back to its seat if the connection drops. */
 export const newToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -117,10 +126,21 @@ export class NearbyHost {
     this.retry = setTimeout(() => this.#stayOnline(), 5000);
   }
 
-  /** Open the room. Resolves with the 6-digit code (null if it was closed meanwhile). */
-  async open() {
+  /**
+   * Open the room. Resolves with the 6-digit code (null if it was closed meanwhile).
+   * With a fixed code (a public table) there is one try: if the name is taken it fails with
+   * type 'unavailable-id', which means somebody already hosts that table.
+   */
+  async open(fixedCode = null) {
     const Peer = await loadPeer();
-    for (let attempt = 0; attempt < 5; attempt++) {
+    if (fixedCode) {
+      const p = await openPeer(Peer, PREFIX + fixedCode);
+      if (this.closed) { p.destroy(); return null; }
+      this.peer = p;
+      this.code = fixedCode;
+      this.isPublic = isPublicCode(fixedCode);
+    }
+    for (let attempt = 0; attempt < 5 && !this.peer; attempt++) {
       const code = randomCode();
       try {
         const p = await openPeer(Peer, PREFIX + code);
@@ -154,8 +174,11 @@ export class NearbyHost {
         const returning = this.locked && this.known.has(token);
         if (this.locked && !returning) { safeSend(conn, { t: 'reject', reason: 'started' }); setTimeout(() => conn.close(), 400); return; }
         if (this.guests.size >= MAX_GUESTS) { safeSend(conn, { t: 'reject', reason: 'full' }); setTimeout(() => conn.close(), 400); return; }
-        const name = cleanName(msg.name).trim() || `Player`;
-        const guest = { id, name, gender: msg.gender === 'f' ? 'f' : 'm', look: cleanLook(msg.look, msg.look?.id), token, conn, w: watch(conn, () => this.#drop(id)) };
+        const typed = cleanName(msg.name).trim() || 'Player';
+        // strangers on a public table never see a rude name
+        const name = this.isPublic ? politeName(typed) : typed;
+        const weekly = Number.isFinite(msg.weekly) ? Math.max(0, Math.min(10000000, Math.floor(msg.weekly))) : 0;
+        const guest = { id, name, gender: msg.gender === 'f' ? 'f' : 'm', look: cleanLook(msg.look, msg.look?.id), weekly, token, conn, w: watch(conn, () => this.#drop(id)) };
         this.guests.set(id, guest);
         this.h.onChange?.();
         if (returning) this.h.onRejoin?.(id, token);
@@ -178,7 +201,7 @@ export class NearbyHost {
 
   get list() {
     const labels = this.labels();
-    return [...this.guests.values()].map((g, i) => ({ id: g.id, name: labels[i + 1], gender: g.gender, look: g.look, token: g.token }));
+    return [...this.guests.values()].map((g, i) => ({ id: g.id, name: labels[i + 1], gender: g.gender, look: g.look, weekly: g.weekly, token: g.token }));
   }
   get hostLabel() { return this.labels()[0]; }
   send(id, msg) { safeSend(this.guests.get(id)?.conn, msg); }

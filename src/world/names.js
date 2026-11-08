@@ -168,3 +168,19 @@ export function pickOpponents(count, exclude = [], region = detectNameRegion()) 
   }
   return out;
 }
+
+/**
+ * Names strangers see on a public table: a name with a swear word in it (English, Hindi or Urdu
+ * in Latin letters) shows as "Player" instead. Friends who join by code see the name as typed.
+ */
+const RUDE = [
+  'fuck', 'shit', 'bitch', 'cunt', 'dick', 'cock', 'pussy', 'asshole', 'bastard', 'slut', 'whore', 'rape', 'porn', 'nude', 'sexy',
+  'chutiya', 'chutia', 'madarchod', 'mc', 'bhenchod', 'behenchod', 'bc', 'gandu', 'randi', 'lauda', 'lawda', 'lund', 'bhosd', 'harami', 'kamina', 'jhaant',
+];
+export function politeName(name) {
+  const n = String(name || '').toLowerCase().replace(/[^\p{L}]/gu, '');
+  if (!n) return 'Player';
+  // the two-letter ones only count as the whole name
+  const rude = RUDE.some(w => (w.length <= 2 ? n === w : n.includes(w)));
+  return rude ? 'Player' : String(name);
+}

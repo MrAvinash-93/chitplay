@@ -58,6 +58,18 @@ export default {
     rotateBig: 'Rotate for a bigger view', rotateHide: 'Hide the rotate option', rotateTurn: 'Turn your phone sideways. If it stays upright, turn off rotation lock.',
     about: 'About', contact: 'Contact', privacy: 'Privacy', terms: 'Terms',
     errNoRoom: 'No game with this code. Check the 6 digits on the host’s phone.', errFull: 'This game is full (4 players).', errStarted: 'This game has already started. Ask the host to start a new one.', errBrowser: 'This browser can’t do Nearby Play. Try Chrome or Safari.', errTimeout: 'Couldn’t connect. Make sure both phones are online and try again.', errNetwork: 'Couldn’t reach the connection service. Nearby Play needs internet to connect.', errOther: 'Something went wrong while connecting. Try again.',
+    online: 'Play Online', onlineSub: 'Random players from anywhere', onlineTitle: 'Play Online', onlineSearching: 'Looking for players at the public tables…', onlineTrying: 'Checking table {n}…',
+    onlineNote: 'Players see your name and character. Messages are only emojis and fixed lines, never typed text.', onlineWaiting: 'Waiting for players… computer players fill the seats in {n}s',
+    onlineStarting: 'Starting in {n}s', onlineNobody: 'Nobody else is online right now. Keep waiting, or play with computer players.', onlineSolo: 'Play with computer players', onlineSoloSub: 'Start a match now',
+    onlineJoined: 'You sat down at {host}’s table', onlineNoTable: 'Couldn’t reach the public tables. Check your connection and try again.', onlineRetry: 'Try again', voiceChat: 'Voice chat with friends', voiceChatOn: 'Voice chat on: friends who switch it on hear you, and you hear them.', voiceChatOff: 'Voice chat off', voiceChatDenied: 'No microphone: allow it in your browser to talk.', onlineSeat: '⏳ Waiting for a player…',
+    rewards: 'Rewards', coins: 'coins', dailyShort: 'Daily {n}/3', dailyTitle: 'Daily challenges', dailyBonus: 'All three: +{n} bonus coins', dailyNew: 'New challenges in {h}h {m}m',
+    weekTitle: 'This week', weekNote: 'You and the players you met online or with Nearby Play, by points this week.', weekEmpty: 'Play online or with Nearby Play to see other players here.',
+    hats: 'Special hats', colours: 'Special colours', wear: 'Wear', takeOff: 'Take off', wearing: 'Wearing', owned: 'Yours', colourOwned: 'Yours: pick it under Look', forCoins: 'Buy with coins',
+    buy: 'Buy for', bought: 'Bought! It’s yours.', notEnough: 'Not enough coins yet: play a match or finish a challenge.', needRank: 'Unlocks at rank {title}',
+    coinsGained: '+{n} coins', challengeDone: 'Challenge done: {text} (+{coins} coins)', unlockedHat: 'New rank reward: {name}! Wear it from Rewards.',
+    coinsNote: 'Coins are earned by playing and are only for fun: they can’t be bought or exchanged for anything.',
+    ch_catches: 'Catch the thief ({n}×)', ch_escapes: 'Get away as the thief ({n}×)', ch_wins: 'Win a match ({n}×)', ch_matches: 'Finish a match ({n}×)', ch_online: 'Finish an online match',
+    ch_bigScore: 'Score 5000 in one match', ch_emojis: 'Send an emoji ({n}×)', ch_honestWins: 'Win a match without cheating',
   },
   // private lines: phones send only the number, each phone shows it in its own language
   talk: [

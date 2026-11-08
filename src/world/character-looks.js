@@ -25,6 +25,35 @@ export const HEADWEAR = [
   { id: 'none', label: 'None' }, { id: 'cap', label: 'Cap' }, { id: 'beanie', label: 'Beanie' }, { id: 'pagri', label: 'Turban' },
   { id: 'hijab', label: 'Hijab' }, { id: 'headband', label: 'Headband' },
 ];
+/**
+ * Special hats you earn: a new rank unlocks one (rank = index in the rank ladder), the others cost
+ * coins. They are the same hats the roles wear in the 3D room, so every phone can draw them.
+ */
+export const FANCY_HATS = [
+  { id: 'beret', label: 'Beret', rank: 1 },
+  { id: 'cowboy', label: 'Cowboy hat', rank: 2 },
+  { id: 'tophat', label: 'Top hat', rank: 3 },
+  { id: 'kepi', label: 'Kepi', rank: 4 },
+  { id: 'dhaka', label: 'Dhaka topi', rank: 5 },
+  { id: 'helmet', label: 'Bobby helmet', rank: 6 },
+  { id: 'tiara', label: 'Tiara', rank: 7 },
+  { id: 'ushanka', label: 'Ushanka', rank: 8 },
+  { id: 'crown', label: 'Crown', rank: 9 },
+  { id: 'visor', label: 'Banker visor', price: 200 },
+  { id: 'doctor', label: 'Doctor mirror', price: 250 },
+  { id: 'sombrero', label: 'Sombrero', price: 300 },
+  { id: 'turban', label: 'Royal turban', price: 400 },
+];
+/** Special colours for clothes, bought with coins. */
+export const PREMIUM_COLORS = [
+  { id: 'c-gold', label: 'Gold', hex: '#d4af37', price: 120 },
+  { id: 'c-silver', label: 'Silver', hex: '#c0c6cc', price: 120 },
+  { id: 'c-neon', label: 'Neon green', hex: '#39e75f', price: 150 },
+  { id: 'c-hotpink', label: 'Hot pink', hex: '#ff2d95', price: 150 },
+  { id: 'c-sky', label: 'Sky blue', hex: '#4fc3ff', price: 150 },
+  { id: 'c-midnight', label: 'Midnight', hex: '#151a2e', price: 100 },
+];
+export const isFancyHat = (id) => FANCY_HATS.some(h => h.id === id);
 export const GLASSES = [{ id: 'none', label: 'None' }, { id: 'round', label: 'Round' }, { id: 'square', label: 'Square' }];
 export const FACIAL = [
   { id: 'none', label: 'None' }, { id: 'stubble', label: 'Stubble' }, { id: 'moustache', label: 'Moustache' }, { id: 'beard', label: 'Beard' },
@@ -67,7 +96,7 @@ const DEFAULTS = { glasses: 'none', facial: 'none', headwear: 'none', headColor:
 const HEX = /^#[0-9a-f]{6}$/i;
 const ids = (arr) => new Set(arr.map(x => x.id));
 const VALID = {
-  age: ids(AGES), hair: ids(HAIR_STYLES), outfit: ids(OUTFITS), headwear: ids(HEADWEAR), glasses: ids(GLASSES), facial: ids(FACIAL),
+  age: ids(AGES), hair: ids(HAIR_STYLES), outfit: ids(OUTFITS), headwear: ids([...HEADWEAR, ...FANCY_HATS]), glasses: ids(GLASSES), facial: ids(FACIAL),
 };
 
 export const lookOf = (id) => {
@@ -101,6 +130,23 @@ export function randomLook(gender, skin) {
 
 export const lookKey = (l) => JSON.stringify([l.gender, l.age, l.skin, l.hair, l.hairColor, l.eyes, l.outfit, l.color, l.color2, l.pants, l.glasses, l.facial, l.headwear, l.headColor, l.bindi]);
 
+// the special hats in the flat portraits (fixed colours: nothing from outside goes in here)
+const FANCY_SVG = {
+  beret: '<ellipse cx="34" cy="13" rx="17" ry="6.5" fill="#1a1a1a"/><rect x="34" y="4" width="2" height="4" fill="#1a1a1a"/>',
+  cowboy: '<path d="M6 18q26 7 52 0-6 6-26 6T6 18z" fill="#8a5a2b"/><path d="M19 18q1-13 13-13t13 13q-13 4-26 0z" fill="#9d6a37"/><circle cx="32" cy="14" r="2" fill="#f0c040"/>',
+  tophat: '<rect x="11" y="15" width="42" height="4" rx="2" fill="#111"/><rect x="20" y="-4" width="24" height="20" rx="2" fill="#151515"/><rect x="20" y="10" width="24" height="3" fill="#c62828"/>',
+  kepi: '<path d="M19 18l2-13h22l2 13z" fill="#1a2250"/><rect x="18" y="14" width="28" height="4" fill="#c8272d"/><path d="M18 18h28q-2 4-14 4t-14-4z" fill="#111"/>',
+  dhaka: '<path d="M17 19q1-12 15-12t15 12z" fill="#b71c1c"/><path d="M19 13h26M18 16h28" stroke="#ffd166" stroke-width="1.4"/>',
+  helmet: '<path d="M17 21q0-21 15-21t15 21z" fill="#14204a"/><circle cx="32" cy="12" r="3" fill="#d4af37"/><rect x="16" y="19" width="32" height="3" rx="1.5" fill="#0d1530"/>',
+  tiara: '<path d="M19 17l4-8 4 6 5-10 5 10 4-6 4 8z" fill="#e8c46a"/><circle cx="32" cy="9" r="2" fill="#e91e63"/>',
+  ushanka: '<path d="M14 22q0-17 18-17t18 17z" fill="#5b4636"/><rect x="11" y="18" width="10" height="16" rx="5" fill="#6d5644"/><rect x="43" y="18" width="10" height="16" rx="5" fill="#6d5644"/>',
+  crown: '<path d="M18 19l1-13 6 6 7-9 7 9 6-6 1 13z" fill="#f2c12e"/><rect x="18" y="16" width="28" height="4" fill="#d9a400"/><circle cx="32" cy="11" r="2" fill="#c62828"/>',
+  visor: '<path d="M16 21q16-8 32 0" fill="none" stroke="#1f7a3a" stroke-width="3"/><path d="M34 19q12 0 18 5-10 1-18-1z" fill="#2e9e4f"/>',
+  doctor: '<path d="M16 22q16-8 32 0" fill="none" stroke="#333" stroke-width="2"/><circle cx="32" cy="15" r="5" fill="#cfd8dc" stroke="#607d8b"/>',
+  sombrero: '<ellipse cx="32" cy="18" rx="30" ry="6" fill="#d9b86a"/><path d="M22 18q2-15 10-15t10 15z" fill="#e2c47c"/><path d="M4 18q28 9 56 0" fill="none" stroke="#c8272d" stroke-width="2"/>',
+  turban: '<path d="M13 25q0-21 19-21t19 21q-19-12-38 0z" fill="#ffd166"/><circle cx="32" cy="12" r="3" fill="#c62828"/><path d="M32 9v-6" stroke="#fff" stroke-width="2"/>',
+};
+
 /** A small flat face for the character picker (SVG markup built only from checked values). */
 export function portraitSvg(rawLook) {
   const l = cleanLook(rawLook, rawLook?.id);
@@ -124,7 +170,8 @@ export function portraitSvg(rawLook) {
   const hat = l.headwear === 'cap' ? `<path d="M15 23a17 15 0 0 1 34 0zM44 22h13q-2 4-13 3z" fill="${l.color2}"/>`
     : l.headwear === 'beanie' ? `<path d="M15 24a17 18 0 0 1 34 0z" fill="${l.color2}"/>`
       : l.headwear === 'pagri' ? `<path d="M13 25q0-20 19-20t19 20q-19-12-38 0z" fill="${l.headColor}"/>`
-        : l.headwear === 'headband' ? `<path d="M16 23q16-7 32 0v3q-16-7-32 0z" fill="${l.headColor}"/>` : '';
+        : l.headwear === 'headband' ? `<path d="M16 23q16-7 32 0v3q-16-7-32 0z" fill="${l.headColor}"/>`
+          : (FANCY_SVG[l.headwear] || '');
   const hijab = l.headwear === 'hijab' ? `<path d="M32 5C16 5 11 20 12 34c0 12 8 18 20 18s20-6 20-18c1-14-4-29-20-29zm0 10c9 0 13 8 13 18s-5 14-13 14-13-4-13-14 4-18 13-18z" fill="${l.headColor}"/>` : '';
   return `<svg viewBox="0 0 64 64" aria-hidden="true" width="56" height="56">${afro}${back}${bun}<path d="M10 64q1-15 22-15t22 15z" fill="${l.color}"/><rect x="27" y="42" width="10" height="10" rx="4" fill="${l.skin}"/><ellipse cx="32" cy="31" rx="15" ry="${l.age === 'child' ? 15 : 17}" fill="${l.skin}"/>${top}${eye(26)}${eye(38)}<path d="M26 40q6 4 12 0" fill="none" stroke="#7a2424" stroke-width="1.4" stroke-linecap="round"/>${facial}${glasses}${l.bindi ? '<circle cx="32" cy="24.5" r="1.1" fill="#c62828"/>' : ''}${hat}${hijab}</svg>`;
 }

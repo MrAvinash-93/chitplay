@@ -1,13 +1,13 @@
 import { describe, it, expect } from './harness.js';
-import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName } from '../src/world/names.js?v=20261108-0613';
-import { PRESETS, cleanLook, lookOf, portraitSvg, AGES } from '../src/world/character-looks.js?v=20261108-0613';
-import { profile, rankFor, RANKS } from '../src/persistence/profile-store.js?v=20261108-0613';
-import { COUNTRIES } from '../src/world/countries.js?v=20261108-0613';
-import { Match } from '../src/world/match.js?v=20261108-0613';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261108-0613';
-import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261108-0613';
-import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261108-0613';
-import EN from '../src/i18n/en.js?v=20261108-0613';
+import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName, politeName } from '../src/world/names.js?v=20261108-0738';
+import { PRESETS, cleanLook, lookOf, portraitSvg, AGES, FANCY_HATS } from '../src/world/character-looks.js?v=20261108-0738';
+import { profile, rankFor, RANKS, challengesFor, COINS } from '../src/persistence/profile-store.js?v=20261108-0738';
+import { COUNTRIES } from '../src/world/countries.js?v=20261108-0738';
+import { Match } from '../src/world/match.js?v=20261108-0738';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261108-0738';
+import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261108-0738';
+import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261108-0738';
+import EN from '../src/i18n/en.js?v=20261108-0738';
 
 describe('Names', () => {
   it('keeps letters and spaces only', () => {
@@ -160,5 +160,41 @@ describe('Profile', () => {
     expect(profile.all.points).toBe(0);
     expect(profile.badges).toHaveLength(0);
     expect(profile.hall).toHaveLength(0);
+  });
+});
+
+describe('Coins, challenges and rewards', () => {
+  it('every day has three challenges of three different kinds, the same on every phone', () => {
+    for (let day = 20000; day < 20060; day++) {
+      const a = challengesFor(day), b = challengesFor(day);
+      expect(a.length).toBe(3);
+      expect(new Set(a.map(c => c.key)).size).toBe(3);
+      expect(a.map(c => c.id).join()).toBe(b.map(c => c.id).join());
+    }
+  });
+  it('a match pays coins, finished challenges pay more, and nothing is bought without coins', () => {
+    profile.resetScore();
+    const before = profile.coins;
+    const r = profile.recordMatch({ mode: 'local', won: true, score: 1000, game: 'IN', rounds: 5 });
+    expect(r.coinsEarned >= COINS.match + COINS.win).toBe(true);
+    expect(profile.coins).toBe(before + r.coinsEarned);
+    const poor = profile.coins < 400;
+    if (poor) expect(profile.buy('turban')).toBe(false);
+    expect(profile.buy('crown')).toBe(false);          // a rank reward is never for sale
+    expect(profile.buy('not-a-thing')).toBe(false);
+  });
+  it('a rank reward hat is yours once your points reach that rank', () => {
+    const beret = FANCY_HATS.find(h => h.id === 'beret');
+    expect(profile.owns('beret')).toBe(profile.rank.index >= beret.rank);
+  });
+  it('a special hat from another phone is accepted, anything else is not', () => {
+    expect(cleanLook({ headwear: 'crown' }, 'gamer').headwear).toBe('crown');
+    expect(cleanLook({ headwear: '<script>' }, 'gamer').headwear).toBe(lookOf('gamer').headwear || 'none');
+  });
+  it('strangers never see a rude name', () => {
+    expect(politeName('Riya')).toBe('Riya');
+    expect(politeName('Fuckboy')).toBe('Player');
+    expect(politeName('Mc')).toBe('Player');
+    expect(politeName('Mcdonald')).toBe('Mcdonald');
   });
 });

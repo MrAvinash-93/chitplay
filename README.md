@@ -17,6 +17,32 @@ A 3D take on the classic four-player paper-chit game, for every age. Four charac
 - **Scan to join:** one tile on the first page. Live camera on HTTPS, or a photo or saved screenshot of the code anywhere. Tap the host's QR to fill the screen; friends already in the room can show it too.
 - **Nearby rooms:** anyone in the room can change the game before a match or between matches. Back keeps you connected; only Disconnect leaves. A computer player takes over for anyone who is gone or doesn't choose within 30 seconds, and a player who rejoins gets their seat back at once.
 
+## Play Online, coins and rewards
+
+- **Play Online** (random players, no server of our own, free).
+  - There are 8 public tables with fixed names on the free PeerJS broker.
+  - Pressing Play Online tries table 1: if the name is free you host it, and if it's taken you join it.
+  - If that table is full or already playing, the next one is tried.
+  - A table starts on its own when 4 players are in, or 25 seconds after the first player joins.
+  - Computer players fill the empty seats.
+  - If nobody else is online, you can play with computer players instead.
+  - Names with swear words show as "Player" to strangers. Messages are only emojis and fixed lines.
+  - This lives in `src/net/nearby.js` (`PUBLIC_TABLES`, `open(fixedCode)`) and in `publicSearch()` in `game-screen.js`.
+- **Voice chat**, friends only (`src/net/voice.js`).
+  - It is available only in Nearby rooms joined by code, QR or invite link, never at public tables.
+  - It is off until switched on.
+  - Sound goes phone to phone over WebRTC and is never recorded.
+- **Coins** are earned for every match, a good score, a win, playing online, each new rank and daily challenges.
+  - They buy special hats and colours. They can't be bought with money and have no value.
+  - This keeps it fine for AdSense: there are no paid random items.
+- **Daily challenges.** Three a day, the same for everyone that day (picked from the day number). Finishing all three adds a bonus.
+- **Rank rewards.** Each new rank unlocks a special hat (Beret → … → Crown).
+  - The hats are the role hats of the 3D room (`FANCY_HATS` in `character-looks.js`).
+  - Other hats and the special colours cost coins.
+- **This week.** Your points this week, and the players you met online or with Nearby Play.
+  - Each phone sends its weekly points when it joins a room.
+  - It is a free table with no server. A global leaderboard would need one (Cloudflare or Firebase).
+
 ## Quick start
 
 ChitPlay is a zero-build project (native ES modules, three.js vendored locally).
