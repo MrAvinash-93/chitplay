@@ -4,8 +4,11 @@
  * Plain DOM, no 3D, no network: light enough for any phone. Secrets are shown only to the player
  * holding the phone, behind a "pass the phone" screen.
  */
-import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261108-0855';
-import { createStage } from './stage3d.js?v=20261108-0855';
+import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261108-0913';
+import { createStage } from './stage3d.js?v=20261108-0913';
+import { loadWorld } from '../world/world-loader.js?v=20261108-0913';
+import { PRESETS, lookOf } from '../world/character-looks.js?v=20261108-0913';
+import { asOneGame, editionFor } from '../world/countries.js?v=20261108-0913';
 
 export const GAMES = [
   { slug: 'who-is-the-spy', name: 'Who Is the Spy?', icon: '🕵️', min: 4, max: 10, minutes: '10–20', blurb: 'Everyone gets the same secret word, except the spy. Give clues, find the spy.' },
@@ -43,7 +46,48 @@ function screen(...kids) {
 const btn = (label, onclick, cls = '') => h('button', { type: 'button', class: `btn ${cls}`, onclick }, [label]);
 // with the 3D stage the paper card stays only for screen readers (the chit on the mat shows it)
 let stage = null;
-const card = (kids, cls = '') => h('div', { class: `chit ${cls}${stage && !cls.includes('story') ? ' chit--sr' : ''}` }, kids);
+const card = (kids, cls = '') => h('div', { class: `chit ${cls}${stage && !world && !cls.includes('story') ? ' chit--sr' : ''}` }, kids);
+/* ─── the 3D room: the players sit at the mat as characters ─── */
+let world = null;              // the main game's room, when it loads
+let cast = [];                 // all players' names
+let seats = [];                // player index sitting at each of the 4 places (-1: an onlooker)
+const COLORS = ['#d4a017', '#e91e63', '#2196f3', '#43a047'];
+/** The same character for the same name, every game. */
+function lookFor(name) {
+  let n = 0;
+  for (const ch of String(name).toLowerCase()) n = (n * 31 + ch.codePointAt(0)) >>> 0;
+  const adults = PRESETS.filter(p => p.age !== 'child');
+  return lookOf(adults[n % adults.length].id);
+}
+/** Sit the players down: everyone when there are four or fewer, otherwise the current player and the next three. */
+function sitDown(names, current = 0) {
+  cast = names;
+  if (!world) return;
+  const n = names.length;
+  seats = n <= 4 ? [0, 1, 2, 3].map(k => (k < n ? k : -1)) : [0, 1, 2, 3].map(k => (current + k) % n);
+  world.story.begin(seats.map((p, k) => (p < 0
+    ? { name: '', look: lookOf(PRESETS[(k * 7) % PRESETS.length].id), color: COLORS[k], isHuman: false, label: '' }
+    : { name: names[p], look: lookFor(names[p]), color: COLORS[k], isHuman: false, label: names[p] })));
+}
+/** The place a player sits at, bringing them to the table if they're not there yet. */
+function seatOf(i) {
+  if (!world || i == null || i < 0) return -1;
+  let k = seats.indexOf(i);
+  if (k < 0) { sitDown(cast, i); k = seats.indexOf(i); }
+  return k;
+}
+/** A player acts in the room: a pose, an emoji over the head, words in a bubble. */
+function act(i, pose, emoji, words) {
+  const k = seatOf(i);
+  if (k < 0) return;
+  if (pose) world.story.pose(k, pose);
+  if (emoji) world.story.emote(k, emoji, 2.4);
+  if (words) world.story.say(k, words);
+}
+const fx = (kind, i = null) => { if (world) world.story.effect(kind, i == null ? null : seatOf(i)); };
+const everyone = (fn) => cast.forEach((_, i) => { if (seats.includes(i)) fn(i); });
+const indexOf = (name) => cast.indexOf(name);
+
 /** Show this on the 3D chit (and fold it again for the next player). */
 const chit = (text, opts) => stage?.reveal(text, opts);
 const foldChit = (opts) => stage?.fold(opts);
@@ -89,6 +133,7 @@ function setup(game, options, go) {
         if (clean.length < game.min) { err.textContent = `This game needs at least ${game.min} players.`; return; }
         if (unique.size !== clean.length) { err.textContent = 'Two players have the same name: change one.'; return; }
         savePlayers(clean);
+        sitDown(clean);
         go(clean, Object.fromEntries((options || []).map(o => [o.key, o.value])));
       }, 'primary'),
       h('a', { class: 'rules', href: `../games/${game.slug}/` }, ['How to play →']),
@@ -98,6 +143,7 @@ function setup(game, options, go) {
 /** The phone goes to one player: only they see what comes next. */
 function passTo(name, reveal, then) {
   foldChit();
+  act(indexOf(name), 'hold', '📜');
   screen(h('section', { class: 'panel pass' }, [
     h('p', { class: 'lead' }, ['Pass the phone to']),
     h('h1', {}, [name]),
@@ -113,6 +159,7 @@ function results(game, players, scores, restart, note = '') {
   const order = players.map((n, i) => [n, scores[i]]).sort((a, b) => b[1] - a[1]);
   const best = order[0]?.[1];
   chit(order.filter(o => o[1] === best).length > 1 ? 'A tie!' : `${order[0][0]} wins!`, { tone: 'gold', label: '🏆' });
+  if (world) { const w = seatOf(players.indexOf(order[0][0])); if (w >= 0) world.story.celebrate(w); fx('confetti'); }
   screen(top(game), h('section', { class: 'panel' }, [
     h('h1', {}, [order.filter(o => o[1] === best).length > 1 ? 'A tie at the top!' : `${order[0][0]} wins!`]),
     note ? h('p', { class: 'lead' }, [note]) : null,
@@ -167,6 +214,8 @@ function spy(game) {
       const clues = () => {
         const first = pick(players);
         stage?.toss();
+        everyone(i => act(i, 'think', null));
+        act(indexOf(first), 'wave', '💬', 'I’ll start!');
         screen(top(game), h('section', { class: 'panel' }, [
           h('h1', {}, ['Clue time']),
           h('p', { class: 'lead' }, [`Starting with ${first}, go round the circle. Each player says one word or a short clue about their secret word, without saying it.`]),
@@ -184,6 +233,9 @@ function spy(game) {
       };
       const reveal = (accused) => {
         const caught = spies.has(accused);
+        everyone(i => { if (i !== accused && world) world.story.point(seatOf(i), seatOf(accused)); });
+        if (caught) { fx('siren', accused); setTimeout(() => fx('cuffs', accused), 450); act(accused, 'cry', '😱'); }
+        else { [...spies].forEach(sp => { fx('smoke', sp); act(sp, 'laugh', '😎', 'It wasn’t me… or was it?'); }); act(accused, 'deny', '😤'); }
         const spyNames = [...spies].map(i => players[i]).join(' and ');
         if (!caught) [...spies].forEach(i => { scores[i] += 3; });
         const after = () => next();
@@ -243,11 +295,12 @@ function truthOrDare(game) {
       if (!bags[kind].length) bags[kind] = shuffle(kind === 'truth' ? TRUTHS : DARES);
       const text = bags[kind].pop();
       chit(text, { tone: kind, label: kind === 'truth' ? 'TRUTH' : 'DARE' });
+      act(who, kind === 'truth' ? 'think' : 'surprised', kind === 'truth' ? '🤔' : '😬', text);
       screen(top(game), h('section', { class: 'panel' }, [
         h('p', { class: 'lead' }, [`${players[who]} · ${kind === 'truth' ? 'Truth' : 'Dare'}`]),
         card([h('span', { class: 'prompt' }, [text])], 'open unfold'),
-        btn(kind === 'truth' ? 'Answered (+1)' : 'Done (+1)', () => { scores[who] += 1; next(); }, 'primary'),
-        btn('Skip, no worries', next),
+        btn(kind === 'truth' ? 'Answered (+1)' : 'Done (+1)', () => { scores[who] += 1; act(who, 'cheer', '🎉'); everyone(i => { if (i !== who) act(i, 'clap', null); }); next(); }, 'primary'),
+        btn('Skip, no worries', () => { act(who, 'laugh', '😅'); next(); }),
       ]));
     };
     next();
@@ -266,6 +319,8 @@ function riddles(game) {
       const [q, answer, hint] = deck[n++];
       let hinted = false;
       chit(q, { label: `Riddle ${n}` });
+      everyone(i => act(i, 'think', null));
+      if (cast.length) act(Math.floor(Math.random() * cast.length), 'show', '🧩', q);
       const hintBox = h('p', { class: 'hint' });
       screen(top(game), h('section', { class: 'panel' }, [
         h('p', { class: 'lead' }, [`Riddle ${n} of ${deck.length}`]),
@@ -278,7 +333,7 @@ function riddles(game) {
             h('p', { class: 'lead' }, ['The answer:']),
             card([h('span', { class: 'big' }, [answer])], 'open'),
             h('h2', {}, ['Who said it first?']),
-            h('div', { class: 'grid' }, [...players.map((p, i) => btn(p, () => { scores[i] += hinted ? 1 : 2; next(); })), btn('Nobody', next)]),
+            h('div', { class: 'grid' }, [...players.map((p, i) => btn(p, () => { scores[i] += hinted ? 1 : 2; act(i, 'jump', '💡'); fx('royal', i); next(); })), btn('Nobody', () => { everyone(i => act(i, 'facepalm', null)); next(); })]),
             scoreLine(players, scores),
           ]));
         }, 'primary'),
@@ -323,6 +378,7 @@ function majority(game) {
         const most = Math.max(...Object.values(count));
         const winners = choices.filter(c => count[c] === most);
         players.forEach((_, i) => { if (winners.includes(picks[i])) scores[i] += 1; });
+        players.forEach((_, i) => act(i, winners.includes(picks[i]) ? 'clap' : 'facepalm', winners.includes(picks[i]) ? '👏' : '🙈'));
         chit(winners.join(' / '), { tone: 'gold', label: 'The majority picked' });
         screen(top(game), h('section', { class: 'panel' }, [
           h('h1', {}, [q]),
@@ -366,6 +422,8 @@ function consequences(game) {
       const story = CONSEQUENCES.map(([ask], i) => h('p', { class: 'line', style: `animation-delay:${i * 0.45}s` }, [h('small', {}, [ask]), lines[i]]));
       const text = lines.join(' ');
       chit(lines[0], { tone: 'gold', label: 'Once upon a time…' });
+      everyone(i => act(i, 'laugh', '😂'));
+      fx('confetti');
       screen(top(game), h('section', { class: 'panel' }, [
         h('h1', {}, ['The story unfolds…']),
         card(story, 'open story'),
@@ -408,8 +466,16 @@ const stageEl = document.getElementById('stage');
 const PLAY = { 'who-is-the-spy': spy, 'truth-or-dare': truthOrDare, 'riddle-chits': riddles, 'majority-vote': majority, consequences };
 const slug = new URLSearchParams(location.search).get('game');
 const game = GAMES.find(g => g.slug === slug);
-createStage(stageEl).catch(() => null).then((st) => {
-  stage = st;
-  if (!st) stageEl.hidden = true;
+loadWorld().then(async (w) => {
+  if (w?.story) {
+    world = w;
+    stageEl.hidden = true;
+    document.body.classList.add('room');
+    world.story.setCountry(asOneGame(editionFor('en'), 'en'));
+    world.story.setCalm?.(false);
+  } else {
+    stage = await createStage(stageEl).catch(() => null);
+    if (!stage) stageEl.hidden = true;
+  }
   if (game) { document.title = `${game.name} – Play Free | ChitPlay`; PLAY[slug](game); } else hub();
 });

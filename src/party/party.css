@@ -65,3 +65,12 @@ textarea { width: 100%; resize: vertical; }
 .bar { position: static; }
 .chit--sr { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .panel.pass { margin-top: 12px; }
+
+/* in the 3D room: the room fills the screen, the game sits in a sheet at the bottom */
+body.room { background: transparent; }
+body.room #party { position: relative; z-index: 5; display: flex; flex-direction: column; justify-content: flex-end; min-height: 100vh; min-height: 100dvh; padding-bottom: 12px; pointer-events: none; }
+body.room #party > * { pointer-events: auto; }
+body.room .bar { background: transparent; margin-bottom: auto; }
+body.room .panel { max-height: 58vh; overflow-y: auto; background: rgba(36, 20, 12, .9); backdrop-filter: blur(4px); }
+body.room .panel.pass { margin-top: 0; }
+@media (orientation: landscape) and (max-height: 520px) { body.room #party { max-width: 46%; margin: 0 8px 0 auto; } body.room .panel { max-height: 78vh; } }
