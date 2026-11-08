@@ -1,6 +1,9 @@
 /** Chinese in Pinyin. */
 export default {
   ui: {
+    partyGames: "Yi bu shouji de juhui youxi",
+    onlineCountry: "Xian zhao {country} de wanjia…",
+    onlineWorld: "Zheng zai quan shijie zhao wanjia…",
     unlockRank: "dadao dengji {title}",
     brag_hat: "Xihuan wo de {item} ma? Dengji {rank} jiu neng dedao.",
     brag_buy: "Zhe ge {item} shi wo yong tiaozhan jinbi mai de!",

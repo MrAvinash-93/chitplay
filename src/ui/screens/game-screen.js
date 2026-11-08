@@ -1,24 +1,24 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261108-0822';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261108-0822';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261108-0822';
+import { GAME_PHASES } from '../../app/config.js?v=20261108-0833';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261108-0833';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261108-0833';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261108-0822';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261108-0822';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261108-0822';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261108-0822';
-import { voiceBox } from '../../world/voice.js?v=20261108-0822';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode } from '../../net/nearby.js?v=20261108-0822';
-import { cleanName, pickOpponents, politeName } from '../../world/names.js?v=20261108-0822';
+import { loadWorld } from '../../world/world-loader.js?v=20261108-0833';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261108-0833';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261108-0833';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261108-0833';
+import { voiceBox } from '../../world/voice.js?v=20261108-0833';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261108-0833';
+import { cleanName, pickOpponents, politeName } from '../../world/names.js?v=20261108-0833';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261108-0822';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261108-0822';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261108-0822';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261108-0822';
-import { iconSvg } from '../icons.js?v=20261108-0822';
-import { VoiceChat } from '../../net/voice.js?v=20261108-0822';
+} from '../../world/character-looks.js?v=20261108-0833';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261108-0833';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261108-0833';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261108-0833';
+import { iconSvg } from '../icons.js?v=20261108-0833';
+import { VoiceChat } from '../../net/voice.js?v=20261108-0833';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -794,7 +794,7 @@ export function GameScreen({ transition }) {
             ]),
             // always visible, so visitors and ad-network reviewers can find these pages
             el('nav', { className: 'game__legal', attrs: { 'aria-label': ui.about } }, [
-              ['about/', ui.about], ['contact/', ui.contact], ['privacy/', ui.privacy], ['terms/', ui.terms],
+              ['party/', `🎲 ${ui.partyGames}`], ['about/', ui.about], ['contact/', ui.contact], ['privacy/', ui.privacy], ['terms/', ui.terms],
             ].map(([href, label]) => el('a', { attrs: { href } }, [label]))),
           );
         }
@@ -1284,7 +1284,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261108-0822').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261108-0833').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -1483,6 +1483,7 @@ export function GameScreen({ transition }) {
           status.textContent = ui.connecting;
         }
         try {
+          room.country = detected.id;
           const code = await room.open(publicTable);
           if (net?.room !== room) return 'cancelled';   // Back was pressed while connecting
           if (publicTable) {
@@ -1498,7 +1499,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261108-0822').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261108-0833').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -1535,15 +1536,29 @@ export function GameScreen({ transition }) {
         armBackGuard();
         lobbyBack = cancel;
         audioManager.unlock();
-        for (let n = 1; n <= PUBLIC_TABLES; n++) {
+        // 1. look at every table: who is waiting, and where they're from
+        const home = detected.id;
+        searchStatus.textContent = fmt(ui.onlineCountry, { country: COUNTRIES[home]?.name || home });
+        const codes = Array.from({ length: PUBLIC_TABLES }, (_, i) => publicCode(i + 1));
+        let seen = [];
+        try { seen = await peekTables(codes); } catch { seen = []; }
+        if (cancelled || !alive) return;
+        // 2. sit with players from your own country first, then with anyone waiting
+        const waiting = seen.filter(t => !t.locked && t.seats < 3)
+          .sort((a, b) => (b.country === home) - (a.country === home) || b.seats - a.seats);
+        for (const t of waiting) {
+          searchStatus.textContent = t.country === home ? fmt(ui.onlineCountry, { country: COUNTRIES[home]?.name || home }) : ui.onlineWorld;
+          if ((await joinPublic(t.code)) === 'joined' || cancelled) return;
+        }
+        // 3. nobody waiting: open the first free table, so the next player finds you
+        searchStatus.textContent = ui.onlineWorld;
+        const busy = new Set(seen.map(t => t.code));
+        for (const code of codes.filter(c => !busy.has(c))) {
           if (cancelled || !alive) return;
-          const code = publicCode(n);
-          searchStatus.textContent = fmt(ui.onlineTrying, { n });
           const hosted = await hostLobby(code);
           if (hosted === 'open' || cancelled || hosted === 'cancelled') return;
-          if (hosted === 'failed') break;   // no connection at all: no point trying every table
-          const joined = await joinPublic(code);
-          if (joined === 'joined' || cancelled) return;
+          if (hosted === 'failed') break;   // no connection at all
+          if ((await joinPublic(code)) === 'joined' || cancelled) return;   // someone took it a moment ago
         }
         if (cancelled || !alive) return;
         lobbyBack = null;
@@ -1689,7 +1704,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261108-0822');
+        const scanner = import('../../net/qr-scan.js?v=20261108-0833');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });

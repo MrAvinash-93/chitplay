@@ -1,6 +1,9 @@
 /** Russian, transliterated. */
 export default {
   ui: {
+    partyGames: "Igry dlya kompanii na odnom telefone",
+    onlineCountry: "Snachala ishchem igrokov iz strany {country}…",
+    onlineWorld: "Ishchem igrokov po vsemu miru…",
     unlockRank: "dostignete ranga {title}",
     brag_hat: "Nravitsya moya {item}? Ee dayut na range {rank}.",
     brag_buy: "Etu {item} ya kupil za monety iz zadanii!",

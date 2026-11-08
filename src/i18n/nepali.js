@@ -1,6 +1,9 @@
 /** Roman Nepali. */
 export default {
   ui: {
+    partyGames: "Euta phone ka party games",
+    onlineCountry: "Pahile {country} ka players khojdai…",
+    onlineWorld: "Sansar bhar players khojdai…",
     unlockRank: "rank {title} samma pugnus",
     brag_hat: "Mero {item} man paryo? Yo rank {rank} ma paainchha.",
     brag_buy: "Yo {item} maile challenge ko coins le kineko!",

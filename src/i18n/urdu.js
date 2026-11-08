@@ -1,6 +1,9 @@
 /** Roman Urdu. */
 export default {
   ui: {
+    partyGames: "Aik phone wale party games",
+    onlineCountry: "Pehle {country} ke players dhoond rahe hain…",
+    onlineWorld: "Duniya bhar mein players dhoond rahe hain…",
     unlockRank: "rank {title} tak pahunchein",
     brag_hat: "Meri {item} pasand aayi? Yeh rank {rank} par milti hai.",
     brag_buy: "Yeh {item} main ne challenges ke coins se khareedi!",

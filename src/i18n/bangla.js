@@ -1,6 +1,9 @@
 /** Roman Bangla. */
 export default {
   ui: {
+    partyGames: "Ek phone er party games",
+    onlineCountry: "Age {country} er players khujchhi…",
+    onlineWorld: "Sara bishwe players khujchhi…",
     unlockRank: "rank {title} e pouchao",
     brag_hat: "Amar {item} bhalo legechhe? Eta rank {rank} e pawa jay.",
     brag_buy: "Ei {item} ami challenge er coins diye kinechhi!",

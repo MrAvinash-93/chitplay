@@ -1,6 +1,9 @@
 /** Deutsch. */
 export default {
   ui: {
+    partyGames: "Partyspiele für ein Handy",
+    onlineCountry: "Suche zuerst Spieler aus {country}…",
+    onlineWorld: "Suche Spieler weltweit…",
     unlockRank: "Rang {title} erreichst",
     brag_hat: "Gefällt dir mein {item}? Den gibt es ab Rang {rank}.",
     brag_buy: "Diesen {item} hab ich mit Münzen aus den Aufgaben gekauft!",

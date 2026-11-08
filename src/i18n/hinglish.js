@@ -1,6 +1,9 @@
 /** Hinglish (Hindi in Latin letters). */
 export default {
   ui: {
+    partyGames: "Ek phone wale party games",
+    onlineCountry: "Pehle {country} ke players dhoondh rahe hain…",
+    onlineWorld: "Duniya bhar mein players dhoondh rahe hain…",
     unlockRank: "rank {title} tak pahuncho",
     brag_hat: "Meri {item} pasand aayi? Yeh rank {rank} par milti hai.",
     brag_buy: "Yeh {item} maine challenges ke coins se kharidi!",

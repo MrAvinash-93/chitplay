@@ -1,6 +1,9 @@
 /** Japanese in Romaji. */
 export default {
   ui: {
+    partyGames: "Hitotsu no sumaho de paatii geemu",
+    onlineCountry: "Mazu {country} no pureiyaa o sagashite imasu…",
+    onlineWorld: "Sekaijuu de pureiyaa o sagashite imasu…",
     unlockRank: "ranku {title} ni naru",
     brag_hat: "Kono {item} ii desho? Ranku {rank} de moraemasu.",
     brag_buy: "Kono {item} wa charenji no koin de kaimashita!",

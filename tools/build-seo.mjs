@@ -49,7 +49,7 @@ const ANALYTICS = `<!-- analytics -->
 <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KRTTSTQQ"></script>${ADSENSE_TAG}
 <!-- /analytics -->`;
 
-const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}how-to-play/">How to play</a> · <a href="${up}strategy/">Strategy</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
+const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}how-to-play/">How to play</a> · <a href="${up}strategy/">Strategy</a> · <a href="${up}party/">Party games</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
 const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src="${up}assets/logo.png" alt="ChitPlay" width="180" height="31" style="display:block"></a>`;
 const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
 <link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
@@ -296,6 +296,121 @@ ${faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></de
 `;
 }
 
+// ── Party games: five pass-and-play games for one phone (the app is /party/) ──
+const PARTY = [
+  {
+    slug: 'who-is-the-spy', name: 'Who Is the Spy?', players: '4–10', time: '10–20 minutes',
+    desc: 'Play Who Is the Spy free online on one phone: everyone gets the same secret word except the spy. Give clues, find the spy. Rules, scoring and tips.',
+    intro: 'Who Is the Spy is a word game of bluffing for a group in the same room. Everybody secretly gets the same word, except one player, the spy, who gets a similar but different word. Nobody knows who the spy is, not even the spy. Give a clue, listen to everyone else\'s, and work out who doesn\'t quite fit.',
+    steps: ['Add the players and choose a word category (food, places, things, animals or mixed).', 'Pass the phone around: each player privately sees their secret word, then hides it.', 'Starting with a random player, everyone gives one short clue about their word without saying it.', 'Talk it over, then vote together for the player you think is the spy.', 'If you caught the spy, the spy gets one last chance: guess the group\'s word from four options.'],
+    scoring: 'If the spy is not caught, the spy scores 3. If the spy is caught and then guesses the group\'s word, the spy scores 2; if the guess is wrong, every other player scores 1. With eight or more players there are two spies.',
+    win: 'After the last round the player with the most points wins.',
+    tips: ['Clues that are too exact help the spy guess the word; clues that are too vague make you look like the spy.', 'If your word seems slightly different from everyone else\'s clues, you might be the spy: blend in.'],
+    faq: [['How many players do you need for Who Is the Spy?', 'At least four, and up to ten. With eight or more players ChitPlay picks two spies.'], ['Does the spy know they are the spy?', 'No. The spy simply gets a different word, so they have to notice the difference from the other clues.']],
+  },
+  {
+    slug: 'truth-or-dare', name: 'Truth or Dare', players: '2–15', time: '10–30 minutes',
+    desc: 'Play Truth or Dare free on one phone with friends and family: friendly truths and fun, safe dares for every age. Skip anything, no questions asked.',
+    intro: 'Truth or Dare is the classic party game: on your turn, choose to answer a question honestly or to do a small challenge. ChitPlay\'s prompts are written to be fun for every age: no dangerous, rude or embarrassing dares, and nothing about private matters.',
+    steps: ['Add the players and choose how many turns each.', 'On your turn, choose Truth or Dare.', 'Read the prompt aloud and answer it or do it.', 'Not comfortable? Press Skip: there is never a penalty for skipping.', 'The phone moves to the next player.'],
+    scoring: 'Every truth answered and every dare done earns 1 point. Skipping costs nothing.',
+    win: 'The player with the most points after the last turn wins, but the real point is the laughs.',
+    tips: ['Agree before you start that anyone can skip anything.', 'Mix truths and dares to keep the game moving.'],
+    faq: [['Is ChitPlay\'s Truth or Dare safe for children?', 'The prompts are written for every age: harmless questions and light challenges like impressions, tongue twisters or a short dance.'], ['Can I skip a prompt?', 'Yes, always, and skipping never costs points.']],
+  },
+  {
+    slug: 'riddle-chits', name: 'Riddle Chits', players: '2–10', time: '10–20 minutes',
+    desc: 'Play Riddle Chits free: draw a riddle (paheli) on one phone, race your friends to solve it. Hints, a timer and scores. Fun brain game for all ages.',
+    intro: 'Riddle Chits turns a box of folded riddles, or paheliyan, into a quick group game. One riddle is unfolded at a time and everyone races to shout the answer. Stuck? Take a hint, but it costs you a point.',
+    steps: ['Add the players and choose how many riddles to play.', 'Read the riddle aloud. A one-minute timer helps keep things moving.', 'Anyone can answer out loud. Press Show a hint if nobody gets it.', 'Press Show the answer and tap the player who said it first.'],
+    scoring: 'A riddle solved without a hint earns 2 points; with a hint it earns 1.',
+    win: 'The player with the most points after the last riddle wins.',
+    tips: ['Read every word: many riddles are about wordplay.', 'Think of everyday objects first.'],
+    faq: [['Are the riddles suitable for kids and adults?', 'Yes. They are classic, family-friendly riddles that every age can solve.'], ['Can we play with only two people?', 'Yes, Riddle Chits works from two players.']],
+  },
+  {
+    slug: 'majority-vote', name: 'Majority Vote', players: '3–15', time: '10–15 minutes',
+    desc: 'Play Majority Vote free on one phone: everyone secretly picks what they think most of the group will choose. Think like the crowd to score.',
+    intro: 'Majority Vote is a game about reading your group. For every question, each player secretly picks the answer they think most players will pick. The answers are revealed together, and everyone who chose with the majority scores.',
+    steps: ['Add the players and choose how many questions.', 'Pass the phone: each player secretly picks the answer they think most will choose.', 'When everyone has picked, the results are shown together as bars.', 'Everyone who picked the most popular answer scores a point.'],
+    scoring: 'One point each time you pick the majority answer. If two answers tie for most picks, both count.',
+    win: 'The player with the most points after the last question wins.',
+    tips: ['Don\'t answer for yourself: answer for the group.', 'Watch who usually agrees with whom.'],
+    faq: [['Is my choice secret?', 'Yes. Each player picks while holding the phone alone, and only the totals are shown.'], ['What happens in a tie?', 'If two answers have the same number of picks, both count as the majority.']],
+  },
+  {
+    slug: 'consequences', name: 'Consequences', players: '3–8', time: '5–10 minutes',
+    desc: 'Play Consequences free on one phone: write a story one folded line at a time without seeing the others, then unfold the whole funny tale.',
+    intro: 'Consequences is the old paper-folding story game. Each player writes one part of a story (who, met whom, where, what they said, what happened) while the earlier lines stay folded out of sight. At the end the whole story is unfolded and read out, usually to a lot of laughter.',
+    steps: ['Add the players.', 'Pass the phone: each player writes one line for the part shown, without seeing what came before.', 'Seven parts make a story: who, met whom, where, what each said, what happened, and what the world said.', 'Unfold the story and read it aloud. Copy it to share, or write another.'],
+    scoring: 'There are no points: the best story wins the room.',
+    win: 'Everybody wins when the story makes the whole room laugh.',
+    tips: ['Short lines work best.', 'Keep it kind: the story is read out to everyone.'],
+    faq: [['Where does the name Consequences come from?', 'It is a traditional parlour game played on folded paper; the last line tells "the consequence".'], ['Can we play it again?', 'Yes, press Write another for a new story with the same players.']],
+  },
+];
+function partyPage(g) {
+  const url = `${SITE}/games/${g.slug}/`;
+  const title = `${g.name.replace('?', '')} – Play Free on One Phone | ChitPlay`;
+  const play = `../../party/?game=${g.slug}`;
+  const related = PARTY.filter(o => o.slug !== g.slug).map(o => `<li><a href="../${o.slug}/">${esc(o.name)}</a></li>`).join('');
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'VideoGame', name: g.name, url, description: g.desc, image: `${SITE}/assets/chitplay-game.jpg`, gamePlatform: 'Web browser', applicationCategory: 'Game', genre: ['Party game'], numberOfPlayers: { '@type': 'QuantitativeValue', minValue: Number(g.players.split('–')[0]), maxValue: Number(g.players.split('–')[1]) }, author: DEVELOPER_LD, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } },
+    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: g.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'ChitPlay', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: 'Games', item: `${SITE}/games/` }, { '@type': 'ListItem', position: 3, name: g.name, item: url }] },
+  ];
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${ANALYTICS}
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(g.desc)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChitPlay">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(g.desc)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${SITE}/assets/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+${iconLinks('../../')}
+<script type="application/ld+json">${json(ld)}</script>
+<style>body{margin:0;background:#140b07;color:#f6ead2;font:17px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(28px,6vw,40px);line-height:1.2}h2{font-size:21px;margin-top:28px}.btn{display:inline-block;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6}.facts{display:flex;flex-wrap:wrap;gap:8px;padding:0;list-style:none}.facts li{padding:6px 12px;border-radius:999px;background:#24140c}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}footer{margin-top:40px;font-size:13px;color:#d4c2a0}</style>
+</head>
+<body>
+<main>
+${logoLink('../../')}
+<nav aria-label="Breadcrumb"><a href="../../">ChitPlay</a> › <a href="../">Games</a> › ${esc(g.name)}</nav>
+<h1>${esc(g.name)}: how to play, free on one phone</h1>
+<ul class="facts"><li>👥 ${g.players} players</li><li>⏱ ${g.time}</li><li>📱 one phone, pass it round</li><li>🆓 free, no sign-up</li></ul>
+<p>${esc(g.intro)}</p>
+<p><a class="btn" href="${play}">▶ Play ${esc(g.name)} now</a></p>
+<h2>How to play</h2>
+<ol>${g.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+<h2>Scoring</h2>
+<p>${esc(g.scoring)}</p>
+<h2>Who wins</h2>
+<p>${esc(g.win)}</p>
+<h2>Tips</h2>
+<ul>${g.tips.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+<h2>Questions</h2>
+${g.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
+<h2>More party games</h2>
+<ul>${related}<li><a href="../raja-rani-chor-police/">Raja Rani Chor Police</a> (3D chit game)</li></ul>
+<footer>${footerLinks('../../')} · © ${TODAY.slice(0, 4)} ChitPlay</footer>
+</main>
+</body>
+</html>
+`;
+}
+for (const g of PARTY) {
+  mkdirSync(join(ROOT, 'games', g.slug), { recursive: true });
+  writeFileSync(join(ROOT, 'games', g.slug, 'index.html'), partyPage(g));
+}
+
 function hubPage() {
   const url = `${SITE}/games/`;
   const items = COUNTRY_ORDER.map(id => {
@@ -347,6 +462,8 @@ ${logoLink('../')}
 <p>One indoor game, many names. Pick yours and play it free, at any age. Looking for ideas? See <a href="../indoor-games/">indoor games for four people</a> and <a href="../school-games/">paper games for school</a>.</p>
 <p><a class="btn" href="../">▶ Play now</a></p>
 <ol>${items}</ol>
+<h2>Party games for one phone</h2>
+<ul>${PARTY.map(g => `<li><a href="${g.slug}/">${esc(g.name)}</a>: ${g.players} players, ${g.time}</li>`).join('')}</ul>
 <h2>Roles in every version</h2>
 <div class="wrap"><table><thead><tr><th>Game</th><th>Country</th><th>Roles</th><th>Who guesses</th></tr></thead><tbody>${table}</tbody></table></div>
 <h2>Questions</h2>
@@ -365,6 +482,7 @@ for (const id of COUNTRY_ORDER) {
   writeFileSync(join(dir, 'index.html'), pageFor(id));
 }
 writeFileSync(join(ROOT, 'games', 'index.html'), hubPage());
+
 
 // ── Topic pages: useful answers for what people actually search ──
 const TOPICS = {
@@ -636,7 +754,7 @@ const HOST = new URL(SITE).hostname;
 if (HOST.endsWith('github.io')) rmSync(join(ROOT, 'CNAME'), { force: true });
 else writeFileSync(join(ROOT, 'CNAME'), `${HOST}\n`);
 
-const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), ...COUNTRY_ORDER.map(id => `${SITE}/games/${GAME_SLUGS[id]}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`)];
+const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), ...COUNTRY_ORDER.map(id => `${SITE}/games/${GAME_SLUGS[id]}/`), `${SITE}/party/`, ...PARTY.map(g => `${SITE}/games/${g.slug}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`)];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u, i) => `  <url><loc>${u}</loc><lastmod>${TODAY}</lastmod><changefreq>monthly</changefreq><priority>${i === 0 ? '1.0' : i === 1 ? '0.9' : '0.8'}</priority></url>`).join('\n')}
@@ -714,7 +832,7 @@ const body = `<!-- seo:body -->
     <ul>
 ${COUNTRY_ORDER.map(id => `      <li><a href="games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)}) — ${esc(GAME_AKA[id].filter(a => a !== GAME_NAME_EN[id]).slice(0, 2).join(', '))}</li>`).join('\n')}
     </ul>
-    <p><a href="games/">All chit games and rules</a> · <a href="how-to-play/">How to play (full guide)</a> · <a href="strategy/">Strategy and tips</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
+    <p><a href="games/">All chit games and rules</a> · <a href="how-to-play/">How to play (full guide)</a> · <a href="strategy/">Strategy and tips</a> · <a href="party/">Party games for one phone</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
   </section>
   <!-- /seo:body -->`;
 let index = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -723,6 +841,9 @@ index = index.replace(/<!-- analytics -->[\s\S]*?<!-- \/analytics -->/, ANALYTIC
 writeFileSync(join(ROOT, 'index.html'), index);
 
 const notFound = readFileSync(join(ROOT, '404.html'), 'utf8').replace(/<!-- analytics -->[\s\S]*?<!-- \/analytics -->/, ANALYTICS);
+// the party games page gets the same analytics/AdSense block as the other pages
+const partyApp = join(ROOT, 'party', 'index.html');
+if (existsSync(partyApp)) writeFileSync(partyApp, readFileSync(partyApp, 'utf8').replace(/<!-- analytics -->[\s\S]*?<!-- \/analytics -->/, ANALYTICS));
 writeFileSync(join(ROOT, '404.html'), notFound);
 
 console.log(`SEO built for ${SITE}: ${COUNTRY_ORDER.length} game pages, hub, sitemap (${urls.length} urls), robots, manifest, index.html`);

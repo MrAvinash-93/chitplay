@@ -1,6 +1,9 @@
 /** Français. */
 export default {
   ui: {
+    partyGames: "Jeux de soirée sur un seul téléphone",
+    onlineCountry: "On cherche d’abord des joueurs de {country}…",
+    onlineWorld: "Recherche de joueurs dans le monde entier…",
     unlockRank: "atteins le rang {title}",
     brag_hat: "Tu aimes mon {item} ? On l’obtient au rang {rank}.",
     brag_buy: "J’ai acheté ce {item} avec les pièces de mes défis !",

@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName, politeName } from '../world/names.js?v=20261108-0822';
-import { cleanLook } from '../world/character-looks.js?v=20261108-0822';
+import { cleanName, politeName } from '../world/names.js?v=20261108-0833';
+import { cleanLook } from '../world/character-looks.js?v=20261108-0833';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0822.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0833.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -44,6 +44,29 @@ export const randomCode = () => String(Math.floor(100000 + Math.random() * 90000
 export const PUBLIC_TABLES = 8;
 export const publicCode = (n) => `public-${n}`;
 export const isPublicCode = (c) => /^public-[1-9]\d?$/.test(String(c || ''));
+
+/**
+ * Look at every public table without sitting down: which ones have somebody waiting, from which
+ * country, with how many seats taken. One connection, a couple of seconds, no data kept.
+ * Resolves [{ code, waiting, country, seats, locked }] (free tables are left out).
+ */
+export async function peekTables(codes, ms = 3500) {
+  const Peer = await loadPeer();
+  const me = await openPeer(Peer);
+  try {
+    return (await Promise.all(codes.map(code => new Promise((resolve) => {
+      let done = false;
+      const finish = (v) => { if (!done) { done = true; clearTimeout(t); try { conn.close(); } catch {} resolve(v); } };
+      const t = setTimeout(() => finish(null), ms);
+      const conn = me.connect(PREFIX + code, { reliable: true });
+      conn.on('open', () => safeSend(conn, { t: 'peek' }));
+      conn.on('data', (m) => { if (m?.t === 'info') finish({ code, country: String(m.country || ''), seats: Number(m.seats) || 0, locked: !!m.locked }); });
+      conn.on('error', () => finish(null));
+    })))).filter(Boolean);
+  } finally {
+    setTimeout(() => { try { me.destroy(); } catch {} }, 300);
+  }
+}
 export const isCode = (c) => /^\d{6}$/.test(String(c || ''));
 /** A phone's private ticket back to its seat if the connection drops. */
 export const newToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -166,6 +189,12 @@ export class NearbyHost {
       g?.w.seen();
       if (!msg || typeof msg !== 'object' || msg.t === 'ping') return;
       if (msg.t === 'bye') { this.#drop(id); return; }
+      // somebody looking for a table: tell them where we're from and how full we are, nothing else
+      if (msg.t === 'peek') {
+        safeSend(conn, { t: 'info', country: this.isPublic ? this.country || '' : '', seats: this.guests.size, locked: this.locked || !this.isPublic });
+        setTimeout(() => { try { conn.close(); } catch {} }, 400);
+        return;
+      }
       if (msg.t === 'hello') {
         if (g) return;
         const token = String(msg.token || id);

@@ -1,6 +1,9 @@
 /** English: the default language, and the fallback for anything another language doesn't have. */
 export default {
   ui: {
+    partyGames: "Party games for one phone",
+    onlineCountry: "Looking for players from {country} first…",
+    onlineWorld: "Looking for players worldwide…",
     unlockRank: "reach rank {title}",
     brag_hat: "Like my {item}? You get it at rank {rank}.",
     brag_buy: "Got this {item} with coins from my challenges!",

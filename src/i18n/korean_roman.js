@@ -1,6 +1,9 @@
 /** Korean, romanized. */
 export default {
   ui: {
+    partyGames: "Hanaui pon-euro paati geim",
+    onlineCountry: "Meonjeo {country} peulleieo chatneun jung…",
+    onlineWorld: "Jeon segye peulleieo chatneun jung…",
     unlockRank: "raengkeu {title} dalseong",
     brag_hat: "Nae {item} eottae? Raengkeu {rank}-eseo badayo.",
     brag_buy: "I {item}-eun chaellinji koin-euro sasseoyo!",
