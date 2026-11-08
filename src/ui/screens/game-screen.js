@@ -1,24 +1,24 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261108-0738';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261108-0738';
-import { profile, BADGES, RANKS } from '../../persistence/profile-store.js?v=20261108-0738';
+import { GAME_PHASES } from '../../app/config.js?v=20261108-0822';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261108-0822';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261108-0822';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261108-0738';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261108-0738';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261108-0738';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261108-0738';
-import { voiceBox } from '../../world/voice.js?v=20261108-0738';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode } from '../../net/nearby.js?v=20261108-0738';
-import { cleanName, pickOpponents, politeName } from '../../world/names.js?v=20261108-0738';
+import { loadWorld } from '../../world/world-loader.js?v=20261108-0822';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN } from '../../world/countries.js?v=20261108-0822';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261108-0822';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261108-0822';
+import { voiceBox } from '../../world/voice.js?v=20261108-0822';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode } from '../../net/nearby.js?v=20261108-0822';
+import { cleanName, pickOpponents, politeName } from '../../world/names.js?v=20261108-0822';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261108-0738';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261108-0738';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../../world/table-talk.js?v=20261108-0738';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261108-0738';
-import { iconSvg } from '../icons.js?v=20261108-0738';
-import { VoiceChat } from '../../net/voice.js?v=20261108-0738';
+} from '../../world/character-looks.js?v=20261108-0822';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261108-0822';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261108-0822';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261108-0822';
+import { iconSvg } from '../icons.js?v=20261108-0822';
+import { VoiceChat } from '../../net/voice.js?v=20261108-0822';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -736,6 +736,9 @@ export function GameScreen({ transition }) {
           dailyPill.setAttribute('aria-label', `${ui.rewards}: ${fmt(ui.dailyShort, { n: d.items.filter(i => i.done).length })}, ${profile.coins} ${ui.coins}`);
         };
         paintDaily();
+        // the first visit of the day: today's reward
+        // only while the start screen is still up: never over a match or a room the player already chose
+        if (!profile.login.claimed) later(700, () => { if (alive && !match && !net && overlay.hidden && sheet.classList.contains('game__sheet--home')) openLoginReward(paintDaily); });
         const baseRefresh = rankRefresh;
         rankRefresh = () => { baseRefresh(); paintDaily(); };
 
@@ -1188,7 +1191,7 @@ export function GameScreen({ transition }) {
     net.seat = m.seat;
     players = m.players.map((p, i) => ({
       name: (net?.public && i !== m.seat ? politeName(String(p.name)) : String(p.name)).slice(0, 16), gender: p.gender === 'f' ? 'f' : 'm', look: cleanLook(p.look, p.look?.id),
-      color: SHIRTS[i], isHuman: i === m.seat, remote: null,
+      color: SHIRTS[i], isHuman: i === m.seat, remote: null, flair: FLAIRS.has(p.flair) ? p.flair : '', bot: p.human === false,
     }));
     profile.noteRivals(m.players.filter((p, i) => i !== m.seat && p.human).map((p, i) => ({ name: net?.public ? politeName(String(p.name)) : p.name, weekly: p.weekly })));
     voiceBox.setCast(players.map(p => ({ gender: p.gender, age: p.look.age })));
@@ -1213,7 +1216,7 @@ export function GameScreen({ transition }) {
         if (m.m === 'setCountry') { st.setCountry(localize(COUNTRIES[m.a[0]] || base, mode)); break; }
         if (m.m === 'begin') {
           // the host's own labels say "(You)" about the host, so each phone writes its own
-          st.begin(players.map(p => ({ name: p.name, look: p.look, color: p.color, isHuman: p.isHuman, label: p.isHuman ? `${p.name} (${ui.you})` : p.name })));
+          st.begin(players.map(p => ({ name: p.name, look: p.look, color: p.color, isHuman: p.isHuman, label: `${p.bot ? '🤖 ' : p.flair ? `${p.flair} ` : ''}${p.isHuman ? `${p.name} (${ui.you})` : p.name}` })));
           break;
         }
         if (!chatOn() && (m.m === 'say' || m.m === 'talkTo')) break;
@@ -1268,7 +1271,7 @@ export function GameScreen({ transition }) {
     return new Promise((resolve) => {
       const nameInput = nameInputEl();
       const nameNow = () => myName();
-      const joinExtras = () => ({ gender: profile.gender, look: profile.look, weekly: profile.week.points });
+      const joinExtras = () => ({ gender: profile.gender, look: profile.look, weekly: profile.week.points, flair: profile.flair });
       const rounds = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS);
       const big = (label, sub, onClick, primary, iconName = null) => el('button', {
         className: `game__choice${primary ? ' game__choice--primary' : ''}${iconName ? ' game__choice--icon' : ''}`, type: 'button', onClick,
@@ -1281,7 +1284,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261108-0738').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261108-0822').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -1353,8 +1356,9 @@ export function GameScreen({ transition }) {
         const startNow = () => {
           if (!room.guests.size || room.locked) return;
           clearInterval(publicTimer);
+          if (publicTable) cast = lobbyCast();
           // each friend keeps this seat for the whole room, even if their phone drops
-          net.seats = room.list.slice(0, 3).map(g => ({ token: g.token, name: g.name, gender: g.gender, look: g.look, weekly: g.weekly }));
+          net.seats = room.list.slice(0, 3).map(g => ({ token: g.token, name: g.name, gender: g.gender, look: g.look, weekly: g.weekly, flair: g.flair }));
           net.name = room.hostLabel;
           room.lock();
           lobbyBack = null;
@@ -1364,6 +1368,7 @@ export function GameScreen({ transition }) {
           resolve('host');
         };
         const startBtn = big(ui.startNeedOne, GAME_NAME_EN[base.id], startNow, true);
+        startBtn.hidden = !!publicTable;   // a public table starts by itself
         startBtn.disabled = true;
         const room = new NearbyHost({
           onChange: () => paint(),
@@ -1375,7 +1380,14 @@ export function GameScreen({ transition }) {
         net = { role: 'host', room, name, seats: [], lastEnd: null, repaint: () => paint(), public: !!publicTable };
         // a public table: it starts by itself when it's full, or soon after somebody sits down
         const PUBLIC_WAIT_MS = 25000;
-        let deadline = 0, lastGuests = 0;
+        let deadline = 0, lastGuests = 0, openedAt = 0;
+        // computer players who sat down while we waited, in order; they leave again for real players
+        const lobbyBots = [];
+        const lobbyCast = () => {
+          const extra = makeCast();
+          const g = room.guests.size;
+          return [0, 1, 2, 3].map(i => (i >= g && i < 3 && lobbyBots[i - g]) || extra[i]);
+        };
         const pubSub = el('p', { className: 'game__sub' });
         const leavePublic = () => { clearInterval(publicTimer); lobbyBack = null; room.close(); net = null; keepAwake(false); };
         const soloBtn = big(ui.onlineSolo, ui.onlineSoloSub, () => { leavePublic(); resolve('solo'); }, false, 'play');
@@ -1387,10 +1399,28 @@ export function GameScreen({ transition }) {
           // someone just sat down at an almost-due table: give the next one a moment
           if (g > lastGuests && startsIn() < 6) deadline = Date.now() + 8000;
           lastGuests = g;
+          // a real player takes the seat of a computer player
+          while (g + lobbyBots.length > 3) lobbyBots.pop();
+          // seats fill one by one, so the table is full by the time the wait is over
+          const total = Math.max(1, deadline - openedAt);
+          const due = Math.min(3 - g, Math.floor(((Date.now() - openedAt) / total) * 3.4));
+          while (lobbyBots.length < due) {
+            const taken = [room.hostLabel, ...room.list.map(x => x.name), ...lobbyBots.map(b => b.name)];
+            const b = pickOpponents(1, taken)[0];
+            lobbyBots.push({ ...b, look: randomLook(b.gender, country.theme.skins[lobbyBots.length % country.theme.skins.length]), flair: RANKS[1 + Math.floor(Math.random() * 5)].icon });
+          }
           const left = startsIn();
-          if (g >= 3 || (left === 0 && g >= 1)) { startNow(); return; }
-          pubSub.textContent = g ? fmt(ui.onlineStarting, { n: left }) : (left ? fmt(ui.onlineWaiting, { n: left }) : ui.onlineNobody);
-          soloBtn.hidden = !(left === 0 && g === 0);
+          if (g >= 3) { startNow(); return; }
+          if (left === 0) {
+            if (g >= 1) { startNow(); return; }
+            // nobody real came: the same table plays on this phone
+            cast = lobbyCast();
+            leavePublic();
+            resolve('solo');
+            return;
+          }
+          pubSub.textContent = fmt(ui.onlineStarting, { n: left });
+          soloBtn.hidden = true;
           paint();
         };
         armBackGuard();
@@ -1401,13 +1431,14 @@ export function GameScreen({ transition }) {
           const g = room.list;
           list.append(el('li', { className: 'game__lobby-me' }, [`⭐ ${room.hostLabel} ${ui.youHost}`]));
           for (let i = 0; i < 3; i++) {
-            list.append(el('li', { className: g[i] ? 'on' : '' }, [g[i] ? `✅ ${g[i].name}` : (i === g.length ? (publicTable ? ui.onlineSeat : ui.waiting) : ui.bot)]));
+            const bot = publicTable && !g[i] ? lobbyBots[i - g.length] : null;
+            list.append(el('li', { className: g[i] || bot ? 'on' : '' }, [g[i] ? `✅ ${g[i].name}` : bot ? `🤖 ${bot.name}` : (i === g.length ? (publicTable ? ui.onlineSeat : ui.waiting) : ui.bot)]));
           }
           const n = g.length + 1;
           startBtn.disabled = g.length === 0;
           startBtn.querySelector('strong').textContent = g.length ? fmt(ui.startN, { n }) : ui.startNeedOne;
           if (g.length) haptic(15);
-          room.broadcast({ t: 'lobby', host: room.hostLabel, game: base.id, rounds: rounds(), players: [room.hostLabel, ...g.map(x => x.name)], ...(publicTable ? { startsIn: startsIn() } : {}) });
+          room.broadcast({ t: 'lobby', host: room.hostLabel, game: base.id, rounds: rounds(), players: [room.hostLabel, ...g.map(x => x.name), ...(publicTable ? lobbyBots.map(b => `🤖 ${b.name}`) : [])], ...(publicTable ? { startsIn: startsIn() } : {}) });
         };
         const subEl = el('p', { className: 'game__sub' });
         const showLobby = () => {
@@ -1455,7 +1486,8 @@ export function GameScreen({ transition }) {
           const code = await room.open(publicTable);
           if (net?.room !== room) return 'cancelled';   // Back was pressed while connecting
           if (publicTable) {
-            deadline = Date.now() + PUBLIC_WAIT_MS;
+            openedAt = Date.now();
+            deadline = openedAt + PUBLIC_WAIT_MS;
             showLobby();
             keepAwake(true);
             tickPublic();
@@ -1466,7 +1498,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261108-0738').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261108-0822').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -1657,7 +1689,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261108-0738');
+        const scanner = import('../../net/qr-scan.js?v=20261108-0822');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });
@@ -2087,6 +2119,7 @@ export function GameScreen({ transition }) {
     await sleep(700);
     S().reveal(match.roles);
     haptic(30);
+    S().effect('royal', match.seatOf('king'));
     await sleep(1500);
 
     // Reactions
@@ -2095,6 +2128,8 @@ export function GameScreen({ transition }) {
       act(g, 'jump', '🎉');
       act(thief, 'cry', '😭');
       S().look(thief, null);
+      S().effect('siren', g);
+      later(450, () => { if (alive) S().effect('cuffs', thief); });
       sfx.play('correct');
       haptic([20, 40, 20]);
       say(g, 'guesserWin', {}, { to: thief, camera: 'none' });
@@ -2105,6 +2140,7 @@ export function GameScreen({ transition }) {
       act(thief, 'laugh', '😂');
       act(g, 'facepalm', '💢');
       S().look(g, null);
+      S().effect('smoke', thief);
       sfx.play('wrong');
       say(thief, 'thiefWin', {}, { to: g, camera: 'none' });
       await sleep(900);
@@ -2234,7 +2270,7 @@ export function GameScreen({ transition }) {
       const r = await nearbyFlow(nearbyStart || {});
       nearbyStart = null;
       if (!alive) return;
-      if (r === 'solo') { pm = 'play'; break; }   // nobody online: a match with computer players instead
+      if (r === 'solo') { clear(sheet); sheet.className = 'game__sheet'; pm = 'play'; break; }   // nobody online: the same table plays on this phone
       if (r === 'host') break;           // room full enough and Start pressed
       if (r === 'guest') return;         // a friend's phone: the host drives from here
     }
@@ -2259,7 +2295,7 @@ export function GameScreen({ transition }) {
       // new strangers at the table every match; the ones on the start screen play the first one
       const table = cast || makeCast();
       cast = null;
-      players = table.map((p, i) => ({ name: p.name, gender: p.gender, look: { ...p.look, skin: country.theme.skins[i % country.theme.skins.length] }, color: SHIRTS[i], isHuman: false, remote: null }));
+      players = table.map((p, i) => ({ name: p.name, gender: p.gender, look: { ...p.look, skin: country.theme.skins[i % country.theme.skins.length] }, color: SHIRTS[i], isHuman: false, remote: null, flair: p.flair || '', brag: p.brag || null }));
       if (pm === 'pass') {
         (lastPassTable || []).forEach((t, k) => {
           const seat = (HUMAN_SEAT + k) % 4;
@@ -2270,7 +2306,7 @@ export function GameScreen({ transition }) {
             p.name = pickOpponents(1, players.map(o => o.name))[0].name;
           }
         });
-      } else if (human) players[HUMAN_SEAT] = { ...players[HUMAN_SEAT], name: myName(), gender: profile.gender, look: profile.look, isHuman: true, weekly: net ? profile.week.points : null };
+      } else if (human) players[HUMAN_SEAT] = { ...players[HUMAN_SEAT], name: myName(), gender: profile.gender, look: profile.look, isHuman: true, weekly: net ? profile.week.points : null, flair: profile.flair };
       // Nearby: friends take seats 0, 1, 2 in the order they joined; empty seats stay computer players
       if (pm === 'nearby' && isHost()) {
         players[HUMAN_SEAT].name = net.name;   // the name the friends already saw in the lobby
@@ -2279,7 +2315,7 @@ export function GameScreen({ transition }) {
         const online = net.room.list;
         net.seats.forEach((s, k) => {
           // a friend who is away keeps name and seat; a computer player sits in until they're back
-          players[k] = { name: s.name, gender: s.gender, look: s.look, color: SHIRTS[k], isHuman: false, remote: online.find(g => g.token === s.token)?.id || null, weekly: s.weekly ?? 0 };
+          players[k] = { name: s.name, gender: s.gender, look: s.look, color: SHIRTS[k], isHuman: false, remote: online.find(g => g.token === s.token)?.id || null, weekly: s.weekly ?? 0, flair: FLAIRS.has(s.flair) ? s.flair : '' };
         });
         // nobody at the table shares a name with a friend
         const taken = new Set(players.filter((p, i) => p.remote || i === HUMAN_SEAT || net.seats[i]).map(p => p.name.toLowerCase()));
@@ -2320,7 +2356,7 @@ export function GameScreen({ transition }) {
     S().setCountry(country);
     S().begin(players.map(p => ({
       name: p.name, look: p.look, color: p.color, isHuman: p.isHuman,
-      label: isMe(p) && p.name !== ui.you ? `${p.name} (${ui.you})` : p.name,
+      label: `${net && !p.isHuman && !p.remote ? '🤖 ' : p.flair ? `${p.flair} ` : ''}${isMe(p) && p.name !== ui.you ? `${p.name} (${ui.you})` : p.name}`,
     })));
     if (voiceOn() && !voiceBox.available) showToast(ui.voiceOff, 3500);
     keepAwake(true);
@@ -2337,11 +2373,14 @@ export function GameScreen({ transition }) {
       await sayWait(0, 'intro', {}, 250, { to: null });
       await sayWait(1, 'introReply', {}, 250, { to: 0 });
       S().clearTalk();
+      await maybeBrag(0.85);
+      S().clearTalk();
     }
 
     for (let r = first; r <= match.rounds; r++) {
       await playRound(r, { resume: resumeRound && r === first });
       if (r < match.rounds) {
+        if (r >= 2) await maybeBrag(0.3);
         await sayWait(pickOne([0, 1, 2, 3]), 'nextRound');
         renderScores();
       }
@@ -2352,6 +2391,7 @@ export function GameScreen({ transition }) {
     const w = match.winner();
     setRound(`🏆 ${ui.over}`);
     S().celebrate(w);
+    S().effect('confetti');
     S().emote(w, '🏆', 4);
     sfx.play('victory');
     haptic([30, 50, 30, 50, 90]);
@@ -2459,10 +2499,66 @@ export function GameScreen({ transition }) {
   /* ─── Who sits at the table ─────────────────────────────── */
   function makeCast() {
     const skins = country.theme.skins;
-    return pickOpponents(4, [myName()]).map((o, i) => ({ ...o, look: randomLook(o.gender, skins[i % skins.length]) }));
+    // the hats you haven't got yet: a computer player may be wearing one, and tell you how they got it
+    const missing = FANCY_HATS.filter(h => !profile.owns(h.id));
+    return pickOpponents(4, [myName()]).map((o, i) => {
+      const look = randomLook(o.gender, skins[i % skins.length]);
+      let brag = null;
+      if (missing.length && Math.random() < 0.4) {
+        const hat = missing.splice(Math.floor(Math.random() * missing.length), 1)[0];
+        look.headwear = hat.id;
+        look.id = 'custom';
+        brag = { hat: hat.id };
+      }
+      // their rank: usually somewhere in the middle of the ladder
+      const r = brag?.hat && FANCY_HATS.find(h => h.id === brag.hat).rank != null
+        ? FANCY_HATS.find(h => h.id === brag.hat).rank
+        : 1 + Math.floor(Math.random() * 6);
+      return { ...o, look, flair: RANKS[Math.min(r, RANKS.length - 1)].icon, brag };
+    });
+  }
+  /** Something a computer player has that you don't, and how they got it (null if you have it all). */
+  function bragFor(seat) {
+    const p = players[seat];
+    if (!p) return null;
+    const hat = p.brag?.hat && FANCY_HATS.find(h => h.id === p.brag.hat);
+    const options = [];
+    if (hat && !profile.owns(hat.id)) {
+      options.push(() => (hat.rank != null
+        ? fmt(ui.brag_hat, { item: lookName(hat.id, hat.label), rank: rankTitle({ ...RANKS[hat.rank], index: hat.rank }) })
+        : fmt(ui.brag_buy, { item: lookName(hat.id, hat.label) })));
+    }
+    const lockedEmoji = SPECIAL_EMOJIS.filter(e => !profile.owns(e.id));
+    if (lockedEmoji.length) {
+      const e = pickOne(lockedEmoji);
+      options.push(() => { S().throwEmoji(seat, null, e.symbol); return fmt(ui.brag_emoji, { emoji: e.symbol, how: emojiHow(e) }); });
+    }
+    if (!profile.daily.bonus) options.push(() => fmt(ui.brag_daily, { n: DAILY_BONUS }));
+    if (profile.login.day < 7) options.push(() => fmt(ui.brag_streak, { n: 7 }));
+    return options.length ? pickOne(options) : null;
+  }
+  /** Now and then a computer player shows off something you could earn too. */
+  async function maybeBrag(chance) {
+    if (playMode === 'watch' || playMode === 'pass' || Math.random() > chance) return;
+    const bots = players.map((_, i) => i).filter(i => isBot(i));
+    const withHat = bots.filter(i => players[i].brag?.hat && !profile.owns(players[i].brag.hat));
+    const seat = withHat.length ? pickOne(withHat) : bots.length ? pickOne(bots) : -1;
+    const line = seat >= 0 ? bragFor(seat) : null;
+    if (!line || !chatOn()) return;
+    const text = line();
+    S().say(seat, text);
+    act(seat, 'show', null, 'happy');
+    await sleep(Math.min(4200, 1400 + text.length * 45));
+  }
+  /** How a special emoji is unlocked, in words. */
+  function emojiHow(e) {
+    if (e.badge) { const b = BADGES.find(x => x.id === e.badge); return fmt(ui.unlockBadge, { name: badgeText(b).name, hint: badgeText(b).hint }); }
+    if (e.rank != null) return fmt(ui.unlockRank, { title: rankTitle({ ...RANKS[e.rank], index: e.rank }) });
+    if (e.login) return ui.unlockLogin;
+    return fmt(ui.unlockCoins, { n: e.price });
   }
   function seatList() {
-    return players.map(x => ({ name: x.name, gender: x.gender, look: x.look, human: !!(x.isHuman || x.remote || x.weekly != null), weekly: x.weekly ?? null }));
+    return players.map(x => ({ name: x.name, gender: x.gender, look: x.look, human: !!(x.isHuman || x.remote || x.weekly != null), weekly: x.weekly ?? null, flair: x.flair || '' }));
   }
   /** The start screen shows who you'd play with: three strangers and you. */
   function previewTable() {
@@ -2636,10 +2732,24 @@ export function GameScreen({ transition }) {
       }, [label])));
       body.append(el('span', { className: 'game__talk-label' }, [ui.talkTo]), chips);
       if (tab === 'emoji') {
-        body.append(el('div', { className: 'game__talk-emojis' }, TALK_EMOJIS.map((e, i) => el('button', {
-          className: 'game__talk-emoji', type: 'button', attrs: { 'aria-label': e },
-          onClick: () => { sendEmoji(target, i); closeTalk(); },
-        }, [e]))));
+        body.append(el('div', { className: 'game__talk-emojis' }, [
+          ...TALK_EMOJIS.map((e, i) => el('button', {
+            className: 'game__talk-emoji', type: 'button', attrs: { 'aria-label': e },
+            onClick: () => { sendEmoji(target, i); closeTalk(); },
+          }, [e])),
+          ...SPECIAL_EMOJIS.map((e, k) => {
+            const mine = profile.owns(e.id);
+            return el('button', {
+              className: `game__talk-emoji game__talk-emoji--special${mine ? '' : ' game__talk-emoji--locked'}`, type: 'button',
+              attrs: { 'aria-label': mine ? e.symbol : `${e.symbol} 🔒 ${emojiHow(e)}`, title: mine ? '' : emojiHow(e) },
+              onClick: () => {
+                if (!mine) { showToast(fmt(ui.lockedEmoji, { emoji: e.symbol, how: emojiHow(e) }), 3200); return; }
+                sendEmoji(target, TALK_EMOJIS.length + k);
+                closeTalk();
+              },
+            }, [e.symbol, mine ? null : el('small', {}, ['🔒'])]);
+          }),
+        ]));
       } else {
         body.append(
           el('p', { className: 'game__netnote' }, [fmt(ui.talkPrivateHelp, { name: players[target].name })]),
@@ -2673,7 +2783,7 @@ export function GameScreen({ transition }) {
   function deliverEmoji(from, to, i) {
     if (!isTalkEmoji(i) || !validSeat(from) || !allowed(from)) return;
     const target = validSeat(to) && to !== from ? to : null;
-    const symbol = TALK_EMOJIS[i];
+    const symbol = ALL_EMOJIS[i];
     S().throwEmoji(from, target, symbol);
     sfx.play('select');
     if (target != null) S().look(from, target);
@@ -2686,7 +2796,7 @@ export function GameScreen({ transition }) {
     const bots = players.map((_, s) => s).filter(s => s !== from && isBot(s));
     if (bots.length && Math.random() < 0.45) {
       const who = target != null && isBot(target) ? target : pickOne(bots);
-      later(1000 + Math.random() * 1000, () => { if (alive && matchRunning) S().throwEmoji(who, from, pickOne(TALK_EMOJIS)); });
+      later(1000 + Math.random() * 1000, () => { if (alive && matchRunning) S().throwEmoji(who, from, Math.random() < 0.25 ? pickOne(SPECIAL_EMOJIS).symbol : pickOne(TALK_EMOJIS)); });
     }
   }
   function sendWhisper(to, line) {
@@ -2877,6 +2987,37 @@ export function GameScreen({ transition }) {
 
   /* ─── Profile ─────────────────────────────────────────── */
   let profileTab = 'character';
+  /** A row of seven days: what each visit gives, today's highlighted. */
+  function loginRow() {
+    const l = profile.login;
+    return el('div', { className: 'game__loginrow' }, l.rewards.map((c, i) => el('span', {
+      className: `game__loginday${i + 1 < l.day || (l.claimed && i + 1 === l.day) ? ' game__loginday--done' : ''}${i + 1 === l.day ? ' game__loginday--today' : ''}`,
+    }, [el('small', {}, [fmt(ui.loginDay, { n: i + 1 })]), el('strong', {}, [i === 6 ? `${c}+🌈` : String(c)])])));
+  }
+  function openLoginReward(onDone) {
+    clear(overlay);
+    overlay.hidden = false;
+    screen.classList.add('game--overlay');
+    const l = profile.login;
+    overlay.append(el('div', { className: 'game__panel game__panel--login' }, [
+      el('h2', { className: 'game__title' }, [ui.loginTitle]),
+      el('p', { className: 'game__sub' }, [fmt(ui.loginSub, { n: l.day })]),
+      loginRow(),
+      el('button', {
+        className: 'game__choice game__choice--primary', type: 'button',
+        onClick: () => {
+          const got = profile.claimLogin();
+          closeOverlay();
+          if (got) {
+            sfx.play('victory'); haptic([20, 40, 20]);
+            showToast(fmt(ui.loginGot, { n: got.coins }), 2600);
+            if (got.rainbow) later(2800, () => showToast(ui.rainbowUnlocked, 3600));
+          }
+          onDone?.();
+        },
+      }, [el('strong', {}, [fmt(ui.loginCollect, { n: l.coins })])]),
+    ]));
+  }
   /** The words of a daily challenge, in the player's language. */
   function challengeText(c) {
     return fmt(ui[`ch_${c.key}`] || c.id, { n: c.n });
@@ -2961,6 +3102,8 @@ export function GameScreen({ transition }) {
       }, [el('span', { html: iconSvg('coin') }), String(price)]);
       rewardsBox.append(
         el('div', { className: 'game__coinbar' }, [el('span', { html: iconSvg('coin') }), el('strong', {}, [String(profile.coins)]), el('span', {}, [ui.coins])]),
+        el('h3', { className: 'game__h3' }, [ui.loginTitle]),
+        loginRow(),
         el('h3', { className: 'game__h3' }, [ui.dailyTitle]),
         el('ol', { className: 'game__daily' }, d.items.map(c => el('li', { className: c.done ? 'game__daily--done' : '' }, [
           el('span', { className: 'game__daily-text' }, [challengeText(c)]),
@@ -2986,6 +3129,12 @@ export function GameScreen({ transition }) {
           }
           if (h.rank != null) return item(face, name, fmt(ui.needRank, { title: rankTitle({ ...RANKS[h.rank], index: h.rank }) }), el('span', { className: 'game__lock', html: '🔒' }));
           return item(face, name, ui.forCoins, buyBtn(h.id, h.price));
+        })),
+        el('h3', { className: 'game__h3' }, [ui.specialEmojis]),
+        el('div', { className: 'game__shop' }, SPECIAL_EMOJIS.map((e) => {
+          const face = `<span class="game__shopemoji">${e.symbol}</span>`;
+          if (profile.owns(e.id)) return item(face, e.symbol, ui.emojiOwned, null);
+          return item(face, e.symbol, emojiHow(e), e.price != null ? buyBtn(e.id, e.price) : el('span', { className: 'game__lock', html: '🔒' }));
         })),
         el('h3', { className: 'game__h3' }, [ui.colours]),
         el('div', { className: 'game__shop' }, PREMIUM_COLORS.map((c) => {

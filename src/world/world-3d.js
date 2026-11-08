@@ -8,13 +8,14 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261108-0738';
+import { settingsStore } from '../persistence/settings-store.js?v=20261108-0822';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261108-0738';
-import { lookOf, lookKey } from './character-looks.js?v=20261108-0738';
-import { buildRoomDetails } from './room-details.js?v=20261108-0738';
-import { COUNTRIES } from './countries.js?v=20261108-0738';
-import * as Themes from './themes.js?v=20261108-0738';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261108-0822';
+import { lookOf, lookKey } from './character-looks.js?v=20261108-0822';
+import { buildRoomDetails } from './room-details.js?v=20261108-0822';
+import { COUNTRIES } from './countries.js?v=20261108-0822';
+import { isSpecialEmoji } from './table-talk.js?v=20261108-0822';
+import * as Themes from './themes.js?v=20261108-0822';
 
 const TAU = Math.PI * 2;
 
@@ -1033,14 +1034,14 @@ function createWorld() {
       y: Math.max(56, Math.min(H - 56, (1 - proj.y) / 2 * H)),
     };
   }
-  function burstEmoji(at, symbol) {
-    for (let n = 0; n < 7; n++) {
+  function burstEmoji(at, symbol, count = 7, spread = 1) {
+    for (let n = 0; n < count; n++) {
       const bit = document.createElement('span');
       bit.className = 'emoji-fx__bit';
       bit.textContent = symbol;
       fxLayer.appendChild(bit);
-      const angle = (n / 7) * Math.PI * 2 + Math.random() * 0.5;
-      const reach = 44 + Math.random() * 34;
+      const angle = (n / count) * Math.PI * 2 + Math.random() * 0.5;
+      const reach = (44 + Math.random() * 34) * spread;
       bit.animate([
         { transform: fxTransform(at.x, at.y, 0.5), opacity: 1 },
         { transform: fxTransform(at.x + Math.cos(angle) * reach, at.y + Math.sin(angle) * reach + 14, 0.9, angle * 60), opacity: 0 },
@@ -1049,8 +1050,9 @@ function createWorld() {
   }
   function flyEmoji(from, to, symbol, delay) {
     const a = headOnScreen(from), b = headOnScreen(to);
+    const special = isSpecialEmoji(symbol);
     const one = document.createElement('span');
-    one.className = 'emoji-fx__one';
+    one.className = `emoji-fx__one${special ? ' emoji-fx__one--special' : ''}`;
     one.textContent = symbol;
     fxLayer.appendChild(one);
     const arc = Math.min(a.y, b.y) - Math.min(110, window.innerHeight * 0.14);
@@ -1061,7 +1063,8 @@ function createWorld() {
       { transform: fxTransform(b.x, b.y, 1.15, 0), opacity: 1 },
     ], { duration: 640, delay, easing: 'ease-in-out', fill: 'both' }).onfinish = () => {
       one.remove();
-      burstEmoji(b, symbol);
+      burstEmoji(b, symbol, special ? 10 : 7, special ? 1.4 : 1);
+      if (special) burstEmoji(b, '✨', 8, 1.8);
       actors[to].emote(symbol, 2);
       actors[to].mood('worried', 1.4);
       audioManager.play('chit-unfold');
@@ -1344,6 +1347,57 @@ function createWorld() {
       });
     },
     mood(i, name, sec = 2.5) { actors[i]?.mood(name, sec); },
+    /**
+     * A big moment, seen on every phone: 'siren' (the police caught the thief), 'cuffs' (on the thief),
+     * 'smoke' (the thief got away), 'royal' (the king is revealed), 'confetti' (the winner).
+     */
+    effect(kind, i = null) {
+      if (!story.active) return;
+      const at = i != null && actors[i] ? headOnScreen(i) : { x: window.innerWidth / 2, y: window.innerHeight * 0.32 };
+      if (reduced) { if (i != null) actors[i]?.emote({ siren: '🚨', cuffs: '🚔', smoke: '💨', royal: '👑', confetti: '🎉' }[kind] || '✨', 2); return; }
+      if (kind === 'siren') {
+        const flash = document.createElement('div');
+        flash.className = 'fx-siren';
+        fxLayer.appendChild(flash);
+        setTimeout(() => flash.remove(), 1900);
+        burstEmoji(at, '🚨', 6, 1.2);
+        audioManager.play('siren');
+      } else if (kind === 'cuffs') {
+        burstEmoji(at, '🔗', 8, 1.1);
+        const car = document.createElement('span');
+        car.className = 'emoji-fx__one emoji-fx__one--special';
+        car.textContent = '🚔';
+        fxLayer.appendChild(car);
+        car.animate([
+          { transform: fxTransform(at.x - 140, at.y + 40, 0.6), opacity: 0 },
+          { transform: fxTransform(at.x - 30, at.y + 30, 1.4), opacity: 1, offset: 0.5 },
+          { transform: fxTransform(at.x + 120, at.y + 26, 1.2), opacity: 0 },
+        ], { duration: 1500, easing: 'ease-in-out', fill: 'both' }).onfinish = () => car.remove();
+        actors[i]?.emote('😵', 2.2);
+      } else if (kind === 'smoke') {
+        burstEmoji(at, '💨', 12, 1.6);
+        setTimeout(() => burstEmoji({ x: at.x + 30, y: at.y + 20 }, '💨', 6, 1.1), 220);
+        actors[i]?.emote('😎', 2.4);
+        audioManager.play('whoosh');
+      } else if (kind === 'royal') {
+        burstEmoji(at, '✨', 10, 1.5);
+        setTimeout(() => burstEmoji(at, '👑', 5, 1.1), 180);
+        audioManager.play('reveal');
+      } else if (kind === 'confetti') {
+        const colors = ['#ffd27a', '#e91e63', '#2196f3', '#43a047', '#ff7a2f', '#ffffff'];
+        for (let n = 0; n < 70; n++) {
+          const bit = document.createElement('i');
+          bit.className = 'fx-confetti';
+          bit.style.background = colors[n % colors.length];
+          fxLayer.appendChild(bit);
+          const x = Math.random() * window.innerWidth;
+          bit.animate([
+            { transform: `translate(${x}px, -20px) rotate(0deg)`, opacity: 1 },
+            { transform: `translate(${x + (Math.random() - 0.5) * 160}px, ${window.innerHeight + 20}px) rotate(${360 + Math.random() * 720}deg)`, opacity: 0.9 },
+          ], { duration: 1800 + Math.random() * 1400, delay: Math.random() * 500, easing: 'cubic-bezier(.3,.6,.5,1)', fill: 'both' }).onfinish = () => bit.remove();
+        }
+      }
+    },
     // one player sneaks a look at another's chit
     sneak(i, j) {
       actors[i].setPose('sneaky');

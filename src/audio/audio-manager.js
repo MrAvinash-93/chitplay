@@ -1,4 +1,4 @@
-import { settingsStore } from '../persistence/settings-store.js?v=20261108-0738';
+import { settingsStore } from '../persistence/settings-store.js?v=20261108-0822';
 
 /**
  * Web Audio API sound manager. All sounds are synthesized — no external files.
@@ -202,6 +202,17 @@ class AudioManager {
         // fan and fridge winding down
         this.#noise({ dur: 0.03, gain: 0.08, freq: 900, q: 2 });
         this.#tone({ freq: 160, to: 35, dur: 0.9, type: 'sawtooth', gain: 0.035, release: 0.2 });
+        break;
+      case 'siren':
+        // a friendly two-tone police siren, three times
+        for (let k = 0; k < 3; k++) {
+          this.#tone({ freq: 760, to: 980, dur: 0.22, type: 'triangle', gain: 0.05, delay: k * 0.5 });
+          this.#tone({ freq: 980, to: 760, dur: 0.22, type: 'triangle', gain: 0.05, delay: k * 0.5 + 0.25 });
+        }
+        break;
+      case 'whoosh':
+        this.#noise({ dur: 0.45, gain: 0.09, freq: 1400, q: 0.6, type: 'bandpass', attack: 0.08 });
+        this.#noise({ dur: 0.35, gain: 0.05, freq: 600, q: 0.8, type: 'bandpass', attack: 0.05, delay: 0.12 });
         break;
       case 'power-on':
         // tubelight starter: tik… tik… then the hum

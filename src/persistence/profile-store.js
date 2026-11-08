@@ -2,8 +2,9 @@
  * The player's profile, kept on this device only: name, gender, character,
  * points (solo and Nearby apart), rank, badges, best matches and pinned games.
  */
-import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261108-0738';
-import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261108-0738';
+import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261108-0822';
+import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261108-0822';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261108-0822';
 
 const KEY = 'chitplay.profile.v1';
 const OLD_STATS_KEY = 'chitplay.stats.v1';
@@ -58,6 +59,8 @@ export const CHALLENGES = [
   { id: 'honest1', key: 'honestWins', n: 1, coins: 80 },
 ];
 export const DAILY_BONUS = 50;
+/** Coming back every day: day 1 to day 7, then it starts again. A full week also unlocks 🌈. */
+export const LOGIN_REWARDS = [20, 30, 40, 50, 60, 80, 150];
 
 /** A small seeded random generator: the day number picks the same challenges on every phone. */
 function seeded(seed) {
@@ -96,7 +99,7 @@ function firstRun() {
     v: 1, name: randomName(gender, detectNameRegion()), gender, look: cleanLook(look, look.id),
     stats: { local: emptyStats(), nearby: emptyStats() },
     badges: [], hall: [], pins: [], games: {}, streak: 0, lastDay: 0,
-    coins: 0, owned: [], daily: null, week: null, rivals: null,
+    coins: 0, owned: [], daily: null, week: null, rivals: null, login: null,
   };
   // scores from before profiles existed stay with the player
   try {
@@ -133,6 +136,7 @@ function load() {
         daily: s.daily && typeof s.daily === 'object' ? s.daily : null,
         week: s.week && typeof s.week === 'object' ? s.week : null,
         rivals: s.rivals && typeof s.rivals === 'object' && Array.isArray(s.rivals.list) ? s.rivals : null,
+        login: s.login && typeof s.login === 'object' ? s.login : null,
       };
       return data;
     }
@@ -189,6 +193,10 @@ function weekState(p) {
   return p.week;
 }
 const hatOf = (id) => FANCY_HATS.find(h => h.id === id);
+const emojiOf = (id) => SPECIAL_EMOJIS.find(e => e.id === id || e.symbol === id);
+const loginState = (p) => (p.login ||= { last: 0, streak: 0, weeks: 0 });
+/** What others see next to your name: your rank's icon, or your newest badge, or nothing yet. */
+export const FLAIRS = new Set([...RANKS.map(r => r.icon), ...BADGES.map(b => b.icon)]);
 const colourOf = (id) => PREMIUM_COLORS.find(c => c.id === id);
 
 export const profile = {
@@ -204,20 +212,58 @@ export const profile = {
   get rank() { return rankFor(allStats(load()).points); },
   get coins() { return load().coins; },
 
-  /** A special hat or colour you have: bought, or (hats) earned with your rank. */
+  /** A special hat, colour or emoji you have: bought, or earned with your rank, a badge or a week of visits. */
   owns(id) {
     const p = load();
     if (p.owned.includes(id)) return true;
+    const rank = rankFor(allStats(p).points).index;
     const hat = hatOf(id);
-    return !!hat && hat.rank != null && rankFor(allStats(p).points).index >= hat.rank;
+    if (hat) return hat.rank != null && rank >= hat.rank;
+    const e = emojiOf(id);
+    if (!e) return false;
+    if (e.rank != null) return rank >= e.rank;
+    if (e.badge) return p.badges.includes(e.badge);
+    if (e.login) return loginState(p).weeks >= 1;
+    return false;
+  },
+  get flair() {
+    const p = load();
+    const rank = rankFor(allStats(p).points);
+    if (rank.index >= 1) return rank.icon;
+    const last = p.badges[p.badges.length - 1];
+    return BADGES.find(b => b.id === last)?.icon || '';
+  },
+  /** Today's visit reward: which day of the week it is and whether it's taken. */
+  get login() {
+    const p = load();
+    const l = loginState(p);
+    const today = dayNumber();
+    const claimed = l.last === today;
+    const day = claimed ? l.streak : (l.last === today - 1 ? (l.streak % 7) + 1 : 1);
+    return { day, claimed, coins: LOGIN_REWARDS[day - 1], rewards: LOGIN_REWARDS.slice(), weeks: l.weeks };
+  },
+  /** Take today's visit reward (once a day). Returns what you got, or null if it was taken already. */
+  claimLogin() {
+    const p = load();
+    const l = loginState(p);
+    const today = dayNumber();
+    if (l.last === today) return null;
+    l.streak = l.last === today - 1 ? (l.streak % 7) + 1 : 1;
+    l.last = today;
+    const coins = LOGIN_REWARDS[l.streak - 1];
+    p.coins += coins;
+    let rainbow = false;
+    if (l.streak === 7) { l.weeks += 1; rainbow = l.weeks === 1; }
+    save();
+    return { day: l.streak, coins, rainbow };
   },
   /** Spend coins on a hat or colour. false if it's owned already or you can't afford it. */
   buy(id) {
     const p = load();
-    const item = hatOf(id) || colourOf(id);
+    const item = hatOf(id) || colourOf(id) || emojiOf(id);
     if (!item || item.price == null || profile.owns(id) || p.coins < item.price) return false;
     p.coins -= item.price;
-    p.owned.push(id);
+    p.owned.push(item.id || id);
     save();
     return true;
   },

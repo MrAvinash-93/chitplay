@@ -1,13 +1,13 @@
 import { describe, it, expect } from './harness.js';
-import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName, politeName } from '../src/world/names.js?v=20261108-0738';
-import { PRESETS, cleanLook, lookOf, portraitSvg, AGES, FANCY_HATS } from '../src/world/character-looks.js?v=20261108-0738';
-import { profile, rankFor, RANKS, challengesFor, COINS } from '../src/persistence/profile-store.js?v=20261108-0738';
-import { COUNTRIES } from '../src/world/countries.js?v=20261108-0738';
-import { Match } from '../src/world/match.js?v=20261108-0738';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261108-0738';
-import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261108-0738';
-import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261108-0738';
-import EN from '../src/i18n/en.js?v=20261108-0738';
+import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName, politeName } from '../src/world/names.js?v=20261108-0822';
+import { PRESETS, cleanLook, lookOf, portraitSvg, AGES, FANCY_HATS } from '../src/world/character-looks.js?v=20261108-0822';
+import { profile, rankFor, RANKS, challengesFor, COINS } from '../src/persistence/profile-store.js?v=20261108-0822';
+import { COUNTRIES } from '../src/world/countries.js?v=20261108-0822';
+import { Match } from '../src/world/match.js?v=20261108-0822';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261108-0822';
+import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261108-0822';
+import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261108-0822';
+import EN from '../src/i18n/en.js?v=20261108-0822';
 
 describe('Names', () => {
   it('keeps letters and spaces only', () => {

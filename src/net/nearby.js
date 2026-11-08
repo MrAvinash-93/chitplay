@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName, politeName } from '../world/names.js?v=20261108-0738';
-import { cleanLook } from '../world/character-looks.js?v=20261108-0738';
+import { cleanName, politeName } from '../world/names.js?v=20261108-0822';
+import { cleanLook } from '../world/character-looks.js?v=20261108-0822';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0738.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0822.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -178,7 +178,9 @@ export class NearbyHost {
         // strangers on a public table never see a rude name
         const name = this.isPublic ? politeName(typed) : typed;
         const weekly = Number.isFinite(msg.weekly) ? Math.max(0, Math.min(10000000, Math.floor(msg.weekly))) : 0;
-        const guest = { id, name, gender: msg.gender === 'f' ? 'f' : 'm', look: cleanLook(msg.look, msg.look?.id), weekly, token, conn, w: watch(conn, () => this.#drop(id)) };
+        // the icon of their rank or badge: a short string, checked against the real list by the game screen
+        const flair = typeof msg.flair === 'string' ? msg.flair.slice(0, 8) : '';
+        const guest = { id, name, gender: msg.gender === 'f' ? 'f' : 'm', look: cleanLook(msg.look, msg.look?.id), weekly, flair, token, conn, w: watch(conn, () => this.#drop(id)) };
         this.guests.set(id, guest);
         this.h.onChange?.();
         if (returning) this.h.onRejoin?.(id, token);
@@ -201,7 +203,7 @@ export class NearbyHost {
 
   get list() {
     const labels = this.labels();
-    return [...this.guests.values()].map((g, i) => ({ id: g.id, name: labels[i + 1], gender: g.gender, look: g.look, weekly: g.weekly, token: g.token }));
+    return [...this.guests.values()].map((g, i) => ({ id: g.id, name: labels[i + 1], gender: g.gender, look: g.look, weekly: g.weekly, flair: g.flair, token: g.token }));
   }
   get hostLabel() { return this.labels()[0]; }
   send(id, msg) { safeSend(this.guests.get(id)?.conn, msg); }
