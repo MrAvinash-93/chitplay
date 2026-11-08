@@ -3,18 +3,18 @@
  * - Everything else (versioned JS/CSS, three.js, icons): cache first,
  *   refreshed in the background.
  */
-const VERSION = 'chitplay-20261108-0848';
+const VERSION = 'chitplay-20261108-0855';
 const CORE = [
   './',
   './index.html',
   './manifest.webmanifest',
   './assets/icon.svg',
   './assets/icon-192.png',
-  './src/styles/tokens.css?v=20261108-0848',
-  './src/styles/base.css?v=20261108-0848',
-  './src/styles/layout.css?v=20261108-0848',
-  './src/styles/world-3d.css?v=20261108-0848',
-  './src/app/bootstrap.js?v=20261108-0848',
+  './src/styles/tokens.css?v=20261108-0855',
+  './src/styles/base.css?v=20261108-0855',
+  './src/styles/layout.css?v=20261108-0855',
+  './src/styles/world-3d.css?v=20261108-0855',
+  './src/app/bootstrap.js?v=20261108-0855',
   './src/vendor/three.chitplay.min.js',
 ];
 

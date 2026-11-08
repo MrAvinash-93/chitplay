@@ -4,7 +4,8 @@
  * Plain DOM, no 3D, no network: light enough for any phone. Secrets are shown only to the player
  * holding the phone, behind a "pass the phone" screen.
  */
-import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261108-0848';
+import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261108-0855';
+import { createStage } from './stage3d.js?v=20261108-0855';
 
 export const GAMES = [
   { slug: 'who-is-the-spy', name: 'Who Is the Spy?', icon: '🕵️', min: 4, max: 10, minutes: '10–20', blurb: 'Everyone gets the same secret word, except the spy. Give clues, find the spy.' },
@@ -40,7 +41,12 @@ function screen(...kids) {
   app.querySelector('button.primary, input')?.focus({ preventScroll: true });
 }
 const btn = (label, onclick, cls = '') => h('button', { type: 'button', class: `btn ${cls}`, onclick }, [label]);
-const card = (kids, cls = '') => h('div', { class: `chit ${cls}` }, kids);
+// with the 3D stage the paper card stays only for screen readers (the chit on the mat shows it)
+let stage = null;
+const card = (kids, cls = '') => h('div', { class: `chit ${cls}${stage && !cls.includes('story') ? ' chit--sr' : ''}` }, kids);
+/** Show this on the 3D chit (and fold it again for the next player). */
+const chit = (text, opts) => stage?.reveal(text, opts);
+const foldChit = (opts) => stage?.fold(opts);
 const top = (game) => h('header', { class: 'bar' }, [
   h('a', { href: './', class: 'back', 'aria-label': 'All party games' }, ['‹ Party games']),
   h('strong', {}, [game ? `${game.icon} ${game.name}` : 'ChitPlay']),
@@ -91,6 +97,7 @@ function setup(game, options, go) {
 
 /** The phone goes to one player: only they see what comes next. */
 function passTo(name, reveal, then) {
+  foldChit();
   screen(h('section', { class: 'panel pass' }, [
     h('p', { class: 'lead' }, ['Pass the phone to']),
     h('h1', {}, [name]),
@@ -105,6 +112,7 @@ function passTo(name, reveal, then) {
 function results(game, players, scores, restart, note = '') {
   const order = players.map((n, i) => [n, scores[i]]).sort((a, b) => b[1] - a[1]);
   const best = order[0]?.[1];
+  chit(order.filter(o => o[1] === best).length > 1 ? 'A tie!' : `${order[0][0]} wins!`, { tone: 'gold', label: '🏆' });
   screen(top(game), h('section', { class: 'panel' }, [
     h('h1', {}, [order.filter(o => o[1] === best).length > 1 ? 'A tie at the top!' : `${order[0][0]} wins!`]),
     note ? h('p', { class: 'lead' }, [note]) : null,
@@ -150,6 +158,7 @@ function spy(game) {
         if (k >= players.length) { clues(); return; }
         const i = k++;
         passTo(players[i], () => [
+          (chit(spies.has(i) ? odd : common, { label: `Round ${round} · your secret word` }), null),
           h('p', { class: 'lead' }, [`Round ${round}: your secret word`]),
           card([h('span', { class: 'big' }, [spies.has(i) ? odd : common])], 'open'),
           h('p', {}, ['Remember it. You might be the spy without knowing!']),
@@ -157,6 +166,7 @@ function spy(game) {
       };
       const clues = () => {
         const first = pick(players);
+        stage?.toss();
         screen(top(game), h('section', { class: 'panel' }, [
           h('h1', {}, ['Clue time']),
           h('p', { class: 'lead' }, [`Starting with ${first}, go round the circle. Each player says one word or a short clue about their secret word, without saying it.`]),
@@ -186,6 +196,7 @@ function spy(game) {
             h('div', { class: 'grid' }, shuffle([common, ...decoys]).map(w => btn(w, () => {
               const right = w === common;
               if (right) [...spies].forEach(i => { scores[i] += 2; }); else players.forEach((_, i) => { if (!spies.has(i)) scores[i] += 1; });
+              chit(common, { tone: 'gold', label: 'The word was' });
               screen(top(game), h('section', { class: 'panel' }, [
                 h('h1', {}, [right ? 'The spy guessed it!' : 'Wrong guess: the group wins the round!']),
                 h('p', { class: 'lead' }, [`The word was “${common}”. The spy had “${odd}”.`]),
@@ -194,6 +205,7 @@ function spy(game) {
             }))),
           ]));
         } else {
+          chit(odd, { tone: 'gold', label: `${spyNames}'s word` });
           screen(top(game), h('section', { class: 'panel' }, [
             h('h1', {}, [`Wrong! The spy was ${spyNames}.`]),
             h('p', { class: 'lead' }, [`The word was “${common}”. The spy had “${odd}”. The spy scores 3.`]),
@@ -219,6 +231,7 @@ function truthOrDare(game) {
       if (turn >= total) { results(game, players, scores, () => truthOrDare(game), 'One point for every truth told and every dare done.'); return; }
       const who = turn % players.length;
       turn += 1;
+      stage?.toss();
       screen(top(game), h('section', { class: 'panel' }, [
         h('p', { class: 'lead' }, [`Turn ${turn} of ${total}`]),
         h('h1', {}, [`${players[who]}: truth or dare?`]),
@@ -229,6 +242,7 @@ function truthOrDare(game) {
     const show = (who, kind) => {
       if (!bags[kind].length) bags[kind] = shuffle(kind === 'truth' ? TRUTHS : DARES);
       const text = bags[kind].pop();
+      chit(text, { tone: kind, label: kind === 'truth' ? 'TRUTH' : 'DARE' });
       screen(top(game), h('section', { class: 'panel' }, [
         h('p', { class: 'lead' }, [`${players[who]} · ${kind === 'truth' ? 'Truth' : 'Dare'}`]),
         card([h('span', { class: 'prompt' }, [text])], 'open unfold'),
@@ -251,6 +265,7 @@ function riddles(game) {
       if (n >= deck.length) { results(game, players, scores, () => riddles(game), 'Two points for a riddle solved without a hint, one with.'); return; }
       const [q, answer, hint] = deck[n++];
       let hinted = false;
+      chit(q, { label: `Riddle ${n}` });
       const hintBox = h('p', { class: 'hint' });
       screen(top(game), h('section', { class: 'panel' }, [
         h('p', { class: 'lead' }, [`Riddle ${n} of ${deck.length}`]),
@@ -258,6 +273,7 @@ function riddles(game) {
         hintBox, timer(60),
         btn('Show a hint', (e) => { hinted = true; hintBox.textContent = `Hint: ${hint}`; e.currentTarget.disabled = true; }),
         btn('Show the answer', () => {
+          chit(answer, { tone: 'gold', label: 'Answer' });
           screen(top(game), h('section', { class: 'panel' }, [
             h('p', { class: 'lead' }, ['The answer:']),
             card([h('span', { class: 'big' }, [answer])], 'open'),
@@ -287,10 +303,12 @@ function majority(game) {
       const ask = () => {
         if (k >= players.length) { reveal(); return; }
         const i = k++;
+        foldChit();
         screen(h('section', { class: 'panel pass' }, [
           h('p', { class: 'lead' }, [`Question ${n} · pass the phone to`]),
           h('h1', {}, [players[i]]),
           btn(`I’m ${players[i]}`, () => {
+            chit(q, { label: `Question ${n}` });
             screen(h('section', { class: 'panel' }, [
               h('h1', {}, [q]),
               h('p', { class: 'lead' }, ['Pick what you think MOST players will pick. Secretly!']),
@@ -305,6 +323,7 @@ function majority(game) {
         const most = Math.max(...Object.values(count));
         const winners = choices.filter(c => count[c] === most);
         players.forEach((_, i) => { if (winners.includes(picks[i])) scores[i] += 1; });
+        chit(winners.join(' / '), { tone: 'gold', label: 'The majority picked' });
         screen(top(game), h('section', { class: 'panel' }, [
           h('h1', {}, [q]),
           h('ul', { class: 'bars' }, choices.map(c => h('li', { class: winners.includes(c) ? 'win' : '' }, [
@@ -333,6 +352,7 @@ function consequences(game) {
       const [ask, example] = CONSEQUENCES[i];
       const input = h('textarea', { maxlength: '90', rows: '3', 'aria-label': ask, placeholder: example });
       passTo(who, () => [
+        (chit(ask, { label: `Line ${i + 1} of ${CONSEQUENCES.length}` }), null),
         h('p', { class: 'lead' }, [`Line ${i + 1} of ${CONSEQUENCES.length} · the lines above are folded away`]),
         card([h('span', { class: 'prompt' }, [ask])], 'open'),
         input,
@@ -345,6 +365,7 @@ function consequences(game) {
     const unfold = () => {
       const story = CONSEQUENCES.map(([ask], i) => h('p', { class: 'line', style: `animation-delay:${i * 0.45}s` }, [h('small', {}, [ask]), lines[i]]));
       const text = lines.join(' ');
+      chit(lines[0], { tone: 'gold', label: 'Once upon a time…' });
       screen(top(game), h('section', { class: 'panel' }, [
         h('h1', {}, ['The story unfolds…']),
         card(story, 'open story'),
@@ -370,6 +391,7 @@ function timer(seconds) {
 
 /* ─── the hub ─── */
 function hub() {
+  stage?.toss();
   screen(h('header', { class: 'bar' }, [h('a', { href: '../', class: 'back' }, ['‹ ChitPlay']), h('strong', {}, ['Party games'])]),
     h('section', { class: 'panel' }, [
       h('h1', {}, ['Party games for one phone']),
@@ -382,7 +404,12 @@ function hub() {
     ]));
 }
 
+const stageEl = document.getElementById('stage');
 const PLAY = { 'who-is-the-spy': spy, 'truth-or-dare': truthOrDare, 'riddle-chits': riddles, 'majority-vote': majority, consequences };
 const slug = new URLSearchParams(location.search).get('game');
 const game = GAMES.find(g => g.slug === slug);
-if (game) { document.title = `${game.name} – Play Free | ChitPlay`; PLAY[slug](game); } else hub();
+createStage(stageEl).catch(() => null).then((st) => {
+  stage = st;
+  if (!st) stageEl.hidden = true;
+  if (game) { document.title = `${game.name} – Play Free | ChitPlay`; PLAY[slug](game); } else hub();
+});
