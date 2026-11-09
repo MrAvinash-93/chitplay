@@ -1,4 +1,4 @@
-import { settingsStore } from '../persistence/settings-store.js?v=20261108-0913';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-0233';
 
 /**
  * Web Audio API sound manager. All sounds are synthesized — no external files.
@@ -219,6 +219,32 @@ class AudioManager {
         [0, 0.22, 0.55].forEach(d => this.#noise({ dur: 0.02, gain: 0.09, freq: 3200, q: 3, delay: d }));
         this.#tone({ freq: 100, dur: 0.6, type: 'sine', gain: 0.03, delay: 0.62, release: 0.3 });
         this.#chord([523.25, 783.99], { dur: 0.12, type: 'triangle', gain: 0.04, delay: 0.7 });
+        break;
+      case 'crash':
+        this.#noise({ dur: 0.5, gain: 0.16, freq: 380, q: 0.7, type: 'lowpass' });
+        this.#tone({ freq: 300, to: 60, dur: 0.45, type: 'sawtooth', gain: 0.06 });
+        break;
+      case 'flap':
+        this.#noise({ dur: 0.09, gain: 0.05, freq: 1800, q: 0.9, type: 'bandpass' });
+        break;
+      case 'combo':
+        this.#tone({ freq: 988, dur: 0.05, type: 'square', gain: 0.03 });
+        this.#tone({ freq: 1319, dur: 0.07, type: 'square', gain: 0.03, delay: 0.05 });
+        this.#tone({ freq: 1760, dur: 0.09, type: 'square', gain: 0.025, delay: 0.1 });
+        break;
+      case 'achieve':
+        // a little fanfare with a sparkle on top
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.#tone({ freq: f, dur: 0.12, type: 'triangle', gain: 0.07, delay: i * 0.09 }));
+        this.#chord([1046.5, 1318.51, 1567.98], { dur: 0.5, type: 'sine', gain: 0.05, delay: 0.38 });
+        for (let i = 0; i < 6; i++) this.#tone({ freq: 2093 + i * 260, dur: 0.03, type: 'sine', gain: 0.02, delay: 0.42 + i * 0.05 });
+        break;
+      case 'rankup':
+        [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.#tone({ freq: f, dur: 0.16, type: 'sawtooth', gain: 0.035, delay: i * 0.1 }));
+        this.#chord([523.25, 659.25, 783.99, 1046.5], { dur: 0.9, type: 'triangle', gain: 0.06, delay: 0.55 });
+        break;
+      case 'whoosh-in':
+        this.#noise({ dur: 1.1, gain: 0.08, freq: 600, q: 0.5, type: 'bandpass', attack: 0.6 });
+        this.#chord([261.63, 392, 523.25], { dur: 0.7, type: 'triangle', gain: 0.05, delay: 0.75 });
         break;
       default:
         break;

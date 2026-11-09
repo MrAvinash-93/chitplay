@@ -127,7 +127,7 @@ export default {
     badges: 'Bajji', hall: 'Kono tanmatsu no besuto shiai', noHall: 'Shiai o oeru to koko ni noru yo.',
     resetScore: 'Sukoa o risetto', resetSure: 'Mou ichido tappu de pointo, ranku, bajji o kesu', resetDone: 'Sukoa o risetto shita',
     graphics: 'Gurafikkusu', gLow: 'Karui (ichiban sumuuzu)', gAuto: 'Jidou', gMedium: 'Chuu', gHigh: 'Kou', gUltra: '4K (kouseinou tanmatsu)', graphicsHelp: 'Karui ga dono sumaho demo ichiban. Sumuuzu nara agete mo ii yo.',
-    language: 'Gengo', languageHelp: 'Menyuu, messeeji, kaiwa. Koe wa Eigo no mama.',
+    language: 'Gengo', languageHelp: 'Menyuu, messeeji, kaiwa.',
     done: 'Kanryou', rankUp: '{icon} Shin ranku: {title}!', newBadge: '{icon} Bajji: {name}!', gained: '+{n} ranku pointo', hallPlace: '🏅 Besuto shiai no {n}-i',
     forfeit: '🎲 {name} no batsu geemu', forfeitLine: 'Onaji heya ni iru nara: {name} wa {text}.',
     rotateBig: 'Yoko-muki de ookiku miru', rotateHide: 'Kaiten botan o kakusu', rotateTurn: 'Sumaho o yoko ni shite. Mawaranai nara kaiten rokku o ofu ni.',

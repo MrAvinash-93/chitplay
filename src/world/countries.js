@@ -496,7 +496,7 @@ const ONE_GAME_ROLES = {
 /** Twists from other countries, off by default. */
 export const HOUSE_RULES = ['hint', 'secondChance', 'penalty', 'fine'];
 export const oneGameName = (lang) => ONE_GAME_NAMES[lang] || ONE_GAME_NAMES.en;
-export const editionFor = (lang) => COUNTRIES[EDITION_FOR[lang]] || COUNTRIES.US;
+export const editionFor = (lang) => COUNTRIES[EDITION_FOR[lang] || { hindi: 'IN' }[lang]] || COUNTRIES.US;
 export function asOneGame(edition, lang, house = []) {
   const names = ONE_GAME_ROLES[lang] || ONE_GAME_ROLES.en;
   const points = [1000, 800, 500, 0];

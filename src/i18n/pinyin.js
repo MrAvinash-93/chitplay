@@ -127,7 +127,7 @@ export default {
     badges: 'Huizhang', hall: 'Zhe tai shebei de zuijia bisai', noHall: 'Wancheng yi chang jiu neng shang bang.',
     resetScore: 'Chongzhi fenshu', resetSure: 'Zai dian yi ci qingchu fen, dengji he huizhang', resetDone: 'Fenshu yi chongzhi',
     graphics: 'Huazhi', gLow: 'Qingliang (zui liuchang)', gAuto: 'Zidong', gMedium: 'Zhong', gHigh: 'Gao', gUltra: '4K (qiang shebei)', graphicsHelp: 'Qingliang zai renhe shouji shang dou zui hao. Liuchang shi zai tigao.',
-    language: 'Yuyan', languageHelp: 'Caidan, xiaoxi he wanjia duihua. Yuyin baochi Yingwen.',
+    language: 'Yuyan', languageHelp: 'Caidan, xiaoxi he wanjia duihua.',
     done: 'Wancheng', rankUp: '{icon} Xin dengji: {title}!', newBadge: '{icon} Huizhang: {name}!', gained: '+{n} dengji fen', hallPlace: '🏅 Zuijia bisai di {n} ming',
     forfeit: '🎲 {name} de chengfa', forfeitLine: 'Ruguo zai tong yi ge fangjian: {name} yao {text}.',
     rotateBig: 'Xuanzhuan kan de geng da', rotateHide: 'Yincang xuanzhuan xuanxiang', rotateTurn: 'Ba shouji hengguolai. Bu zhuan de hua guanbi xuanzhuan suoding.',

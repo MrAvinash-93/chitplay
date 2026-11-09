@@ -2,9 +2,9 @@
  * The player's profile, kept on this device only: name, gender, character,
  * points (solo and Nearby apart), rank, badges, best matches and pinned games.
  */
-import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261108-0913';
-import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261108-0913';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261108-0913';
+import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261110-0233';
+import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261110-0233';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-0233';
 
 const KEY = 'chitplay.profile.v1';
 const OLD_STATS_KEY = 'chitplay.stats.v1';
@@ -211,6 +211,10 @@ export const profile = {
   get streak() { return load().streak; },
   get rank() { return rankFor(allStats(load()).points); },
   get coins() { return load().coins; },
+  /** Coins for an achievement. Coins can't be bought and have no value outside the game. */
+  /** Spend coins (on a second chance, a room decoration…). False if there aren't enough. */
+  spend(n) { const p = load(); n = Math.max(0, Math.floor(n) || 0); if (p.coins < n) return false; p.coins -= n; save(); return true; },
+  addCoins(n) { const p = load(); p.coins += Math.max(0, Math.floor(n) || 0); save(); },
 
   /** A special hat, colour or emoji you have: bought, or earned with your rank, a badge or a week of visits. */
   owns(id) {

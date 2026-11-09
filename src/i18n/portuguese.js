@@ -127,7 +127,7 @@ export default {
     badges: 'Medalhas', hall: 'Melhores partidas neste aparelho', noHall: 'Termine uma partida para entrar na lista.',
     resetScore: 'Zerar pontos', resetSure: 'Toque de novo para apagar pontos, nível e medalhas', resetDone: 'Pontos zerados',
     graphics: 'Gráficos', gLow: 'Leve (o mais fluido)', gAuto: 'Automático', gMedium: 'Médio', gHigh: 'Alto', gUltra: '4K (aparelhos fortes)', graphicsHelp: 'Leve roda melhor em qualquer celular. Aumente só se continuar fluido.',
-    language: 'Idioma', languageHelp: 'Menus, mensagens e a conversa dos jogadores. As vozes continuam em inglês.',
+    language: 'Idioma', languageHelp: 'Menus, mensagens e a conversa dos jogadores.',
     done: 'Pronto', rankUp: '{icon} Novo nível: {title}!', newBadge: '{icon} Medalha: {name}!', gained: '+{n} pontos de nível', hallPlace: '🏅 Nº {n} das suas melhores partidas',
     forfeit: '🎲 Prenda para {name}', forfeitLine: 'Se estiverem na mesma sala: {name} tem que {text}.',
     rotateBig: 'Gire para ver maior', rotateHide: 'Esconder a opção de girar', rotateTurn: 'Vire o celular de lado. Se não girar, desligue o bloqueio de rotação.',

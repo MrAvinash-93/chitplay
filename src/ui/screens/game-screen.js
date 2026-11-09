@@ -1,23 +1,31 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261108-0913';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261108-0913';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261108-0913';
+import { GAME_PHASES } from '../../app/config.js?v=20261110-0233';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261110-0233';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261110-0233';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261108-0913';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261108-0913';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261108-0913';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261108-0913';
-import { voiceBox } from '../../world/voice.js?v=20261108-0913';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261108-0913';
-import { cleanName, pickOpponents, politeName } from '../../world/names.js?v=20261108-0913';
+import { loadWorld } from '../../world/world-loader.js?v=20261110-0233';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261110-0233';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261110-0233';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261110-0233';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261110-0233';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261110-0233';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261108-0913';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261108-0913';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261108-0913';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261108-0913';
-import { iconSvg } from '../icons.js?v=20261108-0913';
+} from '../../world/character-looks.js?v=20261110-0233';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261110-0233';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261110-0233';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261110-0233';
+import { iconSvg } from '../icons.js?v=20261110-0233';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261110-0233';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261110-0233';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261110-0233';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261110-0233';
+import { clearPhoto, faceHtml, setPhotoFromFile } from '../../arcade/photo.js?v=20261110-0233';
+import { DECOR, RARITY, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261110-0233';
+import { savedList } from '../../arcade/resume.js?v=20261110-0233';
+import { logoSvg } from '../../arcade/logo.js?v=20261110-0233';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261110-0233';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -30,7 +38,7 @@ const SHIRTS = ['#d4a017', '#e91e63', '#2196f3', '#43a047'];
 const CANCEL = Symbol('cancel');
 const ROUND_OPTIONS = [3, 5, 7, 10, 20];
 const DEFAULT_ROUNDS = 7;
-const LANGUAGE_TAGS = { en: 'en', hinglish: 'hi-Latn', urdu: 'ur-Latn', nepali: 'ne-Latn', bangla: 'bn-Latn', romaji: 'ja-Latn', korean_roman: 'ko-Latn', pinyin: 'zh-Latn', russian_latin: 'ru-Latn', german: 'de', french: 'fr', portuguese: 'pt', spanish: 'es' };
+const LANGUAGE_TAGS = { en: 'en', hinglish: 'hi-Latn', urdu: 'ur-Latn', nepali: 'ne-Latn', bangla: 'bn-Latn', romaji: 'ja-Latn', korean_roman: 'ko-Latn', pinyin: 'zh-Latn', russian_latin: 'ru-Latn', german: 'de', french: 'fr', portuguese: 'pt', spanish: 'es', hindi: 'hi', indonesian: 'id', turkish: 'tr', italian: 'it' };
 const TOSS_WAIT_SECONDS = 5;
 const CLOSE_CALL_CHANCE = 0.35;   // an unnoticed peek sometimes still gets an "are you looking at my chit?"
 // a restart starts a new screen; this tells it to go straight into the match
@@ -68,7 +76,11 @@ async function shareGame({ title, text, url }) {
 
 /* ─── Saved match (survives an accidental refresh) ─────────── */
 const SAVE_KEY = 'chitplay.match3d.v1';
+let cameFromGameLink = false;
 const SAVE_MAX_AGE = 7 * 24 * 3600 * 1000;
+/** Opponents named in the language being played, leaning towards the other gender to the player. */
+const pickOpponents = (count, exclude = []) => pickAny(count, exclude, languageId() === 'en' ? detectNameRegion() : (NAME_REGION_FOR[languageId()] || detectNameRegion()), profile.gender);
+
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -175,7 +187,6 @@ export function GameScreen({ transition }) {
       if (on) { clearTimeout(task.timer); task.left = Math.max(0, task.left - (performance.now() - task.began)); } else arm(task);
     });
     world?.story?.setPaused(on);
-    voiceBox.pause(on);
   }
   const sleep = (ms) => new Promise((resolve, reject) => {
     if (!alive) { reject(CANCEL); return; }
@@ -192,8 +203,10 @@ export function GameScreen({ transition }) {
   const detected = start.detected;
   const mode = 'en';                        // role names and rules stay in the game's own English text
   // the whole game can be read in the player's language (Latin letters); English by default
-  let lang = isLanguage(settingsStore.get('chatLang')) ? settingsStore.get('chatLang') : 'en';
-  const chatPack = () => (lang === 'en' ? country.lang : lang);
+  const BROWSER_LANG = { hi: 'hindi', ur: 'urdu', ne: 'nepali', bn: 'bangla', ja: 'romaji', ko: 'korean_roman', zh: 'pinyin', ru: 'russian_latin', de: 'german', fr: 'french', pt: 'portuguese', es: 'spanish', id: 'indonesian', ms: 'indonesian', tr: 'turkish', it: 'italian' };
+  const fromBrowser = () => { for (const l of navigator.languages || [navigator.language || 'en']) { const id = BROWSER_LANG[String(l).slice(0, 2).toLowerCase()]; if (id) return id; if (/^en/i.test(l)) return 'en'; } return 'en'; };
+  let lang = isLanguage(settingsStore.get('chatLang')) ? settingsStore.get('chatLang') : fromBrowser();
+  const chatPack = () => (lang === 'en' || ['hindi', 'indonesian', 'turkish', 'italian'].includes(lang) ? country.lang : lang);
   base = editionFor(lang);                  // one game: the language picks its name, room and voices
   const houseRules = () => (settingsStore.get('houseRules') || []).filter(r => HOUSE_RULES.includes(r));
   const oneGame = (b) => asOneGame(localize(b, mode), lang, houseRules());
@@ -253,6 +266,14 @@ export function GameScreen({ transition }) {
     myChitOpen = true;
     paintMyChit();
   }
+  // the emojis everyone reaches for, always on screen during a match
+  const QUICK_EMOJIS = ['😂', '🤡', '😜', '😈', '🤫', '🙄', '💀', '🐔', '🍌', '🔥'];
+  let quickAt = 0;
+  const quickBar = el('div', { className: 'game__troll', attrs: { role: 'group', 'aria-label': 'Emojis' } }, QUICK_EMOJIS.map(sym => el('button', {
+    type: 'button', attrs: { 'aria-label': sym },
+    onClick: () => { if (Date.now() - quickAt < 500) return; quickAt = Date.now(); sendEmoji(null, ALL_EMOJIS.indexOf(sym)); },
+  }, [sym])));
+  quickBar.hidden = true;
   const talkBtn = el('button', { className: 'game__talkbtn', type: 'button', html: iconSvg('chatDots'), onClick: () => toggleTalk() });
   talkBtn.hidden = true;
   const talkPanel = el('div', { className: 'game__talk' });
@@ -269,7 +290,14 @@ export function GameScreen({ transition }) {
   const exitBtn = iconBtn('menu', () => openMenu());
   exitBtn.hidden = true;
   const profileBtn = el('button', { className: 'game__exit game__profilebtn', type: 'button', onClick: () => openProfile() });
-  const paintProfileBtn = () => { profileBtn.innerHTML = portraitSvg(profile.look); };
+  const paintProfileBtn = () => { profileBtn.innerHTML = faceHtml(portraitSvg(profile.look)); };
+  // from the list and a game's own screen it opens straight away; from a match, it asks first
+  let homeLeave = null;
+  const scanBtn = iconBtn('qr', () => {
+    if (homeLeave) { homeLeave('scan'); return; }
+    if (match && !window.confirm(`${ui.scanJoin}?`)) return;
+    location.href = './?scan=1';
+  }, 'game__scanbtn');
   const langBtn = el('button', { className: 'game__exit game__langbtn', type: 'button', onClick: () => openLanguage() });
   const paintLangBtn = () => {
     langBtn.innerHTML = iconSvg('globe');
@@ -278,12 +306,11 @@ export function GameScreen({ transition }) {
 
   /* The three on/off switches: in the top bar, and again in the profile's settings */
   const chatOn = () => settingsStore.get('chatEnabled') !== false;
-  const voiceOn = () => settingsStore.get('voiceEnabled') !== false;
   const soundOn = () => !!settingsStore.get('soundEnabled');
   function setChat(next) {
     settingsStore.set('chatEnabled', next);
     showToast(next ? ui.chatOn : ui.chatOff, 1600);
-    if (!next) { voiceBox.stop(); world?.story?.clearTalk(); }
+    if (!next) world?.story?.clearTalk();
     paintSwitches();
   }
   function setSound(next) {
@@ -292,24 +319,16 @@ export function GameScreen({ transition }) {
     if (next) { audioManager.unlock(); sfx.play('select'); }
     paintSwitches();
   }
-  function setVoice(next) {
-    settingsStore.set('voiceEnabled', next);
-    voiceBox.setEnabled(next);
-    paintSwitches();
-  }
   const chatBtn = iconBtn('chat', () => setChat(!chatOn()));
   const soundBtn = iconBtn('sound', () => setSound(!soundOn()));
-  const voiceBtn = iconBtn('mic', () => setVoice(!voiceOn()));
   function paintSwitches() {
     setIcon(chatBtn, chatOn() ? 'chat' : 'chatOff');
     setIcon(soundBtn, soundOn() ? 'sound' : 'soundOff');
-    setIcon(voiceBtn, voiceOn() ? 'mic' : 'micOff');
-    [[chatBtn, chatOn()], [soundBtn, soundOn()], [voiceBtn, voiceOn()]].forEach(([b, on]) => {
+    [[chatBtn, chatOn()], [soundBtn, soundOn()]].forEach(([b, on]) => {
       b.setAttribute('aria-pressed', String(on));
       b.classList.toggle('game__exit--off', !on);
     });
   }
-  voiceBox.setEnabled(voiceOn());
 
   /* ─── Mobile comfort: rotate to landscape, keep the screen awake, haptics ─── */
   const isTouch = window.matchMedia?.('(pointer: coarse)').matches;
@@ -318,7 +337,7 @@ export function GameScreen({ transition }) {
   rotateBtn.hidden = !isTouch;
 
   /* On small screens the switches fold away behind one button, so the top bar never overflows */
-  const toolsBox = el('div', { className: 'game__tools' }, [rotateBtn, chatBtn, voiceBtn, soundBtn]);
+  const toolsBox = el('div', { className: 'game__tools' }, [rotateBtn, chatBtn, soundBtn]);
   const toolsBtn = iconBtn('sliders', () => toolsBox.classList.toggle('game__tools--open'), 'game__toolsbtn');
 
   /** Every label on the always-visible controls, for the first paint and after a language change. */
@@ -327,9 +346,9 @@ export function GameScreen({ transition }) {
     label(exitBtn, ui.menuTitle);
     label(profileBtn, ui.profile);
     label(langBtn, ui.language);
+    label(scanBtn, ui.scanJoin);
     label(chatBtn, ui.chatLabel);
     label(soundBtn, ui.soundLabel);
-    label(voiceBtn, ui.voiceLabel);
     label(rotateBtn, ui.rotateLabel);
     label(toolsBtn, ui.moreLabel);
     label(talkBtn, ui.talk);
@@ -414,12 +433,12 @@ export function GameScreen({ transition }) {
 
   const topBar = el('div', { className: 'game__top' }, [
     exitBtn, roundPill, scoreRow,
-    el('div', { className: 'game__top-right' }, [langBtn, toolsBox, toolsBtn, profileBtn]),
+    el('div', { className: 'game__top-right' }, [scanBtn, langBtn, toolsBox, toolsBtn, profileBtn]),
   ]);
   // the prompt, the chips and the rotate pill stack at the bottom, so they can never overlap
   const dock = el('div', { className: 'game__dock' }, [prompt, sheet, rotatePill]);
   const screen = el('div', { className: 'screen game', attrs: { 'aria-label': 'CHITPLAY' } }, [
-    topBar, myChitEl, talkBtn, whisperEl, toast, dock, talkPanel, rotateHint, overlay,
+    topBar, myChitEl, talkBtn, quickBar, whisperEl, toast, dock, talkPanel, rotateHint, overlay,
   ]);
   screen.addEventListener('pointerdown', (e) => { if (tapHandler && e.target === screen) tapHandler(e); });
 
@@ -475,11 +494,8 @@ export function GameScreen({ transition }) {
   }
 
   /* ─── Speech (never repeats; players are silent if a pool runs dry) ─── */
-  // the browser's speech voice (the narrator borrows the deepest player voice)
-  function voice(seat, parts, emotion) {
-    tell({ t: 'voice', seat, text: parts.text, emotion });
-    return voiceBox.speak(seat === 'narrator' ? 2 : seat, parts.text, emotion);
-  }
+  // players talk in speech bubbles only: nothing to wait for but the bubble
+  const voice = () => Promise.resolve();
 
   /* Who is this line said to? That decides where the camera goes. */
   const SAID_TO_GUESSER = new Set(['plead', 'nervous', 'accusedReply', 'alibi']);
@@ -571,75 +587,64 @@ export function GameScreen({ transition }) {
     if (mood) S().mood(i, mood, 2.5);
   };
 
+  onPopup((k) => sfx.play(k || 'reveal'));
+  (() => {
+    let seen = false;
+    try { seen = !!sessionStorage.getItem('chitplay.gate'); sessionStorage.setItem('chitplay.gate', '1'); } catch {}
+    if (seen) return;
+    const gate = el('div', { className: 'gate', attrs: { 'aria-hidden': 'true' } }, [
+      el('div', { className: 'gate__glow' }),
+      el('img', { className: 'gate__logo', attrs: { src: 'assets/icon.svg', alt: '', width: '120', height: '120' } }),
+      el('strong', { className: 'gate__name' }, ['CHITPLAY']),
+      el('span', { className: 'gate__sub' }, ['Welcome to the gaming house']),
+      el('span', { className: 'gate__doors' }, [el('i'), el('i')]),
+    ]);
+    const done = () => { gate.classList.add('gate--out'); setTimeout(() => gate.remove(), 700); };
+    gate.addEventListener('pointerdown', () => { audioManager.unlock(); sfx.play('whoosh-in'); done(); });
+    document.body.append(gate);
+    world?.story?.flyIn?.();
+    setTimeout(done, 2300);
+  })();
+  startReminder(lang);
+
   /* ─── Start sheet: swipe through the games, then play ─── */
   function chooseSetup() {
     return new Promise((resolve) => {
       // a language change rebuilds the sheet in place, on the same game
-      let onKey = null;
+      let openedId = cameFromGameLink ? base.id : null;
+      cameFromGameLink = false;
       function build() {
-        if (onKey) document.removeEventListener('keydown', onKey);
         // your pinned games first, then your own country's game
-        const order = [base.id];   // one game (its name follows the language)
+        // the chit game (its name follows the language), then every table game side by side
+        const shell = shellText(lang);
+        let recent = [];
+        try { recent = JSON.parse(localStorage.getItem('chitplay.recent')) || []; } catch {}
+        const everyGame = [base.id, ...TABLE_GAMES.map(g => g.slug)];
+        // your pinned games come first, then the ones you last started
+        const orderNow = () => {
+          const pins = profile.pins.filter(id => everyGame.includes(id));
+          const seen = recent.filter(id => everyGame.includes(id) && !pins.includes(id));
+          return [...pins, ...seen, ...everyGame.filter(id => !pins.includes(id) && !seen.includes(id))];
+        };
+        let chosen = base.id;
+        const tableGame = () => gameBySlug(chosen);
         setRound('CHITPLAY');
         clear(sheet);
-        sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--home';
-
-        // 1) The game carousel: one big card per game, swipe (or ‹ ›) to the next
-        const cards = new Map();
-        const track = el('div', { className: 'game__carousel', attrs: { role: 'listbox', 'aria-label': ui.chooseGame, tabindex: '0' } },
-          order.map((id) => {
-            const g = COUNTRIES[id];
-            const badge = el('span', { className: 'game__bigcard-badge' });
-            const star = el('button', {
-              className: 'game__star', type: 'button',
-              onClick: (e) => {
-                e.stopPropagation();
-                profile.togglePin(id);
-                haptic(10);
-                paintPin();
-              },
-            });
-            const paintPin = () => {
-              const on = profile.isPinned(id);
-              star.innerHTML = iconSvg(on ? 'starOn' : 'star');
-              star.classList.toggle('game__star--on', on);
-              star.setAttribute('aria-label', on ? ui.pinRemove : ui.pinAdd);
-              star.setAttribute('aria-pressed', String(on));
-              badge.textContent = on ? ui.pinned : id === detected.id ? ui.yourGame : '';
-              badge.hidden = !badge.textContent;
-            };
-            const card = el('div', {
-              className: 'game__bigcard',
-              style: { '--accent': g.theme.wall[1], '--accent2': g.roles.king.color },
-              attrs: { role: 'option', 'aria-label': GAME_NAME_EN[id], 'data-id': id, tabindex: '0' },
-              onClick: () => { if (id !== base.id) centerOn(id, true); },
-            }, [
-              star,
-              badge,
-              el('span', { className: 'game__bigcard-icon', attrs: { 'aria-hidden': 'true' } }, [GAME_ICON[id]]),
-              el('strong', { className: 'game__bigcard-name' }, [country.game]),
-              el('span', { className: 'game__bigcard-roles' }, [['king', 'queen', 'detective', 'thief'].map(r => country.roles[r].name).join(' · ')]),
-            ]);
-            paintPin();
-            cards.set(id, card);
-            return card;
-          }));
-        const arrow = (dir, label) => el('button', {
-          className: `game__arrow game__arrow--${dir < 0 ? 'prev' : 'next'}`, type: 'button',
-          attrs: { 'aria-label': label }, html: iconSvg(dir < 0 ? 'left' : 'right'), onClick: () => step(dir),
-        });
-        const dots = el('div', { className: 'game__dots', attrs: { 'aria-hidden': 'true' } }, order.map(id => el('span', { attrs: { 'data-id': id } })));
-        const carousel = el('div', { className: 'game__carouselwrap game__carouselwrap--one' }, order.length > 1 ? [arrow(-1, ui.prevGame), track, arrow(1, ui.nextGame)] : [track]);
-
-        // 2) Everything about the chosen game (re-filled on every swipe)
+        // Everything about the chosen game
         const details = el('div', { className: 'game__chosen' });
 
-        // 3) Start buttons + options (built once)
+        // Start buttons + options (built once)
         const leave = (value) => {
           audioManager.unlock(); sfx.play('select'); haptic(15);
-          // the game you choose moves to the front of your Indoor Games, with a star
-          if (value !== 'rejoin' && value !== 'scan') profile.pin(base.id);
-          document.removeEventListener('keydown', onKey);
+          // a table game plays on its own page; a code or a QR finds the right game by itself
+          try { if (value !== 'rejoin' && value !== 'scan') localStorage.setItem('chitplay.recent', JSON.stringify([chosen, ...recent.filter(id => id !== chosen)].slice(0, 8))); } catch {}
+          const table = tableGame();
+          if (table && value !== 'rejoin' && value !== 'scan') {
+            location.href = `play/?game=${table.slug}&mode=${value}&n=${seatsFor(table)}${table.modes ? `&style=${styleFor(table)}` : ''}${table.skill ? `&level=${levelFor(table)}` : ''}${table.rules && rulesFor(table).length ? `&rules=${rulesFor(table).join(',')}` : ''}`;
+            return;
+          }
+          lobbyBack = null;
+          homeLeave = null;
           sheet.className = 'game__sheet'; onModeChange = null; resolve(value);
         };
         const bigPlay = (iconName, label, sub, value) => el('button', {
@@ -652,6 +657,87 @@ export function GameScreen({ transition }) {
           className: 'game__tile', type: 'button', attrs: { title: sub }, onClick: () => leave(value),
         }, [el('span', { className: 'game__tile-ico', html: iconSvg(iconName) }), el('span', { className: 'game__tile-label' }, [label])]);
 
+        // how many are playing, for a table game: remembered for each game
+        const seatsFor = (g) => {
+          let n = g.seats;
+          try { n = Number(localStorage.getItem(`chitplay.seats.${g.slug}`)) || n; } catch {}
+          return Math.min(g.max, Math.max(g.min, n));
+        };
+        const styleFor = (g) => {
+          let s = null;
+          try { s = localStorage.getItem(`chitplay.style.${g.slug}`); } catch {}
+          return g.modes?.some(m => m[0] === s) ? s : g.modes?.[0]?.[0];
+        };
+        const levelFor = (g) => {
+          let s = null;
+          try { s = localStorage.getItem('chitplay.level'); } catch {}
+          return ['easy', 'normal', 'hard'].includes(s) ? s : (g.slug && 'normal');
+        };
+        const levelPicker = el('div', { className: 'game__rounds' });
+        const paintLevel = () => {
+          const g = tableGame();
+          clear(levelPicker);
+          levelPicker.hidden = !g?.skill;
+          if (levelPicker.hidden) return;
+          levelPicker.append(el('span', { className: 'game__rounds-label' }, [shell.level]), ...['easy', 'normal', 'hard'].map(id => el('button', {
+            className: `game__pill${id === levelFor(g) ? ' game__pill--on' : ''}`, type: 'button', attrs: { 'aria-pressed': String(id === levelFor(g)) },
+            onClick: () => { try { localStorage.setItem('chitplay.level', id); } catch {} haptic(10); paintLevel(); },
+          }, [shell[id]])));
+        };
+        const rulesFor = (g) => { try { const r = JSON.parse(localStorage.getItem(`chitplay.rules.${g.slug}`)); return Array.isArray(r) ? r.filter(k => g.rules?.some(x => x[0] === k)) : []; } catch { return []; } };
+        const rulesBox = el('div', { className: 'game__houserules' });
+        const paintRules = () => {
+          const g = tableGame();
+          clear(rulesBox);
+          rulesBox.hidden = !g?.rules;
+          if (rulesBox.hidden) return;
+          const on = rulesFor(g);
+          rulesBox.append(el('strong', {}, ['House rules']), ...g.rules.map(([k, label, help]) => {
+            const box = el('input', { attrs: { type: 'checkbox', ...(on.includes(k) ? { checked: 'checked' } : {}) } });
+            box.addEventListener('change', () => {
+              const next = new Set(rulesFor(g));
+              if (box.checked) next.add(k); else next.delete(k);
+              try { localStorage.setItem(`chitplay.rules.${g.slug}`, JSON.stringify([...next])); } catch {}
+              haptic(8);
+            });
+            return el('label', { className: 'game__house-rule' }, [box, el('span', {}, [el('b', {}, [label]), ` ${help}`])]);
+          }));
+        };
+        const stylePicker = el('div', { className: 'game__rounds' });
+        const paintStyles = () => {
+          const g = tableGame();
+          clear(stylePicker);
+          stylePicker.hidden = !g?.modes;
+          if (stylePicker.hidden) return;
+          stylePicker.append(el('span', { className: 'game__rounds-label' }, [shell.mode]), ...g.modes.map(([id, label, help]) => el('button', {
+            className: `game__pill${id === styleFor(g) ? ' game__pill--on' : ''}`, type: 'button', attrs: { title: help, 'aria-pressed': String(id === styleFor(g)) },
+            onClick: () => {
+              try { localStorage.setItem(`chitplay.style.${g.slug}`, id); } catch {}
+              haptic(10);
+              paintStyles();
+            },
+          }, [label])));
+        };
+        const seatPicker = el('div', { className: 'game__rounds' });
+        const paintSeats = () => {
+          const g = tableGame();
+          clear(seatPicker);
+          seatPicker.hidden = !g || g.min === g.max;
+          if (seatPicker.hidden) return;
+          const sizes = [];
+          for (let n = g.min; n <= Math.min(g.max, 6); n++) sizes.push(n);
+          seatPicker.append(el('span', { className: 'game__rounds-label' }, [shell.players]), ...sizes.map(n => el('button', {
+            className: `game__pill${n === seatsFor(g) ? ' game__pill--on' : ''}`, type: 'button', attrs: { 'aria-pressed': String(n === seatsFor(g)) },
+            onClick: () => {
+              try { localStorage.setItem(`chitplay.seats.${g.slug}`, String(n)); } catch {}
+              haptic(10);
+              paintSeats();
+        paintStyles();
+        paintLevel();
+        paintRules();
+            },
+          }, [String(n)])));
+        };
         const roundsNow = () => (ROUND_OPTIONS.includes(settingsStore.get('matchRounds')) ? settingsStore.get('matchRounds') : DEFAULT_ROUNDS);
         const rounds = el('div', { className: 'game__rounds' }, [
           el('span', { className: 'game__rounds-label' }, [ui.rounds]),
@@ -675,7 +761,7 @@ export function GameScreen({ transition }) {
         ]);
         rankRefresh = () => {
           const rank = profile.rank;
-          playerFace.innerHTML = portraitSvg(profile.look);
+          playerFace.innerHTML = faceHtml(portraitSvg(profile.look));
           playerName.textContent = profile.name;
           playerRank.textContent = `${rank.icon} ${fmt(ui.rankLine, {
             title: rankTitle(rank), pts: profile.all.points.toLocaleString('en'),
@@ -698,39 +784,386 @@ export function GameScreen({ transition }) {
         paintDaily();
         // the first visit of the day: today's reward
         // only while the start screen is still up: never over a match or a room the player already chose
-        if (!profile.login.claimed) later(700, () => { if (alive && !match && !net && overlay.hidden && sheet.classList.contains('game__sheet--home')) openLoginReward(paintDaily); });
+        if (!profile.login.claimed) later(700, () => { if (alive && !match && !net && overlay.hidden && sheet.classList.contains('game__sheet--start')) openLoginReward(paintDaily); });
         const baseRefresh = rankRefresh;
         rankRefresh = () => { baseRefresh(); paintDaily(); };
 
+        const rankStrip = el('div', { className: 'rankline rankline--home' });
+        const paintRank = () => {
+          const rp = rankProgress();
+          clear(rankStrip);
+          const fill = el('i');
+          fill.style.width = `${Math.round(rp.share * 100)}%`;
+          rankStrip.append(el('span', {}, [`${rp.icon} ${rp.title}`]), el('div', { className: 'rankbar' }, [fill]), el('small', {}, [rp.next ? `${rp.points.toLocaleString('en')} / ${rp.next.at.toLocaleString('en')} → ${rp.next.icon}` : rp.points.toLocaleString('en')]));
+        };
+        paintRank();
         const ticket = loadRejoin();
-        const pick = el('div', { className: 'game__home-pick' }, [
-          el('p', { className: 'game__tagline' }, [ui.tagline]),
-          el('h2', { className: 'game__category' }, [ui.indoorTitle]),
-          carousel,
-          dots,
-        ]);
-        const go = el('div', { className: 'game__home-go' }, [
-          playerCard,
-          dailyPill,
+        const legalLinksNow = () => legalLinks();
+
+        /* A: what you see when ChitPlay opens: every game, with search and pins */
+        const entries = () => [
+          { id: base.id, slug: 'cops', name: country.game, icon: GAME_ICON[base.id], kind: 'Party', accent: '#b5341f', blurb: ['king', 'queen', 'detective', 'thief'].map(r => country.roles[r].name).join(' · '), aka: [GAME_NAME_EN[base.id], ...(GAME_AKA[base.id] || []), 'raja rani chor police sipahi mafia cops robbers'].join(' ') },
+          ...TABLE_GAMES.map(g => ({ id: g.slug, slug: g.slug, name: g.name, icon: g.icon, kind: g.kind, also: g.also, hot: g.hot, video: g.video, accent: g.accent, blurb: g.blurb, aka: g.aka || '' })),
+        ];
+        const pinButton = (id, onChange) => {
+          const star = el('button', {
+            className: 'game__pin', type: 'button',
+            onClick: (e) => { e.stopPropagation(); profile.togglePin(id); haptic(10); paint(); onChange?.(); },
+          });
+          const paint = () => {
+            const on = profile.isPinned(id);
+            star.innerHTML = iconSvg(on ? 'starOn' : 'star');
+            star.classList.toggle('game__pin--on', on);
+            star.setAttribute('aria-label', on ? ui.pinRemove : ui.pinAdd);
+            star.setAttribute('aria-pressed', String(on));
+          };
+          paint();
+          return star;
+        };
+        let kind = '';
+        const search = el('input', { className: 'allgames__search', attrs: { type: 'search', placeholder: shell.search, 'aria-label': shell.search, enterkeyhint: 'search' } });
+        const grid = el('div', { className: 'allgames__grid' });
+        const hotRow = el('div', { className: 'hotrow' });
+        const recentRow = el('div', { className: 'hotrow recent' });
+        const carryRow = el('div', { className: 'hotrow recent' });
+        
+        function hotList() {
+          try { const h = JSON.parse(localStorage.getItem('chitplay.hot')); if (Array.isArray(h) && h.length) return h.filter(id => everyGame.includes(id)); } catch {}
+          return HOT_DEFAULT;
+        }
+        /* choose your own hot games: as many as you like, never none */
+        function editHot() {
+          let list = hotList();
+          const body = el('div', { className: 'hotedit__list' });
+          const paint = () => {
+            clear(body);
+            body.append(...entries().map(g => el('button', { className: `hotedit__item${list.includes(g.id) ? ' on' : ''}`, type: 'button', attrs: { 'aria-pressed': String(list.includes(g.id)) }, onClick: async () => {
+              if (list.includes(g.id)) {
+                if (list.length === 1) { await notice({ icon: '🔥', title: 'Keep at least one hot game', body: 'Add another game to Hot first, then take this one off.' }); return; }
+                list = list.filter(x => x !== g.id);
+              } else list = [...list, g.id];
+              try { localStorage.setItem('chitplay.hot', JSON.stringify(list)); } catch {}
+              paint();
+            } }, [el('span', { html: logoSvg(g, 40) }), el('strong', {}, [g.name]), el('small', {}, [list.includes(g.id) ? '🔥 In Hot' : '+ Add'])])));
+          };
+          const box = el('div', { className: 'myroom hotedit', attrs: { role: 'dialog', 'aria-label': 'Hot games' } }, [
+            el('div', { className: 'myroom__head' }, [el('strong', {}, ['🔥 Your hot games']), el('button', { className: 'allgames__close', type: 'button', attrs: { 'aria-label': shell.close }, onClick: () => { box.remove(); paintList(); } }, ['✕'])]),
+            el('p', { className: 'game__netnote' }, ['Tap to add or take off. Keep as many as you like.']),
+            body,
+            el('button', { className: 'game__back', type: 'button', onClick: () => { try { localStorage.removeItem('chitplay.hot'); } catch {} list = HOT_DEFAULT.slice(); paint(); } }, ['Back to the usual hot games']),
+          ]);
+          paint();
+          document.body.append(box);
+        }
+        const chips = el('div', { className: 'allgames__chips' });
+        const kinds = ['', ...CATEGORIES];
+        function paintList() {
+          const q = search.value.trim().toLowerCase();
+          const rank = orderNow();
+          const found = entries()
+            .filter(g => (!kind || g.kind === kind) && (!q || `${g.name} ${g.aka} ${g.kind}`.toLowerCase().includes(q)))
+            .sort((a, b) => rank.indexOf(a.id) - rank.indexOf(b.id));
+          clear(chips);
+          chips.append(...kinds.map(k => el('button', { className: `allgames__chip${k === kind ? ' on' : ''}`, type: 'button', attrs: { 'aria-pressed': String(k === kind) }, onClick: () => { kind = k; paintList(); } }, [k || shell.allGames])));
+          clear(grid);
+          const hotIds = hotList();
+          const hot = !q && !kind ? hotIds.map(id => entries().find(g => g.id === id)).filter(Boolean) : [];
+          hotRow.hidden = !hot.length;
+          clear(hotRow);
+          if (hot.length) {
+            hotRow.append(el('div', { className: 'hotrow__head' }, [el('h2', { className: 'hotrow__title' }, ['🔥 Hot right now']), el('button', { className: 'hotrow__edit', type: 'button', onClick: () => editHot() }, ['✏️ Edit'])]), el('div', { className: 'hotrow__list' }, hot.map(g => el('button', {
+              className: 'hotcard', type: 'button', style: { '--accent': g.accent }, onClick: () => { sfx.play('select'); haptic(10); showGame(g.id); },
+            }, [
+              el('span', { className: 'hotcard__logo', attrs: { 'aria-hidden': 'true' }, html: logoSvg(g, 88) }),
+              el('strong', {}, [g.name]),
+              el('small', {}, [bestOf(g.id) ? `🏅 Best ${bestOf(g.id)}` : '▶ Tap to play']),
+            ]))));
+          }
+          // games in progress: carry on with one tap
+          clear(carryRow);
+          const going = !q && !kind ? savedList().map(x => gameBySlug(x.slug)).filter(Boolean).slice(0, 4) : [];
+          carryRow.hidden = !going.length;
+          if (going.length) carryRow.append(el('h2', { className: 'hotrow__title' }, ['⏯️ Carry on']), el('div', { className: 'recent__list' }, going.map(g => el('a', { className: 'recent__game carry', attrs: { href: `play/?game=${g.slug}&mode=play`, 'aria-label': `Carry on ${g.name}` } }, [el('span', { html: logoSvg(g, 52) }), el('small', {}, [g.name])]))));
+          // the games you played last, one tap away
+          clear(recentRow);
+          const rec = !q && !kind ? recent.filter(id => everyGame.includes(id)).slice(0, 6) : [];
+          recentRow.hidden = !rec.length;
+          if (rec.length) recentRow.append(el('h2', { className: 'hotrow__title' }, ['🕘 Recently played']), el('div', { className: 'recent__list' }, rec.map((id) => { const g = entries().find(x => x.id === id); return g ? el('button', { className: 'recent__game', type: 'button', attrs: { 'aria-label': g.name }, onClick: () => { sfx.play('select'); showGame(g.id); } }, [el('span', { html: logoSvg(g, 52) }), el('small', {}, [g.name])]) : null; })));
+          if (!found.length) grid.append(el('p', { className: 'allgames__none' }, [shell.none]));
+          grid.append(...found.map(g => el('div', { className: 'allgames__box', style: { '--accent': g.accent } }, [
+            el('button', { className: 'allgames__open', type: 'button', attrs: { 'aria-label': g.name }, onClick: () => { sfx.play('select'); haptic(10); showGame(g.id); } }, [
+              el('span', { className: 'allgames__logo', attrs: { 'aria-hidden': 'true' }, html: logoSvg(g, 76) }),
+              el('strong', {}, [g.name]),
+              el('small', {}, [g.blurb]),
+              g.video && bestOf(g.id) ? el('em', { className: 'allgames__best' }, [`🏅 Best ${bestOf(g.id)}`]) : null,
+            ]),
+            pinButton(g.id, paintList),
+          ])));
+        }
+        search.addEventListener('input', paintList);
+        const listView = el('div', { className: 'game__list' }, [
+          el('div', { className: 'game__list-me' }, [playerCard, dailyPill]),
+          el('div', { className: 'game__list-row' }, [rankStrip, el('button', { className: 'game__roombtn', type: 'button', onClick: () => openMyRoom() }, ['🛋️ My Room'])]),
           ...(ticket?.left ? [bigPlay('restart', ui.rejoinBtn, fmt(ui.rejoinSub, { code: ticket.code }), 'rejoin')] : []),
-          bigPlay('play', ui.play, ui.playSub, 'play'),
+          search,
+          chips,
+          el('div', { className: 'game__list-scroll' }, [carryRow, hotRow, recentRow, grid, legalLinksNow()]),
+        ]);
+
+        /* My Room: make the gaming house your own, and show it off */
+        function openMyRoom() {
+          const st = world?.story;
+          if (!st?.setRoomStyle) { showToast('Your room needs 3D graphics.', 2600); return; }
+          document.querySelector('.myroom')?.remove();
+          const pick = (key, value) => { st.setRoomStyle({ [key]: value }); sfx.play('select'); haptic(8); paint(); };
+          const MOOD = [['warm', '🕯️ Warm'], ['cool', '❄️ Cool'], ['sunset', '🌇 Sunset'], ['neon', '🟣 Neon night', { wins: 10 }], ['disco', '🪩 Disco', { achievements: 4 }]];
+          // how far the player has come: the best things open up with wins, achievements and rank
+          const progress = () => ({ wins: Object.values(playStats().wins || {}).reduce((x, y) => x + y, 0), achievements: achievementList().filter(a => a.done).length, rank: rankProgress().index || 0 });
+          const DECO_NEED = { fairy: { wins: 3 }, neon: { achievements: 2 } };
+          const lockedNote = (why) => showToast(`${why} to unlock this`, 2600);
+          const WALLS = [['', 'Classic'], ['#ffd9a8', 'Peach'], ['#bfe6c8', 'Mint'], ['#c9d6ff', 'Sky'], ['#ffc2d4', 'Rose'], ['#d9c2ff', 'Lilac'], ['#8f8f8f', 'Slate']];
+          const head = el('div', { className: 'myroom__level' });
+          const body = el('div', { className: 'myroom__body' });
+          let tab = 'shop';
+          let previewing = null;            // a theme being tried on before buying
+          const ownTheme = st.roomStyle.theme || '';
+          const tabs = el('div', { className: 'myroom__tabs' });
+          const stopPreview = () => { if (previewing != null) { previewing = null; st.setRoomStyle({ theme: decorState().themes.includes(st.roomStyle.theme) ? st.roomStyle.theme : ownTheme }); } };
+          const close = () => { stopPreview(); if (!decorState().themes.includes(st.roomStyle.theme) && st.roomStyle.theme) st.setRoomStyle({ theme: '' }); box.remove(); st.roomView?.(false); document.body.classList.remove('room-edit'); };
+          setTimeout(() => st.roomView?.(true, box), 0);
+          // only the room and its panel while you decorate: the game list steps aside
+          document.body.classList.add('room-edit');
+          const celebrate = (before, what) => {
+            const after = roomLevel();
+            sfx.play('achieve');
+            haptic([10, 40, 10]);
+            if (after.level > before.level) showToast(`🏠 Room level ${after.level}: ${after.title}!`, 3600);
+            else showToast(`🎉 ${what} is in your room!`, 2400);
+          };
+          const buyDecor = async (d) => {
+            const why = lockedBy(d.need, progress());
+            if (why) { lockedNote(why); return; }
+            if (!(await confirmSpend({ what: d.name, price: d.price, coins: profile.coins, icon: d.icon }))) return;
+            if (!profile.spend(d.price)) return;
+            const before = roomLevel();
+            const ds = decorState();
+            ds.owned.push(d.id);
+            const free = spotsFor(d).find(s2 => !Object.values(ds.placed).includes(s2.id));
+            if (free) ds.placed[d.id] = free.id;
+            saveDecor(ds);
+            st.placeDecor();
+            celebrate(before, d.name);
+            if (!free) showToast(`${d.icon} ${d.name} is in your bag: make space for it in My things`, 3200);
+            paintDaily?.();
+            paint();
+          };
+          const buyTheme = async (t) => {
+            const why = lockedBy(t.need, progress());
+            if (why) { lockedNote(why); return; }
+            if (!(await confirmSpend({ what: `${t.name} theme`, price: t.price, coins: profile.coins, icon: t.icon }))) return;
+            if (!profile.spend(t.price)) return;
+            const before = roomLevel();
+            const ds = decorState();
+            ds.themes.push(t.id);
+            saveDecor(ds);
+            previewing = null;
+            st.setRoomStyle({ theme: t.id, mood: t.mood || st.roomStyle.mood });
+            celebrate(before, `The ${t.name} look`);
+            paint();
+          };
+          const place = (id, spotId) => {
+            const ds = decorState();
+            // whatever was in that spot goes back to the bag
+            Object.keys(ds.placed).forEach((k) => { if (ds.placed[k] === spotId) delete ds.placed[k]; });
+            if (spotId) ds.placed[id] = spotId; else delete ds.placed[id];
+            saveDecor(ds);
+            st.placeDecor();
+            sfx.play('select');
+            paint();
+          };
+          const tag = (rarity) => el('small', { className: 'myroom__rarity', style: { '--r': RARITY[rarity].color } }, [RARITY[rarity].name]);
+          const paintHead = () => {
+            const lv = roomLevel();
+            clear(head);
+            head.append(
+              el('div', { className: 'myroom__lvtop' }, [el('strong', {}, [`🏠 Lv ${lv.level} · ${lv.title}`]), el('span', { className: 'myroom__coins' }, [el('span', { html: iconSvg('coin') }), String(profile.coins)])]),
+              el('div', { className: 'myroom__lvbar' }, [el('i', { style: { width: `${Math.round(lv.share * 100)}%` } })]),
+              el('small', {}, [lv.next ? `${lv.next.at - lv.points} more room points to “${lv.next.title}”. Rarer things give more.` : 'The greatest gaming house there is!']),
+            );
+          };
+          const paint = () => {
+            const now = st.roomStyle;
+            const p = progress();
+            paintHead();
+            clear(tabs);
+            tabs.append(...[['shop', '🛍️ Shop'], ['themes', '🎨 Themes'], ['mine', '🎒 My things'], ['lights', '💡 Lights']].map(([id, label]) => el('button', { className: `myroom__opt${tab === id ? ' on' : ''}`, type: 'button', onClick: () => { if (tab === 'themes' && id !== 'themes') stopPreview(); tab = id; paint(); } }, [label])));
+            clear(body);
+            const ds = decorState();
+            if (tab === 'shop') {
+              Object.keys(RARITY).forEach((r) => {
+                const list = DECOR.filter(d => d.rarity === r);
+                body.append(el('h3', { className: 'myroom__group', style: { '--r': RARITY[r].color } }, [`${RARITY[r].name} · ${list.filter(d => ds.owned.includes(d.id)).length}/${list.length}`]), el('div', { className: 'myroom__shop' }, list.map((d) => {
+                  const why = lockedBy(d.need, p);
+                  const mine = ds.owned.includes(d.id);
+                  return el('div', { className: `myroom__item${mine ? ' owned' : ''}${why ? ' locked' : ''}`, style: { '--r': RARITY[r].color } }, [
+                    el('span', { className: 'myroom__icon' }, [d.icon]), el('strong', {}, [d.name]),
+                    mine ? el('small', { className: 'myroom__ok' }, ['✓ In your room']) : why ? el('small', { className: 'myroom__lock' }, [why]) : el('button', { className: `game__buy${profile.coins < d.price ? ' short' : ''}`, type: 'button', onClick: () => buyDecor(d) }, [el('span', { html: iconSvg('coin') }), String(d.price)]),
+                  ]);
+                })));
+              });
+              return;
+            }
+            if (tab === 'themes') {
+              body.append(el('p', { className: 'game__netnote' }, ['A theme changes the whole room: floor, mat, walls and light. Try one on before you buy it.']), el('div', { className: 'myroom__shop' }, THEMES.map((t) => {
+                const owned = !t.id || ds.themes.includes(t.id);
+                const using = (now.theme || '') === t.id;
+                const why = lockedBy(t.need, p);
+                return el('div', { className: `myroom__item${using ? ' owned' : ''}${why && !owned ? ' locked' : ''}`, style: { '--r': RARITY[t.rarity].color } }, [
+                  el('span', { className: 'myroom__icon' }, [t.icon]), el('strong', {}, [t.name]), t.id ? tag(t.rarity) : el('small', {}, [t.note]),
+                  using && previewing == null ? el('small', { className: 'myroom__ok' }, ['✓ Using']) : owned
+                    ? el('button', { className: 'game__buy', type: 'button', onClick: () => { previewing = null; pick('theme', t.id); if (t.mood) st.setRoomStyle({ mood: t.mood }); } }, ['Use'])
+                    : el('div', { className: 'myroom__pair' }, [
+                      el('button', { className: 'myroom__try', type: 'button', onClick: () => { previewing = t.id; st.setRoomStyle({ theme: t.id }); sfx.play('select'); paint(); } }, [previewing === t.id ? '👁️ Trying' : '👁️ Try']),
+                      why ? el('small', { className: 'myroom__lock' }, [why]) : el('button', { className: `game__buy${profile.coins < t.price ? ' short' : ''}`, type: 'button', onClick: () => buyTheme(t) }, [el('span', { html: iconSvg('coin') }), String(t.price)]),
+                    ]),
+                ]);
+              })));
+              return;
+            }
+            if (tab === 'mine') {
+              if (!ds.owned.length) { body.append(el('p', { className: 'game__netnote' }, ['Nothing yet. Win games, collect coins, and buy things in the Shop.'])); return; }
+              body.append(el('p', { className: 'game__netnote' }, ['Choose where each thing goes. Picking a taken spot swaps them.']), ...ds.owned.map((id) => {
+                const d = decorOf(id);
+                if (!d) return null;
+                const sel = el('select', { className: 'myroom__select', attrs: { 'aria-label': `Where to put ${d.name}` } }, [el('option', { attrs: { value: '' } }, ['In my bag']), ...spotsFor(d).map(s2 => el('option', { attrs: { value: s2.id, ...(ds.placed[id] === s2.id ? { selected: 'selected' } : {}) } }, [s2.name]))]);
+                sel.addEventListener('change', () => place(id, sel.value));
+                return el('div', { className: 'myroom__item myroom__item--row', style: { '--r': RARITY[d.rarity].color } }, [el('span', { className: 'myroom__icon' }, [d.icon]), el('strong', {}, [d.name]), sel]);
+              }));
+              return;
+            }
+            body.append(
+              el('h3', {}, ['Light']),
+              el('div', { className: 'myroom__row' }, MOOD.map(([id, label, need]) => { const why = lockedBy(need, p); return el('button', { className: `myroom__opt${now.mood === id ? ' on' : ''}${why ? ' locked' : ''}`, type: 'button', attrs: { 'aria-pressed': String(now.mood === id), title: why || label }, onClick: () => (why ? lockedNote(why) : pick('mood', id)) }, [why ? `🔒 ${label.split(' ').slice(1).join(' ')}` : label]); })),
+              el('h3', {}, ['Wall tint']),
+              el('div', { className: 'myroom__row' }, WALLS.map(([c, label]) => el('button', { className: `myroom__swatch${now.wall === c ? ' on' : ''}`, type: 'button', style: { '--c': c || '#e6dcc6' }, attrs: { 'aria-label': label, title: label, 'aria-pressed': String(now.wall === c) }, onClick: () => pick('wall', c) }))),
+              el('h3', {}, ['Party lights']),
+              el('div', { className: 'myroom__row' }, [
+                ...[['fairy', '✨ Fairy lights'], ['neon', '💡 Neon strips']].map(([k, label]) => { const why = lockedBy(DECO_NEED[k], p); return el('button', { className: `myroom__opt${now[k] ? ' on' : ''}${why ? ' locked' : ''}`, type: 'button', attrs: { 'aria-pressed': String(!!now[k]), title: why || label }, onClick: () => (why ? lockedNote(why) : pick(k, !now[k])) }, [why ? `🔒 ${label.split(' ').slice(1).join(' ')}` : label]); }),
+              ]),
+            );
+          };
+          const lookAround = el('button', { className: 'game__choice', type: 'button', onClick: () => {
+            document.body.classList.add('room-only');
+            const exit = el('button', { className: 'roomonly-exit', type: 'button' }, ['✕ Tap anywhere to come back']);
+            const back = () => { document.body.classList.remove('room-only'); exit.remove(); removeEventListener('pointerdown', onTap, true); };
+            const onTap = (e) => { e.preventDefault(); e.stopPropagation(); back(); };
+            document.body.append(exit);
+            setTimeout(() => addEventListener('pointerdown', onTap, true), 250);
+            sfx.play('select');
+          } }, [el('strong', {}, ['👁️ See the whole room'])]);
+          const share = el('button', { className: 'game__choice game__choice--primary', type: 'button', onClick: async () => {
+            close();
+            await new Promise(r => setTimeout(r, 120));
+            const url = st.snapshot();
+            try {
+              const blob = await (await fetch(url)).blob();
+              const file = new File([blob], 'my-chitplay-room.jpg', { type: 'image/jpeg' });
+              if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: 'My ChitPlay room', text: `My gaming room on ChitPlay is ${roomLevel().title}!` }); return; }
+            } catch { /* cancelled, or this browser can't share files */ }
+            const a = document.createElement('a');
+            a.href = url; a.download = 'my-chitplay-room.jpg';
+            document.body.append(a); a.click(); a.remove();
+            showToast('Saved a picture of your room', 2400);
+          } }, [el('strong', {}, ['📸 Show off my room'])]);
+          const box = el('div', { className: 'myroom', attrs: { role: 'dialog', 'aria-label': 'My Room' } }, [
+            el('div', { className: 'myroom__head' }, [el('strong', {}, ['🛋️ My Room']), el('button', { className: 'allgames__close', type: 'button', attrs: { 'aria-label': shell.close }, onClick: close }, ['✕'])]),
+            head,
+            tabs,
+            body,
+            el('div', { className: 'myroom__actions' }, [lookAround, share]),
+          ]);
+          paint();
+          document.body.append(box);
+        }
+
+        try { if (sessionStorage.getItem('chitplay.openRoom')) { sessionStorage.removeItem('chitplay.openRoom'); setTimeout(() => openMyRoom(), 700); } } catch {}
+
+        /* B: one game: how to play it, and every way of playing it */
+        const onlineBtn = el('button', { className: 'game__choice game__choice--icon game__choice--online', type: 'button', onClick: () => leave('online') }, [
+          el('span', { className: 'game__choice-ico', html: iconSvg('globe') }),
+          el('span', { className: 'game__choice-text' }, [el('strong', {}, [ui.online]), el('span', {}, [ui.onlineSub])]),
+        ]);
+        const head = el('div', { className: 'game__gamehead' });
+        const pick = el('div', { className: 'game__home-pick' }, [head]);
+        const go = el('div', { className: 'game__home-go' }, [
+          bigPlay('play', shell.guestPlay, ui.playSub, 'play'),
           // strangers from anywhere: random matching on free public tables
-          el('button', { className: 'game__choice game__choice--icon game__choice--online', type: 'button', onClick: () => leave('online') }, [
-            el('span', { className: 'game__choice-ico', html: iconSvg('globe') }),
-            el('span', { className: 'game__choice-text' }, [el('strong', {}, [ui.online]), el('span', {}, [ui.onlineSub])]),
-          ]),
-          el('div', { className: 'game__tiles' }, [
+          onlineBtn,
+          el('div', { className: 'game__tiles game__tiles--three' }, [
             tile('eye', ui.watch, ui.watchSub, 'watch'),
-            tile('wifi', ui.nearby, ui.nearbySub, 'nearby'),
             tile('phone', ui.pass, ui.passSub, 'pass'),
-            tile('qr', ui.scanJoin, ui.scanSub, 'scan'),
+            tile('wifi', ui.nearby, ui.nearbySub, 'nearby'),
           ]),
           rounds,
+          seatPicker,
+          stylePicker,
+          levelPicker,
+          rulesBox,
         ]);
-        sheet.append(pick, go, details);
+        function showList() {
+          openedId = null;
+          lobbyBack = null;
+          sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--list';
+          sheet.replaceChildren(listView);
+          paintList();
+          rankRefresh();
+          paintRank();
+          checkUnlocks();
+        }
+        function showGame(id) {
+          openedId = id;
+          select(id);
+          const e = entries().find(x => x.id === id);
+          clear(head);
+          head.style.setProperty('--accent', e.accent);
+          head.append(
+            el('button', { className: 'game__gameback', type: 'button', attrs: { 'aria-label': shell.allGames }, html: iconSvg('left'), onClick: () => showList() }),
+            el('span', { className: 'game__gamelogo', attrs: { 'aria-hidden': 'true' }, html: logoSvg(e, 64) }),
+            el('span', { className: 'game__gamename' }, [el('strong', {}, [e.name]), el('small', {}, [e.blurb])]),
+            pinButton(id),
+          );
+          const st = playStats();
+          const bestLine = st.best[id] ? `🏅 Your best: ${st.best[id]}. Can you beat it?` : st.plays[id] ? `🎮 Played ${st.plays[id]} · won ${st.wins[id] || 0}. Go for another win!` : '✨ New for you: give it a try!';
+          head.append(el('p', { className: 'game__bestline' }, [bestLine]));
+          sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--home';
+          sheet.replaceChildren(pick, go, details);
+          sheet.scrollTop = 0;
+          // the phone's Back button returns to the list, not out of the site
+          armBackGuard();
+          lobbyBack = () => showList();
+        }
+        homeLeave = leave;
+        paintSeats();
+        paintStyles();
+        paintLevel();
+        paintRules();
+
+        function legalLinks() { return el('nav', { className: 'game__legal', attrs: { 'aria-label': ui.about } }, [
+          ['games/', `🎲 ${shell.guides}`], ['about/', ui.about], ['contact/', ui.contact], ['privacy/', ui.privacy], ['terms/', ui.terms],
+        ].map(([href, label]) => el('a', { attrs: { href } }, [label]))); }
 
         function fillDetails() {
           clear(details);
+          const table = tableGame();
+          if (table) {
+            details.append(
+              el('h2', { className: 'game__title sr-only' }, [table.name]),
+              el('p', { className: 'game__sub' }, [`${table.kind} · ${table.min === table.max ? table.min : `${table.min}–${table.max}`} · ${table.minutes} min`]),
+              el('a', { className: 'game__choice game__choice--howto', attrs: { href: `games/${table.slug}/` } }, [el('strong', {}, [`❓ ${ui.howto}`])]),
+              legalLinks(),
+            );
+            return;
+          }
           const roles = el('div', { className: 'game__roles' }, ['king', 'queen', 'detective', 'thief'].map((slot, i) => {
             const r = country.roles[slot];
             const own = ROLE_LATIN[base.id]?.[i] || r.name;
@@ -767,63 +1200,36 @@ export function GameScreen({ transition }) {
               seoIntro,
             ]),
             // always visible, so visitors and ad-network reviewers can find these pages
-            el('nav', { className: 'game__legal', attrs: { 'aria-label': ui.about } }, [
-              ['party/', `🎲 ${ui.partyGames}`], ['about/', ui.about], ['contact/', ui.contact], ['privacy/', ui.privacy], ['terms/', ui.terms],
-            ].map(([href, label]) => el('a', { attrs: { href } }, [label]))),
+            legalLinks(),
           );
         }
 
         function select(id) {
+          chosen = id;
+          const table = gameBySlug(id);
+          rounds.hidden = !!table;
+          paintSeats();
+          paintStyles();
+          paintLevel();
+          paintRules();
+          if (table) {
+            fillDetails();
+            return;
+          }
           base = COUNTRIES[id];
           country = oneGame(base);
           ui = uiFor();
-          voiceBox.setLanguages(country.voice);
           // the start sheet shows instantly; the 3D room catches up when it's loaded
           world?.story?.setCountry(country, { soon: true });
           previewTable();
           // a plain visit keeps its clean / address: analytics counts a rewrite as a second page view
-          if (base.id !== detected.id || new URLSearchParams(location.search).has('game')) {
-            setUrlGame(base);
-            document.title = `CHITPLAY: ${GAME_NAME_EN[base.id].replace(':', '')}`;
-          }
+          // the address stays clean: a refresh always comes back to where you were, not to a game page
           loadPack(chatPack());
-          cards.forEach((c, cid) => { c.classList.toggle('game__bigcard--on', cid === id); c.setAttribute('aria-selected', String(cid === id)); });
-          dots.querySelectorAll('span').forEach(d => d.classList.toggle('on', d.dataset.id === id));
           fillDetails();
         }
 
-        function centerOn(id, smooth) {
-          const card = cards.get(id);
-          if (!card) return;
-          // 'instant', not 'auto': the track's CSS is scroll-behavior:smooth, and a slow opening glide
-          // would let the scroll handler below pick a card it merely passes through
-          track.scrollTo({ left: card.offsetLeft - (track.clientWidth - card.clientWidth) / 2, behavior: smooth ? 'smooth' : 'instant' });
-          if (!smooth) select(id);
-        }
-        function step(dir) {
-          const i = order.indexOf(base.id);
-          const next = order[(i + dir + order.length) % order.length];
-          haptic(10);
-          centerOn(next, true);
-        }
-        // whichever card ends up in the middle after a swipe becomes the game
-        let scrollTimer = 0;
-        track.addEventListener('scroll', () => {
-          clearTimeout(scrollTimer);
-          scrollTimer = setTimeout(() => {
-            const mid = track.scrollLeft + track.clientWidth / 2;
-            let best = null, bestD = Infinity;
-            cards.forEach((c, id) => { const d = Math.abs(c.offsetLeft + c.clientWidth / 2 - mid); if (d < bestD) { bestD = d; best = id; } });
-            if (best && best !== base.id) { sfx.play('select'); haptic(8); select(best); }
-          }, 110);
-        }, { passive: true });
-        onKey = (e) => {
-          if (e.target?.matches?.('input, select, textarea')) return;
-          if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
-          if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
-        };
-        document.addEventListener('keydown', onKey);
-        requestAnimationFrame(() => centerOn(base.id, false));
+        select(openedId && everyGame.includes(openedId) ? openedId : base.id);
+        if (openedId && everyGame.includes(openedId)) showGame(openedId); else showList();
       }
       onModeChange = build;
       build();
@@ -1162,7 +1568,6 @@ export function GameScreen({ transition }) {
       color: SHIRTS[i], isHuman: i === m.seat, remote: null, flair: FLAIRS.has(p.flair) ? p.flair : '', bot: p.human === false,
     }));
     profile.noteRivals(m.players.filter((p, i) => i !== m.seat && p.human).map((p, i) => ({ name: net?.public ? politeName(String(p.name)) : p.name, weekly: p.weekly })));
-    voiceBox.setCast(players.map(p => ({ gender: p.gender, age: p.look.age })));
     exitBtn.hidden = false;
     matchRunning = true;
     setMyChit(null);
@@ -1170,7 +1575,6 @@ export function GameScreen({ transition }) {
     armBackGuard();
     guestTotals = [0, 0, 0, 0];
     clear(sheet); sheet.className = 'game__sheet'; showPrompt('');
-    voiceBox.setLanguages(country.voice);
     world.story.setCountry(country);
     renderScores();
     keepAwake(true);
@@ -1191,7 +1595,6 @@ export function GameScreen({ transition }) {
         if (typeof st[m.m] === 'function' && !LOCAL_ONLY.has(m.m)) st[m.m](...(Array.isArray(m.a) ? m.a : []));
         break;
       }
-      case 'voice': if (chatOn()) voiceBox.speak(m.seat === 'narrator' ? 2 : m.seat, String(m.text || ''), m.emotion); break;
       case 'sfx': audioManager.play(m.n); break;
       case 'fan': if (m.on) audioManager.fanStart(); else audioManager.fanStop(); break;
       case 'round': roundEl.textContent = m.text; break;
@@ -1252,7 +1655,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261108-0913').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261110-0233').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -1467,7 +1870,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261108-0913').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261110-0233').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -1655,6 +2058,8 @@ export function GameScreen({ transition }) {
           try {
             const lobby = await room.join(code, name, token, joinExtras());
             if (net?.room !== room) return;
+            // that code belongs to one of the other games: its page takes over
+            if (lobby.arcade) { room.close(); net = null; location.href = `play/?join=${code}`; return; }
             saveRejoin({ code, token, name });
             clearUrlJoin();
             if (!lobby.rejoin) waitingPaint(lobby);
@@ -1671,7 +2076,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261108-0913');
+        const scanner = import('../../net/qr-scan.js?v=20261110-0233');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });
@@ -2201,6 +2606,11 @@ export function GameScreen({ transition }) {
     const ticket = loadRejoin();
     // after a reload the phone goes straight back; after ✕ the player chooses (the Rejoin button)
     let nearbyStart = ticket && (urlJoin === ticket.code || (!urlJoin && !ticket.left)) ? { rejoin: ticket } : urlJoin ? { code: urlJoin } : null;
+    // the Scan button on another page sends you here
+    if (new URLSearchParams(location.search).has('scan')) {
+      nearbyStart = { scan: true };
+      try { history.replaceState(null, '', location.pathname); } catch {}
+    }
     if (nearbyStart?.rejoin) {
       // a reload has no tap to unlock sound yet: the first touch does it
       screen.addEventListener('pointerdown', () => audioManager.unlock(), { once: true });
@@ -2208,6 +2618,11 @@ export function GameScreen({ transition }) {
 
     const saved = nearbyStart ? null : loadSave();
     const fromUrl = readUrlGame();
+    // a link to a game opens it once; after that the address goes back to plain, so a refresh doesn't reopen it
+    if (new URLSearchParams(location.search).has('game')) {
+      cameFromGameLink = !!fromUrl;
+      try { const u = new URL(location.href); u.searchParams.delete('game'); history.replaceState(null, '', u); } catch {}
+    }
     if (saved && (!fromUrl || fromUrl.country.id === saved.country)) {
       base = COUNTRIES[saved.country];
       country = oneGame(base);
@@ -2328,8 +2743,6 @@ export function GameScreen({ transition }) {
       });
     }
     if (!alive) return;
-    voiceBox.setLanguages(country.voice);
-    voiceBox.setCast(players.map(p => ({ gender: p.gender, age: p.look.age })));
     setMyChit(null);
     setTalkAvailable(pm === 'play' || pm === 'nearby');
     sfx.fanStart();
@@ -2340,7 +2753,6 @@ export function GameScreen({ transition }) {
       name: p.name, look: p.look, color: p.color, isHuman: p.isHuman,
       label: `${net && !p.isHuman && !p.remote ? '🤖 ' : p.flair ? `${p.flair} ` : ''}${isMe(p) && p.name !== ui.you ? `${p.name} (${ui.you})` : p.name}`,
     })));
-    if (voiceOn() && !voiceBox.available) showToast(ui.voiceOff, 3500);
     keepAwake(true);
     await sleep(800);
 
@@ -2644,7 +3056,6 @@ export function GameScreen({ transition }) {
     base = COUNTRIES[id];
     country = oneGame(base);
     ui = uiFor();
-    voiceBox.setLanguages(country.voice);
     world?.story?.setCountry(country);
     loadPack(chatPack());
     document.querySelectorAll('.game__gameselect').forEach((s) => { s.value = id; });
@@ -2669,6 +3080,7 @@ export function GameScreen({ transition }) {
 
   function setTalkAvailable(on) {
     talkBtn.hidden = !on;
+    quickBar.hidden = !on;
     if (!on) closeTalk();
   }
   function closeTalk() {
@@ -2767,6 +3179,7 @@ export function GameScreen({ transition }) {
     const target = validSeat(to) && to !== from ? to : null;
     const symbol = ALL_EMOJIS[i];
     S().throwEmoji(from, target, symbol);
+    S().emojiPop(symbol, players[from].name);
     sfx.play('select');
     if (target != null) S().look(from, target);
     const text = target != null
@@ -2860,7 +3273,7 @@ export function GameScreen({ transition }) {
   const scoreCard = () => {
     const rank = profile.rank, st = profile.stats;
     return el('div', { className: 'game__card' }, [
-      el('span', { className: 'game__avatar', html: portraitSvg(profile.look) }),
+      el('span', { className: 'game__avatar', html: faceHtml(portraitSvg(profile.look)) }),
       el('div', { className: 'game__card-text' }, [
         el('strong', {}, [profile.name]),
         el('span', {}, [`${rank.icon} ${rankTitle(rank)}`]),
@@ -2931,7 +3344,6 @@ export function GameScreen({ transition }) {
     if (!match && !net) {
       base = editionFor(id);
       country = oneGame(base);
-      voiceBox.setLanguages(country.voice);
       world?.story?.setCountry(country);
       cast = null;
       previewTable();
@@ -3013,6 +3425,7 @@ export function GameScreen({ transition }) {
   function challengeText(c) {
     return fmt(ui[`ch_${c.key}`] || c.id, { n: c.n });
   }
+  const HAT_NAMES = Object.fromEntries([...FANCY_HATS, ...PREMIUM_COLORS, ...SPECIAL_EMOJIS].map(x => [x.id, x.name || x.symbol || x.label || 'this item']));
   function openProfile({ fromMenu = false, tab = null } = {}) {
     if (tab) profileTab = tab;
     const inMatch = !!match && !!players.length;
@@ -3044,6 +3457,21 @@ export function GameScreen({ transition }) {
     const genderSeg = seg([['m', ui.male], ['f', ui.female]], profile.gender, (g) => {
       profile.setGender(g);
       applyLook({ ...profile.look, gender: g });
+      filterPresets();
+    });
+    // male characters under Male, female under Female
+    const filterPresets = () => [...presetGrid.children].forEach((c) => { c.hidden = c.dataset.gender !== profile.gender; });
+    const photoInput = el('input', { attrs: { type: 'file', accept: 'image/*', 'aria-label': 'Choose a photo' } });
+    photoInput.hidden = true;
+    const photoNote = el('small', { className: 'game__netnote' }, ['Your photo stays on this phone. Other players see your character.']);
+    const photoRow = el('div', { className: 'game__photo' }, [
+      el('button', { className: 'game__choice', type: 'button', onClick: () => photoInput.click() }, [el('strong', {}, ['📷 Use my photo'])]),
+      el('button', { className: 'game__back', type: 'button', onClick: () => { clearPhoto(); paintProfileBtn(); rankRefresh?.(); showToast('Photo removed', 1500); } }, ['Remove photo']),
+      photoInput, photoNote,
+    ]);
+    photoInput.addEventListener('change', async () => {
+      try { await setPhotoFromFile(photoInput.files?.[0]); paintProfileBtn(); rankRefresh?.(); showToast('Profile photo saved', 1600); } catch { showToast('That picture could not be used', 2000); }
+      photoInput.value = '';
     });
     const row = (label, control) => el('label', { className: 'game__row-field' }, [el('span', {}, [label]), control]);
 
@@ -3063,7 +3491,9 @@ export function GameScreen({ transition }) {
           refreshCustom();
         },
       }, [el('span', { className: 'game__preset-face', html: portraitSvg(lookOf(p.id)) }), el('small', {}, [name])]));
+      presetGrid.lastChild.dataset.gender = p.gender;
     });
+    filterPresets();
 
     // the colours you can wear: the usual ones, and the special ones you bought
     const clothColours = () => [...CLOTH_COLORS, ...PREMIUM_COLORS.filter(c => profile.owns(c.id)).map(c => c.hex)];
@@ -3084,7 +3514,9 @@ export function GameScreen({ transition }) {
       ]);
       const buyBtn = (id, price) => el('button', {
         className: 'game__buy', type: 'button', attrs: { 'aria-label': `${ui.buy} ${price}` },
-        onClick: () => {
+        onClick: async () => {
+          const what = HAT_NAMES?.[id] || 'this';
+          if (!(await confirmSpend({ what, price, coins: profile.coins }))) return;
           if (!profile.buy(id)) { showToast(ui.notEnough, 1800); return; }
           sfx.play('confirm'); haptic([15, 30, 15]);
           showToast(ui.bought, 1600);
@@ -3121,6 +3553,12 @@ export function GameScreen({ transition }) {
           if (h.rank != null) return item(face, name, fmt(ui.needRank, { title: rankTitle({ ...RANKS[h.rank], index: h.rank }) }), el('span', { className: 'game__lock', html: '🔒' }));
           return item(face, name, ui.forCoins, buyBtn(h.id, h.price));
         })),
+        el('h3', { className: 'game__h3' }, ['🏆 Achievements']),
+        el('p', { className: 'game__netnote' }, [`${achievementList().filter(a => a.done).length} / ${ACHIEVEMENTS.length}`]),
+        el('div', { className: 'game__achievements' }, achievementList().map(a => el('div', { className: `achv achv--${a.tier}${a.done ? ' achv--done' : ''}` }, [
+          el('span', { className: 'achv__icon' }, [a.done ? a.icon : '🔒']),
+          el('span', { className: 'achv__text' }, [el('small', { className: 'achv__tier', style: { color: TIERS[a.tier].color } }, [TIERS[a.tier].name]), el('strong', {}, [a.name]), el('small', {}, [`${a.hint} · +${a.coins} coins`])]),
+        ]))),
         el('h3', { className: 'game__h3' }, [ui.specialEmojis]),
         el('div', { className: 'game__shop' }, SPECIAL_EMOJIS.map((e) => {
           const face = `<span class="game__shopemoji">${e.symbol}</span>`;
@@ -3236,6 +3674,20 @@ export function GameScreen({ transition }) {
         openProfile({ fromMenu });
       },
     }, LANGUAGES.map(l => el('option', { attrs: { value: l.id, ...(l.id === lang ? { selected: 'selected' } : {}) } }, [l.label])));
+    /* the daily reminder: asks the browser's permission only when you switch it on */
+    const reminderRow = () => {
+      const s = reminderSettings();
+      const box = el('input', { attrs: { type: 'checkbox', role: 'switch', ...(s.on ? { checked: 'checked' } : {}) } });
+      const time = el('input', { className: 'game__reminder-time', attrs: { type: 'time', value: s.time, 'aria-label': 'Reminder time' } });
+      const note = el('p', { className: 'game__netnote' }, [reminderSupported() ? 'While ChitPlay is open, or around this time on an installed app in Chrome.' : 'This browser can’t show reminders.']);
+      box.addEventListener('change', async () => {
+        const on = await setReminder(box.checked, lang, time.value);
+        box.checked = on;
+        if (box.checked !== on || (!on && Notification?.permission === 'denied')) note.textContent = 'Notifications are blocked in your browser’s settings.';
+      });
+      time.addEventListener('change', () => { if (box.checked) setReminder(true, lang, time.value); else setReminder(false, lang, time.value); });
+      return el('div', { className: 'game__reminder' }, [el('label', { className: 'game__switch' }, [el('span', { className: 'game__switch-ico' }, ['🔔']), el('span', {}, ['Daily reminder']), box]), time, note]);
+    };
     const toggle = (iconName, iconOff, label, isOn, set) => {
       const ico = el('span', { className: 'game__switch-ico' });
       const input = el('input', { attrs: { type: 'checkbox', role: 'switch', ...(isOn() ? { checked: 'checked' } : {}) } });
@@ -3250,16 +3702,21 @@ export function GameScreen({ transition }) {
       row(ui.graphics, graphics),
       el('p', { className: 'game__netnote' }, [ui.graphicsHelp]),
       toggle('sound', 'soundOff', ui.soundLabel, soundOn, setSound),
-      toggle('mic', 'micOff', ui.voiceLabel, voiceOn, setVoice),
       toggle('chat', 'chatOff', ui.chatLabel, chatOn, setChat),
+      reminderRow(),
     ]);
 
     /* one thing at a time: the panel never grows, only the tab's own content scrolls */
     const TABS = [
-      ['character', 'user', ui.character, () => [genderSeg, presetGrid]],
+      ['character', 'user', ui.character, () => [photoRow, genderSeg, presetGrid]],
       ['look', 'palette', ui.custom, () => [customBox]],
       ['rewards', 'gift', ui.rewards, () => { paintRewards(); return [rewardsBox]; }],
-      ['score', 'trophy', ui.score, () => [scoreBox, resetBtn]],
+      ['score', 'trophy', ui.score, () => {
+        const st = playStats();
+        const top = Object.entries(st.plays).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const most = el('div', { className: 'game__most' }, [el('h3', { className: 'game__h3' }, ['🎮 Most played']), ...(top.length ? top.map(([slug, n]) => { const g = gameBySlug(slug); return el('div', { className: 'game__mostrow' }, [el('span', { html: g ? logoSvg(g, 36) : '' }), el('strong', {}, [g?.name || slug]), el('small', {}, [`${n} played · ${st.wins[slug] || 0} won${st.best[slug] ? ` · best ${st.best[slug]}` : ''}`])]); }) : [el('p', { className: 'game__netnote' }, ['Play a few games and they show up here.'])])]);
+        return [most, scoreBox, resetBtn];
+      }],
       ['settings', 'sliders', ui.settings, () => [settingsBox]],
     ];
     const tabBody = el('div', { className: 'game__tabbody', attrs: { role: 'tabpanel' } });
@@ -3317,8 +3774,6 @@ export function GameScreen({ transition }) {
       tasks.clear();
       world?.story?.setPaused(false);
       world?.story?.portrait(null);
-      voiceBox.pause(false);
-      voiceBox.stop();
       sfx.fanStop();
       keepAwake(false);
       document.removeEventListener('visibilitychange', onVisible);

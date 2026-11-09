@@ -127,7 +127,7 @@ export default {
     badges: 'Baeji', hall: 'I gigi-ui choego gyeonggi', noHall: 'Gyeonggi-reul kkeunnaemyeon yeogi ollayo.',
     resetScore: 'Jeomsu chogihwa', resetSure: 'Han beon deo tap-hamyeon jeomsu, deunggeup, baeji-ga jiwojyeoyo', resetDone: 'Jeomsu chogihwa wallyo',
     graphics: 'Geuraepik', gLow: 'Gabyeoum (gajang budeureoum)', gAuto: 'Jadong', gMedium: 'Jung', gHigh: 'Sang', gUltra: '4K (goseongneung gigi)', graphicsHelp: 'Gabyeoum-i modeun pon-eseo gajang joayo. Budeureoumyeon ollyeodo dwaeyo.',
-    language: 'Eoneo', languageHelp: 'Menyu, mesiji, daehwa. Moksori-neun Yeong-eo-ro yujidoeyo.',
+    language: 'Eoneo', languageHelp: 'Menyu, mesiji, daehwa.',
     done: 'Wallyo', rankUp: '{icon} Sae deunggeup: {title}!', newBadge: '{icon} Baeji: {name}!', gained: '+{n} deunggeup jeomsu', hallPlace: '🏅 Choego gyeonggi {n}wi',
     forfeit: '🎲 {name} beolchik', forfeitLine: 'Gateun bang-e itdamyeon: {name}, {text}.',
     rotateBig: 'Dollyeoseo keuge bogi', rotateHide: 'Hoejeon beoteun sumgigi', rotateTurn: 'Pon-eul garo-ro dollyeoyo. An dolmyeon hoejeon jamgeum-eul kkeuseyo.',

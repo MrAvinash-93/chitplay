@@ -127,7 +127,7 @@ export default {
     badges: 'Badges', hall: 'Is device ke behtareen matches', noHall: 'List mein aane ke liye ek match khatam karein.',
     resetScore: 'Score reset karein', resetSure: 'Points, rank aur badges mitane ke liye dobara tap karein', resetDone: 'Score reset ho gaya',
     graphics: 'Graphics', gLow: 'Light (sab se smooth)', gAuto: 'Auto', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (taqatwar device ke liye)', graphicsHelp: 'Light har phone par behtareen chalta hai. Device smooth rahe tab hi ooper jayein.',
-    language: 'Zaban', languageHelp: 'Menu, paighamat aur players ki guftagu. Awaz English hi rahegi.',
+    language: 'Zaban', languageHelp: 'Menu, paighamat aur players ki guftagu.',
     done: 'Ho gaya', rankUp: '{icon} Nayi rank: {title}!', newBadge: '{icon} Badge: {name}!', gained: '+{n} rank points', hallPlace: '🏅 Aap ke behtareen matches mein #{n}',
     forfeit: '🎲 {name} ki saza', forfeitLine: 'Agar ek hi kamre mein hain: {name} ko {text}.',
     rotateBig: 'Bare view ke liye ghumayein', rotateHide: 'Rotate option chhupayein', rotateTurn: 'Phone ko tircha karein. Na ghoome to rotation lock band karein.',

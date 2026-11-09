@@ -127,7 +127,7 @@ export default {
     badges: 'Insignias', hall: 'Mejores partidas en este dispositivo', noHall: 'Termina una partida para entrar en la lista.',
     resetScore: 'Borrar puntos', resetSure: 'Toca otra vez para borrar puntos, rango e insignias', resetDone: 'Puntos borrados',
     graphics: 'Gráficos', gLow: 'Ligero (el más fluido)', gAuto: 'Automático', gMedium: 'Medio', gHigh: 'Alto', gUltra: '4K (para equipos potentes)', graphicsHelp: 'Ligero va mejor en cualquier teléfono. Sube solo si sigue fluido.',
-    language: 'Idioma', languageHelp: 'Menús, mensajes y la charla de los jugadores. Las voces siguen en inglés.',
+    language: 'Idioma', languageHelp: 'Menús, mensajes y la charla de los jugadores.',
     done: 'Listo', rankUp: '{icon} Nuevo rango: ¡{title}!', newBadge: '{icon} Insignia: ¡{name}!', gained: '+{n} puntos de rango', hallPlace: '🏅 N.º {n} de tus mejores partidas',
     forfeit: '🎲 Prenda para {name}', forfeitLine: 'Si están en la misma sala: {name} tiene que {text}.',
     rotateBig: 'Gira para ver más grande', rotateHide: 'Ocultar la opción de girar', rotateTurn: 'Pon el teléfono de lado. Si no gira, quita el bloqueo de rotación.',

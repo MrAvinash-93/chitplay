@@ -66,7 +66,7 @@ function clockTexture() {
   });
 }
 
-function slateTexture() {
+function slateTexture(title = 'CHITPLAY', lines = ['King      1000', 'Queen      800', 'Police     500', 'Thief        0']) {
   return tex(1024, 720, (g, w, h) => {
     g.fillStyle = '#1f2a26'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 300; i++) {           // old chalk smudges
@@ -76,9 +76,9 @@ function slateTexture() {
     g.strokeStyle = '#7a5532'; g.lineWidth = 34; g.strokeRect(0, 0, w, h);
     g.fillStyle = 'rgba(245,245,235,.92)'; g.textAlign = 'left';
     g.font = '700 72px "Comic Sans MS", "Segoe Print", cursive';
-    g.fillText('CHITPLAY', 66, 124);
+    g.fillText(String(title).slice(0, 18), 66, 124);
     g.font = '52px "Comic Sans MS", "Segoe Print", cursive';
-    ['King      1000', 'Queen      800', 'Police     500', 'Thief        0'].forEach((t, i) => g.fillText(t, 74, 232 + i * 92));
+    lines.slice(0, 4).forEach((t, i) => g.fillText(String(t).slice(0, 22), 74, 232 + i * 92));
     g.strokeStyle = 'rgba(245,245,235,.8)'; g.lineWidth = 5;
     g.beginPath(); g.moveTo(70, 150); g.lineTo(520, 150); g.stroke();
     for (let i = 0; i < 4; i++) {             // a tally of who won
@@ -158,6 +158,14 @@ export function buildRoomDetails(scene, wallMaterial, anisotropy) {
   slate.position.set(0.25, 1.5, -2.575);
   slate.rotation.z = -0.012;
   scene.add(slate);
+  /** Chalk something new on the slate: the game being played and its scores. */
+  const setSlate = (title, lines) => {
+    const t = slateTexture(title, lines);
+    t.anisotropy = anisotropy || 8;
+    slate.material.map?.dispose();
+    slate.material.map = t;
+    slate.material.needsUpdate = true;
+  };
 
   /* shelf with school things on the right wall */
   const shelfX = 4.0, shelfZ = -0.5;
@@ -197,4 +205,5 @@ export function buildRoomDetails(scene, wallMaterial, anisotropy) {
   batHandle.position.set(-3.6, 0.92, -2.35);
   batHandle.rotation.z = 0.14;
   scene.add(batHandle);
+  return { setSlate };
 }

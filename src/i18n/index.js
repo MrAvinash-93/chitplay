@@ -4,9 +4,9 @@
  * only when somebody picks it. Anything a language doesn't have yet falls back to English,
  * so nothing is ever blank.
  */
-import EN from './en.js?v=20261108-0913';
+import EN from './en.js?v=20261110-0233';
 
-const V = '?v=20261108-0913';
+const V = '?v=20261110-0233';
 const LOADERS = {
   hinglish: () => import(`./hinglish.js${V}`),
   urdu: () => import(`./urdu.js${V}`),
@@ -20,11 +20,16 @@ const LOADERS = {
   french: () => import(`./french.js${V}`),
   portuguese: () => import(`./portuguese.js${V}`),
   spanish: () => import(`./spanish.js${V}`),
+  hindi: () => import(`./hindi.js${V}`),
+  indonesian: () => import(`./indonesian.js${V}`),
+  turkish: () => import(`./turkish.js${V}`),
+  italian: () => import(`./italian.js${V}`),
 };
 
 /** In the picker, each language under its own name. `short` goes on the button in the top bar. */
 export const LANGUAGES = [
   { id: 'en', label: 'English', short: 'EN' },
+  { id: 'hindi', label: 'हिन्दी', short: 'हि' },
   { id: 'hinglish', label: 'Hinglish', short: 'HI' },
   { id: 'urdu', label: 'Roman Urdu', short: 'UR' },
   { id: 'nepali', label: 'Roman Nepali', short: 'NE' },
@@ -37,6 +42,9 @@ export const LANGUAGES = [
   { id: 'french', label: 'Français', short: 'FR' },
   { id: 'portuguese', label: 'Português', short: 'PT' },
   { id: 'spanish', label: 'Español', short: 'ES' },
+  { id: 'indonesian', label: 'Bahasa Indonesia', short: 'ID' },
+  { id: 'turkish', label: 'Türkçe', short: 'TR' },
+  { id: 'italian', label: 'Italiano', short: 'IT' },
 ];
 export const isLanguage = (id) => LANGUAGES.some(l => l.id === id);
 

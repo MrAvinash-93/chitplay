@@ -127,7 +127,7 @@ export default {
     badges: 'Badge', hall: 'Yo device ka uttam match', noHall: 'List ma aauna euta match sakaunuhos.',
     resetScore: 'Score reset garnuhos', resetSure: 'Point, rank ra badge metauna feri tap garnuhos', resetDone: 'Score reset bhayo',
     graphics: 'Graphics', gLow: 'Light (sabai bhanda smooth)', gAuto: 'Auto', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (baliyo device ko lagi)', graphicsHelp: 'Light har phone ma ramro chalchha. Device smooth bhaye matra mathi januhos.',
-    language: 'Bhasha', languageHelp: 'Menu, sandesh ra player ko kurakani. Aawaj English nai rahanchha.',
+    language: 'Bhasha', languageHelp: 'Menu, sandesh ra player ko kurakani.',
     done: 'Bhayo', rankUp: '{icon} Naya rank: {title}!', newBadge: '{icon} Badge: {name}!', gained: '+{n} rank point', hallPlace: '🏅 Tapai ko uttam match ma #{n}',
     forfeit: '🎲 {name} ko sajaya', forfeitLine: 'Eutai kotha ma hunuhunchha bhane: {name} le {text}.',
     rotateBig: 'Thulo view ko lagi ghumaunuhos', rotateHide: 'Rotate option lukaunuhos', rotateTurn: 'Phone terso parnuhos. Naghume rotation lock banda garnuhos.',

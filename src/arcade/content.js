@@ -1,0 +1,176 @@
+/**
+ * Words, prompts and riddles for the party games. Everything here is written for ChitPlay,
+ * suits every age and costs nothing to play: no dares that are dangerous, rude or embarrassing,
+ * no questions about private matters. Add to the lists freely; the games pick at random.
+ */
+
+/** Who Is the Spy: most players get the first word, the spy gets the second. */
+export const SPY_WORDS = {
+  food: [['Pizza', 'Burger'], ['Tea', 'Coffee'], ['Mango', 'Papaya'], ['Ice cream', 'Kulfi'], ['Rice', 'Noodles'], ['Samosa', 'Spring roll'],
+    ['Chocolate', 'Toffee'], ['Orange', 'Lemon'], ['Bread', 'Chapati'], ['Popcorn', 'Chips']],
+  places: [['Beach', 'Swimming pool'], ['School', 'College'], ['Hospital', 'Clinic'], ['Airport', 'Railway station'], ['Zoo', 'Farm'],
+    ['Cinema', 'Theatre'], ['Library', 'Bookshop'], ['Park', 'Garden'], ['Market', 'Mall']],
+  things: [['Phone', 'Tablet'], ['Pen', 'Pencil'], ['Umbrella', 'Raincoat'], ['Watch', 'Clock'], ['Chair', 'Sofa'], ['Bicycle', 'Scooter'],
+    ['Pillow', 'Blanket'], ['Mirror', 'Window'], ['Kite', 'Balloon'], ['Torch', 'Candle']],
+  animals: [['Dog', 'Wolf'], ['Cat', 'Tiger'], ['Horse', 'Donkey'], ['Parrot', 'Pigeon'], ['Lion', 'Leopard'], ['Cow', 'Buffalo'],
+    ['Dolphin', 'Shark'], ['Monkey', 'Gorilla'], ['Butterfly', 'Bee'], ['Frog', 'Turtle']],
+};
+export const SPY_CATEGORIES = [['food', 'Food'], ['places', 'Places'], ['things', 'Things'], ['animals', 'Animals'], ['mixed', 'Mixed']];
+
+/** Truth or Dare: friendly prompts that work with family, friends or classmates. */
+export const TRUTHS = [
+  'What is the funniest thing that happened to you this year?', 'Which food could you eat every day?', 'What was your favourite cartoon as a child?',
+  'What is a small thing that always makes you happy?', 'Which song do you secretly sing along to?', 'What is the best gift you have ever received?',
+  'If you could have any pet, what would it be?', 'What is one thing you are really good at?', 'Which place would you love to visit one day?',
+  'What is the silliest thing you were scared of as a child?', 'Who in this room makes you laugh the most?', 'What is your favourite festival and why?',
+  'What would you do with a free day and no phone?', 'Which superpower would you choose?',
+  'What is a habit you would like to start?', 'Which teacher or adult taught you something important?', 'What is the best meal you have ever had?',
+  'What game did you love playing as a child?', 'If you wrote a book, what would it be about?', 'What is something new you learned recently?',
+  'What do you do when you cannot sleep?', 'What is your favourite word in any language?', 'Which film could you watch again and again?',
+  'What is the kindest thing someone did for you?', 'What would your dream job be?', 'Which season do you like best?', 'What is your hidden talent?',
+  'If you could meet anyone from history, who would it be?', 'What makes a perfect weekend for you?',
+];
+export const DARES = [
+  'Do your best impression of an animal for 10 seconds.', 'Say the alphabet backwards as far as you can.', 'Talk like a news reader for the next round.',
+  'Make up a short poem about the person on your left.', 'Do 10 jumping jacks.', 'Hum a song and let the others guess it.',
+  'Balance a book on your head for 15 seconds.', 'Tell a joke. Everyone has to try not to laugh.', 'Speak only in questions until your next turn.',
+  'Do a slow-motion walk across the room.', 'Name five fruits in five seconds.', 'Pull your funniest face and hold it for 5 seconds.',
+  'Describe your day as if it were an adventure film.', 'Draw a cat with your eyes closed.', 'Say a tongue twister three times fast.',
+  'Act like a robot until your next turn.', 'Give everyone in the room a compliment.', 'Spell your name with your elbow in the air.',
+  'Do your best dance move for 10 seconds.', 'Sing the first line of any song like an opera singer.', 'Pretend to be a waiter and take everyone’s order.',
+  'Say “ChitPlay” in three different voices.', 'Clap a rhythm and let the next player copy it.', 'Make the sound of three different vehicles.',
+  'Walk like a penguin to the door and back.', 'Count to 20 in another language (or try!).', 'Invent a new handshake with the player on your right.',
+  'Describe this room as a travel guide would.', 'Hold a plank for 10 seconds.', 'Pretend to sell a pen to the group in 20 seconds.',
+];
+
+/** Riddle Chits: [riddle, answer, hint]. */
+export const RIDDLES = [
+  ['What has keys but can’t open locks?', 'A piano', 'It makes music.'],
+  ['What gets wetter the more it dries?', 'A towel', 'You use it after a bath.'],
+  ['What has hands but cannot clap?', 'A clock', 'It tells you something all day.'],
+  ['What has a neck but no head?', 'A bottle', 'You drink from it.'],
+  ['What can you catch but not throw?', 'A cold', 'You may sneeze.'],
+  ['What goes up but never comes down?', 'Your age', 'Birthdays.'],
+  ['What has many teeth but cannot bite?', 'A comb', 'Your hair knows it.'],
+  ['I have cities but no houses, forests but no trees, water but no fish. What am I?', 'A map', 'You read it to travel.'],
+  ['What can travel around the world while staying in a corner?', 'A stamp', 'It goes on letters.'],
+  ['The more you take, the more you leave behind. What are they?', 'Footsteps', 'You make them when you walk.'],
+  ['What has one eye but cannot see?', 'A needle', 'Thread goes through it.'],
+  ['What is full of holes but still holds water?', 'A sponge', 'It is in the kitchen.'],
+  ['What belongs to you, but other people use it more than you?', 'Your name', 'People call you with it.'],
+  ['What can you break without touching it?', 'A promise', 'You say it.'],
+  ['What comes once in a minute, twice in a moment, but never in a thousand years?', 'The letter M', 'Look at the spelling.'],
+  ['I am tall when I am young and short when I am old. What am I?', 'A candle', 'It gives light.'],
+  ['What has legs but cannot walk?', 'A table', 'You eat at it.'],
+  ['What runs but never walks, has a mouth but never talks?', 'A river', 'It flows to the sea.'],
+  ['What can fill a room but takes up no space?', 'Light', 'Switch it on.'],
+  ['What has a thumb and four fingers but is not alive?', 'A glove', 'You wear it in winter.'],
+  ['If you drop me I crack, but smile at me and I smile back. What am I?', 'A mirror', 'You see yourself.'],
+  ['What word is spelled wrong in every dictionary?', 'Wrong', 'Read the question again.'],
+  ['What starts with T, ends with T and has T in it?', 'A teapot', 'It holds a drink.'],
+  ['What month has 28 days?', 'All of them', 'Every month has at least 28.'],
+  ['What is always in front of you but cannot be seen?', 'The future', 'Tomorrow.'],
+  ['What has a head and a tail but no body?', 'A coin', 'You toss it.'],
+  ['What building has the most stories?', 'A library', 'Books.'],
+  ['What can you hold in your right hand but not in your left?', 'Your left hand', 'Think about your hands.'],
+  ['What goes through cities and fields but never moves?', 'A road', 'Cars use it.'],
+  ['What has to be broken before you can use it?', 'An egg', 'Breakfast.'],
+  ['What invention lets you look right through a wall?', 'A window', 'Glass.'],
+  ['What is so fragile that saying its name breaks it?', 'Silence', 'Shh…'],
+  ['What has many keys but no doors, space but no room?', 'A keyboard', 'You type on it.'],
+  ['What kind of band never plays music?', 'A rubber band', 'It stretches.'],
+  ['What is black when clean and white when dirty?', 'A blackboard', 'Chalk.'],
+  ['Forward I am heavy, backward I am not. What am I?', 'A ton', 'Read it backwards.'],
+  ['What flies without wings?', 'Time', 'Clocks measure it.'],
+  ['What has words but never speaks?', 'A book', 'You read it.'],
+  ['Which room has no doors or windows?', 'A mushroom', 'It grows after rain.'],
+  ['What is easy to get into but hard to get out of?', 'Trouble', 'Better avoid it.'],
+];
+
+/** Majority Vote: everyone guesses what most of the group will choose. */
+export const MAJORITY = [
+  ['Best snack for a movie night?', ['Popcorn', 'Chips', 'Chocolate', 'Fruit']],
+  ['Best time of day?', ['Morning', 'Afternoon', 'Evening', 'Night']],
+  ['Which pet would you choose?', ['Dog', 'Cat', 'Fish', 'Bird']],
+  ['Perfect holiday?', ['Beach', 'Mountains', 'City', 'Stay home']],
+  ['Tea or coffee?', ['Tea', 'Coffee', 'Neither']],
+  ['Which superpower?', ['Flying', 'Invisibility', 'Super speed', 'Mind reading']],
+  ['Best season?', ['Summer', 'Monsoon', 'Winter', 'Spring']],
+  ['Favourite way to travel?', ['Train', 'Plane', 'Car', 'Bus']],
+  ['Best breakfast?', ['Paratha', 'Cereal', 'Eggs', 'Idli or dosa']],
+  ['Sweet or salty?', ['Sweet', 'Salty']],
+  ['Which game would you play first?', ['Cricket', 'Football', 'Chess', 'Ludo']],
+  ['Books or films?', ['Books', 'Films']],
+  ['Best dessert?', ['Ice cream', 'Gulab jamun', 'Cake', 'Kheer']],
+  ['Early bird or night owl?', ['Early bird', 'Night owl']],
+  ['Which colour for a new phone?', ['Black', 'White', 'Blue', 'Red']],
+  ['Rain or sunshine?', ['Rain', 'Sunshine']],
+  ['Best pizza topping?', ['Cheese', 'Vegetables', 'Paneer', 'Mushroom']],
+  ['Which would you rather visit?', ['Space', 'Deep sea', 'Jungle', 'Desert']],
+  ['Call or text?', ['Call', 'Text']],
+  ['Best way to relax?', ['Music', 'Sleep', 'Walk', 'Games']],
+  ['Favourite fruit?', ['Mango', 'Apple', 'Banana', 'Grapes']],
+  ['Mountains or sea?', ['Mountains', 'Sea']],
+  ['Which chit would you want to draw?', ['King', 'Queen', 'Police', 'Thief']],
+  ['Best number?', ['3', '7', '8', '10']],
+  ['Spicy food?', ['Love it', 'A little', 'No thanks']],
+  ['Ideal pet name?', ['Tommy', 'Moti', 'Sheru', 'Coco']],
+  ['Which is scarier?', ['Spiders', 'Heights', 'Dark', 'Exams']],
+  ['Best festival food?', ['Sweets', 'Biryani', 'Snacks', 'Everything']],
+  ['Shoes or slippers at home?', ['Shoes', 'Slippers', 'Barefoot']],
+  ['Which animal is the smartest?', ['Dolphin', 'Crow', 'Elephant', 'Dog']],
+  ['How do you eat a samosa?', ['With chutney', 'With ketchup', 'Plain']],
+  ['Best board game?', ['Ludo', 'Carrom', 'Chess', 'Snakes and ladders']],
+  ['Hot or cold drink?', ['Hot', 'Cold']],
+  ['Who wins a race?', ['Cheetah', 'Horse', 'Ostrich', 'Greyhound']],
+  ['Window or aisle seat?', ['Window', 'Aisle']],
+  ['Best colour for a kite?', ['Red', 'Yellow', 'Green', 'Rainbow']],
+];
+
+/**
+ * Who Is the Spy at a table with bots or strangers: pairs of similar words, and clue cards for each
+ * word. Neighbouring words share a clue on purpose, which is what makes the spy hard to spot.
+ */
+export const SPY_PAIRS = [
+  ['Pizza', 'Burger'], ['Tea', 'Coffee'], ['Mango', 'Papaya'], ['Ice cream', 'Kulfi'], ['Samosa', 'Spring roll'], ['Bread', 'Chapati'],
+  ['Beach', 'Swimming pool'], ['Hospital', 'Clinic'], ['Airport', 'Railway station'], ['Cinema', 'Theatre'], ['Library', 'Bookshop'], ['Market', 'Mall'],
+  ['Phone', 'Tablet'], ['Pen', 'Pencil'], ['Umbrella', 'Raincoat'], ['Watch', 'Clock'], ['Bicycle', 'Scooter'], ['Kite', 'Balloon'],
+  ['Dog', 'Wolf'], ['Cat', 'Tiger'], ['Horse', 'Donkey'], ['Lion', 'Leopard'], ['Dolphin', 'Shark'], ['Butterfly', 'Bee'],
+];
+export const CLUES = {
+  Pizza: ['Comes in slices', 'Round', 'Cheesy', 'Has a crust'], Burger: ['Held in two hands', 'Has a bun', 'Cheesy', 'Comes with fries'],
+  Tea: ['Hot in a cup', 'Made from leaves', 'Goes with biscuits', 'Morning habit'], Coffee: ['Hot in a cup', 'Made from beans', 'Keeps you awake', 'Morning habit'],
+  Mango: ['Sweet and yellow', 'Has one big stone', 'A summer treat', 'Grows on a tree'], Papaya: ['Sweet and yellow', 'Full of black seeds', 'Good for digestion', 'Grows on a tree'],
+  'Ice cream': ['Cold and sweet', 'Melts fast', 'Comes in a cone', 'Many flavours'], Kulfi: ['Cold and sweet', 'Melts fast', 'On a stick', 'Tastes of cardamom'],
+  Samosa: ['Crispy outside', 'Triangle', 'Fried', 'Goes with chutney'], 'Spring roll': ['Crispy outside', 'Long and thin', 'Fried', 'Goes with sauce'],
+  Bread: ['Baked', 'Comes in slices', 'Makes a sandwich', 'Goes with butter'], Chapati: ['Round and flat', 'Made at home', 'Goes with dal', 'Goes with butter'],
+  Beach: ['You get wet', 'Sand everywhere', 'Waves', 'Good for a holiday'], 'Swimming pool': ['You get wet', 'Has a deep end', 'Smells of chlorine', 'Has lanes'],
+  Hospital: ['Doctors work here', 'Very big building', 'Has an emergency room', 'People get better'], Clinic: ['Doctors work here', 'A small place', 'A quick visit', 'People get better'],
+  Airport: ['You carry bags', 'You check in', 'Security line', 'Goes up in the sky'], 'Railway station': ['You carry bags', 'Has platforms', 'Tea sellers', 'Long journeys'],
+  Cinema: ['Sit in the dark', 'Big screen', 'Popcorn', 'Buy a ticket'], Theatre: ['Sit in the dark', 'Live actors', 'A stage', 'Buy a ticket'],
+  Library: ['Full of books', 'Keep quiet', 'Borrow and return', 'Reading tables'], Bookshop: ['Full of books', 'You pay at the till', 'New covers', 'Great for gifts'],
+  Market: ['Lots of shops', 'People bargain', 'Open air', 'Fresh vegetables'], Mall: ['Lots of shops', 'Air conditioned', 'Has escalators', 'Food court'],
+  Phone: ['Has a screen', 'Fits in a pocket', 'You make calls', 'Needs charging'], Tablet: ['Has a screen', 'Bigger than a book', 'Good for films', 'Needs charging'],
+  Pen: ['You write with it', 'Uses ink', 'Has a cap', 'Hard to erase'], Pencil: ['You write with it', 'Needs sharpening', 'Has an eraser', 'Made of wood'],
+  Umbrella: ['For the rain', 'Opens up', 'You hold it', 'Has a handle'], Raincoat: ['For the rain', 'You wear it', 'Has a hood', 'Has buttons'],
+  Watch: ['Tells the time', 'On your wrist', 'Has a strap', 'A nice gift'], Clock: ['Tells the time', 'On the wall', 'Has an alarm', 'Big numbers'],
+  Bicycle: ['Two wheels', 'You pedal it', 'No fuel needed', 'Good exercise'], Scooter: ['Two wheels', 'Has an engine', 'Needs a helmet', 'Needs petrol'],
+  Kite: ['Flies in the air', 'On a string', 'Needs wind', 'Festival fun'], Balloon: ['Flies in the air', 'Full of air', 'Can pop', 'Birthday fun'],
+  Dog: ['Four legs', 'Barks', 'Loyal friend', 'Wags its tail'], Wolf: ['Four legs', 'Howls', 'Lives in a pack', 'Lives in the forest'],
+  Cat: ['Has whiskers', 'Purrs', 'Loves naps', 'Lives indoors'], Tiger: ['Has whiskers', 'Has stripes', 'Roars', 'Lives in the jungle'],
+  Horse: ['Has hooves', 'Runs fast', 'You can ride it', 'Has a long mane'], Donkey: ['Has hooves', 'Long ears', 'Carries loads', 'Very stubborn'],
+  Lion: ['A big cat', 'Has a mane', 'Lives in a group', 'Roars loudly'], Leopard: ['A big cat', 'Has spots', 'Climbs trees', 'Hunts alone'],
+  Dolphin: ['Lives in the sea', 'Very friendly', 'Jumps out of water', 'Clicks and whistles'], Shark: ['Lives in the sea', 'Sharp teeth', 'A fin on top', 'A fearsome hunter'],
+  Butterfly: ['Has wings', 'Very colourful', 'Starts as a caterpillar', 'Loves flowers'], Bee: ['Has wings', 'Makes honey', 'Can sting', 'Loves flowers'],
+};
+
+/** Consequences at a table with bots or strangers: each part of the story, with lines to choose from. */
+export const STORY_LINES = [
+  ['Who?', ['The brave grandmother', 'A very tired detective', 'The king of the jungle', 'A dancing postman', 'My neighbour’s goat', 'A retired astronaut']],
+  ['Met whom?', ['…met a talking parrot', '…met the school principal', '…met a confused ghost', '…met a famous chef', '…met a sleepy lion', '…met their own twin']],
+  ['Where?', ['…on the roof of a moving bus', '…in a very long queue', '…behind the samosa stall', '…at the top of a mountain', '…inside a giant shoe', '…at a wedding nobody invited them to']],
+  ['What did the first one say?', ['“Have you seen my umbrella?”', '“I knew this would happen.”', '“Is this seat taken?”', '“Do you speak fish?”', '“We need more chutney.”', '“I can explain everything.”']],
+  ['What did the other one say?', ['“Only on Tuesdays.”', '“Ask my lawyer.”', '“That’s what my mother said.”', '“Not without my hat!”', '“Try turning it off and on.”', '“Who told you?”']],
+  ['What happened next?', ['They opened a samosa shop together.', 'It began to rain marbles.', 'They danced until sunrise.', 'Everyone forgot why they came.', 'A goat won the election.', 'They swapped shoes and went home.']],
+  ['And what did the world say?', ['Everyone agreed it was the best day ever.', 'The newspapers called it a miracle.', 'Nobody believed a word of it.', 'The whole town clapped.', 'People still talk about it today.', 'The cat, as usual, did not care.']],
+];

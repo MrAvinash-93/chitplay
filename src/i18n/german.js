@@ -127,7 +127,7 @@ export default {
     badges: 'Abzeichen', hall: 'Beste Partien auf diesem Gerät', noHall: 'Beende eine Partie, um hier zu erscheinen.',
     resetScore: 'Punkte zurücksetzen', resetSure: 'Nochmal tippen, um Punkte, Rang und Abzeichen zu löschen', resetDone: 'Punkte zurückgesetzt',
     graphics: 'Grafik', gLow: 'Leicht (am flüssigsten)', gAuto: 'Automatisch', gMedium: 'Mittel', gHigh: 'Hoch', gUltra: '4K (für starke Geräte)', graphicsHelp: 'Leicht läuft auf jedem Handy am besten. Höher nur, wenn dein Gerät flüssig bleibt.',
-    language: 'Sprache', languageHelp: 'Menüs, Nachrichten und Gespräche der Spieler. Die Stimmen bleiben Englisch.',
+    language: 'Sprache', languageHelp: 'Menüs, Nachrichten und Gespräche der Spieler.',
     done: 'Fertig', rankUp: '{icon} Neuer Rang: {title}!', newBadge: '{icon} Abzeichen: {name}!', gained: '+{n} Rangpunkte', hallPlace: '🏅 Platz {n} deiner besten Partien',
     forfeit: '🎲 Aufgabe für {name}', forfeitLine: 'Wenn ihr im selben Raum seid: {name} muss {text}.',
     rotateBig: 'Drehen für mehr Platz', rotateHide: 'Dreh-Hinweis ausblenden', rotateTurn: 'Dreh dein Handy quer. Bleibt es hochkant, schalte die Rotationssperre aus.',

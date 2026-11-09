@@ -10,6 +10,27 @@ const SOUTH_ASIA_F = 'Priya Neha Pooja Anjali Kavita Sunita Rekha Meena Ritu Shr
 
 const NAMES = {
   IN: { m: list(SOUTH_ASIA_M), f: list(SOUTH_ASIA_F) },
+  /* the same people, written the way each language's players read: Hindi in Devanagari, the rest in Latin letters */
+  IN_DEVA: {
+    m: list('आकाश राहुल रोहन अमन अर्जुन करण विकास निखिल दीपक मनीष अजय विजय संजय गौरव सौरभ अभिषेक हर्ष यश कुणाल मोहित रोहित अमित विवेक नितिन वरुण ईशान आदित्य प्रणव सिद्धार्थ शुभम'),
+    f: list('प्रिया नेहा पूजा अंजलि कविता रेखा रितु श्रेया स्नेहा दिव्या निशा आरती स्वाति कोमल पायल अनन्या ईशा किरण सपना प्रीति रश्मि श्वेता रिया सिमरन ज्योति मानसी निकिता पल्लवी साक्षी तन्वी'),
+  },
+  CN_LATIN: {
+    m: list('Wei Qiang Lei Jun Yang Yong Jie Tao Ming Chao Haoran Zixuan Yuhang Junjie Zhiqiang Tianyu Wenbo Haitao Xiaodong Jiawei Pengfei Haoyu Bowen Zihao Yichen'),
+    f: list('Fang Na Min Jing Li Xiuying Xiaohong Meimei Tingting Xue Xinyi Yutong Siyu Jiayi Meiling Xiaoyan Huimin Shihan Mengyao Yulan Zihan Kexin Ruoxi Yaqi Lin'),
+  },
+  JP_LATIN: {
+    m: list('Haruto Kenta Daiki Yuki Shota Takumi Riku Sota Ren Hiroto Takeshi Masaru Daisuke Yuma Kaito Sora Hayato Kenji Ryota Itsuki'),
+    f: list('Sakura Yui Hana Aoi Miyu Riko Mei Hina Ayaka Nanami Haruka Sayaka Misaki Hinata Ai Mayumi Keiko Yumi Rin Akari'),
+  },
+  KR_LATIN: {
+    m: list('Minjun Seojun Doyun Yejun Siwoo Hajun Juwon Jiho Jihu Junseo Hyunwoo Donghyun Sungmin Jaehyun Taehyun Sangwoo Jinwoo Woojin Gunwoo Minho'),
+    f: list('Seoyeon Seoyun Jiwoo Hayun Minseo Jimin Subin Yujin Eunji Jieun Hyejin Miyoung Sujin Yeeun Daeun Soyeon Yuna Haeun Nayeon Chaewon'),
+  },
+  RU_LATIN: {
+    m: list('Ivan Dmitry Alexey Sergey Andrey Mikhail Nikolai Pavel Maxim Artyom Kirill Egor Denis Roman Vladimir Ilya Nikita Timur Oleg Yuri'),
+    f: list('Anna Maria Elena Olga Natalia Tatiana Irina Svetlana Ekaterina Darya Polina Alina Sofia Ksenia Viktoria Yulia Vera Alisa Milana Nadia'),
+  },
   PK: {
     m: list('Ahmed Ali Hassan Hussain Bilal Usman Omar Hamza Zain Faisal Imran Kamran Salman Asad Tariq Waqas Adnan Shahid Junaid Fahad Rizwan Danish Saad Shoaib Yasir Nabeel Haris Talha Arslan Babar'),
     f: list('Ayesha Fatima Sana Hina Maryam Zainab Sara Nida Iqra Rabia Saba Mehwish Amna Kiran Sadia Bushra Farah Aiman Hira Noor Sidra Laiba Maham Anum Alina Rida Mahnoor Javeria Asma Samina'),
@@ -138,6 +159,8 @@ export function detectNameRegion() {
   return 'US';
 }
 
+/** The name list for a game language: its own script, or Latin letters for the romanised languages. */
+export const NAME_REGION_FOR = { hindi: 'IN_DEVA', hinglish: 'IN', urdu: 'PK', nepali: 'NP', bangla: 'BD', romaji: 'JP_LATIN', korean_roman: 'KR_LATIN', pinyin: 'CN_LATIN', russian_latin: 'RU_LATIN', german: 'DE', french: 'FR', portuguese: 'BR', spanish: 'MX', indonesian: 'ID', turkish: 'TR', italian: 'IT' };
 export const NAME_REGIONS = Object.keys(NAMES);
 export const namesOf = (region) => NAMES[region] || NAMES.US;
 
@@ -154,17 +177,23 @@ export function randomName(gender = 'm', region = detectNameRegion()) {
   return pickFrom(gender === 'f' ? n.f : n.m);
 }
 
-/** `count` different opponents, boys and girls mixed, none named like anyone in `exclude`. */
-export function pickOpponents(count, exclude = [], region = detectNameRegion()) {
+/**
+ * `count` different opponents, none named like anyone in `exclude`. About two in three are of the
+ * other gender to the person playing (`me`: 'm' or 'f'), so a table feels mixed and lively;
+ * without `me` it is half and half.
+ */
+export function pickOpponents(count, exclude = [], region = detectNameRegion(), me = null) {
   const taken = new Set(exclude.map(n => String(n).toLowerCase()));
   const out = [];
-  let gender = Math.random() < 0.5 ? 'm' : 'f';
+  const other = me === 'f' ? 'm' : 'f';
+  const lean = me === 'm' || me === 'f' ? 0.65 : 0.5;
   for (let i = 0; i < count; i++) {
-    const pool = (gender === 'f' ? namesOf(region).f : namesOf(region).m).filter(n => !taken.has(n.toLowerCase()));
-    const name = pickFrom(pool);
+    const gender = Math.random() < lean ? other : (other === 'f' ? 'm' : 'f');
+    const all = gender === 'f' ? namesOf(region).f : namesOf(region).m;
+    const pool = all.filter(n => !taken.has(n.toLowerCase()));
+    const name = pickFrom(pool.length ? pool : all);
     taken.add(name.toLowerCase());
     out.push({ name, gender });
-    gender = gender === 'f' ? 'm' : 'f';
   }
   return out;
 }

@@ -8,14 +8,16 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261108-0913';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-0233';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261108-0913';
-import { lookOf, lookKey } from './character-looks.js?v=20261108-0913';
-import { buildRoomDetails } from './room-details.js?v=20261108-0913';
-import { COUNTRIES } from './countries.js?v=20261108-0913';
-import { isSpecialEmoji } from './table-talk.js?v=20261108-0913';
-import * as Themes from './themes.js?v=20261108-0913';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-0233';
+import { lookOf, lookKey } from './character-looks.js?v=20261110-0233';
+import { buildRoomDetails } from './room-details.js?v=20261110-0233';
+import { COUNTRIES } from './countries.js?v=20261110-0233';
+import { isSpecialEmoji } from './table-talk.js?v=20261110-0233';
+import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-0233';
+import { decorMakers } from './decor-makers.js?v=20261110-0233';
+import * as Themes from './themes.js?v=20261110-0233';
 
 const TAU = Math.PI * 2;
 
@@ -265,7 +267,7 @@ function createWorld() {
   tube.position.set(0.4, 2.35, -2.55);
   scene.add(tube);
 
-  buildRoomDetails(scene, wallMat, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
+  const roomDetails = buildRoomDetails(scene, wallMat, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
 
   /* The mat */
   const MAT_W = 3.0, MAT_D = 2.0;
@@ -275,6 +277,10 @@ function createWorld() {
   mat.material.bumpMap = mat.material.map;
   mat.receiveShadow = true;
   scene.add(mat);
+
+  /* The table games put their board here, on the mat in the middle of the room */
+  const boardRoot = new THREE.Group();
+  scene.add(boardRoot);
 
   /* Lighting: evening sun through a grilled window, tubelight, hemisphere fill */
   const sunTarget = new THREE.Object3D();
@@ -318,8 +324,97 @@ function createWorld() {
   const hemi = new THREE.HemisphereLight('#f6d6b4', '#3a2018', 0.7);
   scene.add(hemi);
   const tubeLight = new THREE.PointLight('#e8f0ff', 14, 0, 2);
+  const moodLight = new THREE.PointLight('#ffffff', 0, 7, 1.6);
+  moodLight.position.set(0, 2.1, -0.6);
+  scene.add(moodLight);
+  const ROOM_KEY = 'chitplay.room';
+  const MOODS = {
+    warm: { hemi: ['#f6d6b4', '#3a2018'], tube: '#e8f0ff', mood: 0 },
+    cool: { hemi: ['#d6e6ff', '#1d2433'], tube: '#dfe9ff', mood: 0 },
+    sunset: { hemi: ['#ffc58a', '#4a1f10'], tube: '#ffd9b0', mood: 3, color: '#ff7a3a' },
+    neon: { hemi: ['#b9a6ff', '#140a26'], tube: '#c9b8ff', mood: 6, color: '#a24bff' },
+    disco: { hemi: ['#e9dcff', '#20102a'], tube: '#ffffff', mood: 7, disco: true },
+  };
+  let room = { mood: 'warm', wall: '', fairy: false, neon: false };
+  try { room = { ...room, ...JSON.parse(localStorage.getItem(ROOM_KEY)) }; } catch {}
+  let fairy = null, neonStrip = null;
+  let themeReady = false;   // the floor, mat and wall can change once the room is fully built
+  function buildFairy() {
+    const g = new THREE.Group();
+    const cols = ['#ffd27a', '#ff6b8a', '#7de3ff', '#9dff8a', '#ffa64d'];
+    for (let i = 0; i < 44; i++) {
+      const x = -3.4 + (i / 43) * 6.8;
+      const y = 2.12 - Math.abs(Math.sin((i / 43) * Math.PI * 4)) * 0.18;
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: cols[i % cols.length], toneMapped: false }));
+      b.position.set(x, y, -2.55);
+      g.add(b);
+    }
+    return g;
+  }
+  function buildNeon() {
+    const g = new THREE.Group();
+    const a = new THREE.Mesh(new THREE.BoxGeometry(7, 0.035, 0.035), new THREE.MeshBasicMaterial({ color: '#ff3ea5', toneMapped: false }));
+    a.position.set(0, 0.06, -2.56);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(7, 0.035, 0.035), new THREE.MeshBasicMaterial({ color: '#33e1ff', toneMapped: false }));
+    b.position.set(0, 2.3, -2.56);
+    const glow = new THREE.PointLight('#ff3ea5', 2.2, 3.5, 2);
+    glow.position.set(0, 0.3, -2.2);
+    g.add(a, b, glow);
+    return g;
+  }
+  function applyRoom() {
+    const m = MOODS[room.mood] || MOODS.warm;
+    hemi.color.set(m.hemi[0]);
+    hemi.groundColor.set(m.hemi[1]);
+    tubeLight.color.set(m.tube);
+    moodLight.intensity = m.mood;
+    if (m.color) moodLight.color.set(m.color);
+    wallMat.color.set(room.wall || '#ffffff');
+    if (room.fairy && !fairy) { fairy = buildFairy(); scene.add(fairy); }
+    if (fairy) fairy.visible = !!room.fairy;
+    if (room.neon && !neonStrip) { neonStrip = buildNeon(); scene.add(neonStrip); }
+    if (neonStrip) neonStrip.visible = !!room.neon;
+    if (themeReady) applyTheme(country);
+  }
   tubeLight.position.set(0.4, 2.3, -2.3);
   scene.add(tubeLight);
+
+  applyRoom();
+
+  /* Things the player bought for the room, each in the spot they chose */
+  const decorRoot = new THREE.Group();
+  scene.add(decorRoot);
+  const M = (color, extra = {}) => std({ color, roughness: 0.6, ...extra });
+  const glowMat = (color) => new THREE.MeshBasicMaterial({ color, toneMapped: false });
+  const box3 = (w, h, d, m, x = 0, y = 0, z = 0) => { const o = shadowy(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)); o.position.set(x, y, z); return o; };
+  const cyl3 = (rt, rb, h, m, x = 0, y = 0, z = 0, seg = 14) => { const o = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m)); o.position.set(x, y, z); return o; };
+  const DECOR_MAKERS = {
+    plant() { const g = new THREE.Group(); g.add(cyl3(0.16, 0.12, 0.3, M('#b5532a'), 0, 0.15, 0)); for (let i = 0; i < 9; i++) { const l = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), M(i % 2 ? '#2f8a3a' : '#3fa34d'))); l.scale.set(1, 0.45, 0.7); l.position.set(Math.cos(i * 0.7) * 0.14, 0.4 + i * 0.07, Math.sin(i * 0.7) * 0.14); l.rotation.z = Math.cos(i) * 0.6; g.add(l); } return g; },
+    lamp() { const g = new THREE.Group(); g.add(cyl3(0.16, 0.18, 0.04, M('#2a2a2a'), 0, 0.02, 0), cyl3(0.02, 0.02, 1.5, M('#bfa060', { metalness: 0.6 }), 0, 0.77, 0), cyl3(0.14, 0.24, 0.26, M('#f6e3b8', { emissive: '#7a5a20' }), 0, 1.58, 0)); const l = new THREE.PointLight('#ffd9a0', 1.6, 3.2, 2); l.position.set(0, 1.45, 0); g.add(l); return g; },
+    beanbag() { const g = new THREE.Group(); const b = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 12), M('#d9483b', { roughness: 0.9 }))); b.scale.set(1, 0.62, 1); b.position.y = 0.26; const t = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10), M('#e85a4c', { roughness: 0.9 }))); t.scale.set(1, 0.7, 0.6); t.position.set(0, 0.45, 0.2); g.add(b, t); return g; },
+    speaker() { const g = new THREE.Group(); g.add(box3(0.42, 0.95, 0.38, M('#1d1d22'), 0, 0.48, 0)); [0.68, 0.3].forEach((y, i) => { const c = cyl3(i ? 0.15 : 0.09, i ? 0.15 : 0.09, 0.02, M('#444'), 0, y, 0.2, 18); c.rotation.x = Math.PI / 2; g.add(c); }); g.add(box3(0.36, 0.02, 0.02, glowMat('#33e1ff'), 0, 0.92, 0.2)); return g; },
+    trophies() { const g = new THREE.Group(); const wood = M('#6b4223'); g.add(box3(0.9, 1.2, 0.3, wood, 0, 0.6, 0)); [0.35, 0.75].forEach((y) => { g.add(box3(0.82, 0.03, 0.28, M('#8a5a30'), 0, y, 0.02)); [-0.25, 0, 0.25].forEach((x, k) => { const cup = new THREE.Group(); cup.add(cyl3(0.05, 0.03, 0.08, M(k === 1 ? '#ffd23f' : '#cfd8e3', { metalness: 0.8, roughness: 0.25 }), 0, 0.1, 0), cyl3(0.03, 0.04, 0.05, M('#5a3a1a'), 0, 0.03, 0)); cup.position.set(x, y + 0.01, 0.06); g.add(cup); }); }); return g; },
+    arcade() { const g = new THREE.Group(); g.add(box3(0.62, 1.6, 0.55, M('#3d1d7a'), 0, 0.8, 0)); const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.36), glowMat('#2bd8ff')); scr.position.set(0, 1.22, 0.281); scr.rotation.x = -0.12; g.add(scr); g.add(box3(0.6, 0.05, 0.25, M('#2a0f55'), 0, 0.95, 0.32)); [-0.12, 0.08, 0.16].forEach((x, i) => { const b = cyl3(0.025, 0.025, 0.03, glowMat(['#ff3b5c', '#ffd23f', '#2bff8a'][i]), x, 0.99, 0.36, 10); g.add(b); }); g.add(box3(0.62, 0.12, 0.56, glowMat('#ff3ea5'), 0, 1.66, 0)); return g; },
+    poster() { const g = new THREE.Group(); const c = document.createElement('canvas'); c.width = 256; c.height = 360; const x = c.getContext('2d'); const gr = x.createLinearGradient(0, 0, 0, 360); gr.addColorStop(0, '#7b3fe4'); gr.addColorStop(1, '#e8a317'); x.fillStyle = gr; x.fillRect(0, 0, 256, 360); x.fillStyle = '#fff'; x.font = '900 46px system-ui'; x.textAlign = 'center'; x.fillText('CHIT', 128, 120); x.fillText('PLAY', 128, 172); x.font = '120px system-ui'; x.fillText('🎮', 128, 310); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const p = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.7), std({ map: t, roughness: 0.8 })); g.add(box3(0.54, 0.74, 0.02, M('#2a1a10'), 0, 0, -0.012), p); p.position.z = 0.002; return g; },
+    clock() { const g = new THREE.Group(); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.025, 8, 36), glowMat('#ff3ea5')); const inner = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 8, 30), glowMat('#33e1ff')); g.add(ring, inner); const l = new THREE.PointLight('#ff3ea5', 1.2, 2.4, 2); l.position.z = 0.3; g.add(l); return g; },
+  };
+  // shadowy is defined further down; the makers only run later, once it exists
+  Object.assign(DECOR_MAKERS, decorMakers(THREE, { M, glowMat, box3, cyl3, shadowy: (o) => shadowy(o) }));
+  const decorMeshes = new Map();
+  function placeDecor() {
+    const { placed } = decorState();
+    decorMeshes.forEach((m, id) => { if (!placed[id]) { decorRoot.remove(m); decorMeshes.delete(id); } });
+    Object.entries(placed).forEach(([id, spotId]) => {
+      const spot = SPOTS.find(s => s.id === spotId);
+      if (!spot || !DECOR_MAKERS[id]) return;
+      let m = decorMeshes.get(id);
+      if (!m) { m = DECOR_MAKERS[id](); decorRoot.add(m); decorMeshes.set(id, m); }
+      const onFloor = placeOf(spot) === 'floor';
+      m.position.set(spot.x, onFloor ? 0 : spot.y, spot.z);
+      // floor things face the middle of the room
+      m.rotation.y = onFloor ? Math.atan2(-spot.x, -spot.z) : 0;
+    });
+  }
 
   /* Ceiling-fan shadow sweeping the mat */
   const fanShadow = new THREE.Mesh(
@@ -430,6 +525,8 @@ function createWorld() {
   }
 
   // Pencil that wrote the chits
+  let matPencil = null;
+  let matCleared = false;
   {
     const pencil = new THREE.Group();
     const body = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 0.16, 6), std({ color: '#e8b923', roughness: 0.5 })));
@@ -441,6 +538,7 @@ function createWorld() {
     pencil.rotation.set(0, 0.7, Math.PI / 2);
     pencil.position.set(0.5, 0.0105, 0.72);
     props.add(pencil);
+    matPencil = pencil;
   }
 
   // Old CRT TV on a stool, playing static
@@ -745,6 +843,79 @@ function createWorld() {
     return { pos, look: [head.x, lookY, head.z], orbit: 0, exact: true };
   };
 
+  /*
+   * A table game: the board fills whatever part of the screen the game's panel leaves free, seen at
+   * a slight angle so the pieces look solid and the players around it stay in the picture.
+   */
+  const TV = { w: 2.3, h: 1.4375, y: 1.46, z: -1.75 };
+  let tvBig = null, tvTexture = null, tvPads = [], sofa = null, seatLift = null;
+  const SEAT_H = 0.34;
+  function buildSofa() {
+    const g = new THREE.Group();
+    const velvet = std({ color: '#7a2433', roughness: 0.85 });
+    const cushion = std({ color: '#9b3346', roughness: 0.9 });
+    const wood = std({ color: '#4a2c18', roughness: 0.6 });
+    const base = shadowy(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.22, 0.95), velvet)); base.position.y = 0.17;
+    const back = shadowy(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.62, 0.22), velvet)); back.position.set(0, 0.55, 0.46);
+    g.add(base, back);
+    [-1.12, -0.37, 0.37, 1.12].forEach((x) => { const c = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.1, 0.8), cushion)); c.position.set(x, 0.32, -0.03); g.add(c); const b = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.42, 0.12), cushion)); b.position.set(x, 0.6, 0.31); b.rotation.x = -0.15; g.add(b); });
+    [-1.62, 1.62].forEach((x) => { const a = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.48, 0.95), velvet)); a.position.set(x, 0.33, 0); g.add(a); });
+    [[-1.45, -0.38], [1.45, -0.38], [-1.45, 0.4], [1.45, 0.4]].forEach(([x, z]) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.08, 8), wood); l.position.set(x, 0.04, z); g.add(l); });
+    // a low table and a rug in front, like every living room
+    const rug = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.6), std({ map: Themes.matTexture('woven'), roughness: 0.95 }));
+    rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.006, -0.95); rug.receiveShadow = true;
+    const table = shadowy(new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.06, 0.45), wood)); table.position.set(0, 0.3, -0.95);
+    [[-0.48, -0.17], [0.48, -0.17], [-0.48, 0.17], [0.48, 0.17]].forEach(([x, z]) => { const l = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.28, 0.05), wood); l.position.set(x, 0.14, z - 0.95); g.add(l); });
+    const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std({ color: '#c7a04a', metalness: 0.6, roughness: 0.3 }));
+    bowl.rotation.x = Math.PI; bowl.position.set(0.25, 0.45, -0.95);
+    g.add(rug, table, bowl);
+    g.position.z = 0.55;
+    return g;
+  }
+  /* the TV fills whatever the panel leaves free */
+  const tvFraming = () => {
+    const W = window.innerWidth || 1, H = window.innerHeight || 1;
+    const r = boardPanel?.isConnected ? boardPanel.getBoundingClientRect() : null;
+    const TOP = 52;
+    let freeW = W, freeH = H - TOP, cx = W / 2, cy = TOP + freeH / 2;
+    if (r) {
+      if (r.left > W * 0.4) { freeW = Math.max(160, r.left); cx = freeW / 2; freeH = H; cy = H / 2; }
+      else { freeH = Math.max(120, r.top - TOP); cy = TOP + freeH / 2; }
+    }
+    const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
+    const d = Math.max((TV.w + 0.16) * H / (0.97 * freeW * fovK), (TV.h + 0.16) * H / (0.95 * freeH * fovK));
+    // in a tall space the picture sits higher, so the players show below it
+    const roomy = freeH / Math.max(1, freeW) > 0.95;
+    const ox = W / 2 - cx, oy = H / 2 - cy + (roomy ? freeH * 0.1 : 0);
+    if (!viewOffset.on) Object.assign(viewOffset, { x: ox, y: oy, on: true });
+    viewOffset.x += (ox - viewOffset.x) * 0.14;
+    viewOffset.y += (oy - viewOffset.y) * 0.14;
+    camera.setViewOffset(W, H, viewOffset.x, viewOffset.y, W, H);
+    return { pos: [0, TV.y + 0.42, TV.z + d], look: [0, TV.y + 0.05, TV.z], orbit: 0, exact: true };
+  };
+  let boardShot = null, boardPanel = null;
+  const BOARD_TILT = 0.52;
+  const boardFraming = (span) => () => {
+    const W = window.innerWidth || 1, H = window.innerHeight || 1;
+    const r = boardPanel?.isConnected ? boardPanel.getBoundingClientRect() : null;
+    const TOP = 52;   // the bar with the back button
+    let freeW = W, freeH = H - TOP, cx = W / 2, cy = TOP + freeH / 2;
+    if (r) {
+      // the panel is at the side (wide screens, a phone on its side) or along the bottom
+      if (r.left > W * 0.4) { freeW = Math.max(160, r.left); cx = freeW / 2; freeH = H; cy = H / 2; }
+      else { freeH = Math.max(120, r.top - TOP); cy = TOP + freeH / 2; }
+    }
+    const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
+    const d = Math.min(7.5, Math.max(span * H / (0.9 * freeH * fovK), span * H / (0.94 * freeW * fovK)));
+    // when the panel changes height the picture slides over, instead of jumping
+    const ox = W / 2 - cx, oy = H / 2 - cy;
+    if (!viewOffset.on) Object.assign(viewOffset, { x: ox, y: oy, on: true });
+    viewOffset.x += (ox - viewOffset.x) * 0.14;
+    viewOffset.y += (oy - viewOffset.y) * 0.14;
+    camera.setViewOffset(W, H, viewOffset.x, viewOffset.y, W, H);
+    return { pos: [0, d * Math.cos(BOARD_TILT), d * Math.sin(BOARD_TILT)], look: [0, 0, 0], orbit: 0, exact: true };
+  };
+
   function startGuesserScan(guesser, acc = 'cap') {
     const others = actors.filter(a => a !== guesser);
     detectiveScan = { actor: guesser, others, next: 0, i: 0 };
@@ -792,6 +963,7 @@ function createWorld() {
   }
 
   function update(dt) {
+    decorMeshes.forEach((m) => m.userData.tick?.(dt, time));
     const motion = reduced ? 0 : 1;
 
     // Power / tubelight flicker
@@ -803,6 +975,8 @@ function createWorld() {
       power = reduced ? damp(power, 1, 6, dt) : f;
     }
     fanSpeed = damp(fanSpeed, powerTarget, powerTarget ? 0.9 : 0.45, dt);
+    if (MOODS[room.mood]?.disco) moodLight.color.setHSL((time * 0.18) % 1, 0.95, 0.55);
+    if (fairy?.visible && motion) fairy.children.forEach((b, i) => { b.scale.setScalar(0.7 + 0.5 * Math.abs(Math.sin(time * 2.2 + i * 0.7))); });
 
     hemi.intensity = 0.22 + 0.5 * power;
     tubeLight.intensity = 14 * power;
@@ -874,8 +1048,10 @@ function createWorld() {
     pointer.sx = damp(pointer.sx, pointer.x, 3, dt);
     pointer.sy = damp(pointer.sy, pointer.y, 3, dt);
     updateActors(dt);
+    tvPads.forEach((m, i) => { if (actors[i]?.root.visible) { actors[i].handWorld(m.position); m.rotation.y = actors[i].root.rotation.y; } });
     const talking = talkShot && time < talkUntil;
-    const framing = portraitShot || (talking ? talkShot : shot);
+    const framing = boardShot || portraitShot || (talking ? talkShot : shot);
+    const sway = boardShot ? 0 : motion;   // a board you tap on has to hold still
     const sh = typeof framing === 'function' ? framing() : framing;
     tmpLook.set(...sh.look);
     tmpOff.set(...sh.pos).sub(tmpLook).multiplyScalar(sh.exact ? 1 : distMul);
@@ -887,8 +1063,8 @@ function createWorld() {
     }
     tmpOff.applyAxisAngle(THREE.Object3D.DEFAULT_UP, Math.sin(time * 0.09) * sh.orbit * motion);
     tmpPos.copy(tmpLook).add(tmpOff);
-    tmpPos.x += pointer.sx * 0.3 * motion;
-    tmpPos.y += pointer.sy * 0.15 * motion;
+    tmpPos.x += pointer.sx * 0.3 * sway;
+    tmpPos.y += pointer.sy * 0.15 * sway;
     if (snapCamera || reduced) {
       camPos.copy(tmpPos);
       camLook.copy(tmpLook);
@@ -899,10 +1075,10 @@ function createWorld() {
       camLook.set(damp(camLook.x, tmpLook.x, k, dt), damp(camLook.y, tmpLook.y, k, dt), damp(camLook.z, tmpLook.z, k, dt));
     }
     camera.position.copy(camPos);
-    camera.position.x += Math.sin(time * 0.71) * 0.025 * motion;
-    camera.position.y += Math.sin(time * 1.13 + 1) * 0.018 * motion;
+    camera.position.x += Math.sin(time * 0.71) * 0.025 * sway;
+    camera.position.y += Math.sin(time * 1.13 + 1) * 0.018 * sway;
     camera.lookAt(camLook);
-    camera.rotation.z += Math.sin(time * 0.53) * 0.006 * motion;
+    camera.rotation.z += Math.sin(time * 0.53) * 0.006 * sway;
   }
 
   /* If the device can't keep up, draw fewer pixels instead of stuttering. */
@@ -949,11 +1125,17 @@ function createWorld() {
 
   // a big sheet covers the room: nobody will miss the extra frames, and the battery will thank us
   const CALM_MS = 1000 / 20;
-  let calm = false, frameNo = 0;
+  let calm = false, frameNo = 0, boardSlow = false, boardMs = 16;
   function frame(now) {
     rafId = requestAnimationFrame(frame);
     const q = QUALITY[quality];
-    if (now - lastRender < (calm ? Math.max(CALM_MS, q.frameMs) : q.frameMs) - 2) return;
+    const goalMs = boardShot && !boardSlow ? Math.min(q.frameMs, 1000 / 60) : q.frameMs;
+    if (now - lastRender < (calm ? Math.max(CALM_MS, goalMs) : goalMs) - 2) return;
+    // a phone that can't hold it goes back to its steady rate rather than stutter
+    if (boardShot && !boardSlow && lastRender) {
+      boardMs = boardMs * 0.97 + (now - lastRender) * 0.03;
+      if (boardMs > 27) boardSlow = true;
+    }
     if (!calm) watchPerformance(now - lastRender, now);
     lastRender = now;
     if (q.shadowEvery > 1 && frameNo++ % q.shadowEvery === 0) sun.shadow.needsUpdate = true;
@@ -1098,11 +1280,18 @@ function createWorld() {
     tagLayer.appendChild(el);
     return { el, emoji, name, role: null, width: 0 };
   });
+  let barAt = 0, barSeen = 0;
+  const topBarBottom = () => {
+    const now = performance.now();
+    if (now - barSeen > 500) { barSeen = now; const b = document.querySelector('header.bar, .game__top'); const r = b?.getBoundingClientRect(); barAt = r && r.height && getComputedStyle(b).visibility !== 'hidden' ? r.bottom : 0; }
+    return barAt;
+  };
   function placeLabel(label, angle = '') {
     const W = window.innerWidth, H = window.innerHeight;
     proj.project(camera);
-    const y = (1 - proj.y) / 2 * H;
-    const off = proj.z > 1 || y < 0 || y > H + 24;
+    // never under the bar along the top (back button, title, menu): a name there would be hidden
+    const y = Math.max(topBarBottom() + 14, (1 - proj.y) / 2 * H);
+    const off = proj.z > 1 || (1 - proj.y) / 2 * H < -40 || y > H + 24;
     label.el.style.visibility = off ? 'hidden' : 'visible';
     if (off) return;
     // stays whole at the screen edges, where a player can sit partly out of view on phones
@@ -1183,7 +1372,9 @@ function createWorld() {
   let themeTimer = 0;
   function applyTheme(c) {
     clearTimeout(themeTimer);
-    const t = c.theme;
+    // a room theme the player chose wins over the country's look
+    const own = themeOf(room.theme);
+    const t = own?.floor ? { ...c.theme, floor: own.floor, mat: own.mat, wall: own.wall } : c.theme;
     const inUse = [floor.material.map, mat.material.map, wallMat.map, calendar.material.map];
     const put = (material, texture) => { material.map = texture; material.needsUpdate = true; };
     put(floor.material, themed(`floor|${t.floor}`, () => Themes.floorTexture(t.floor), inUse));
@@ -1200,6 +1391,11 @@ function createWorld() {
 
   let portraitShot = null;
   const dressAll = (list) => list?.forEach((p, i) => { if (p?.look && actors[i]) actors[i].setLook(p.look); });
+
+  // the shapes above need helpers defined further down the file: place things once everything exists
+  placeDecor();
+  themeReady = true;
+  if (room.theme) applyTheme(country);
 
   const story = {
     active: false,
@@ -1249,6 +1445,144 @@ function createWorld() {
     },
     setCalm(on) { calm = !!on; },
     setPaused(on) { paused = !!on; },
+    /** Where this player's throwing hand is right now. */
+    handOf(i) { return actors[i].handWorld(new THREE.Vector3()); },
+    /** A player reaches down, picks something up and throws it at the board; the others watch. */
+    rollGesture(i) {
+      const a = actors[i];
+      if (!a) return;
+      a.play([['reach', 0.34, 11], ['throw', 0.32, 12], ['fling', 0.42, 16], ['idle', 0, 6]]);
+      a.lookAt(MAT_CENTER);
+      actors.forEach((o, n) => { if (n !== i) o.lookAt(headOf(a)); });
+      after(1.5, () => actors.forEach(o => o.lookAt(MAT_CENTER)));
+    },
+    /** A short reach towards the board, for moving a piece. */
+    reachOut(i) {
+      actors[i]?.play([['reach', 0.42, 10], ['idle', 0, 6]]);
+    },
+    /** The TV games: a big screen against the wall, players on the floor in front of it, controllers in hand. */
+    tvMode(on, { canvas, panel = null, players = 1 } = {}) {
+      boardPanel = panel;
+      if (!on) return;
+      if (!tvBig) {
+        tvBig = new THREE.Group();
+        const frame = shadowy(new THREE.Mesh(new THREE.BoxGeometry(TV.w + 0.14, TV.h + 0.14, 0.09), std({ color: '#14161b', roughness: 0.35, metalness: 0.4 })));
+        tvTexture = new THREE.CanvasTexture(canvas);
+        tvTexture.colorSpace = THREE.SRGBColorSpace;
+        const screen = new THREE.Mesh(new THREE.PlaneGeometry(TV.w, TV.h), new THREE.MeshBasicMaterial({ map: tvTexture, toneMapped: false }));
+        screen.position.z = 0.05;
+        const leg = (x) => { const l = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.06, TV.y - TV.h / 2, 0.06), std({ color: '#2a2c33', roughness: 0.4 }))); l.position.set(x, -(TV.y + TV.h / 2) / 2 + TV.h / 2 + 0.0, 0); return l; };
+        tvBig.add(frame, screen, leg(-0.8), leg(0.8));
+        tvBig.position.set(0, TV.y, TV.z);
+        scene.add(tvBig);
+        const pad = () => {
+          const g = new THREE.Group();
+          g.add(new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.03, 0.075), std({ color: '#23252c', roughness: 0.4 })));
+          const b = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.008, 8), std({ color: '#e0453a' }));
+          b.position.set(0.04, 0.018, 0);
+          g.add(b);
+          scene.add(g);
+          return g;
+        };
+        tvPads = actors.map(pad);
+      } else if (tvTexture.image !== canvas) tvTexture.image = canvas;
+      if (!sofa) {
+        sofa = buildSofa();
+        scene.add(sofa);
+        seatLift = new THREE.Group();
+        seatLift.position.y = SEAT_H;
+        scene.add(seatLift);
+        actors.forEach(a => seatLift.add(a.root));
+        mat.visible = false;
+      }
+      const xs = { 1: [0], 2: [-0.52, 0.52], 3: [-0.82, 0, 0.82], 4: [-1.14, -0.38, 0.38, 1.14] }[players] || [0];
+      actors.forEach((a, i) => {
+        const here = i < players;
+        a.root.visible = here;
+        tvPads[i].visible = here;
+        if (here) { a.root.position.x = xs[i]; a.root.position.z = 0.5; a.root.rotation.y = Math.PI; a.lookAt(new THREE.Vector3(0, TV.y, TV.z)); a.setPose('hold'); }
+      });
+      chits.forEach((c) => { c.mesh.visible = false; });
+      if (boardShot !== tvFraming) { boardShot = tvFraming; snapCamera = true; }
+    },
+    tvPanel(panel) { boardPanel = panel; },
+    tvRefresh() { if (tvTexture) tvTexture.needsUpdate = true; },
+    tvCanvasBack() {},
+    /** The room as the player has made it: lights, wall colour, decorations. Remembered on this device. */
+    get roomStyle() { return { ...room }; },
+    setRoomStyle(next) {
+      room = { ...room, ...next };
+      try { localStorage.setItem(ROOM_KEY, JSON.stringify(room)); } catch {}
+      applyRoom();
+    },
+    /** Put the room's things where the player has chosen (read from this device). */
+    placeDecor() { placeDecor(); },
+    /** Look at the whole room, for arranging it. */
+    /** Where something in the 3D room shows on the screen, in CSS pixels. */
+    screenOf(o) {
+      if (!o) return null;
+      o.getWorldPosition(proj).project(camera);
+      if (proj.z > 1) return null;
+      return { x: ((proj.x + 1) / 2) * window.innerWidth, y: ((1 - proj.y) / 2) * window.innerHeight };
+    },
+    /** Another game is being played here: the Cops and Robbers chits and their pencil leave the mat for good. */
+    /** The slate on the wall: a title and up to four lines of chalk. */
+    setSlate(title, lines = []) { roomDetails?.setSlate?.(title, lines); },
+    clearMat() { matCleared = true; chits.forEach((c) => { c.mesh.visible = false; }); if (matPencil) matPencil.visible = false; },
+    /** Show the whole room; with a panel down the side, the room centres in the space left beside it. */
+    roomView(on, panel = null) {
+      if (!on) { viewOffset.on = false; camera.clearViewOffset(); shot = camera.aspect < 0.8 ? SHOTS.overhead : SHOTS.home; return; }
+      shot = () => {
+        const W = window.innerWidth || 1, H = window.innerHeight || 1;
+        const r = panel?.isConnected && !document.body.classList.contains('room-only') ? panel.getBoundingClientRect() : null;
+        const side = r && r.left > W * 0.4 ? r.left : W;
+        const ox = W / 2 - side / 2;
+        if (!viewOffset.on) Object.assign(viewOffset, { x: ox, y: 0, on: true });
+        viewOffset.x += (ox - viewOffset.x) * 0.14;
+        camera.setViewOffset(W, H, viewOffset.x, 0, W, H);
+        return { pos: [0, 3.1, side < W ? 5.2 : 4.6], look: [0, 0.6, -1], orbit: 0.05 };
+      };
+    },
+    /** A picture of the room right now, to show friends. */
+    snapshot() {
+      update(0);
+      renderer.render(scene, camera);
+      return renderer.domElement.toDataURL('image/jpeg', 0.9);
+    },
+    /** A slow sweep round the room, for the moment ChitPlay opens. */
+    flyIn() { if (!reduced) { camPos.set(0, 3.4, 6.5); camLook.set(0, 0.6, -1.5); } },
+    /** The group a table game builds its board in. */
+    get boardRoot() { return boardRoot; },
+    /** Frame the board above (or beside) the panel, and clear the chits off the mat. */
+    boardMode(on, { span = 2, panel = null } = {}) {
+      const opening = on && !boardShot;
+      boardPanel = panel;
+      if (opening || !on) boardShot = on ? boardFraming(span) : null;
+      if (!on) { viewOffset.on = false; camera.clearViewOffset(); }
+      chits.forEach((c) => { c.mesh.visible = !on && !matCleared; });
+      // only the first time: after that the camera glides, so a new panel doesn't shake the room
+      if (opening || !on) snapCamera = true;
+    },
+    /**
+     * What's under a tap: the object with userData.pick that the ray hits first, or else the nearest
+     * one within a fingertip of the tap, since small pieces are hard to hit on a phone.
+     */
+    boardAt(clientX, clientY, list) {
+      if (!list.length) return null;
+      ndc.set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hit = raycaster.intersectObjects(list, true)[0];
+      if (hit) {
+        for (let o = hit.object; o; o = o.parent) if (o.userData.pick != null) return o.userData.pick;
+      }
+      let best = null, bestD = 34;
+      for (const o of list) {
+        o.getWorldPosition(proj).project(camera);
+        const d = Math.hypot(((proj.x + 1) / 2) * window.innerWidth - clientX, ((1 - proj.y) / 2) * window.innerHeight - clientY);
+        if (d < bestD) { bestD = d; best = o.userData.pick; }
+      }
+      return best;
+    },
     begin(list) {
       story.active = true;
       html.classList.add('story-mode');
@@ -1260,7 +1594,8 @@ function createWorld() {
       setPower(true);
       shot = camera.aspect < 0.8 ? SHOTS.overhead : SHOTS.home;
       dressAll(list);
-      list.forEach((p, i) => actors[i].setName(p.label || p.name));
+      // a seat nobody sits in stays empty
+      list.forEach((p, i) => { actors[i].root.visible = !p.hidden; actors[i].setName(p.hidden ? null : p.label || p.name); });
       gatherChits(false);
     },
     end() {
@@ -1345,6 +1680,23 @@ function createWorld() {
         if (reduced) actors[i].emote(symbol, 2);
         else flyEmoji(from, i, symbol, n * 90);
       });
+    },
+    /** An emoji right in front of everybody, big, with who sent it. */
+    emojiPop(symbol, name = '') {
+      const box = document.createElement('div');
+      box.className = 'emoji-pop';
+      box.setAttribute('aria-hidden', 'true');
+      box.style.left = `${32 + Math.random() * 36}%`;
+      const big = document.createElement('span');
+      big.textContent = String(symbol).slice(0, 8);
+      box.append(big);
+      if (name) {
+        const who = document.createElement('small');
+        who.textContent = String(name).slice(0, 36);
+        box.append(who);
+      }
+      document.body.append(box);
+      setTimeout(() => box.remove(), 1900);
     },
     mood(i, name, sec = 2.5) { actors[i]?.mood(name, sec); },
     /**

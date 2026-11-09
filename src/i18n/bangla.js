@@ -127,7 +127,7 @@ export default {
     badges: 'Badge', hall: 'Ei device-er shera match', noHall: 'List-e ashte ekta match shesh korun.',
     resetScore: 'Score reset korun', resetSure: 'Point, rank ar badge muchhte abar tap korun', resetDone: 'Score reset holo',
     graphics: 'Graphics', gLow: 'Light (shobcheye smooth)', gAuto: 'Auto', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (shoktishali device-er jonno)', graphicsHelp: 'Light shob phone-e bhalo chole. Device smooth thakle tobei upore jan.',
-    language: 'Bhasha', languageHelp: 'Menu, message ar player-der kothabarta. Konthho English-i thakbe.',
+    language: 'Bhasha', languageHelp: 'Menu, message ar player-der kothabarta.',
     done: 'Hoyeche', rankUp: '{icon} Notun rank: {title}!', newBadge: '{icon} Badge: {name}!', gained: '+{n} rank point', hallPlace: '🏅 Apnar shera match-e #{n}',
     forfeit: '🎲 {name}-er shasti', forfeitLine: 'Ek ghore thakle: {name}-ke {text}.',
     rotateBig: 'Boro view-er jonno ghurun', rotateHide: 'Rotate option lukan', rotateTurn: 'Phone-ta ara-ari dhorun. Na ghurle rotation lock bondho korun.',

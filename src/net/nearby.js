@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName, politeName } from '../world/names.js?v=20261108-0913';
-import { cleanLook } from '../world/character-looks.js?v=20261108-0913';
+import { cleanName, politeName } from '../world/names.js?v=20261110-0233';
+import { cleanLook } from '../world/character-looks.js?v=20261110-0233';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261108-0913.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261110-0233.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -43,7 +43,9 @@ export const randomCode = () => String(Math.floor(100000 + Math.random() * 90000
  */
 export const PUBLIC_TABLES = 8;
 export const publicCode = (n) => `public-${n}`;
-export const isPublicCode = (c) => /^public-[1-9]\d?$/.test(String(c || ''));
+/** A public table of one of the other games: each game has its own tables, so you meet people playing it. */
+export const tableCode = (slug, n) => `public-${slug}-${n}`;
+export const isPublicCode = (c) => /^public-(?:[a-z0-9-]+-)?[1-9]\d?$/.test(String(c || ''));
 
 /**
  * Look at every public table without sitting down: which ones have somebody waiting, from which
@@ -113,8 +115,9 @@ export class NearbyHost {
   /**
    * @param {{ onChange?: Function, onMessage?: (guestId, msg) => void, onLeave?: (guestId) => void, onRejoin?: (guestId, token) => void }} handlers
    */
-  constructor(handlers = {}) {
+  constructor(handlers = {}, { maxGuests = MAX_GUESTS } = {}) {
     this.h = handlers;
+    this.max = maxGuests;
     this.code = null;
     this.peer = null;
     this.guests = new Map();      // id -> { id, name, conn, w }
@@ -202,7 +205,7 @@ export class NearbyHost {
         [...this.guests.values()].filter(x => x.token === token).forEach(x => this.#drop(x.id));
         const returning = this.locked && this.known.has(token);
         if (this.locked && !returning) { safeSend(conn, { t: 'reject', reason: 'started' }); setTimeout(() => conn.close(), 400); return; }
-        if (this.guests.size >= MAX_GUESTS) { safeSend(conn, { t: 'reject', reason: 'full' }); setTimeout(() => conn.close(), 400); return; }
+        if (this.guests.size >= this.max) { safeSend(conn, { t: 'reject', reason: 'full' }); setTimeout(() => conn.close(), 400); return; }
         const typed = cleanName(msg.name).trim() || 'Player';
         // strangers on a public table never see a rude name
         const name = this.isPublic ? politeName(typed) : typed;

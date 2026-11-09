@@ -1,13 +1,13 @@
 import { describe, it, expect } from './harness.js';
-import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName, politeName } from '../src/world/names.js?v=20261108-0913';
-import { PRESETS, cleanLook, lookOf, portraitSvg, AGES, FANCY_HATS } from '../src/world/character-looks.js?v=20261108-0913';
-import { profile, rankFor, RANKS, challengesFor, COINS } from '../src/persistence/profile-store.js?v=20261108-0913';
-import { COUNTRIES, asOneGame, editionFor } from '../src/world/countries.js?v=20261108-0913';
-import { Match } from '../src/world/match.js?v=20261108-0913';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261108-0913';
-import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261108-0913';
-import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261108-0913';
-import EN from '../src/i18n/en.js?v=20261108-0913';
+import { cleanName, isValidName, pickOpponents, namesOf, NAME_REGIONS, randomName, politeName } from '../src/world/names.js?v=20261110-0233';
+import { PRESETS, cleanLook, lookOf, portraitSvg, AGES, FANCY_HATS } from '../src/world/character-looks.js?v=20261110-0233';
+import { profile, rankFor, RANKS, challengesFor, COINS } from '../src/persistence/profile-store.js?v=20261110-0233';
+import { COUNTRIES, asOneGame, editionFor } from '../src/world/countries.js?v=20261110-0233';
+import { Match } from '../src/world/match.js?v=20261110-0233';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji } from '../src/world/table-talk.js?v=20261110-0233';
+import { joinCodeFrom } from '../src/net/qr-scan.js?v=20261110-0233';
+import { LANGUAGES, useLanguage, strings } from '../src/i18n/index.js?v=20261110-0233';
+import EN from '../src/i18n/en.js?v=20261110-0233';
 
 describe('Names', () => {
   it('keeps letters and spaces only', () => {
@@ -96,14 +96,15 @@ describe('Table talk', () => {
 });
 
 describe('Languages', () => {
-  it('every language fills the same blanks as English, and stays in Latin letters', async () => {
+  it('every language fills the same blanks as English, and stays in Latin letters (except native-script ones)', async () => {
+    const NATIVE_SCRIPT = new Set(['hindi']);
     const holes = (s) => (String(s).match(/\{\w+\}/g) || []).sort().join();
     for (const l of LANGUAGES) {
       await useLanguage(l.id);
       const ui = strings();
       for (const [k, v] of Object.entries(EN.ui)) {
         expect(typeof ui[k] === 'string' && holes(ui[k]) === holes(v)).toBe(true);
-        expect(/[Ѐ-ӿऀ-৿؀-ۿ぀-ヿ一-鿿가-힯]/.test(ui[k])).toBe(false);
+        if (!NATIVE_SCRIPT.has(l.id)) expect(/[Ѐ-ӿऀ-৿؀-ۿ぀-ヿ一-鿿가-힯]/.test(ui[k])).toBe(false);
       }
     }
     await useLanguage('en');

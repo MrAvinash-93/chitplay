@@ -1,0 +1,128 @@
+/**
+ * Tunnel Race: a paper plane flying down a tunnel that never ends. Steer round the inside of the
+ * tunnel to slip past the walls, collect gems, and keep going: it gets a little faster as you go.
+ *
+ * Angles are in radians round the tunnel; distance is in tunnel units.
+ */
+import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0233';
+
+export const AHEAD = 60;
+const TAU = Math.PI * 2;
+const PLANE = 0.16;                       // half the plane's width, as an angle
+export const speedAt = (d) => Math.min(30, 12 + d * 0.006);
+const angDiff = (a, b) => { let x = (a - b) % TAU; if (x > Math.PI) x -= TAU; if (x < -Math.PI) x += TAU; return x; };
+const r3 = (v) => Math.round(v * 1000) / 1000;
+
+/** Does this obstacle touch a plane at angle a? */
+export function blocks(o, a) {
+  const d = Math.abs(angDiff(a, o.c));
+  if (o.k === 'wall') return d < o.w / 2 + PLANE;
+  if (o.k === 'gap') return d > o.w / 2 - PLANE;
+  return d < o.w / 2 + PLANE || Math.abs(angDiff(a, o.c + Math.PI)) < o.w / 2 + PLANE;   // 'twin'
+}
+function spawn(s) {
+  const lvl = Math.min(1, s.d / 2600);
+  const roll = rnd(s);
+  const c = r3(rnd(s) * TAU);
+  let o;
+  if (roll < 0.5) o = { k: 'wall', c, w: r3(1.1 + lvl * 1.2 + rnd(s) * 0.4) };
+  else if (roll < 0.85) o = { k: 'gap', c, w: r3(Math.max(1.4, 2.9 - lvl * 1.2 - rnd(s) * 0.3)) };
+  else o = { k: 'twin', c, w: r3(0.8 + lvl * 0.7) };
+  o.z = r1(s.at);
+  s.obs.push(o);
+  if (rnd(s) < 0.5) {
+    // a gem sits where the plane can get through
+    const open = o.k === 'gap' ? o.c : o.k === 'wall' ? o.c + Math.PI : o.c + Math.PI / 2;
+    s.gems.push({ z: r1(o.z + 4), a: r3(open) });
+  }
+  s.at += Math.max(7, 13 - lvl * 5);
+}
+
+export default {
+  hint: 'Drag left or right',
+  pad: [['l', '◀'], ['r', '▶']],
+  analog: 'x',
+  init({ n, seed }) {
+    const s = { n, seed, t: 0, d: 0, at: 26, obs: [], gems: [], ev: [],
+      planes: seats(n).map(i => ({ a: r3(Math.PI * 1.5 + (i - (n - 1) / 2) * 0.55), w: 0, alive: true, score: 0, gems: 0 })) };
+    while (s.at < AHEAD) spawn(s);
+    return s;
+  },
+  step(s, inputs) {
+    s.t += 1;
+    const from = s.d;
+    s.d =Math.round((from + speedAt(from) * TICK) * 100) / 100;
+    while (s.at < s.d + AHEAD) spawn(s);
+    s.obs = s.obs.filter(o => o.z > s.d - 3);
+    s.gems = s.gems.filter(g => g.z > s.d - 3 && !g.got);
+    s.planes.forEach((p, i) => {
+      if (!p.alive) return;
+      const inp = inputs[i] || {};
+      const x = Number.isFinite(inp.x) ? Math.max(-1, Math.min(1, inp.x)) : (inp.r ? 1 : 0) - (inp.l ? 1 : 0);
+      p.w += (x * 3.4 - p.w) * 0.2;
+      p.a = r3(((p.a + p.w * TICK) % TAU + TAU) % TAU);
+      for (const o of s.obs) {
+        if (o.z > from && o.z <= s.d && blocks(o, p.a)) { p.alive = false; s.ev.push({ k: 'crash', seat: i }); return; }
+        if (o.z > from && o.z <= s.d) s.ev.push({ k: 'pass', seat: i });
+      }
+      for (const g of s.gems) {
+        if (!g.got && g.z > from && g.z <= s.d && Math.abs(angDiff(p.a, g.a)) < 0.42) { g.got = true; p.gems += 1; s.ev.push({ k: 'star', seat: i }); }
+      }
+      p.score = Math.floor(s.d / 6) + p.gems * 10;
+    });
+  },
+  revive(s, seat) {
+    Object.assign(s.planes[seat], { alive: true, w: 0 });
+    s.obs = s.obs.filter(o => o.z > s.d + 16);
+  },
+  over(s) {
+    if (s.planes.some(p => p.alive)) return null;
+    const scores = s.planes.map(p => p.score), top = Math.max(...scores);
+    return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true };
+  },
+  // steers for the open side of whatever is next, but reacts late: at speed it can't save every one
+  bot(s, seat) {
+    const p = s.planes[seat];
+    if (!p?.alive) return {};
+    const look = 14 + ((seat * 5 + Math.floor(s.t / 120)) % 4) * 2;
+    const o = s.obs.find(x => x.z > s.d && x.z < s.d + look);
+    if (!o) return { x: 0 };
+    let target;
+    if (o.k === 'gap') target = o.c;
+    else if (o.k === 'twin') target = [o.c + Math.PI / 2, o.c - Math.PI / 2].sort((u, v) => Math.abs(angDiff(p.a, u)) - Math.abs(angDiff(p.a, v)))[0];
+    else target = Math.abs(angDiff(p.a, o.c)) > o.w / 2 + 0.5 ? p.a : o.c + Math.sign(angDiff(p.a, o.c) || 1) * (o.w / 2 + 0.55);
+    return { x: Math.max(-1, Math.min(1, angDiff(target, p.a) * 2.4)) };
+  },
+  hud(g, s, names) {
+    scoreBar(g, s.planes.map((p, i) => [names[i] || `P${i + 1}`, p.alive ? p.score : `${p.score} ✕`, SEAT_COLORS[i]]));
+  },
+  // without 3D: the same tunnel, seen as rings coming at you
+  draw(g, s, names) {
+    g.fillStyle = '#0b0420'; g.fillRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2 + 14, twist = 0;
+    for (let k = 30; k >= 0; k--) {
+      const z = k * 2 + (2 - (s.d % 2));
+      const r = 900 / (z + 3);
+      g.strokeStyle = `rgba(150, 190, 255, ${0.15 + 0.5 / (1 + z / 10)})`;
+      g.lineWidth = Math.max(1, 6 / (1 + z / 8));
+      g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.stroke();
+    }
+    [...s.obs].reverse().forEach((o) => {
+      const z = o.z - s.d;
+      if (z < 0 || z > AHEAD) return;
+      const r = 900 / (z + 3);
+      g.fillStyle = `rgba(255, ${o.k === 'gap' ? 70 : 140}, 60, ${Math.min(0.85, 1.6 - z / AHEAD)})`;
+      const sector = (a0, len) => { g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, r, a0 + twist, a0 + len + twist); g.closePath(); g.fill(); };
+      if (o.k === 'wall') sector(o.c - o.w / 2, o.w);
+      else if (o.k === 'gap') sector(o.c + o.w / 2, TAU - o.w);
+      else { sector(o.c - o.w / 2, o.w); sector(o.c + Math.PI - o.w / 2, o.w); }
+    });
+    s.planes.forEach((p, i) => {
+      const r = 900 / 3 * 0.78;
+      const x = cx + Math.cos(p.a + twist) * Math.min(r, 170), y = cy + Math.sin(p.a + twist) * Math.min(r, 170);
+      g.fillStyle = p.alive ? SEAT_COLORS[i] : '#555';
+      g.beginPath(); g.moveTo(x, y - 14); g.lineTo(x - 12, y + 10); g.lineTo(x + 12, y + 10); g.closePath(); g.fill();
+    });
+    this.hud(g, s, names);
+  },
+};
