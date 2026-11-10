@@ -1,5 +1,5 @@
 /** Tic-Tac-Toe (noughts and crosses): three in a line on a 3×3 grid. */
-import { best, turnLine } from '../lib.js?v=20261110-1337';
+import { best, turnLine } from '../lib.js?v=20261110-1351';
 
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 const winner = (b) => LINES.find(([x, y, z]) => b[x] >= 0 && b[x] === b[y] && b[y] === b[z]) || null;

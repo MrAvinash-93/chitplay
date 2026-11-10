@@ -13,8 +13,8 @@ const DEFAULTS = Object.freeze({
   chatEnabled: true,
   graphics: 'low',       // "Light": smooth on every phone; higher levels are one choice away in the profile
   playerName: 'Avin',
-  voiceEnabled: false,
-  defaultsVersion: 3,
+  voiceEnabled: true,
+  defaultsVersion: 4,
 });
 
 let current = { ...DEFAULTS };
@@ -35,6 +35,8 @@ function load() {
       }
       // "auto" was the old default, not a choice; someone who picked High or 4K keeps it
       if (current.graphics === 'auto') current.graphics = DEFAULTS.graphics;
+      // the voices came back (they were switched off for everyone before): on once, then it's the player's choice
+      if ((stored.defaultsVersion || 0) < 4) current.voiceEnabled = true;
       current.defaultsVersion = DEFAULTS.defaultsVersion;
       save();
     }

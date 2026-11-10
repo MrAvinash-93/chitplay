@@ -4,14 +4,14 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, TICK } from './lib.js?v=20261110-1337';
-import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261110-1337';
-import { AHEAD as TUNNEL_AHEAD } from './tunnel-race.js?v=20261110-1337';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-1337';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-1337';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-1337';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-1337';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-1337';
+import { SEAT_COLORS, TICK } from './lib.js?v=20261110-1351';
+import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261110-1351';
+import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261110-1351';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-1351';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-1351';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-1351';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-1351';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-1351';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });
@@ -81,37 +81,80 @@ function wingedChit(color) {
   return grp;
 }
 
-/* ─── Tunnel Race ─── */
+/* ─── Tunnel Race: a glowing paper tunnel that turns round you ─── */
+// each level has its own colours: the tunnel, the air, the walls and the safe way through
+const TUNNEL_MOODS = [
+  { bg: '#0b1426', tube: '#4a6fae', ring: '#9fd0ff', wall: '#e0455a', gap: '#f39c34' },   // paper blue
+  { bg: '#160b26', tube: '#7553a8', ring: '#e2b8ff', wall: '#ff4f7a', gap: '#ffb03b' },   // purple night
+  { bg: '#04201f', tube: '#2f8f87', ring: '#a6fff3', wall: '#ff5d5d', gap: '#ffd23f' },   // teal
+  { bg: '#26100a', tube: '#b8662f', ring: '#ffd7a8', wall: '#ff3b3b', gap: '#ffe066' },   // spin cycle: hot
+];
 function tunnelView() {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#0d1626');
-  scene.fog = new THREE.Fog('#0d1626', 16, 58);
-  const camera = new THREE.PerspectiveCamera(70, 1.6, 0.1, 120);
+  scene.background = new THREE.Color(TUNNEL_MOODS[0].bg);
+  scene.fog = new THREE.Fog(TUNNEL_MOODS[0].bg, 14, 56);
+  const camera = new THREE.PerspectiveCamera(72, 1.6, 0.1, 120);
   camera.position.set(0, 0, 4.2);
-  const R = 3;
+  const R = 3, PZ = -1.2, PR = R * 0.74;
+  // the tunnel: light paper with folds and grid lines, tinted by the level's colour
   const tex = canvasTex(512, 256, (g, w, h) => {
-    g.fillStyle = '#3a5b8c'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#4c72aa'; g.fillRect(0, 0, w, h / 2);
-    g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(0, 0, w, 6);
-  }, [1, 12]);
-  const tube = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 120, 48, 1, true), basic('#ffffff', { map: tex, side: THREE.BackSide }));
+    g.fillStyle = '#b9c2d0'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#d9e0ea'; g.fillRect(0, 0, w, h / 2);
+    g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 2); g.lineTo(w, 2); g.stroke();
+    g.strokeStyle = 'rgba(40,50,70,.35)'; g.lineWidth = 2;
+    for (let x = 0; x < w; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+    g.fillStyle = 'rgba(255,255,255,.18)'; for (let k = 0; k < 6; k++) g.fillRect((k * 89) % w, 40 + (k * 37) % 160, 40, 6);
+  }, [1, 14]);
+  const tubeMat = basic(TUNNEL_MOODS[0].tube, { map: tex, side: THREE.BackSide });
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 120, 48, 1, true), tubeMat);
   tube.rotation.x = Math.PI / 2;
   tube.position.z = -55;
-  const world = new THREE.Group();
-  world.add(tube);
-  scene.add(world);
-  scene.add(new THREE.HemisphereLight('#ffffff', '#442266', 1.4));
+  scene.add(tube);
+  // rings of light along the tunnel, rushing past
+  const ringMat = basic(TUNNEL_MOODS[0].ring, { transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+  const rings = Array.from({ length: 12 }, () => { const m = new THREE.Mesh(new THREE.TorusGeometry(R * 0.985, 0.03, 6, 64), ringMat); scene.add(m); return m; });
+  // speed lines along the walls
+  const streakMat = basic('#ffffff', { transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  const streaks = Array.from({ length: 22 }, (_, i) => { const m = box(0.025, 0.025, 2.6, streakMat); m.userData = { a: (i / 22) * TAU + (i % 3) * 0.2, z: -((i * 5.3) % 50) }; scene.add(m); return m; });
+  // walls: red where the plane is heading for one, the way through glowing
   const walls = new Map();
-  const wallMat = [std('#e0455a', { side: THREE.DoubleSide, roughness: 0.5 }), std('#f39c34', { side: THREE.DoubleSide, roughness: 0.5 })];
-  const sector = (a0, len, m) => new THREE.Mesh(new THREE.CircleGeometry(R * 0.995, 28, a0, len), m);
-  const gems = pool(world, () => new THREE.Mesh(new THREE.OctahedronGeometry(0.2), std('#7dffe3', { emissive: '#1b8f7a', metalness: 0.4, roughness: 0.2 })));
-  const planes = [];
-  const PZ = -1.2;
+  const wallMat = () => std('#e0455a', { side: THREE.DoubleSide, roughness: 0.45, emissive: '#3a0a10' });
+  const sector = (a0, len, m) => new THREE.Mesh(new THREE.CircleGeometry(R * 0.995, 36, a0, len), m);
+  const arc = (a0, len, mat) => { const t = new THREE.Mesh(new THREE.TorusGeometry(PR, 0.05, 6, 32, len), mat); t.rotation.z = a0; return t; };
+  const gemMat = std('#7dffe3', { emissive: '#1b8f7a', metalness: 0.4, roughness: 0.2 });
+  const gems = pool(scene, () => new THREE.Mesh(new THREE.OctahedronGeometry(0.2), gemMat));
+  const gemGlow = pool(scene, () => new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), basic('#7dffe3', { transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })));
+  const spark = pool(scene, () => new THREE.Mesh(new THREE.OctahedronGeometry(0.05), basic('#bfffee', { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })));
+  const sparks = [];
+  const trailMats = SEAT_COLORS.map(c => basic(c, { transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const trails = SEAT_COLORS.map((_, i) => pool(scene, () => new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 4), trailMats[i])));
+  scene.add(new THREE.HemisphereLight('#ffffff', '#442266', 1.4));
+  const planes = [], shown = [];
+  let dShown = null, aCam = null, shake = 0;
+  const want = new THREE.Color();
   return {
     scene, camera,
-    update(s, dt) {
-      tex.offset.y = (s.d * 0.04) % 1;
+    update(s, dt, alpha = 0) {
+      // smooth: the tunnel moves on every frame, carried on between the game's ticks
+      const sp = tunnelSpeed(s.d);
+      if (dShown == null || Math.abs(s.d - dShown) > 4) dShown = s.d;
+      dShown += sp * dt;
+      dShown += (s.d + sp * TICK * alpha - dShown) * (1 - Math.exp(-dt * 10));
+      const d = dShown, tNow = s.t + alpha;
+      // the level's colours, blended in
+      const mood = TUNNEL_MOODS[Math.min(TUNNEL_MOODS.length, s.level || 1) - 1];
+      const k = 1 - Math.exp(-dt * 1.5);
+      scene.background.lerp(want.set(mood.bg), k);
+      scene.fog.color.copy(scene.background);
+      tubeMat.color.lerp(want.set(mood.tube), k);
+      ringMat.color.lerp(want.set(mood.ring), k);
+      tex.offset.y = (d * 0.04) % 1;
+      rings.forEach((m, i) => { const z = i * 5 - (d % 5); m.position.z = -z + PZ + 2; });
+      // the plane on this screen, and where it is about to be
+      const me = s.planes[0];
+      const meA = me ? me.a + (me.alive ? me.w * TICK * alpha : 0) : -Math.PI / 2;
       // walls coming at you
+      const next = s.obs.find(o => o.z > s.d);
       const seen = new Set();
       s.obs.forEach((o) => {
         const key = `${o.z}`;
@@ -119,32 +162,80 @@ function tunnelView() {
         let m = walls.get(key);
         if (!m) {
           m = new THREE.Group();
-          const mat = wallMat[o.k === 'gap' ? 1 : 0];
-          if (o.k === 'wall') m.add(sector(o.c - o.w / 2, o.w, mat));
-          else if (o.k === 'gap') m.add(sector(o.c + o.w / 2, TAU - o.w, mat));
-          else m.add(sector(o.c - o.w / 2, o.w, mat), sector(o.c + Math.PI - o.w / 2, o.w, mat));
-          const rim = new THREE.Mesh(new THREE.TorusGeometry(R * 0.99, 0.05, 6, 48), basic('#ffffff'));
-          m.add(rim);
-          m.userData.c0 = o.c;
-          world.add(m);
+          const mat = wallMat();
+          const safe = basic(mood.gap, { transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+          // the way through, outlined
+          if (o.k === 'wall') { m.add(sector(o.c - o.w / 2, o.w, mat)); m.add(arc(o.c + o.w / 2 + 0.1, TAU - o.w - 0.2, safe)); }
+          else if (o.k === 'gap') { m.add(sector(o.c + o.w / 2, TAU - o.w, mat)); m.add(arc(o.c - o.w / 2 + 0.08, o.w - 0.16, safe)); }
+          else { m.add(sector(o.c - o.w / 2, o.w, mat), sector(o.c + Math.PI - o.w / 2, o.w, mat)); m.add(arc(o.c + o.w / 2 + 0.08, Math.PI - o.w - 0.16, safe), arc(o.c + Math.PI + o.w / 2 + 0.08, Math.PI - o.w - 0.16, safe)); }
+          m.add(new THREE.Mesh(new THREE.TorusGeometry(R * 0.99, 0.05, 6, 48), basic('#ffffff')));
+          m.userData = { c0: o.c, mat, safe };
+          scene.add(m);
           walls.set(key, m);
         }
-        m.position.z = -(o.z - s.d) + PZ;
+        m.position.z = -(o.z - d) + PZ;
         m.rotation.z = o.c - m.userData.c0;
+        // the next wall: red and pulsing if the plane is lined up to hit it, calm if it's clear
+        const u = m.userData, danger = o === next && me?.alive && tunnelBlocks(o, meA) && o.z - s.d < 22;
+        u.mat.color.set(danger ? (Math.floor(tNow / 6) % 2 ? '#ff2a2a' : '#ff8080') : mood.wall);
+        u.mat.emissive.set(danger ? '#c00000' : '#8a1a24');   // the walls glow, so they stand out from the tunnel
+        u.safe.opacity = o === next ? 0.65 + Math.sin(tNow * 0.3) * 0.3 : 0.35;
       });
-      walls.forEach((m, key) => { if (!seen.has(key)) { world.remove(m); m.traverse(x => x.geometry?.dispose()); walls.delete(key); } });
-      gems.begin();
-      s.gems.forEach((g) => { const m = gems.next(); m.position.set(Math.cos(g.a) * R * 0.74, Math.sin(g.a) * R * 0.74, -(g.z - s.d) + PZ); m.rotation.y += dt * 4; });
-      gems.end();
+      walls.forEach((m, key) => { if (!seen.has(key)) { scene.remove(m); m.traverse((x) => { x.geometry?.dispose(); }); walls.delete(key); } });
+      gems.begin(); gemGlow.begin();
+      s.gems.forEach((g) => {
+        const p = [Math.cos(g.a) * PR, Math.sin(g.a) * PR, -(g.z - d) + PZ];
+        const m = gems.next(); m.position.set(...p); m.rotation.y = tNow * 0.08; m.rotation.x = tNow * 0.05;
+        const gl = gemGlow.next(); gl.position.set(...p); gl.scale.setScalar(1 + Math.sin(tNow * 0.2 + g.z) * 0.15);
+      });
+      gems.end(); gemGlow.end();
+      // the planes: smoothed, banking into the turn, a trail of light behind
       s.planes.forEach((p, i) => {
-        if (!planes[i]) { planes[i] = paperPlane(SEAT_COLORS[i]); world.add(planes[i]); }
-        const m = planes[i];
-        m.position.set(Math.cos(p.a) * R * 0.74, Math.sin(p.a) * R * 0.74, PZ);
+        if (!planes[i]) { planes[i] = paperPlane(SEAT_COLORS[i]); scene.add(planes[i]); shown[i] = { a: p.a, gems: p.gems, trail: [] }; }
+        const v = shown[i], m = planes[i];
+        const ta = p.a + (p.alive ? p.w * TICK * alpha : 0);
+        let da = ((ta - v.a + Math.PI * 3) % TAU) - Math.PI;
+        v.a += da * (1 - Math.exp(-dt * 26));
+        m.position.set(Math.cos(v.a) * PR, Math.sin(v.a) * PR, PZ);
         m.scale.setScalar(1.5);
-        m.rotation.set(0, 0, p.a + Math.PI / 2 - p.w * 0.25);
-        m.visible = p.alive || Math.floor(s.t / 6) % 2 === 0;
+        m.rotation.set(0, 0, v.a + Math.PI / 2 - p.w * 0.3);
+        m.visible = p.alive || Math.floor(tNow / 6) % 2 === 0;
+        if (p.gems > v.gems) {
+          for (let q = 0; q < 16; q++) { const a = (q / 16) * TAU; sparks.push({ x: m.position.x, y: m.position.y, z: PZ - 0.3, vx: Math.cos(a) * 1.8, vy: Math.sin(a) * 1.8, vz: 3, life: 0.6 }); }
+        }
+        if (!p.alive && v.alive !== false && i === 0) shake = 0.4;
+        v.alive = p.alive; v.gems = p.gems;
+        v.trail.unshift([m.position.x, m.position.y]);
+        if (v.trail.length > 18) v.trail.length = 18;
+        trails[i].begin();
+        if (p.alive) v.trail.forEach(([x, y], q) => { const t = trails[i].next(); t.position.set(x, y, PZ + 0.35 + q * 0.12); t.scale.setScalar(Math.max(0.2, 1 - q * 0.05)); });
+        trails[i].end();
       });
-      // the faster it goes, the wider the view: speed you can feel
+      // sparkles from a gem
+      spark.begin();
+      for (let q = sparks.length - 1; q >= 0; q--) {
+        const p = sparks[q];
+        p.life -= dt;
+        if (p.life <= 0) { sparks.splice(q, 1); continue; }
+        p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+        const m = spark.next(); m.position.set(p.x, p.y, p.z); m.scale.setScalar(p.life * 2); m.material.opacity = Math.min(1, p.life * 2);
+      }
+      spark.end();
+      // speed lines
+      const fast = Math.max(0, (sp - 14) / 16);
+      streakMat.opacity = fast * 0.5;
+      streaks.forEach((m) => { const u = m.userData; u.z += sp * dt * 1.5; if (u.z > 5) u.z -= 55; m.visible = fast > 0.02; m.position.set(Math.cos(u.a) * R * 0.9, Math.sin(u.a) * R * 0.9, u.z); });
+      // the camera turns with the plane, so it always flies along the bottom of the screen
+      const myA = shown[0]?.a ?? -Math.PI / 2;
+      if (aCam == null) aCam = myA;
+      let dc = ((myA - aCam + Math.PI * 3) % TAU) - Math.PI;
+      aCam += dc * (1 - Math.exp(-dt * 6));
+      shake = Math.max(0, shake - dt);
+      const lean = R * 0.3, sx = shake ? Math.sin(tNow * 2.3) * shake * 0.3 : 0;
+      camera.position.set(Math.cos(aCam) * lean + sx, Math.sin(aCam) * lean, 4.2);
+      camera.rotation.set(0, 0, aCam + Math.PI / 2);
+      const fov = 70 + Math.min(10, (sp - 12) * 0.6);
+      if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix(); }
     },
   };
 }

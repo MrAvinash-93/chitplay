@@ -132,3 +132,23 @@ class VoiceBox {
 }
 
 export const voiceBox = new VoiceBox();
+
+/**
+ * The voices to look for, in order, for a chat language. Languages written in Latin letters
+ * (Hinglish, Roman Urdu, Romaji…) read best with an Indian or US English voice, not a voice for
+ * the script they normally use.
+ */
+const VOICE_LANGS = {
+  en: ['en-IN', 'en-US', 'en-GB'], hindi: ['hi-IN', 'en-IN'], hinglish: ['en-IN', 'hi-IN', 'en-US'], urdu: ['en-IN', 'en-US'],
+  nepali: ['en-IN', 'en-US'], bangla: ['en-IN', 'en-US'], romaji: ['en-US', 'en-GB'], korean_roman: ['en-US', 'en-GB'],
+  pinyin: ['en-US', 'en-GB'], russian_latin: ['en-US', 'en-GB'], german: ['de-DE', 'de-AT'], french: ['fr-FR', 'fr-CA'],
+  portuguese: ['pt-BR', 'pt-PT'], spanish: ['es-ES', 'es-MX', 'es-US'], indonesian: ['id-ID'], turkish: ['tr-TR'], italian: ['it-IT'],
+};
+const FROM_BROWSER = { hi: 'hindi', ur: 'urdu', ne: 'nepali', bn: 'bangla', ja: 'romaji', ko: 'korean_roman', zh: 'pinyin', ru: 'russian_latin', de: 'german', fr: 'french', pt: 'portuguese', es: 'spanish', id: 'indonesian', ms: 'indonesian', tr: 'turkish', it: 'italian' };
+export function voiceLangsFor(id) {
+  const lang = VOICE_LANGS[id] ? id : (FROM_BROWSER[String(typeof navigator !== 'undefined' ? navigator.language : '').slice(0, 2).toLowerCase()] || 'en');
+  const list = VOICE_LANGS[lang] || VOICE_LANGS.en;
+  // an English speaker's own accent first, when the browser says which
+  const own = typeof navigator !== 'undefined' ? navigator.language : '';
+  return lang === 'en' && /^en-/i.test(own) ? [own, ...list.filter(l => l.toLowerCase() !== own.toLowerCase())] : list;
+}

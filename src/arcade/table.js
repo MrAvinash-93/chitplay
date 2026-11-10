@@ -10,33 +10,33 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1337';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1337';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1337';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1337';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1337';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1337';
-import { isLanguage } from '../i18n/index.js?v=20261110-1337';
-import { profile } from '../persistence/profile-store.js?v=20261110-1337';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1351';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1351';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1351';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1351';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1351';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1351';
+import { isLanguage } from '../i18n/index.js?v=20261110-1351';
+import { profile } from '../persistence/profile-store.js?v=20261110-1351';
 import { audioManager } from '../audio/audio-manager.js';
-import { iconSvg } from '../ui/icons.js?v=20261110-1337';
-import { faceHtml } from './photo.js?v=20261110-1337';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1337';
+import { iconSvg } from '../ui/icons.js?v=20261110-1351';
+import { faceHtml } from './photo.js?v=20261110-1351';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1351';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1337';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1351';
 
-import { fill, shellText } from './shell-text.js?v=20261110-1337';
-import { nextForRoom } from './decor.js?v=20261110-1337';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1337';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1337';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1337';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1337';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1337';
-import { ask } from './dialog.js?v=20261110-1337';
-import { startReminder } from './reminder.js?v=20261110-1337';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1337';
+import { fill, shellText } from './shell-text.js?v=20261110-1351';
+import { nextForRoom } from './decor.js?v=20261110-1351';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1351';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1351';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1351';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1351';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1351';
+import { ask } from './dialog.js?v=20261110-1351';
+import { startReminder } from './reminder.js?v=20261110-1351';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1351';
 
-const V = '?v=20261110-1337';
+const V = '?v=20261110-1351';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -148,6 +148,7 @@ function openPauseMenu() {
     G ? row(say.howTo, async () => { leave(); await openRules(G); if (solo) setPaused(false); }, 'book') : null,
     row('Quit game', () => { leaveAll(); location.href = '../'; }, 'exit'),
     row('Your profile', () => { if (match && !Logic?.result?.(match.s) && !window.confirm('Open your profile? This game will end.')) return; leaveAll(); location.href = '../?profile=1'; }, 'user'),
+    row(settingsStore.get('voiceEnabled') !== false ? 'Voices: on' : 'Voices: off', () => { settingsStore.set('voiceEnabled', settingsStore.get('voiceEnabled') === false); if (settingsStore.get('voiceEnabled') === false) window.speechSynthesis?.cancel(); menu(); }, settingsStore.get('voiceEnabled') !== false ? 'mic' : 'micOff'),
     row(soundOn() ? 'Sound: on' : 'Sound: off', () => { const next = !soundOn(); audioManager.setEnabled(next); settingsStore.set('soundEnabled', next); menu(); }, soundOn() ? 'sound' : 'soundOff'),
     back('Back to the game', close),
   ]);

@@ -8,16 +8,17 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1337';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1351';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-1337';
-import { lookOf, lookKey } from './character-looks.js?v=20261110-1337';
-import { buildRoomDetails } from './room-details.js?v=20261110-1337';
-import { COUNTRIES } from './countries.js?v=20261110-1337';
-import { isSpecialEmoji } from './table-talk.js?v=20261110-1337';
-import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-1337';
-import { decorMakers } from './decor-makers.js?v=20261110-1337';
-import * as Themes from './themes.js?v=20261110-1337';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-1351';
+import { lookOf, lookKey } from './character-looks.js?v=20261110-1351';
+import { buildRoomDetails } from './room-details.js?v=20261110-1351';
+import { COUNTRIES } from './countries.js?v=20261110-1351';
+import { voiceBox, voiceLangsFor } from './voice.js?v=20261110-1351';
+import { isSpecialEmoji } from './table-talk.js?v=20261110-1351';
+import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-1351';
+import { decorMakers } from './decor-makers.js?v=20261110-1351';
+import * as Themes from './themes.js?v=20261110-1351';
 
 const TAU = Math.PI * 2;
 
@@ -1431,6 +1432,19 @@ function createWorld() {
 
   let portraitShot = null;
   const dressAll = (list) => list?.forEach((p, i) => { if (p?.look && actors[i]) actors[i].setLook(p.look); });
+  /* Voices: whatever a player says in a bubble is also spoken by the browser, in a voice for their age
+     and gender. It never waits: the game goes on while they talk, and a line that can't start soon is
+     simply left as a bubble. */
+  let voiceLang = null;
+  const voiceOn = () => settingsStore.get('voiceEnabled') !== false && settingsStore.get('chatEnabled') !== false && settingsStore.get('soundEnabled') !== false;
+  function speakLine(i, text) {
+    if (!voiceOn() || typeof text !== 'string') return;
+    const lang = settingsStore.get('chatLang') || '';
+    if (lang !== voiceLang) { voiceLang = lang; voiceBox.setLanguages(voiceLangsFor(lang)); }
+    voiceBox.speak(i, text);
+  }
+  addEventListener('chitplay:pause', (e) => { if (e.detail?.on) voiceBox.stop(); });
+  addEventListener('pagehide', () => voiceBox.stop());
 
   // the shapes above need helpers defined further down the file: place things once everything exists
   placeDecor();
@@ -1645,6 +1659,7 @@ function createWorld() {
       setPower(true);
       shot = camera.aspect < 0.8 ? SHOTS.overhead : SHOTS.home;
       dressAll(list);
+      voiceBox.setCast(list.map((p) => { const l = p?.look ? lookOf(p.look) : null; return { gender: l?.gender === 'f' ? 'f' : 'm', age: l?.age || 'adult' }; }));
       // a seat nobody sits in stays empty
       list.forEach((p, i) => { actors[i].root.visible = !p.hidden; actors[i].setName(p.hidden ? null : p.label || p.name); });
       gatherChits(false);
@@ -1660,6 +1675,7 @@ function createWorld() {
       resetActors();
       actors.forEach(a => a.setName(null));
       setPower(true);
+      voiceBox.stop();
     },
     say(i, text, ms) {
       const b = bubbles[i];
@@ -1679,6 +1695,7 @@ function createWorld() {
       }, 35);
       actors[i].talk(dur / 1000 * 0.8);
       audioManager.play('talk');
+      speakLine(i, text);
       return dur;
     },
     /** Point the camera at a conversation: i talks to j (or to everyone when j is null). */

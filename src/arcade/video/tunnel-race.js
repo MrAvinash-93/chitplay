@@ -7,7 +7,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1337';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1351';
 
 export const LEVEL_D = 360;
 export const STAGES = ['Paper tunnel', 'Twin walls', 'Turning walls', 'Spin cycle'];
@@ -61,7 +61,7 @@ export default {
   analog: 'x',
   init({ n, seed }) {
     const s = { n, seed, t: 0, d: 0, at: 26, obs: [], gems: [], ev: [], level: 1, levelAt: -999, ring: false,
-      planes: seats(n).map(i => ({ a: r3(Math.PI * 1.5 + (i - (n - 1) / 2) * 0.55), w: 0, alive: true, score: 0, gems: 0 })) };
+      planes: seats(n).map(i => ({ a: r3(Math.PI * 1.5 + (i - (n - 1) / 2) * 0.55), w: 0, alive: true, score: 0, gems: 0, popAt: -999 })) };
     while (s.at < AHEAD) spawn(s);
     return s;
   },
@@ -90,7 +90,7 @@ export default {
         if (o.z > from && o.z <= s.d) s.ev.push({ k: 'pass', seat: i });
       }
       for (const g of s.gems) {
-        if (!g.got && g.z > from && g.z <= s.d && Math.abs(angDiff(p.a, g.a)) < 0.42) { g.got = true; p.gems += 1; s.ev.push({ k: 'star', seat: i }); }
+        if (!g.got && g.z > from && g.z <= s.d && Math.abs(angDiff(p.a, g.a)) < 0.42) { g.got = true; p.gems += 1; p.popAt = s.t; s.ev.push({ k: 'star', seat: i }); }
       }
       p.score = Math.floor(s.d / 6) + p.gems * 10;
     });
@@ -121,7 +121,19 @@ export default {
   },
   hud(g, s, names) {
     scoreBar(g, s.planes.map((p, i) => [names[i] || `P${i + 1}`, p.alive ? p.score : `${p.score} ✕`, SEAT_COLORS[i]]));
-    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt);
+    // a gem just taken: +10 rising over that player's score
+    const w = W / s.n;
+    s.planes.forEach((p, i) => {
+      const age = s.t - p.popAt;
+      if (age < 0 || age >= 40) return;
+      g.save(); g.globalAlpha = 1 - age / 40;
+      g.font = '900 26px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5; g.fillStyle = '#7dffe3';
+      const y = 74 - age * 0.6;
+      g.strokeText('+10', w * (i + 0.5), y); g.fillText('+10', w * (i + 0.5), y);
+      g.restore();
+    });
+    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 18);
   },
   // without 3D: the same tunnel, seen as rings coming at you
   draw(g, s, names) {
