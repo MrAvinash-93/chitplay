@@ -5,12 +5,12 @@
  * A piece the player may tap carries its move's number in userData.pick.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261110-1448';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261110-1448';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261110-1448';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261110-1448';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261110-1448';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261110-1448';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261110-1453';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261110-1453';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261110-1453';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261110-1453';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261110-1453';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261110-1453';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -63,6 +63,17 @@ const disc = (color, r = 0.06, h = 0.028) => group(mesh(cyl(r, r, h), mat(color,
 function pawnShape(color, s = 1) {
   const m = mat(color, 0.32);
   return group(mesh(cyl(0.042 * s, 0.056 * s, 0.03 * s), m, 0, 0.015 * s, 0), mesh(cyl(0.02 * s, 0.038 * s, 0.075 * s), m, 0, 0.066 * s, 0), mesh(ball(0.032 * s), m, 0, 0.122 * s, 0));
+}
+/** A Ludo token with a glossy finish and a white ring round its base. */
+function glossyPawn(color, s = 1) {
+  const m = new THREE.MeshStandardMaterial({ color, roughness: 0.18, metalness: 0.15 });
+  const ringMat = mat('#fbf6e9', 0.4);
+  return group(
+    mesh(cyl(0.042 * s, 0.058 * s, 0.03 * s), m, 0, 0.015 * s, 0),
+    mesh(cyl(0.059 * s, 0.059 * s, 0.006 * s), ringMat, 0, 0.004 * s, 0),
+    mesh(cyl(0.02 * s, 0.038 * s, 0.075 * s), m, 0, 0.066 * s, 0),
+    mesh(ball(0.034 * s), m, 0, 0.124 * s, 0),
+  );
 }
 const CHESS_HEIGHT = { P: 0.1, N: 0.13, B: 0.145, R: 0.125, Q: 0.165, K: 0.18 };
 function chessPiece(kind, color) {
@@ -161,8 +172,30 @@ class Stage {
     this.picks = [];
     this.marks = [];
     this.playing = null;
+    this.fx = [];
+    this.glows = [];   // rings that pulse while they are switched on (whose turn it is)
   }
   add(obj) { this.world.add(obj); return obj; }
+  /** Sparks flying out from a point, in a piece's colour (a capture, a piece reaching home). */
+  burst(x, y, z, color = '#ffd23f', n = 14, speed = 0.55) {
+    if (reduced) return;
+    for (let k = 0; k < n; k++) {
+      const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.012), new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false }));
+      const a = (k / n) * TAU + Math.random() * 0.4, v = speed * (0.5 + Math.random() * 0.7);
+      m.position.set(x, y, z);
+      this.world.add(m);
+      this.fx.push({ m, vx: Math.cos(a) * v, vy: 0.5 + Math.random() * 0.6, vz: Math.sin(a) * v, life: 0.7, max: 0.7 });
+    }
+  }
+  /** A soft ring spreading on the board where a piece has just landed. */
+  ripple(x, z, color = '#ffffff') {
+    if (reduced) return;
+    const m = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.005, 6, 28), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false }));
+    m.rotation.x = Math.PI / 2;
+    m.position.set(x, TOP_Y + 0.004, z);
+    this.world.add(m);
+    this.fx.push({ m, ring: true, life: 0.45, max: 0.45 });
+  }
   begin() { this.want = []; this.marks.forEach((o) => { this.world.remove(o); }); this.marks = []; this.picks = []; }
   /** Something should be at x,y,z. `kind` says which older piece may become this one. */
   put(kind, make, x, y, z, o = {}) { this.want.push({ kind, make, x, y, z, ...o }); }
@@ -212,7 +245,11 @@ class Stage {
       if (p) next.push(this.#update(p, spec));
       else next.push(this.#create(spec));
     }
-    old.forEach((p) => { if (p) { p.dying = p.dying ?? 0; p.spec = null; next.push(p); } });
+    old.forEach((p) => {
+      if (!p) return;
+      if (p.dying == null) this.burst(p.obj.position.x, p.obj.position.y + 0.04, p.obj.position.z, colorOf(p.obj), 10, 0.4);
+      p.dying = p.dying ?? 0; p.spec = null; next.push(p);
+    });
     this.live = next;
     next.forEach((p) => { if (p.spec?.pick != null) { p.obj.userData.pick = p.spec.pick; this.picks.push(p.obj); } else delete p.obj.userData.pick; });
   }
@@ -238,6 +275,8 @@ class Stage {
       p.t = reduced ? 1 : 0;
       p.dur = spun ? 0.6 : Math.min(0.7, 0.26 + dist * 0.5);
       p.hop = spun ? 0.26 : moved ? (spec.hop ?? Math.min(0.2, 0.05 + dist * 0.15)) : (turned ? 0.1 : 0);
+      if (moved && p.hop >= 0.5) this.burst(p.from[0], p.from[1] + 0.05, p.from[2], colorOf(p.obj), 14, 0.5);
+      p.landing = moved && !spun;
       p.rotFrom = [p.obj.rotation.x, p.obj.rotation.y, p.obj.rotation.z];
       p.rotTo = rot.slice();
       if (spec.route?.length > 1 && !reduced) { p.route = spec.route; p.routeFrom = [p.obj.position.x, p.obj.position.z]; p.routeT = 0; p.routeY = spec.y; p.t = 1; }
@@ -253,11 +292,12 @@ class Stage {
     let dead = false;
     this.clock = (this.clock || 0) + dt;
     if (!reduced) this.marks.forEach((m) => { if (m.userData.pulse) m.material.opacity = 0.5 + 0.4 * Math.sin(this.clock * 5); });
+    this.glows.forEach((r) => { r.material.opacity = r.userData.on ? (reduced ? 0.7 : 0.55 + Math.sin(this.clock * 4) * 0.35) : 0; });
     for (const p of this.live) {
       if (p.route && p.dying == null) {
         p.routeT += dt / STEP_SECONDS;
         const at = Math.floor(p.routeT);
-        if (at >= p.route.length) { const [x, z] = p.route[p.route.length - 1]; p.obj.position.set(x, p.routeY, z); p.route = null; continue; }
+        if (at >= p.route.length) { const [x, z] = p.route[p.route.length - 1]; p.obj.position.set(x, p.routeY, z); p.route = null; if (p.landing) { p.landing = false; this.ripple(x, z); } continue; }
         const [fx, fz] = at ? p.route[at - 1] : p.routeFrom;
         const [tx, tz] = p.route[at];
         const k = p.routeT - at;
@@ -274,6 +314,7 @@ class Stage {
       }
       if (p.t >= 1) continue;
       p.t = Math.min(1, p.t + dt / p.dur);
+      if (p.t >= 1 && p.landing && !p.route) { p.landing = false; this.ripple(p.to[0], p.to[2]); }
       const e = 1 - (1 - p.t) ** 3;
       const o = p.obj.position;
       o.x = p.from[0] + (p.to[0] - p.from[0]) * e;
@@ -282,13 +323,31 @@ class Stage {
       p.obj.rotation.set(p.rotFrom[0] + (p.rotTo[0] - p.rotFrom[0]) * e, p.rotFrom[1] + (p.rotTo[1] - p.rotFrom[1]) * e, p.rotFrom[2] + (p.rotTo[2] - p.rotFrom[2]) * e);
     }
     if (dead) this.live = this.live.filter(p => !p.gone);
+    // sparks and ripples
+    for (let k = this.fx.length - 1; k >= 0; k--) {
+      const f = this.fx[k];
+      f.life -= dt;
+      if (f.life <= 0) { this.world.remove(f.m); f.m.geometry.dispose(); f.m.material.dispose(); this.fx.splice(k, 1); continue; }
+      const t = 1 - f.life / f.max;
+      if (f.ring) { f.m.scale.setScalar(1 + t * 2.4); f.m.material.opacity = 0.7 * (1 - t); continue; }
+      f.vy -= 2.2 * dt;
+      f.m.position.x += f.vx * dt; f.m.position.y = Math.max(TOP_Y + 0.005, f.m.position.y + f.vy * dt); f.m.position.z += f.vz * dt;
+      f.m.material.opacity = Math.min(1, f.life / f.max * 1.6);
+    }
     this.playing?.(dt);
   }
   dispose() {
     this.root.remove(this.world);
     this.live = [];
     this.picks = [];
+    this.fx = [];
   }
+}
+/** The colour of a piece, from the first coloured mesh in it (for its sparks). */
+function colorOf(obj) {
+  let c = '#ffd23f';
+  obj.traverse?.((o) => { if (c === '#ffd23f' && o.material?.color && !o.material.map) c = '#' + o.material.color.getHexString(); });
+  return c;
 }
 
 /* ─── pictures for the boards ─── */
@@ -614,7 +673,35 @@ const BOARDS = {
           g.fillStyle = colors[[1, 2, 3, 0][i]];
           g.beginPath(); g.moveTo(a * u, b * u); g.lineTo(c * u, d * u); g.lineTo(m, m); g.fill();
         });
+        // a white arrow on each start square, pointing the way round, and a soft shine over the yards
+        yards.forEach((_, q) => {
+          const [sc, sr] = path[LUDO_STARTS[q]];
+          const [nc, nr] = path[(LUDO_STARTS[q] + 1) % 52];
+          const ang = Math.atan2(nr - sr, nc - sc);
+          g.save(); g.translate((sc + 0.5) * u, (sr + 0.5) * u); g.rotate(ang);
+          g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.moveTo(u * 0.32, 0); g.lineTo(-u * 0.22, -u * 0.24); g.lineTo(-u * 0.22, u * 0.24); g.closePath(); g.fill();
+          g.restore();
+          const [x, y] = yards[q];
+          const shine = g.createRadialGradient((x + 2) * u, (y + 2) * u, u * 0.5, (x + 3) * u, (y + 3) * u, 4 * u);
+          shine.addColorStop(0, 'rgba(255,255,255,.18)'); shine.addColorStop(1, 'rgba(255,255,255,0)');
+          g.fillStyle = shine; g.fillRect(x * u, y * u, 6 * u, 6 * u);
+        });
+        // a star in the middle: home
+        g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `${u * 1.1}px system-ui, "Segoe UI Symbol", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('★', m, m + u * 0.05);
       }, { color: '#6b4a2b' }));
+      // the yard of the player whose turn it is glows round its edge
+      st.ludoGlow = [0, 1, 2, 3].map((q) => {
+        const [x, y] = yards[q];
+        const [cx, cz] = cell(x + 2.5, y + 2.5, 15);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.018, 6, 4), new THREE.MeshBasicMaterial({ color: '#fff3b0', transparent: true, opacity: 0, depthWrite: false }));   // gold-white: it shows on every colour
+        ring.rotation.set(Math.PI / 2, 0, Math.PI / 4);
+        ring.scale.set(1.15, 1.15, 1);
+        ring.position.set(cx, TOP_Y + 0.006, cz);
+        st.add(ring);
+        return ring;
+      });
+      st.glows.push(...st.ludoGlow);
     },
     tokenAt(v, seat, t, pos) {
       const q = ludoQuarter(v, seat);
@@ -629,6 +716,10 @@ const BOARDS = {
       st.finishThrow?.();
       const spots = new Map();
       const before = st.ludoWas || v.t;
+      // whose turn: their yard glows
+      st.ludoGlow?.forEach((r, q) => { const on = (ctx.active || []).some(seat => ludoQuarter(v, seat) === q); r.userData.on = on; if (!on) r.material.opacity = 0; });
+      // a token that has just reached home: gold sparks in the middle of the board
+      v.t.forEach((tokens, seat) => tokens.forEach((pos, t) => { if (pos === LUDO_HOME && before[seat]?.[t] !== LUDO_HOME && st.ludoWas !== v.t) { const [hx, hz] = cell(7, 7, 15); setTimeout(() => st.burst(hx, TOP_Y + 0.08, hz, '#ffd23f', 24, 0.7), 600); } }));
       st.ludoWas = v.t;
       v.t.forEach((tokens, seat) => tokens.forEach((pos, t) => {
         let [x, z] = this.tokenAt(v, seat, t, pos);
@@ -653,7 +744,7 @@ const BOARDS = {
         }
         // captured: a high arc all the way back to the yard
         const sentHome = was >= 0 && pos < 0;
-        st.put(`t${seat}.${t}`, () => pawnShape(this.pawns[q], 0.82), x, TOP_Y, z, mine ? { pick: move, hop: 0.12, route } : { hop: sentHome ? 0.7 : 0.12, route });
+        st.put(`t${seat}.${t}`, () => glossyPawn(this.pawns[q], 0.82), x, TOP_Y, z, mine ? { pick: move, hop: 0.12, route } : { hop: sentHome ? 0.7 : 0.12, route });
         // where this move would land: a ring on the board
         if (mine) {
           const to = ludoDestination(v, seat, t);
