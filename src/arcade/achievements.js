@@ -3,7 +3,7 @@
  * stays on this device. Coins and rank points come from the same profile as the rest of the game,
  * so playing anything moves you up the same ladder. Nothing here is bought or has any real value.
  */
-import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-1207';
+import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-1215';
 
 const KEY = 'chitplay.achievements';
 // games that were renamed keep their scores under the new name
@@ -31,10 +31,10 @@ const sum = (o) => Object.values(o).reduce((x, y) => x + y, 0);
 export const TIERS = { bronze: { name: 'Bronze', color: '#cd7f32' }, silver: { name: 'Silver', color: '#cfd8e3' }, gold: { name: 'Gold', color: '#ffd23f' }, legend: { name: 'Legend', color: '#c77dff' } };
 const sumOf = (o) => Object.values(o).reduce((x, y) => x + y, 0);
 export const ACHIEVEMENTS = [
-  { id: 'chit-15', tier: 'bronze', icon: '📨', name: 'Paper Wings', hint: 'Score 40 in Flying Chit', coins: 40, test: a => a.best['flying-chit'] >= 40 },
-  { id: 'chit-120', tier: 'silver', icon: '✈️', name: 'Bangle Chaser', hint: 'Score 120 in Flying Chit', coins: 120, test: a => a.best['flying-chit'] >= 120 },
-  { id: 'chit-250', tier: 'gold', icon: '🌤️', name: 'Sky Above the School', hint: 'Score 250 in Flying Chit', coins: 300, test: a => a.best['flying-chit'] >= 250 },
-  { id: 'chit-500', tier: 'legend', icon: '👑', name: 'Chit of Legend', hint: 'Score 500 in Flying Chit', coins: 1000, test: a => a.best['flying-chit'] >= 500 },
+  { id: 'chit-15', tier: 'bronze', icon: '📨', name: 'Paper Wings', hint: 'Score 50 in Flying Chit', coins: 40, test: a => a.best['flying-chit'] >= 50 },
+  { id: 'chit-120', tier: 'silver', icon: '✈️', name: 'Bangle Chaser', hint: 'Score 200 in Flying Chit', coins: 120, test: a => a.best['flying-chit'] >= 200 },
+  { id: 'chit-250', tier: 'gold', icon: '🌤️', name: 'Sky Above the School', hint: 'Score 500 in Flying Chit', coins: 300, test: a => a.best['flying-chit'] >= 500 },
+  { id: 'chit-500', tier: 'legend', icon: '👑', name: 'Chit of Legend', hint: 'Score 1000 in Flying Chit', coins: 1000, test: a => a.best['flying-chit'] >= 1000 },
   { id: 'tunnel-150', tier: 'silver', icon: '🌀', name: 'Into the Spiral', hint: 'Score 150 in Tunnel Race', coins: 120, test: a => a.best['tunnel-race'] >= 150 },
   { id: 'tunnel-600', tier: 'legend', icon: '⚡', name: 'Light Speed', hint: 'Score 600 in Tunnel Race', coins: 1000, test: a => a.best['tunnel-race'] >= 600 },
   { id: 'road-400', tier: 'gold', icon: '🛺', name: 'King of the Road', hint: 'Score 400 in Road Dash', coins: 300, test: a => a.best['road-dash'] >= 400 },

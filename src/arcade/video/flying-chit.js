@@ -9,18 +9,25 @@
  * up and down. Every new level starts with a big golden bangle: fly through it for ten points and
  * full lift.
  *
+ * Fair to play: each bangle is placed where the chit can reach it in time from the one before, so
+ * the bangles make a flowing path. Near a bangle the chit is drawn gently towards its middle, a
+ * bangle forgives a graze of its edge, and fans and books only hit what really touches them.
+ *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1207';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1215';
 
 export const AHEAD = 70;
 export const LEVEL_D = 320;
 export const STAGES = ['Morning class', 'Fans on', 'Swinging bangles', 'Paper storm', 'Night class'];
 export const levelOf = (d) => 1 + Math.floor(d / LEVEL_D);
 export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
-export const speedAt = (d) => Math.min(27, 10 + d * 0.01);
+export const speedAt = (d) => Math.min(25, 10 + d * 0.008);
 const STEER = 2.1;                 // how fast the chit moves across, in screen widths a second
-const hoopSize = (d) => Math.max(0.17, 0.34 - d * 0.00007);
+const hoopSize = (d) => Math.max(0.2, 0.36 - d * 0.00006);
+export const GRAZE = 0.05;         // a bangle counts if the chit is this close to inside it
+export const HITBOX = 0.8;         // fans and books hit only within this share of their size
+const PULL = 0.05;                 // how strongly the next bangle draws a chit that is close to it
 const r2 = (v) => Math.round(v * 100) / 100;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /** Where a moving thing is at tick t: bangles and books swing across, fans bob up and down. */
@@ -35,11 +42,18 @@ function spawn(s) {
   // a new level: one big golden bangle in the middle, with nothing round it
   if (s.gold) {
     s.gold = false;
-    s.objs.push({ k: 'hoop', gold: true, z: r1(s.at), x: 0, y: 0, r: 0.36 });
+    // halfway from the last bangle to the middle, so it is always within reach
+    s.px = r2((s.px || 0) / 2); s.py = r2((s.py || 0) / 2);
+    s.objs.push({ k: 'hoop', gold: true, z: r1(s.at), x: s.px, y: s.py, r: 0.38 });
     s.at += 10;
     return;
   }
-  const x = r2(rnd(s) * 1.8 - 0.9), y = r2(rnd(s) * 1.5 - 0.75);
+  // the next bangle is never further than the chit can fly in the time it has to get there
+  const gap = 8.5 - lvl * 2, time = gap / speedAt(s.at);
+  const reach = Math.max(0.28, STEER * time * 0.55);
+  const x = r2(clamp((s.px || 0) + (rnd(s) * 2 - 1) * reach, -0.85, 0.85));
+  const y = r2(clamp((s.py || 0) + (rnd(s) * 2 - 1) * reach * 0.8, -0.7, 0.7));
+  s.px = x; s.py = y;
   const hoop = { k: 'hoop', z: r1(s.at), x, y, r: r2(hoopSize(s.d)) };
   // from level 3 some bangles swing from side to side
   if (level >= 3 && rnd(s) < Math.min(0.7, 0.35 + (level - 3) * 0.1)) Object.assign(hoop, { bx: x, sw: r2(0.25 + Math.min(0.25, (level - 3) * 0.05)), ph: r2(rnd(s) * 6) });
@@ -47,21 +61,23 @@ function spawn(s) {
   // something in the way, more often the further you are; no fans in the quiet first level
   if (rnd(s) < 0.35 + lvl * 0.45) {
     const k = level >= 2 && rnd(s) < 0.5 ? 'fan' : 'book';
-    const ox = r2(clamp(x + (rnd(s) - 0.5) * 1.2, -0.9, 0.9)), oy = r2(clamp(y + (rnd(s) - 0.5) * 0.9, -0.75, 0.75));
+    // to one side of the bangle, never right behind it
+    const a = rnd(s) * Math.PI * 2, far = 0.5 + rnd(s) * 0.35;
+    const ox = r2(clamp(x + Math.cos(a) * far, -0.9, 0.9)), oy = r2(clamp(y + Math.sin(a) * far * 0.8, -0.75, 0.75));
     const o = { k, z: r1(s.at + 3 + rnd(s) * 3), x: ox, y: oy, r: k === 'fan' ? 0.36 : 0.28 };
     // the paper storm: books drift across; at night the fans bob up and down
     if (k === 'book' && level >= 4 && rnd(s) < 0.5) Object.assign(o, { bx: ox, sw: 0.3, ph: r2(rnd(s) * 6) });
     if (k === 'fan' && level >= 5 && rnd(s) < 0.6) Object.assign(o, { by: oy, bob: 0.35, ph: r2(rnd(s) * 6) });
     s.objs.push(o);
   }
-  s.at += 8.5 - lvl * 2;
+  s.at += gap;
 }
 export default {
   hint: 'Drag to fly',
   pad: [['u', '▲'], ['d', '▼'], ['l', '◀'], ['r', '▶']],
   analog: 'xy',
   init({ n, seed }) {
-    const s = { n, seed, t: 0, d: 0, at: 22, objs: [], ev: [], level: 1, levelAt: -999, gold: false,
+    const s = { n, seed, t: 0, d: 0, at: 22, px: 0, py: 0, objs: [], ev: [], level: 1, levelAt: -999, gold: false,
       chits: seats(n).map(i => ({ x: r2((i - (n - 1) / 2) * 0.35), y: 0, vx: 0, vy: 0, alive: true, score: 0, lift: 1, combo: 0, hit: 0, best: 0, hoops: 0, pop: 0, popAt: -999 })) };
     while (s.at < AHEAD) spawn(s);
     return s;
@@ -79,7 +95,8 @@ export default {
     s.objs.forEach((o) => { if (o.sw || o.bob) { const p = placeAt(o, s.t); o.x = r2(p.x); o.y = r2(p.y); } });
     while (s.at < s.d + AHEAD) spawn(s);
     s.objs = s.objs.filter(o => o.z > s.d - 2);
-    const drain = 0.05 + Math.min(0.06, s.d * 0.00002);
+    const drain = 0.04 + Math.min(0.12, s.d * 0.000025);
+    const next = s.objs.find(o => o.k === 'hoop' && o.z > s.d);
     s.chits.forEach((c, i) => {
       if (!c.alive) { c.y = r2(Math.max(-1.2, c.y - 0.02)); return; }
       const inp = inputs[i] || {};
@@ -89,30 +106,35 @@ export default {
       c.vy = r2(c.vy + (clamp(iy, -1, 1) * STEER - c.vy) * 0.2);
       c.x = r2(clamp(c.x + c.vx * TICK, -1, 1));
       c.y = r2(clamp(c.y + c.vy * TICK, -0.85, 0.85));
+      // close to the next bangle: a gentle pull towards its middle
+      if (next && next.z - s.d < 14) {
+        const dx = next.x - c.x, dy = next.y - c.y;
+        if (Math.hypot(dx, dy) < next.r + 0.3) { c.x = r2(c.x + dx * PULL); c.y = r2(c.y + dy * PULL); }
+      }
       c.lift = Math.round((c.lift - drain * TICK) * 1000) / 1000;
       if (c.hit > 0) c.hit -= 1;
       for (const o of s.objs) {
         if (!(o.z > from && o.z <= s.d)) continue;
         const dist = Math.hypot(c.x - o.x, c.y - o.y);
         if (o.k === 'hoop') {
-          if (dist < o.r && o.gold) {
+          if (dist < o.r + GRAZE && o.gold) {
             c.score += 10;
             c.hoops += 1;
             c.lift = 1;
             c.pop = 10; c.popAt = s.t;
             s.ev.push({ k: 'star', seat: i, combo: 3 });
-          } else if (dist < o.r) {
+          } else if (dist < o.r + GRAZE) {
             c.combo += 1;
             c.hoops += 1;
             c.best = Math.max(c.best, c.combo);
             const pts = Math.min(5, c.combo);
             c.score += pts;
             c.pop = pts; c.popAt = s.t;
-            c.lift = Math.min(1, c.lift + Math.max(0.1, 0.24 - s.d * 0.00005));
+            c.lift = Math.min(1, c.lift + Math.max(0.12, 0.26 - s.d * 0.00005));
             s.ev.push({ k: 'star', seat: i, combo: c.combo });
           } else if (c.combo && !o.gold) { c.combo = 0; s.ev.push({ k: 'miss', seat: i }); }
-        } else if (dist < o.r + 0.1 && c.hit <= 0) {
-          c.lift -= 0.34;
+        } else if (dist < o.r * HITBOX && c.hit <= 0) {
+          c.lift -= 0.3;
           c.combo = 0;
           c.hit = 40;
           s.ev.push({ k: 'hit', seat: i, victim: i });
@@ -135,12 +157,14 @@ export default {
   bot(s, seat) {
     const c = s.chits[seat];
     if (!c?.alive) return {};
+    // now and then its mind wanders for a moment, longer the further it gets: it can be beaten
+    if ((s.t + seat * 97) % 420 < 24 + Math.min(42, s.d / 60)) return {};
     const hoop0 = s.objs.find(o => o.k === 'hoop' && o.z > s.d + 1);
     if (!hoop0) return {};
     // a moving bangle: aim for where it will be when the chit gets there
     const when = s.t + ((hoop0.z - s.d) / speedAt(s.d)) * 60;
     const hoop = { ...hoop0, ...placeAt(hoop0, when) };
-    const wobble = Math.sin(s.t / 23 + seat * 2) * (0.1 + s.d * 0.00008);
+    const wobble = Math.sin(s.t / 23 + seat * 2) * (0.22 + s.d * 0.00012);
     let tx = hoop.x + wobble, ty = hoop.y - wobble * 0.6;
     const block = s.objs.find(o => o.k !== 'hoop' && o.z > s.d && o.z < hoop.z && Math.hypot(o.x - tx, o.y - ty) < o.r + 0.12);
     if (block) { tx += Math.sign(tx - block.x || 1) * 0.35; }

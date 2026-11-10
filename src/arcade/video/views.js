@@ -4,14 +4,14 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, TICK } from './lib.js?v=20261110-1207';
-import { placeAt, speedAt } from './flying-chit.js?v=20261110-1207';
-import { AHEAD as TUNNEL_AHEAD } from './tunnel-race.js?v=20261110-1207';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-1207';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-1207';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-1207';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-1207';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-1207';
+import { SEAT_COLORS, TICK } from './lib.js?v=20261110-1215';
+import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261110-1215';
+import { AHEAD as TUNNEL_AHEAD } from './tunnel-race.js?v=20261110-1215';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-1215';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-1215';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-1215';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-1215';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-1215';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });
@@ -238,6 +238,11 @@ function flyingView() {
   const glowMat = basic('#fff3a0', { transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
   const glow = new THREE.Mesh(new THREE.TorusGeometry(1, 0.2, 8, 40), glowMat);
   scene.add(glow);
+  const aimMat = basic('#ffffff', { transparent: true, opacity: 0.85, depthTest: false, depthWrite: false });
+  const aim = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.014, 6, 32), aimMat);
+  const aimDot = new THREE.Mesh(new THREE.CircleGeometry(0.018, 12), aimMat);
+  aim.renderOrder = aimDot.renderOrder = 5;
+  scene.add(aim, aimDot);
   const golds = pool(scene, () => {
     const g = new THREE.Group();
     g.add(new THREE.Mesh(new THREE.TorusGeometry(1, 0.11, 12, 40), std('#fff06a', { metalness: 0.8, roughness: 0.15, emissive: '#a07800' })));
@@ -346,6 +351,20 @@ function flyingView() {
         else { const m = books.next(); m.position.set(px, py, Z(z)); m.scale.setScalar(o.r * 2.6); m.rotation.y = o.z + (o.sw ? Math.sin(tNow / 20) * 0.3 : 0); m.rotation.z = o.sw ? Math.sin(tNow / 30) * 0.2 : 0; }
       });
       hoops.end(); golds.end(); fans.end(); books.end();
+      // the aim ring for the chit on this screen: it sits at the next bangle's distance
+      const target = s.objs.find(o => o.k === 'hoop' && o.z > s.d + 0.5);
+      const a0 = s.chits[0], v0 = shown[0];
+      aim.visible = aimDot.visible = !!(target && a0?.alive && v0);
+      if (aim.visible) {
+        const z = Z(target.z - d);
+        const tp = (target.sw || target.bob) ? placeAt(target, tNow) : target;
+        const on = Math.hypot(v0.x - tp.x, v0.y - tp.y) < target.r + FLY_GRAZE;
+        aim.position.set(v0.x * X, v0.y * Y, z); aimDot.position.copy(aim.position);
+        const near = Math.min(20, (2.7 - z) * 0.66);   // the same size on screen however far away
+        aim.scale.setScalar(near); aimDot.scale.setScalar(near);
+        aimMat.color.set(on ? '#5dff8a' : '#ffffff');
+        aimMat.opacity = on ? 0.95 : 0.7;
+      }
       // the chits: smoothed between ticks, tilting into turns, flapping, a trail of light behind
       s.chits.forEach((c, i) => {
         if (!chits[i]) { chits[i] = wingedChit(SEAT_COLORS[i]); scene.add(chits[i]); shown[i] = { x: c.x, y: c.y, score: c.score, hit: c.hit, trail: [] }; }
