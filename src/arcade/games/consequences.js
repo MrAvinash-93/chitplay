@@ -3,8 +3,8 @@
  * lines. On a table with strangers (and for computer players) lines come from our own list instead,
  * so nobody ever reads something unmoderated from a stranger.
  */
-import { pick, seatsOf, shuffle } from '../lib.js?v=20261110-1259';
-import { STORY_LINES } from '../content.js?v=20261110-1259';
+import { pick, seatsOf, shuffle } from '../lib.js?v=20261110-1311';
+import { STORY_LINES } from '../content.js?v=20261110-1311';
 
 const clean = (t) => String(t || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90);
 

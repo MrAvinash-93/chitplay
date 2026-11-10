@@ -1,31 +1,31 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261110-1259';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261110-1259';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261110-1259';
+import { GAME_PHASES } from '../../app/config.js?v=20261110-1311';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261110-1311';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261110-1311';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261110-1259';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261110-1259';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261110-1259';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261110-1259';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261110-1259';
-import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261110-1259';
+import { loadWorld } from '../../world/world-loader.js?v=20261110-1311';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261110-1311';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261110-1311';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261110-1311';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261110-1311';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261110-1311';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261110-1259';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261110-1259';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261110-1259';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261110-1259';
-import { iconSvg } from '../icons.js?v=20261110-1259';
-import { shellText, fill } from '../../arcade/shell-text.js?v=20261110-1259';
-import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261110-1259';
-import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261110-1259';
-import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261110-1259';
-import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261110-1259';
-import { DECOR, RARITY, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261110-1259';
-import { savedList } from '../../arcade/resume.js?v=20261110-1259';
-import { logoSvg } from '../../arcade/logo.js?v=20261110-1259';
-import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261110-1259';
+} from '../../world/character-looks.js?v=20261110-1311';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261110-1311';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261110-1311';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261110-1311';
+import { iconSvg } from '../icons.js?v=20261110-1311';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261110-1311';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261110-1311';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261110-1311';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261110-1311';
+import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261110-1311';
+import { DECOR, RARITY, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261110-1311';
+import { savedList } from '../../arcade/resume.js?v=20261110-1311';
+import { logoSvg } from '../../arcade/logo.js?v=20261110-1311';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261110-1311';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -205,7 +205,10 @@ export function GameScreen({ transition }) {
   // the whole game can be read in the player's language (Latin letters); English by default
   const BROWSER_LANG = { hi: 'hindi', ur: 'urdu', ne: 'nepali', bn: 'bangla', ja: 'romaji', ko: 'korean_roman', zh: 'pinyin', ru: 'russian_latin', de: 'german', fr: 'french', pt: 'portuguese', es: 'spanish', id: 'indonesian', ms: 'indonesian', tr: 'turkish', it: 'italian' };
   const fromBrowser = () => { for (const l of navigator.languages || [navigator.language || 'en']) { const id = BROWSER_LANG[String(l).slice(0, 2).toLowerCase()]; if (id) return id; if (/^en/i.test(l)) return 'en'; } return 'en'; };
-  let lang = isLanguage(settingsStore.get('chatLang')) ? settingsStore.get('chatLang') : fromBrowser();
+  // ?lang=spanish (from a page in that language) wins, and is remembered; then the saved choice; then the browser's
+  const urlLang = (() => { try { const q = new URLSearchParams(location.search).get('lang'); return isLanguage(q) ? q : null; } catch { return null; } })();
+  if (urlLang) settingsStore.set('chatLang', urlLang);
+  let lang = urlLang || (isLanguage(settingsStore.get('chatLang')) ? settingsStore.get('chatLang') : fromBrowser());
   const chatPack = () => (lang === 'en' || ['hindi', 'indonesian', 'turkish', 'italian'].includes(lang) ? country.lang : lang);
   base = editionFor(lang);                  // one game: the language picks its name, room and voices
   const houseRules = () => (settingsStore.get('houseRules') || []).filter(r => HOUSE_RULES.includes(r));
@@ -1655,7 +1658,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261110-1259').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261110-1311').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -1870,7 +1873,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261110-1259').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261110-1311').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -2076,7 +2079,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261110-1259');
+        const scanner = import('../../net/qr-scan.js?v=20261110-1311');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });

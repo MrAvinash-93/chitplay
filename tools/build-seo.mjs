@@ -49,7 +49,7 @@ const ANALYTICS = `<!-- analytics -->
 <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KRTTSTQQ"></script>${ADSENSE_TAG}
 <!-- /analytics -->`;
 
-const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}how-to-play/">How to play</a> · <a href="${up}strategy/">Strategy</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a>`;
+const footerLinks = (up) => `<a href="${up}games/">All games</a> · <a href="${up}how-to-play/">How to play</a> · <a href="${up}strategy/">Strategy</a> · <a href="${up}indoor-games/">Indoor games</a> · <a href="${up}school-games/">School games</a> · <a href="${up}about/">About</a> · <a href="${up}contact/">Contact</a> · <a href="${up}privacy/">Privacy</a> · <a href="${up}terms/">Terms</a> · <a href="${up}disclaimer/">Disclaimer</a><br>🌍 ${langLinks(up)}`;
 const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src="${up}assets/logo.png" alt="ChitPlay" width="180" height="31" style="display:block"></a>`;
 const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
 <link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
@@ -59,6 +59,11 @@ const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon-192.png" size
 const src = readFileSync(join(ROOT, 'src/world/countries.js'), 'utf8');
 const C = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
 const { COUNTRIES, COUNTRY_ORDER, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, ROLE_LATIN, localize } = C;
+const { LANG_PAGES } = await import('./seo-langs.mjs');
+/** The games list in English and its pages in other languages point at each other, so each search shows its own. */
+const hreflangLinks = () => [['en', `${SITE}/games/`], ...LANG_PAGES.map(L => [L.code, `${SITE}/${L.dir}/`]), ['x-default', `${SITE}/games/`]]
+  .map(([c, u]) => `<link rel="alternate" hreflang="${c}" href="${u}">`).join('\n');
+const langLinks = (up) => LANG_PAGES.map(L => `<a href="${up}${L.dir}/" hreflang="${L.code}" lang="${L.code}">${L.label}</a>`).join(' · ');
 
 // the real rules engine, so the worked scoring examples always match the game
 const M = await import('data:text/javascript;base64,' + Buffer.from(readFileSync(join(ROOT, 'src/world/match.js'), 'utf8')).toString('base64'));
@@ -448,6 +453,7 @@ ${ANALYTICS}
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="${SITE}/assets/home.jpg">
 ${iconLinks('../')}
+${hreflangLinks()}
 <script type="application/ld+json">${json([ld, crumbs, faqLd])}</script>
 <style>body{margin:0;background:#140b07;color:#f6ead2;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:820px;margin:0 auto;padding:20px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(26px,6vw,38px);line-height:1.2}li{margin:14px 0}small{color:#d4c2a0}.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;background:#24140c;font-size:14px}td,th{padding:8px 10px;border-bottom:1px solid #3a2414;text-align:left}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}.btn{display:inline-block;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6}</style>
 </head>
@@ -865,14 +871,87 @@ const HOST = new URL(SITE).hostname;
 if (HOST.endsWith('github.io')) rmSync(join(ROOT, 'CNAME'), { force: true });
 else writeFileSync(join(ROOT, 'CNAME'), `${HOST}\n`);
 
-const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), MAIN_URL, ...PARTY.map(g => `${SITE}/games/${g.slug}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`)];
+// ── ChitPlay in other languages: one full page each, every game under its local name ──
+function langPage(L) {
+  const url = `${SITE}/${L.dir}/`;
+  const playUrl = (slug) => `../play/?game=${slug}&mode=play&lang=${L.game}`;
+  const shown = (slug, en) => { const [n] = L.names[slug]; return n === en || n.includes(en) ? n : `${n} (${en})`; };
+  const players = (g) => (g.min === g.max ? `${g.min}` : `${g.min}–${g.max}`);
+  const item = (g) => `<li><img src="../assets/games/${g.slug}-square.jpg" alt="" width="56" height="56" loading="lazy" decoding="async"><div><strong>${esc(shown(g.slug, g.name))}</strong> <small>👥 ${players(g)} ${esc(L.ui.players)}</small><br>${esc(L.names[g.slug][1])}<br><a class="go" href="${playUrl(g.slug)}">${esc(L.ui.play)}</a> <a href="../games/${g.slug}/" hreflang="en">${esc(L.ui.rules)}</a></div></li>`;
+  const kinds = ['Party', 'Board', 'Cards', 'Arcade', 'Dice', 'Puzzle'].filter(k => PARTY.some(g => g.kind === k));
+  const sections = kinds.map(k => `<h3>${esc(L.kinds[k] || k)}</h3>\n<ul class="games">${PARTY.filter(g => g.kind === k).map(item).join('')}</ul>`).join('\n');
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'WebPage', name: L.title, url, inLanguage: L.code, description: L.desc, isPartOf: { '@type': 'WebSite', name: 'ChitPlay', url: `${SITE}/` } },
+    { '@context': 'https://schema.org', '@type': 'ItemList', name: L.gamesTitle, numberOfItems: PARTY.length + 1, itemListElement: [{ slug: MAIN_SLUG, name: L.main[0] }, ...PARTY.map(g => ({ slug: g.slug, name: shown(g.slug, g.name) }))].map((g, i) => ({ '@type': 'ListItem', position: i + 1, name: g.name, url: `${SITE}/games/${g.slug}/`, image: `${SITE}/assets/games/${g.slug}-square.jpg` })) },
+    { '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: L.code, mainEntity: L.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'ChitPlay', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: L.label, item: url }] },
+  ];
+  return `<!DOCTYPE html>
+<html lang="${L.code}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${ANALYTICS}
+<title>${esc(L.title)}</title>
+<meta name="description" content="${esc(L.desc)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+${hreflangLinks()}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChitPlay">
+<meta property="og:locale" content="${L.code.replace('-Latn', '').replace('-', '_')}">
+<meta property="og:title" content="${esc(L.title)}">
+<meta property="og:description" content="${esc(L.desc)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${SITE}/assets/home.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(L.title)}">
+<meta name="twitter:description" content="${esc(L.desc)}">
+<meta name="twitter:image" content="${SITE}/assets/home.jpg">
+${iconLinks('../')}
+<script type="application/ld+json">${json(ld)}</script>
+<style>body{margin:0;background:#140b07;color:#f6ead2;font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif}main{max-width:820px;margin:0 auto;padding:20px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(26px,6vw,38px);line-height:1.2}h2{font-size:22px;margin-top:30px}h3{font-size:18px;margin:22px 0 8px;color:#ffd27a}.btn{display:inline-block;padding:14px 24px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6;font-size:18px}.ways{padding-left:0;list-style:none}.ways li{margin:8px 0;padding:10px 14px;border-radius:12px;background:#24140c}.games{padding:0;list-style:none}.games li{display:flex;gap:12px;align-items:flex-start;margin:8px 0;padding:10px 12px;border-radius:12px;background:#24140c}.games img{flex:none;border-radius:12px}.games small{color:#d4c2a0}.go{font-weight:700;margin-right:10px}.feature{display:flex;gap:14px;align-items:center;padding:14px;border-radius:14px;background:#2d170c;border:1px solid #6a3b1d}.feature img{flex:none;border-radius:16px}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}footer{margin-top:40px;font-size:13px;color:#d4c2a0}.langs{font-size:14px}</style>
+</head>
+<body>
+<main>
+${logoLink('../')}
+<h1>${esc(L.h1)}</h1>
+${L.intro.map(p => `<p>${esc(p)}</p>`).join('\n')}
+<p><a class="btn" href="../?lang=${L.game}">${esc(L.ui.playNow)}</a></p>
+<h2>${esc(L.waysTitle)}</h2>
+<ul class="ways">${L.ways.map(([t, d]) => `<li><strong>${esc(t)}:</strong> ${esc(d)}</li>`).join('')}</ul>
+<h2>${esc(L.gamesTitle)}</h2>
+<div class="feature"><img src="../assets/games/${MAIN_SLUG}-square.jpg" alt="${esc(L.main[0])}" width="88" height="88" loading="lazy" decoding="async"><div><strong>${esc(L.main[0])}</strong> <small>👥 4 ${esc(L.ui.players)}</small><br>${esc(L.main[1])}<br><a class="go" href="../?lang=${L.game}">${esc(L.ui.play)}</a> <a href="../games/${MAIN_SLUG}/" hreflang="en">${esc(L.ui.rules)}</a></div></div>
+${sections}
+<h2>${esc(L.faqTitle)}</h2>
+${L.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
+<h2>${esc(L.ui.langs)}</h2>
+<p class="langs"><a href="../games/" hreflang="en" lang="en">English</a> · ${LANG_PAGES.filter(o => o !== L).map(o => `<a href="../${o.dir}/" hreflang="${o.code}" lang="${o.code}">${o.label}</a>`).join(' · ')}</p>
+<p><small>${esc(L.ui.note)}</small></p>
+<footer>${footerLinks('../')} · © ${TODAY.slice(0, 4)} ChitPlay</footer>
+</main>
+</body>
+</html>
+`;
+}
+for (const L of LANG_PAGES) {
+  mkdirSync(join(ROOT, L.dir), { recursive: true });
+  writeFileSync(join(ROOT, L.dir, 'index.html'), langPage(L));
+}
+
+const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), MAIN_URL, ...PARTY.map(g => `${SITE}/games/${g.slug}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`), ...LANG_PAGES.map(L => `${SITE}/${L.dir}/`)];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.map((u, i) => {
   // each game's page carries its own picture, so it can show up in image search too
   const slug = u.match(/\/games\/([a-z0-9-]+)\/$/)?.[1];
   const pic = slug ? `<image:image><image:loc>${SITE}/assets/games/${slug}.jpg</image:loc></image:image>` : '';
-  return `  <url><loc>${u}</loc><lastmod>${TODAY}</lastmod><changefreq>monthly</changefreq><priority>${i === 0 ? '1.0' : i === 1 ? '0.9' : '0.8'}</priority>${pic}</url>`;
+  // the games list and its pages in other languages name each other
+  const cluster = u === `${SITE}/games/` || LANG_PAGES.some(L => u === `${SITE}/${L.dir}/`);
+  const alt = cluster ? [['en', `${SITE}/games/`], ...LANG_PAGES.map(L => [L.code, `${SITE}/${L.dir}/`]), ['x-default', `${SITE}/games/`]].map(([c, h]) => `<xhtml:link rel="alternate" hreflang="${c}" href="${h}"/>`).join('') : '';
+  return `  <url><loc>${u}</loc><lastmod>${TODAY}</lastmod><changefreq>monthly</changefreq><priority>${i === 0 ? '1.0' : i === 1 ? '0.9' : '0.8'}</priority>${pic}${alt}</url>`;
 }).join('\n')}
 </urlset>
 `);
@@ -950,6 +1029,7 @@ const body = `<!-- seo:body -->
     <h2>One game, many names</h2>
     <p><a href="games/cops-and-robbers/">Cops and Robbers</a> is played as ${esc(COUNTRY_ORDER.map(id => GAME_NAME_EN[id]).filter(n => n !== 'Cops and Robbers').join(', '))}. Pick your language and the game takes your name for it.</p>
     <p><a href="games/">All games and rules</a> · <a href="how-to-play/">How to play (full guide)</a> · <a href="strategy/">Strategy and tips</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
+    <p>🌍 ${langLinks('')}</p>
   </section>
   <!-- /seo:body -->`;
 let index = readFileSync(join(ROOT, 'index.html'), 'utf8');
