@@ -8,7 +8,7 @@
  * Coordinates: the board is -1…1 on both axes. Seat 0 shoots from the near baseline (y = +0.72)
  * towards -y; seat 1 from the far one. The physics is in plain JS so the host alone decides.
  */
-import { best, turnLine } from '../lib.js?v=20261110-1153';
+import { best, turnLine } from '../lib.js?v=20261110-1207';
 
 export const WALL = 1;
 export const R = 0.052;           // a coin's radius

@@ -4,23 +4,32 @@
  * ceiling fans and stacks of books knock the paper out of it. It never ends: the chit just runs
  * out of lift sooner or later, and the room gets faster and busier the further you get.
  *
- * The classroom comes in levels: first only stacks of books, then ceiling fans, then bangles that
- * swing from side to side. Every new level starts with a big golden bangle: fly through it for ten
- * points and full lift.
+ * The classroom comes in levels, morning to night: first only stacks of books, then ceiling fans,
+ * then bangles that swing from side to side, then books that drift too, and at night the fans bob
+ * up and down. Every new level starts with a big golden bangle: fly through it for ten points and
+ * full lift.
  *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1153';
-
-export const LEVEL_D = 320;
-export const STAGES = ['Quiet class', 'Fans on', 'Swinging bangles', 'Paper storm'];
-export const levelOf = (d) => 1 + Math.floor(d / LEVEL_D);
-export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1207';
 
 export const AHEAD = 70;
+export const LEVEL_D = 320;
+export const STAGES = ['Morning class', 'Fans on', 'Swinging bangles', 'Paper storm', 'Night class'];
+export const levelOf = (d) => 1 + Math.floor(d / LEVEL_D);
+export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
 export const speedAt = (d) => Math.min(27, 10 + d * 0.01);
+const STEER = 2.1;                 // how fast the chit moves across, in screen widths a second
 const hoopSize = (d) => Math.max(0.17, 0.34 - d * 0.00007);
 const r2 = (v) => Math.round(v * 100) / 100;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+/** Where a moving thing is at tick t: bangles and books swing across, fans bob up and down. */
+export function placeAt(o, t) {
+  return {
+    x: o.sw ? clamp(o.bx + Math.sin(t / 45 + o.ph) * o.sw, -0.95, 0.95) : o.x,
+    y: o.bob ? clamp(o.by + Math.sin(t / 38 + o.ph) * o.bob, -0.8, 0.8) : o.y,
+  };
+}
 function spawn(s) {
   const lvl = Math.min(1, s.d / 1700), level = s.level || 1;
   // a new level: one big golden bangle in the middle, with nothing round it
@@ -38,7 +47,12 @@ function spawn(s) {
   // something in the way, more often the further you are; no fans in the quiet first level
   if (rnd(s) < 0.35 + lvl * 0.45) {
     const k = level >= 2 && rnd(s) < 0.5 ? 'fan' : 'book';
-    s.objs.push({ k, z: r1(s.at + 3 + rnd(s) * 3), x: r2(Math.max(-0.9, Math.min(0.9, x + (rnd(s) - 0.5) * 1.2))), y: r2(Math.max(-0.75, Math.min(0.75, y + (rnd(s) - 0.5) * 0.9))), r: k === 'fan' ? 0.36 : 0.28 });
+    const ox = r2(clamp(x + (rnd(s) - 0.5) * 1.2, -0.9, 0.9)), oy = r2(clamp(y + (rnd(s) - 0.5) * 0.9, -0.75, 0.75));
+    const o = { k, z: r1(s.at + 3 + rnd(s) * 3), x: ox, y: oy, r: k === 'fan' ? 0.36 : 0.28 };
+    // the paper storm: books drift across; at night the fans bob up and down
+    if (k === 'book' && level >= 4 && rnd(s) < 0.5) Object.assign(o, { bx: ox, sw: 0.3, ph: r2(rnd(s) * 6) });
+    if (k === 'fan' && level >= 5 && rnd(s) < 0.6) Object.assign(o, { by: oy, bob: 0.35, ph: r2(rnd(s) * 6) });
+    s.objs.push(o);
   }
   s.at += 8.5 - lvl * 2;
 }
@@ -48,7 +62,7 @@ export default {
   analog: 'xy',
   init({ n, seed }) {
     const s = { n, seed, t: 0, d: 0, at: 22, objs: [], ev: [], level: 1, levelAt: -999, gold: false,
-      chits: seats(n).map(i => ({ x: r2((i - (n - 1) / 2) * 0.35), y: 0, vx: 0, vy: 0, alive: true, score: 0, lift: 1, combo: 0, hit: 0, best: 0 })) };
+      chits: seats(n).map(i => ({ x: r2((i - (n - 1) / 2) * 0.35), y: 0, vx: 0, vy: 0, alive: true, score: 0, lift: 1, combo: 0, hit: 0, best: 0, hoops: 0, pop: 0, popAt: -999 })) };
     while (s.at < AHEAD) spawn(s);
     return s;
   },
@@ -62,7 +76,7 @@ export default {
       s.gold = true;
       s.ev.push({ k: 'level', seat: -1, level: s.level, name: stageName(s.level) });
     }
-    s.objs.forEach((o) => { if (o.sw) o.x = r2(Math.max(-0.95, Math.min(0.95, o.bx + Math.sin(s.t / 45 + o.ph) * o.sw))); });
+    s.objs.forEach((o) => { if (o.sw || o.bob) { const p = placeAt(o, s.t); o.x = r2(p.x); o.y = r2(p.y); } });
     while (s.at < s.d + AHEAD) spawn(s);
     s.objs = s.objs.filter(o => o.z > s.d - 2);
     const drain = 0.05 + Math.min(0.06, s.d * 0.00002);
@@ -71,10 +85,10 @@ export default {
       const inp = inputs[i] || {};
       const ix = Number.isFinite(inp.x) ? inp.x : (inp.r ? 1 : 0) - (inp.l ? 1 : 0);
       const iy = Number.isFinite(inp.y) ? -inp.y : (inp.u ? 1 : 0) - (inp.d ? 1 : 0);
-      c.vx += (Math.max(-1, Math.min(1, ix)) * 1.9 - c.vx) * 0.16;
-      c.vy += (Math.max(-1, Math.min(1, iy)) * 1.9 - c.vy) * 0.16;
-      c.x = r2(Math.max(-1, Math.min(1, c.x + c.vx * TICK)));
-      c.y = r2(Math.max(-0.85, Math.min(0.85, c.y + c.vy * TICK)));
+      c.vx = r2(c.vx + (clamp(ix, -1, 1) * STEER - c.vx) * 0.2);
+      c.vy = r2(c.vy + (clamp(iy, -1, 1) * STEER - c.vy) * 0.2);
+      c.x = r2(clamp(c.x + c.vx * TICK, -1, 1));
+      c.y = r2(clamp(c.y + c.vy * TICK, -0.85, 0.85));
       c.lift = Math.round((c.lift - drain * TICK) * 1000) / 1000;
       if (c.hit > 0) c.hit -= 1;
       for (const o of s.objs) {
@@ -83,12 +97,17 @@ export default {
         if (o.k === 'hoop') {
           if (dist < o.r && o.gold) {
             c.score += 10;
+            c.hoops += 1;
             c.lift = 1;
+            c.pop = 10; c.popAt = s.t;
             s.ev.push({ k: 'star', seat: i, combo: 3 });
           } else if (dist < o.r) {
             c.combo += 1;
+            c.hoops += 1;
             c.best = Math.max(c.best, c.combo);
-            c.score += Math.min(5, c.combo);
+            const pts = Math.min(5, c.combo);
+            c.score += pts;
+            c.pop = pts; c.popAt = s.t;
             c.lift = Math.min(1, c.lift + Math.max(0.1, 0.24 - s.d * 0.00005));
             s.ev.push({ k: 'star', seat: i, combo: c.combo });
           } else if (c.combo && !o.gold) { c.combo = 0; s.ev.push({ k: 'miss', seat: i }); }
@@ -118,25 +137,61 @@ export default {
     if (!c?.alive) return {};
     const hoop0 = s.objs.find(o => o.k === 'hoop' && o.z > s.d + 1);
     if (!hoop0) return {};
-    // a swinging bangle: aim for where it will be
-    const hoop = hoop0.sw ? { ...hoop0, x: hoop0.bx + Math.sin((s.t + ((hoop0.z - s.d) / speedAt(s.d)) * 60) / 45 + hoop0.ph) * hoop0.sw } : hoop0;
+    // a moving bangle: aim for where it will be when the chit gets there
+    const when = s.t + ((hoop0.z - s.d) / speedAt(s.d)) * 60;
+    const hoop = { ...hoop0, ...placeAt(hoop0, when) };
     const wobble = Math.sin(s.t / 23 + seat * 2) * (0.1 + s.d * 0.00008);
     let tx = hoop.x + wobble, ty = hoop.y - wobble * 0.6;
     const block = s.objs.find(o => o.k !== 'hoop' && o.z > s.d && o.z < hoop.z && Math.hypot(o.x - tx, o.y - ty) < o.r + 0.12);
     if (block) { tx += Math.sign(tx - block.x || 1) * 0.35; }
-    return { x: Math.max(-1, Math.min(1, (tx - c.x) * 3)), y: Math.max(-1, Math.min(1, -(ty - c.y) * 3)) };
+    return { x: clamp((tx - c.x) * 3, -1, 1), y: clamp(-(ty - c.y) * 3, -1, 1) };
   },
   hud(g, s, names) {
     scoreBar(g, s.chits.map((c, i) => [names[i] || `P${i + 1}`, c.alive ? c.score : `${c.score} ✕`, SEAT_COLORS[i]]));
-    // how much lift is left: the chit's wings
+    const w = (W - 24) / s.n;
     s.chits.forEach((c, i) => {
-      const w = (W - 24) / s.n;
-      g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(12 + i * w, 38, w - 12, 7);
-      g.fillStyle = c.lift > 0.3 ? '#7dff9a' : '#ff6b5b';
-      g.fillRect(12 + i * w, 38, (w - 12) * Math.max(0, c.lift), 7);
-      if (c.combo > 1 && c.alive) { g.fillStyle = '#fff'; g.font = '800 22px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(`×${Math.min(5, c.combo)}`, 12 + i * w + (w - 12) / 2, 70); }
+      const x0 = 12 + i * w, cx = x0 + (w - 12) / 2;
+      // lift: the chit's wings. It glows red when it is nearly gone
+      g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(x0, 38, w - 12, 8);
+      g.fillStyle = c.lift > 0.3 ? '#7dff9a' : (Math.floor(s.t / 8) % 2 ? '#ff6b5b' : '#ffb3a8');
+      g.fillRect(x0, 38, (w - 12) * Math.max(0, c.lift), 8);
+      g.fillStyle = '#fff'; g.font = '800 10px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.fillText('LIFT', x0 + 4, 42.5);
+      if (!c.alive) return;
+      // the combo, hotter the longer it goes
+      if (c.combo > 1) {
+        const k = Math.min(5, c.combo), fresh = s.t - c.popAt < 10 ? 1.15 : 1;
+        g.font = `900 ${Math.round((20 + k * 2) * fresh)}px system-ui, sans-serif`; g.textAlign = 'center';
+        g.fillStyle = ['#fff', '#fff', '#fff36b', '#ffc23f', '#ff8a3d', '#ff5a4f'][k];
+        g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 4;
+        g.strokeText(`COMBO ×${k}`, cx, 66); g.fillText(`COMBO ×${k}`, cx, 66);
+      }
+      // the points a bangle just gave, rising and fading
+      const age = s.t - c.popAt;
+      if (age >= 0 && age < 45) {
+        g.save();
+        g.globalAlpha = 1 - age / 45;
+        g.font = `900 ${c.pop >= 10 ? 34 : 28}px system-ui, sans-serif`; g.textAlign = 'center';
+        g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = 5;
+        g.fillStyle = c.pop >= 10 ? '#fff36b' : '#ffffff';
+        const y = 112 - age * 0.7;
+        g.strokeText(`+${c.pop}`, cx, y); g.fillText(`+${c.pop}`, cx, y);
+        g.restore();
+      }
     });
-    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 18);
+    // hit by a fan or books: the edges of the screen flash red for whoever plays on this screen
+    const me = s.chits[0];
+    if (me && me.hit > 26) {
+      const a = (me.hit - 26) / 14 * 0.45;
+      const grad = g.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.62);
+      grad.addColorStop(0, 'rgba(255,40,40,0)'); grad.addColorStop(1, `rgba(255,40,40,${a})`);
+      g.fillStyle = grad; g.fillRect(0, 0, W, H);
+    }
+    // how far to the next level, under the level's name
+    const into = (s.d % LEVEL_D) / LEVEL_D;
+    g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(W / 2 - 90, H - 5, 180, 4);
+    g.fillStyle = '#ffd23f'; g.fillRect(W / 2 - 90, H - 5, 180 * into, 4);
+    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 19);
   },
   // without 3D: the same space, in perspective
   draw(g, s, names) {

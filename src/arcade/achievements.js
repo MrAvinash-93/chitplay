@@ -3,7 +3,7 @@
  * stays on this device. Coins and rank points come from the same profile as the rest of the game,
  * so playing anything moves you up the same ladder. Nothing here is bought or has any real value.
  */
-import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-1153';
+import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-1207';
 
 const KEY = 'chitplay.achievements';
 // games that were renamed keep their scores under the new name
