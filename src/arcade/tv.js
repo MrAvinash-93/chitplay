@@ -3,19 +3,19 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-1215';
-import { W, H, TICK } from './video/lib.js?v=20261110-1215';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1215';
-import { nextForRoom } from './decor.js?v=20261110-1215';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1215';
-import { MOMENT, linesFor } from './talk.js?v=20261110-1215';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1215';
-import { ask, confirmSpend } from './dialog.js?v=20261110-1215';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1215';
-import { profile } from '../persistence/profile-store.js?v=20261110-1215';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1215';
+import { hintsLeft, showHint } from './hint.js?v=20261110-1222';
+import { W, H, TICK } from './video/lib.js?v=20261110-1222';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1222';
+import { nextForRoom } from './decor.js?v=20261110-1222';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1222';
+import { MOMENT, linesFor } from './talk.js?v=20261110-1222';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1222';
+import { ask, confirmSpend } from './dialog.js?v=20261110-1222';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1222';
+import { profile } from '../persistence/profile-store.js?v=20261110-1222';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1222';
 
-const V = '?v=20261110-1215';
+const V = '?v=20261110-1222';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 const SCALE = matchMedia('(pointer: fine)').matches ? 1.5 : 1;       // ticks between pictures sent to friends: twenty a second

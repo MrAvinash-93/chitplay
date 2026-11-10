@@ -7,7 +7,7 @@
  *
  * Angles are measured in the board's own frame. A pin always arrives at the bottom of the screen.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1215';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1222';
 
 const TAU = Math.PI * 2;
 const FLY = 7;                 // ticks a pin is in the air
