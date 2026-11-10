@@ -6,7 +6,7 @@
  * the highway things come two at a time; in rush hour the other rickshaws race at you. Each new
  * level opens with a coin rush: a few seconds of coins in a zigzag line, and nothing new in the way.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1422';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1427';
 
 export const LANES = 4;
 export const LEVEL_DIST = 4000;
@@ -51,7 +51,7 @@ export default {
   pad: [['l', '◀'], ['r', '▶']],
   init({ n, seed }) {
     return { n, seed, t: 0, dist: 0, next: 30, things: [], coins: [], ev: [], level: 1, levelAt: -999, rush: 0, rushLane: 1,
-      carts: seats(n).map(i => ({ l: i % LANES, y: laneY(i % LANES), alive: true, score: 0, coins: 0, wl: false, wr: false, x: 110 + i * 26 })) };
+      carts: seats(n).map(i => ({ l: i % LANES, y: laneY(i % LANES), alive: true, score: 0, coins: 0, popAt: -999, wl: false, wr: false, x: 110 + i * 26 })) };
   },
   step(s, inputs) {
     s.t += 1;
@@ -79,7 +79,7 @@ export default {
       c.y = r1(c.y + (laneY(c.l) - c.y) * 0.24);
       c.score = Math.floor(s.dist / 40) + c.coins * 5;
       s.coins = s.coins.filter((k) => {
-        if (k.l === c.l && Math.abs(k.x - c.x) < 28) { c.coins += 1; s.ev.push({ k: 'star', seat: i }); return false; }
+        if (k.l === c.l && Math.abs(k.x - c.x) < 28) { c.coins += 1; c.popAt = s.t; s.ev.push({ k: 'star', seat: i }); return false; }
         return true;
       });
       if (s.things.some(t => Math.abs(laneY(t.l) - c.y) < 26 && Math.abs(t.x - c.x) < 34)) { c.alive = false; s.ev.push({ k: 'crash', seat: i }); }
@@ -116,6 +116,16 @@ export default {
   },
   hud(g, s, names) {
     scoreBar(g, s.carts.map((c, i) => [names[i] || `P${i + 1}`, c.alive ? c.score : `${c.score} ✕`, SEAT_COLORS[i]]));
+    // a coin just taken: +5 rising over that player's score
+    s.carts.forEach((c, i) => {
+      const age = s.t - c.popAt;
+      if (age < 0 || age >= 36) return;
+      const w = W / s.n;
+      g.save(); g.globalAlpha = 1 - age / 36; g.font = '900 26px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5; g.fillStyle = '#ffd23f';
+      const y = 86 - age * 0.6; g.strokeText('+5', w * (i + 0.5), y); g.fillText('+5', w * (i + 0.5), y);
+      g.restore();
+    });
     levelTag(g, s.level, s.rush > 0 ? 'Coin rush!' : stageName(s.level), s.t - s.levelAt, 52, `${stageName(s.level)} · coin rush!`);
   },
   draw(g, s, names) {

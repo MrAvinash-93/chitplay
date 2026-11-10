@@ -2,7 +2,7 @@
  * Snakes and Ladders, 2 to 4 players, on our own 100-square board. A six rolls again. Square 100
  * needs the exact number: too high and the token stays put.
  */
-import { roll, seatsOf, turnLine } from '../lib.js?v=20261110-1422';
+import { roll, seatsOf, turnLine } from '../lib.js?v=20261110-1427';
 
 export const LADDERS = { 3: 22, 9: 31, 20: 41, 28: 76, 36: 57, 51: 67, 63: 81, 71: 92 };
 export const SNAKES = { 26: 7, 39: 18, 47: 25, 58: 40, 66: 44, 83: 61, 89: 68, 95: 74, 98: 79 };
