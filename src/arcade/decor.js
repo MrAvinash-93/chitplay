@@ -3,7 +3,7 @@
  * Everything is bought with coins earned by playing (they have no value outside the game), and
  * the best things also need wins, achievements or a rank: a room shows how far you have come.
  */
-import { RANKS } from '../persistence/profile-store.js?v=20261110-1453';
+import { RANKS } from '../persistence/profile-store.js?v=20261110-1504';
 
 export const RARITY = {
   common: { name: 'Common', color: '#b9c3cf', points: 1 },

@@ -9,7 +9,7 @@
  *
  * Side view, in screen pixels: x to the right, y down. Gravity pulls down (+y).
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1453';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1504';
 
 export const PER_LEVEL = 5;
 export const STAGES = ['Still hoops', 'Moving hoops', 'Windy court', 'Wind and moving hoops'];

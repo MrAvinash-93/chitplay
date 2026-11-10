@@ -5,12 +5,12 @@
  * A piece the player may tap carries its move's number in userData.pick.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261110-1453';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261110-1453';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261110-1453';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261110-1453';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261110-1453';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261110-1453';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261110-1504';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261110-1504';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261110-1504';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261110-1504';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261110-1504';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261110-1504';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -187,6 +187,30 @@ class Stage {
       this.fx.push({ m, vx: Math.cos(a) * v, vy: 0.5 + Math.random() * 0.6, vz: Math.sin(a) * v, life: 0.7, max: 0.7 });
     }
   }
+  /** A glowing dot left behind on the board that fades away (a carrom striker's trail). */
+  trace(x, z, color = '#fff3b0') {
+    if (reduced) return;
+    const m = new THREE.Mesh(cyl(0.022, 0.022, 0.003, 12), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6, depthWrite: false }));
+    m.position.set(x, TOP_Y + 0.006, z);
+    this.world.add(m);
+    this.fx.push({ m, still: true, life: 0.35, max: 0.35 });
+  }
+  /** A line on the board from one point to another, gone at the next redraw (the last chess move). */
+  line(x1, z1, x2, z2, color = '#ffd23f', w = 0.022) {
+    const len = Math.hypot(x2 - x1, z2 - z1);
+    const g = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.75, depthWrite: false });
+    const bar = new THREE.Mesh(box(Math.max(0.001, len - 0.05), 0.003, w), mat);
+    bar.position.x = (len - 0.05) / 2;
+    const head = new THREE.Mesh(new THREE.ConeGeometry(w * 1.6, 0.06, 3), mat);
+    head.rotation.z = -Math.PI / 2; head.position.x = len - 0.03; head.scale.z = 0.15;
+    g.add(bar, head);
+    g.position.set(x1, TOP_Y + 0.007, z1);
+    g.rotation.y = -Math.atan2(z2 - z1, x2 - x1);
+    this.world.add(g);
+    this.marks.push(g);
+    return g;
+  }
   /** A soft ring spreading on the board where a piece has just landed. */
   ripple(x, z, color = '#ffffff') {
     if (reduced) return;
@@ -330,6 +354,7 @@ class Stage {
       if (f.life <= 0) { this.world.remove(f.m); f.m.geometry.dispose(); f.m.material.dispose(); this.fx.splice(k, 1); continue; }
       const t = 1 - f.life / f.max;
       if (f.ring) { f.m.scale.setScalar(1 + t * 2.4); f.m.material.opacity = 0.7 * (1 - t); continue; }
+      if (f.still) { f.m.material.opacity = 0.6 * (1 - t); f.m.scale.setScalar(1 - t * 0.5); continue; }
       f.vy -= 2.2 * dt;
       f.m.position.x += f.vx * dt; f.m.position.y = Math.max(TOP_Y + 0.005, f.m.position.y + f.vy * dt); f.m.position.z += f.vz * dt;
       f.m.material.opacity = Math.min(1, f.life / f.max * 1.6);
@@ -520,7 +545,23 @@ const BOARDS = {
         const kind = c.toUpperCase();
         st.put(`p${c}`, () => { const g = chessPiece(kind, white ? '#fffaf0' : '#17110d'); if (!white) g.rotation.y = Math.PI; return g; }, x, TOP_Y, z, white ? {} : { rot: [0, Math.PI, 0] });
       });
-      if (v.last) [v.last.f, v.last.t].forEach((sq) => { const [x, z] = cell(sq % 8, Math.floor(sq / 8), 8); st.area(x, z, 0.2, 0.2, null, { show: true, color: '#f7d774', y: TOP_Y + 0.001 }); });
+      if (v.last) {
+        [v.last.f, v.last.t].forEach((sq) => { const [x, z] = cell(sq % 8, Math.floor(sq / 8), 8); st.area(x, z, 0.2, 0.2, null, { show: true, color: '#f7d774', y: TOP_Y + 0.001 }); });
+        // an arrow from where the last piece came from to where it went
+        const [fx, fz] = cell(v.last.f % 8, Math.floor(v.last.f / 8), 8), [tx, tz] = cell(v.last.t % 8, Math.floor(v.last.t / 8), 8);
+        st.line(fx, fz, tx, tz, '#ffd23f');
+      }
+      // in check: the king's square glows red
+      if (v.check && !v.end) {
+        const k = v.b.indexOf(v.p === 0 ? 'K' : 'k');
+        if (k >= 0) { const [x, z] = cell(k % 8, Math.floor(k / 8), 8); st.mark(x, z, undefined, { r: 0.1, y: TOP_Y + 0.002, color: '#ff2a2a', pulse: true }); st.picks.pop(); }
+      }
+      // checkmate: sparks round the winner's king
+      if (v.end && v.end.winner >= 0 && st.chessEnded !== v.end) {
+        st.chessEnded = v.end;
+        const k = v.b.indexOf(v.end.winner === 0 ? 'K' : 'k');
+        if (k >= 0) { const [x, z] = cell(k % 8, Math.floor(k / 8), 8); setTimeout(() => st.burst(x, TOP_Y + 0.15, z, v.end.winner === 0 ? '#fff3c0' : '#ffd23f', 30, 0.7), 500); }
+      }
       twoStep(ctx, st, (sel) => {
         [...new Set(ctx.legal.map(m => m.f))].forEach((f) => { const [x, z] = cell(f % 8, Math.floor(f / 8), 8); st.area(x, z, 0.2, 0.2, { sel: f }, { show: f === sel, color: '#ffb347', y: TOP_Y + 0.003 }); });
         if (sel == null) return;
@@ -971,8 +1012,11 @@ const BOARDS = {
       const striker = this.coin('S')();
       st.add(striker);
       let f = 0;
+      const pocketed = new Set();
+      const coinColor = (id) => (id === 'q' ? '#ff4d8a' : id === 'S' ? '#fff3b0' : String(id)[0] === 'w' ? '#fff6dc' : '#5a4434');
       st.playing = (dt) => {
         f += dt * 20;
+        if (striker.visible) st.trace(striker.position.x, striker.position.z, '#fff3b0');
         const at = Math.floor(f);
         const a = v.frames[Math.min(v.frames.length - 1, at)];
         const b = v.frames[Math.min(v.frames.length - 1, at + 1)];
@@ -980,7 +1024,11 @@ const BOARDS = {
         v.ids.forEach((id, i) => {
           const o = id === 'S' ? striker : pieces.get(id)?.obj;
           if (!o) return;
-          if (!a[i]) { o.visible = false; return; }
+          if (!a[i]) {
+            // in the pocket: a burst of its colour where it went down (gold for the queen)
+            if (o.visible && !pocketed.has(id)) { pocketed.add(id); st.burst(o.position.x, TOP_Y + 0.03, o.position.z, id === 'q' ? '#ffd23f' : coinColor(id), id === 'q' ? 24 : 12, 0.45); }
+            o.visible = false; return;
+          }
           const to = b[i] || a[i];
           o.position.set(((a[i][0] + (to[0] - a[i][0]) * k) / 1000) * S, TOP_Y, ((a[i][1] + (to[1] - a[i][1]) * k) / 1000) * S);
         });
