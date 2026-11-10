@@ -845,7 +845,7 @@ body.room-only #app, body.room-only .myroom, body.room-only .player-tags, body.r
 @media (max-width: 600px) { .world-caption { top: calc(var(--hud-h) + 48px); } }
 
 /* in a match only the ⏸ menu stays in the top bar; profile, sound and chat are inside it */
-.game--playing .game__top-right > :is(.game__scanbtn, .game__langbtn, .game__profilebtn, .game__toolsbtn, .game__tools) { display: none; }
+.game--playing .game__top-right > :is(.game__scanbtn, .game__profilebtn, .game__toolsbtn, .game__tools) { display: none; }
 /* paused: names, speech and emojis from the room wait behind the menu */
 html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-fx, .player-chit) { display: none; }
 /* after a game: liked it? put it in the Hot games */

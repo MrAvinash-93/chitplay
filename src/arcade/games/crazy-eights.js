@@ -3,8 +3,8 @@
  * Draw one; play it if you can, otherwise pass. First with an empty hand wins the round. The others
  * score their leftover cards against them, and the lowest penalty total after 3 rounds wins.
  */
-import { best, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1534';
-import { newPack, rankOf, sortHand, SUIT_ICON, SUIT_NAME, SUITS, suitOf, showCard } from '../cards.js?v=20261110-1534';
+import { best, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1540';
+import { newPack, rankOf, sortHand, SUIT_ICON, SUIT_NAME, SUITS, suitOf, showCard } from '../cards.js?v=20261110-1540';
 
 const ROUNDS = 3;
 const handValue = (hand) => hand.reduce((sum, c) => {
@@ -34,6 +34,7 @@ function endRound(s, seat) {
 }
 
 export default {
+  rounds: ROUNDS,   // shown at the top of the screen: Round 2/ROUNDS
   init({ n, rng }) {
     const s = { n, round: 1, pen: seatsOf(n).map(() => 0), done: false, between: false, summary: null };
     deal(s, rng);

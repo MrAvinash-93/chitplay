@@ -8,7 +8,7 @@
  * A card is a string: colour letter + value. Colours R G B Y; values 0–9, S (skip), T (turn
  * around), D (draw two). Rainbows are 'W' and 'W4'.
  */
-import { best, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1534';
+import { best, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1540';
 
 export const COLOURS = ['R', 'G', 'B', 'Y'];
 export const COLOUR_NAME = { R: 'Red', G: 'Green', B: 'Blue', Y: 'Yellow' };
@@ -56,6 +56,7 @@ function draw(s, seat, k, rng) {
 }
 
 export default {
+  rounds: MAX_ROUNDS,   // shown at the top of the screen: Round 2/MAX_ROUNDS
   init({ n, rng }) {
     const s = { n, round: 1, pts: seatsOf(n).map(() => 0), done: false, between: false, summary: null };
     deal(s, rng);

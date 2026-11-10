@@ -3,19 +3,19 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-1534';
-import { W, H, TICK } from './video/lib.js?v=20261110-1534';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1534';
-import { nextForRoom } from './decor.js?v=20261110-1534';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1534';
-import { MOMENT, linesFor } from './talk.js?v=20261110-1534';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1534';
-import { ask, confirmSpend } from './dialog.js?v=20261110-1534';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1534';
-import { profile } from '../persistence/profile-store.js?v=20261110-1534';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1534';
+import { hintsLeft, showHint } from './hint.js?v=20261110-1540';
+import { W, H, TICK } from './video/lib.js?v=20261110-1540';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1540';
+import { nextForRoom } from './decor.js?v=20261110-1540';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1540';
+import { MOMENT, linesFor } from './talk.js?v=20261110-1540';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1540';
+import { ask, confirmSpend } from './dialog.js?v=20261110-1540';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1540';
+import { profile } from '../persistence/profile-store.js?v=20261110-1540';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1540';
 
-const V = '?v=20261110-1534';
+const V = '?v=20261110-1540';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -249,7 +249,29 @@ export async function runTv(ctx) {
       e.currentTarget.firstChild.textContent = nameOf(emojiTo);
       e.currentTarget.setAttribute('aria-label', `Send to: ${nameOf(emojiTo)}. Tap to change.`);
     } }, [h('span', {}, [nameOf(emojiTo)]), h('b', { 'aria-hidden': 'true' }, ['▾'])]);
-    return h('div', { class: 'chatrow' }, [who, trollButtons()]);
+    // and a message: one of the game's ready-made lines, said by your character for everyone to see
+    const msgBtn = h('button', { type: 'button', class: 'chatbtn', 'aria-label': say.chat, title: say.chat, onclick: () => openTalk() }, ['💬']);
+    return h('div', { class: 'chatrow' }, [who, trollButtons(), msgBtn]);
+  }
+  function openTalk() {
+    document.querySelector('.sheet')?.remove();
+    const close = () => sheet.remove();
+    const sheet = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': say.chat, onclick: (e) => { if (e.target === sheet) close(); } }, [
+      h('div', { class: 'sheet__box' }, [
+        h('div', { class: 'talklines' }, lines.map((line, i) => h('button', { type: 'button', class: 'btn', onclick: () => { close(); sendLine(i); } }, [line]))),
+        btn(say.close, close),
+      ]),
+    ]);
+    document.body.append(sheet);
+  }
+  let lineAt = 0;
+  function sendLine(i) {
+    if (!lines[i] || Date.now() - lineAt < 1200) return;
+    lineAt = Date.now();
+    if (guestLink) { guestLink.send({ t: 'talk', line: i }); return; }
+    const me = localSeats()[0] ?? 0;
+    story?.say(me, lines[i]);
+    room?.broadcast({ t: 'say', seat: me, text: lines[i] });
   }
   function trollButtons() {
     return h('div', { class: 'troll', role: 'group', 'aria-label': say.chat }, emojis().map(e => h('button', {
@@ -575,6 +597,10 @@ export async function runTv(ctx) {
           const to = Number.isInteger(msg.to) && players[msg.to] ? msg.to : null;
           showEmoji(seat, msg.e, to);
           room.broadcast({ t: 'emoji', seat, e: msg.e, to });
+        } else if (msg.t === 'talk' && seat >= 0 && Number.isInteger(msg.line) && lines[msg.line]) {
+          // only the game's own lines can be sent, never free text
+          story?.say(seat, lines[msg.line]);
+          room.broadcast({ t: 'say', seat, text: lines[msg.line] });
         }
       },
       onLeave: () => {},

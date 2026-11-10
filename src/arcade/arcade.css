@@ -281,3 +281,14 @@ body.room .panel > .chatrow { position: sticky; bottom: 0; z-index: 2; padding-b
 .pausemenu { z-index: 400; }
 .pausebtn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .pausebtn__ico { display: grid; place-items: center; } .pausebtn__ico .ico { width: 20px; height: 20px; }
+
+/* the top bar while playing: pause, the game, what matters now (round and points), and the language */
+.bar .bartitle { flex: none; white-space: nowrap; }
+.barstatus { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 5px 10px; border-radius: 999px; background: rgba(20, 11, 7, .72); color: #ffe6b0; font: 700 13px system-ui, sans-serif; }
+.barstatus:empty { display: none; }
+.bar .langpick { flex: none; margin-left: auto; font-size: 13px; min-height: 36px; padding: 0 10px; }
+.langlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin: 8px 0 12px; }
+/* on a phone the round and the points get a line of their own under the bar, whole */
+@media (max-width: 620px) { .bar { flex-wrap: wrap; row-gap: 6px; } .barstatus { order: 9; flex: 1 0 100%; white-space: normal; text-align: center; font-size: 12px; padding: 4px 10px; } }
+/* a sheet over the game (rules, menu, language): the pointing hand waits behind it */
+html:has(.sheet) .hint-hand { display: none; }

@@ -10,7 +10,7 @@
  *             round again (straight on to its own start square)
  *  - quick:   everyone starts with one token already out
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261110-1534';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261110-1540';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];
@@ -111,6 +111,7 @@ function describe(v, seat, t) {
 }
 
 export default {
+  rounds: SCORE.rounds,   // in Score mode only
   // with two players they sit opposite each other, next to their own corners
   places: (n) => (n === 2 ? [0, -1, 1, -1] : null),
   init({ n, opts }) {

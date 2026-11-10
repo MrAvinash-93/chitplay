@@ -10,33 +10,33 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1534';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1534';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1534';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1534';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1534';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1534';
-import { isLanguage } from '../i18n/index.js?v=20261110-1534';
-import { profile } from '../persistence/profile-store.js?v=20261110-1534';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1540';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1540';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1540';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1540';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1540';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1540';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261110-1540';
+import { profile } from '../persistence/profile-store.js?v=20261110-1540';
 import { audioManager } from '../audio/audio-manager.js';
-import { iconSvg } from '../ui/icons.js?v=20261110-1534';
-import { faceHtml } from './photo.js?v=20261110-1534';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1534';
+import { iconSvg } from '../ui/icons.js?v=20261110-1540';
+import { faceHtml } from './photo.js?v=20261110-1540';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1540';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1534';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1540';
 
-import { fill, shellText } from './shell-text.js?v=20261110-1534';
-import { nextForRoom } from './decor.js?v=20261110-1534';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1534';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1534';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1534';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1534';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1534';
-import { ask } from './dialog.js?v=20261110-1534';
-import { startReminder } from './reminder.js?v=20261110-1534';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1534';
+import { fill, shellText } from './shell-text.js?v=20261110-1540';
+import { nextForRoom } from './decor.js?v=20261110-1540';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1540';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1540';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1540';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1540';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1540';
+import { ask } from './dialog.js?v=20261110-1540';
+import { startReminder } from './reminder.js?v=20261110-1540';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1540';
 
-const V = '?v=20261110-1534';
+const V = '?v=20261110-1540';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -92,8 +92,46 @@ function panelOf() { return app.querySelector('.panel'); }
 // while playing there is one button up here: it pauses the game and holds everything else (rules, profile, sound, quit)
 const topBar = (game) => h('header', { class: 'bar' }, [
   h('button', { type: 'button', class: 'back pausebtn', 'aria-label': 'Pause and menu', title: 'Pause and menu (Esc)', onclick: () => openPauseMenu() }, [h('span', { class: 'pausebtn__ico', html: iconSvg('pause') }), h('span', { class: 'wideonly' }, [' Menu'])]),
-  h('strong', {}, [game ? `${game.icon} ${game.name}` : 'ChitPlay']),
+  h('strong', { class: 'bartitle' }, [game ? `${game.icon} ${game.name}` : 'ChitPlay']),
+  // what matters right now: the round, and everyone's points (filled in as the game goes)
+  h('span', { class: 'barstatus', 'aria-live': 'polite' }, [statusNow]),
+  h('button', { type: 'button', class: 'back langpick', 'aria-label': 'Language', title: 'Language', onclick: () => openLanguages() }, [`🌐 ${(LANGUAGES.find(l => l.id === LANG) || LANGUAGES[0]).short}`]),
 ]);
+let statusNow = '';
+/** Round 3/15 · You 120 · Riya 90: from the game's view and the players' strip. */
+function setStatus(view, strip) {
+  let round = '';
+  if (view && Logic?.rounds && Number.isInteger(view.round) && (G.slug !== 'ludo' || view.style === 'score')) round = `Round ${Math.min(view.round, Logic.rounds)}/${Logic.rounds}`;
+  else if (view && Number.isInteger(view.at) && Number.isInteger(view.total)) round = `Question ${Math.min(view.at + 1, view.total)}/${view.total}`;
+  let scores = (strip || []).map(x => `${String(x.name).slice(0, 10)} ${x.text}`).join(' · ');
+  // no strip of players: the points from the game itself (penalty points where lower is better)
+  const pts = view && [view.scores, view.pts, view.points, view.pen].find(a => Array.isArray(a) && a.every(Number.isFinite));
+  if (!scores && pts && shown?.ctx?.names) {
+    const me = shown.ctx.me;
+    scores = pts.map((v, i) => `${i === me ? 'You' : String(shown.ctx.names[i] || '').slice(0, 10)} ${Math.round(v * 10) / 10}`).join(' · ') + (view.pen === pts ? ' (penalty)' : '');
+  }
+  statusNow = [round, scores].filter(Boolean).join(' · ');
+  document.querySelectorAll('.barstatus').forEach((el) => { el.textContent = statusNow; el.title = statusNow; });
+}
+/** Change the language in the middle of a game: the page reloads and the game carries on where it was. */
+function openLanguages() {
+  document.querySelector('.sheet')?.remove();
+  const close = () => sheet.remove();
+  const sheet = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Language', onclick: (e) => { if (e.target === sheet) close(); } }, [
+    h('div', { class: 'sheet__box' }, [
+      h('h1', {}, ['🌐 Language']),
+      h('div', { class: 'langlist' }, LANGUAGES.map(l => h('button', { type: 'button', class: `btn${l.id === LANG ? ' primary' : ''}`, onclick: () => {
+        if (l.id === LANG) { close(); return; }
+        if ((room || guest) && !window.confirm('Changing the language reloads the page and leaves this room. Continue?')) return;
+        settingsStore.set('chatLang', l.id);
+        try { const u = new URL(location.href); u.searchParams.delete('lang'); history.replaceState(null, '', u); } catch {}
+        location.reload();
+      } }, [l.label]))),
+      btn(say.close, close),
+    ]),
+  ]);
+  document.body.append(sheet);
+}
 
 /* ─── the pause menu ─── */
 // alone (with or without computer players) the game really stops; with people online or nearby it can't, and says so
@@ -387,6 +425,7 @@ let thinking = -1;
 const stripOf = (list) => (list ? h('ul', { class: 'strip' }, list.map(x => h('li', { class: x.on ? 'on' : '', style: `--who:${x.color}` }, [h('strong', {}, [x.name]), h('span', {}, [x.text])]))) : null);
 function paintPanel(p, ctx, send) {
   lastStrip = p.players || null;
+  setStatus(shown?.view, p.players);
   const play = (i) => () => send(ctx.legal[i]);
   const cards = (p.buttons || []).filter(b => b.card);
   const plain = (p.buttons || []).filter(b => !b.card);

@@ -4,8 +4,8 @@
  * votes. Catch the spy and they get one guess at the real word. Works with bots and strangers,
  * because clues are cards rather than speech.
  */
-import { best, leaders, pick, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1534';
-import { SPY_PAIRS, CLUES } from '../content.js?v=20261110-1534';
+import { best, leaders, pick, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1540';
+import { SPY_PAIRS, CLUES } from '../content.js?v=20261110-1540';
 
 const ROUNDS = 3;
 const cluesFor = (word) => CLUES[word] || [];
@@ -34,6 +34,7 @@ function deal(s, rng) {
 const pendingVotes = (s) => seatsOf(s.n).filter(p => s.votes[p] == null);
 
 export default {
+  rounds: ROUNDS,   // shown at the top of the screen: Round 2/ROUNDS
   secret: true,
   init({ n, rng }) {
     const s = { n, round: 1, used: [], scores: seatsOf(n).map(() => 0), done: false };
