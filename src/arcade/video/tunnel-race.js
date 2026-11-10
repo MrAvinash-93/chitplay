@@ -2,9 +2,17 @@
  * Tunnel Race: a paper plane flying down a tunnel that never ends. Steer round the inside of the
  * tunnel to slip past the walls, collect gems, and keep going: it gets a little faster as you go.
  *
+ * The tunnel comes in levels: first plain walls and gaps, then twin walls on both sides, then walls
+ * that turn as they come at you. Every new level opens with a ring of gems all the way round.
+ *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0936';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1142';
+
+export const LEVEL_D = 360;
+export const STAGES = ['Paper tunnel', 'Twin walls', 'Turning walls', 'Spin cycle'];
+export const levelOf = (d) => 1 + Math.floor(d / LEVEL_D);
+export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
 
 export const AHEAD = 60;
 const TAU = Math.PI * 2;
@@ -21,16 +29,25 @@ export function blocks(o, a) {
   return d < o.w / 2 + PLANE || Math.abs(angDiff(a, o.c + Math.PI)) < o.w / 2 + PLANE;   // 'twin'
 }
 function spawn(s) {
-  const lvl = Math.min(1, s.d / 2600);
+  const lvl = Math.min(1, s.d / 2600), level = s.level || 1;
+  // a new level: a ring of gems all the way round, and a little room before the next wall
+  if (s.ring) {
+    s.ring = false;
+    for (let k = 0; k < 8; k++) s.gems.push({ z: r1(s.at), a: r3((k * TAU) / 8) });
+    s.at += 10;
+    return;
+  }
   const roll = rnd(s);
   const c = r3(rnd(s) * TAU);
   let o;
-  if (roll < 0.5) o = { k: 'wall', c, w: r3(1.1 + lvl * 1.2 + rnd(s) * 0.4) };
+  if (roll < 0.5 || (level < 2 && roll >= 0.85)) o = { k: 'wall', c, w: r3(1.1 + lvl * 1.2 + rnd(s) * 0.4) };
   else if (roll < 0.85) o = { k: 'gap', c, w: r3(Math.max(1.4, 2.9 - lvl * 1.2 - rnd(s) * 0.3)) };
   else o = { k: 'twin', c, w: r3(0.8 + lvl * 0.7) };
   o.z = r1(s.at);
+  // from level 3 some walls turn as they come
+  if (level >= 3 && rnd(s) < Math.min(0.6, 0.3 + (level - 3) * 0.1)) o.sp = r3((rnd(s) < 0.5 ? -1 : 1) * Math.min(1.2, 0.45 + (level - 3) * 0.15));
   s.obs.push(o);
-  if (rnd(s) < 0.5) {
+  if (!o.sp && rnd(s) < 0.5) {
     // a gem sits where the plane can get through
     const open = o.k === 'gap' ? o.c : o.k === 'wall' ? o.c + Math.PI : o.c + Math.PI / 2;
     s.gems.push({ z: r1(o.z + 4), a: r3(open) });
@@ -43,7 +60,7 @@ export default {
   pad: [['l', '◀'], ['r', '▶']],
   analog: 'x',
   init({ n, seed }) {
-    const s = { n, seed, t: 0, d: 0, at: 26, obs: [], gems: [], ev: [],
+    const s = { n, seed, t: 0, d: 0, at: 26, obs: [], gems: [], ev: [], level: 1, levelAt: -999, ring: false,
       planes: seats(n).map(i => ({ a: r3(Math.PI * 1.5 + (i - (n - 1) / 2) * 0.55), w: 0, alive: true, score: 0, gems: 0 })) };
     while (s.at < AHEAD) spawn(s);
     return s;
@@ -51,7 +68,14 @@ export default {
   step(s, inputs) {
     s.t += 1;
     const from = s.d;
-    s.d =Math.round((from + speedAt(from) * TICK) * 100) / 100;
+    s.d = Math.round((from + speedAt(from) * TICK) * 100) / 100;
+    if (levelOf(s.d) > s.level) {
+      s.level = levelOf(s.d);
+      s.levelAt = s.t;
+      s.ring = true;
+      s.ev.push({ k: 'level', seat: -1, level: s.level, name: stageName(s.level) });
+    }
+    s.obs.forEach((o) => { if (o.sp) o.c = r3(((o.c + o.sp * TICK) % TAU + TAU) % TAU); });
     while (s.at < s.d + AHEAD) spawn(s);
     s.obs = s.obs.filter(o => o.z > s.d - 3);
     s.gems = s.gems.filter(g => g.z > s.d - 3 && !g.got);
@@ -85,8 +109,10 @@ export default {
     const p = s.planes[seat];
     if (!p?.alive) return {};
     const look = 14 + ((seat * 5 + Math.floor(s.t / 120)) % 4) * 2;
-    const o = s.obs.find(x => x.z > s.d && x.z < s.d + look);
-    if (!o) return { x: 0 };
+    const o0 = s.obs.find(x => x.z > s.d && x.z < s.d + look);
+    if (!o0) return { x: 0 };
+    // a turning wall: aim for where it will be when it gets here
+    const o = o0.sp ? { ...o0, c: o0.c + o0.sp * ((o0.z - s.d) / speedAt(s.d)) } : o0;
     let target;
     if (o.k === 'gap') target = o.c;
     else if (o.k === 'twin') target = [o.c + Math.PI / 2, o.c - Math.PI / 2].sort((u, v) => Math.abs(angDiff(p.a, u)) - Math.abs(angDiff(p.a, v)))[0];
@@ -95,6 +121,7 @@ export default {
   },
   hud(g, s, names) {
     scoreBar(g, s.planes.map((p, i) => [names[i] || `P${i + 1}`, p.alive ? p.score : `${p.score} ✕`, SEAT_COLORS[i]]));
+    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt);
   },
   // without 3D: the same tunnel, seen as rings coming at you
   draw(g, s, names) {

@@ -5,7 +5,7 @@
  * The village wins when every werewolf is gone; the werewolves win when they are as many as the rest.
  * Nobody is hurt: someone "caught" by the werewolves just sits out, like any party game.
  */
-import { best, seatsOf, shuffle } from '../lib.js?v=20261110-0936';
+import { best, seatsOf, shuffle } from '../lib.js?v=20261110-1142';
 
 export const ROLE = { wolf: { name: 'Werewolf', icon: '🐺' }, seer: { name: 'Seer', icon: '🔮' }, doctor: { name: 'Doctor', icon: '🩺' }, villager: { name: 'Villager', icon: '🏡' } };
 const alive = (s) => seatsOf(s.n).filter(p => s.alive[p]);

@@ -1,20 +1,23 @@
 /**
  * Ship Fight: two little ships on one stretch of sea, cannons firing non-stop, rocks between them.
  * Steer to dodge and line up your shots; sink the other ship three times to win. Crates heal or give a
- * triple shot.
+ * triple shot. Each round is a little different: one more rock every round, and from round three the
+ * crates come twice as often.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-0936';
+import { H, r1, rnd, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1142';
 
 const SPEED = 170, SHOT = 320, HP = 5, COOL = 42, TOP = 42, ROUND_WINS = 3, STORM_AT = 60 * 45;
 function newRound(s) {
   s.ships = [{ x: 70, y: 200, hp: HP, cool: 0, triple: 0, hurt: 0 }, { x: W - 70, y: 200, hp: HP, cool: 0, triple: 0, hurt: 0 }];
   s.shots = [];
   s.crate = null;
-  s.crateIn = 300;
+  s.round = (s.wins ? s.wins[0] + s.wins[1] : 0) + 1;
+  s.crateIn = s.round >= 3 ? 150 : 300;
   s.pause = 90;
   s.clock = 0;
   s.rocks = [];
-  for (let i = 0; i < 4; i++) s.rocks.push({ x: r1(220 + rnd(s) * 200), y: r1(TOP + 30 + ((i + rnd(s)) / 4) * (H - TOP - 60)), r: r1(14 + rnd(s) * 12) });
+  const rocks = Math.min(7, 3 + s.round);
+  for (let i = 0; i < rocks; i++) s.rocks.push({ x: r1(220 + rnd(s) * 200), y: r1(TOP + 30 + ((i + rnd(s)) / rocks) * (H - TOP - 60)), r: r1(14 + rnd(s) * 12) });
 }
 const hit = (a, b, d) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < d * d;
 
@@ -60,7 +63,7 @@ export default {
         if (s.crate.kind === 0) p.hp = Math.min(HP, p.hp + 2); else p.triple = 5;
         s.ev.push({ k: 'star', seat: i });
         s.crate = null;
-        s.crateIn = 360;
+        s.crateIn = s.round >= 3 ? 180 : 360;
       }
     });
     if (!s.crate && --s.crateIn <= 0) s.crate = { x: r1(W / 2 - 120 + rnd(s) * 240), y: r1(TOP + 30 + rnd(s) * (H - TOP - 60)), kind: rnd(s) < 0.5 ? 0 : 1 };

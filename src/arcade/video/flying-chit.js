@@ -4,21 +4,40 @@
  * ceiling fans and stacks of books knock the paper out of it. It never ends: the chit just runs
  * out of lift sooner or later, and the room gets faster and busier the further you get.
  *
+ * The classroom comes in levels: first only stacks of books, then ceiling fans, then bangles that
+ * swing from side to side. Every new level starts with a big golden bangle: fly through it for ten
+ * points and full lift.
+ *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0936';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1142';
+
+export const LEVEL_D = 320;
+export const STAGES = ['Quiet class', 'Fans on', 'Swinging bangles', 'Paper storm'];
+export const levelOf = (d) => 1 + Math.floor(d / LEVEL_D);
+export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
 
 export const AHEAD = 70;
 export const speedAt = (d) => Math.min(27, 10 + d * 0.01);
 const hoopSize = (d) => Math.max(0.17, 0.34 - d * 0.00007);
 const r2 = (v) => Math.round(v * 100) / 100;
 function spawn(s) {
-  const lvl = Math.min(1, s.d / 1700);
+  const lvl = Math.min(1, s.d / 1700), level = s.level || 1;
+  // a new level: one big golden bangle in the middle, with nothing round it
+  if (s.gold) {
+    s.gold = false;
+    s.objs.push({ k: 'hoop', gold: true, z: r1(s.at), x: 0, y: 0, r: 0.36 });
+    s.at += 10;
+    return;
+  }
   const x = r2(rnd(s) * 1.8 - 0.9), y = r2(rnd(s) * 1.5 - 0.75);
-  s.objs.push({ k: 'hoop', z: r1(s.at), x, y, r: r2(hoopSize(s.d)) });
-  // something in the way, more often the further you are
+  const hoop = { k: 'hoop', z: r1(s.at), x, y, r: r2(hoopSize(s.d)) };
+  // from level 3 some bangles swing from side to side
+  if (level >= 3 && rnd(s) < Math.min(0.7, 0.35 + (level - 3) * 0.1)) Object.assign(hoop, { bx: x, sw: r2(0.25 + Math.min(0.25, (level - 3) * 0.05)), ph: r2(rnd(s) * 6) });
+  s.objs.push(hoop);
+  // something in the way, more often the further you are; no fans in the quiet first level
   if (rnd(s) < 0.35 + lvl * 0.45) {
-    const k = rnd(s) < 0.5 ? 'fan' : 'book';
+    const k = level >= 2 && rnd(s) < 0.5 ? 'fan' : 'book';
     s.objs.push({ k, z: r1(s.at + 3 + rnd(s) * 3), x: r2(Math.max(-0.9, Math.min(0.9, x + (rnd(s) - 0.5) * 1.2))), y: r2(Math.max(-0.75, Math.min(0.75, y + (rnd(s) - 0.5) * 0.9))), r: k === 'fan' ? 0.36 : 0.28 });
   }
   s.at += 8.5 - lvl * 2;
@@ -28,7 +47,7 @@ export default {
   pad: [['u', '▲'], ['d', '▼'], ['l', '◀'], ['r', '▶']],
   analog: 'xy',
   init({ n, seed }) {
-    const s = { n, seed, t: 0, d: 0, at: 22, objs: [], ev: [],
+    const s = { n, seed, t: 0, d: 0, at: 22, objs: [], ev: [], level: 1, levelAt: -999, gold: false,
       chits: seats(n).map(i => ({ x: r2((i - (n - 1) / 2) * 0.35), y: 0, vx: 0, vy: 0, alive: true, score: 0, lift: 1, combo: 0, hit: 0, best: 0 })) };
     while (s.at < AHEAD) spawn(s);
     return s;
@@ -37,6 +56,13 @@ export default {
     s.t += 1;
     const from = s.d;
     s.d = Math.round((s.d + speedAt(s.d) * TICK) * 100) / 100;
+    if (levelOf(s.d) > s.level) {
+      s.level = levelOf(s.d);
+      s.levelAt = s.t;
+      s.gold = true;
+      s.ev.push({ k: 'level', seat: -1, level: s.level, name: stageName(s.level) });
+    }
+    s.objs.forEach((o) => { if (o.sw) o.x = r2(Math.max(-0.95, Math.min(0.95, o.bx + Math.sin(s.t / 45 + o.ph) * o.sw))); });
     while (s.at < s.d + AHEAD) spawn(s);
     s.objs = s.objs.filter(o => o.z > s.d - 2);
     const drain = 0.05 + Math.min(0.06, s.d * 0.00002);
@@ -55,13 +81,17 @@ export default {
         if (!(o.z > from && o.z <= s.d)) continue;
         const dist = Math.hypot(c.x - o.x, c.y - o.y);
         if (o.k === 'hoop') {
-          if (dist < o.r) {
+          if (dist < o.r && o.gold) {
+            c.score += 10;
+            c.lift = 1;
+            s.ev.push({ k: 'star', seat: i, combo: 3 });
+          } else if (dist < o.r) {
             c.combo += 1;
             c.best = Math.max(c.best, c.combo);
             c.score += Math.min(5, c.combo);
             c.lift = Math.min(1, c.lift + Math.max(0.1, 0.24 - s.d * 0.00005));
             s.ev.push({ k: 'star', seat: i, combo: c.combo });
-          } else if (c.combo) { c.combo = 0; s.ev.push({ k: 'miss', seat: i }); }
+          } else if (c.combo && !o.gold) { c.combo = 0; s.ev.push({ k: 'miss', seat: i }); }
         } else if (dist < o.r + 0.1 && c.hit <= 0) {
           c.lift -= 0.34;
           c.combo = 0;
@@ -86,8 +116,10 @@ export default {
   bot(s, seat) {
     const c = s.chits[seat];
     if (!c?.alive) return {};
-    const hoop = s.objs.find(o => o.k === 'hoop' && o.z > s.d + 1);
-    if (!hoop) return {};
+    const hoop0 = s.objs.find(o => o.k === 'hoop' && o.z > s.d + 1);
+    if (!hoop0) return {};
+    // a swinging bangle: aim for where it will be
+    const hoop = hoop0.sw ? { ...hoop0, x: hoop0.bx + Math.sin((s.t + ((hoop0.z - s.d) / speedAt(s.d)) * 60) / 45 + hoop0.ph) * hoop0.sw } : hoop0;
     const wobble = Math.sin(s.t / 23 + seat * 2) * (0.1 + s.d * 0.00008);
     let tx = hoop.x + wobble, ty = hoop.y - wobble * 0.6;
     const block = s.objs.find(o => o.k !== 'hoop' && o.z > s.d && o.z < hoop.z && Math.hypot(o.x - tx, o.y - ty) < o.r + 0.12);
@@ -104,6 +136,7 @@ export default {
       g.fillRect(12 + i * w, 38, (w - 12) * Math.max(0, c.lift), 7);
       if (c.combo > 1 && c.alive) { g.fillStyle = '#fff'; g.font = '800 22px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(`×${Math.min(5, c.combo)}`, 12 + i * w + (w - 12) / 2, 70); }
     });
+    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 18);
   },
   // without 3D: the same space, in perspective
   draw(g, s, names) {
@@ -115,7 +148,7 @@ export default {
       const z = o.z - s.d;
       if (z < 0) return;
       const [px, py, k] = proj(o.x, o.y, z);
-      if (o.k === 'hoop') { g.strokeStyle = '#e7a800'; g.lineWidth = Math.max(2, 10 * k); g.beginPath(); g.arc(px, py, o.r * 260 * k, 0, 7); g.stroke(); }
+      if (o.k === 'hoop') { g.strokeStyle = o.gold ? '#fff36b' : '#e7a800'; g.lineWidth = Math.max(2, (o.gold ? 16 : 10) * k); g.beginPath(); g.arc(px, py, o.r * 260 * k, 0, 7); g.stroke(); }
       else { g.fillStyle = o.k === 'fan' ? '#555' : '#c0392b'; g.beginPath(); g.arc(px, py, o.r * 230 * k, 0, 7); g.fill(); }
     });
     s.chits.forEach((c, i) => {

@@ -42,3 +42,30 @@ export function scoreBar(g, items) {
     g.fillText(String(value), i * w + w - 12, 21);
   });
 }
+
+/**
+ * The level the game is on: a small tag (at height y), and for two seconds after a new level a big
+ * banner across the middle with its name.
+ */
+export function levelTag(g, level, name, since, y = 52, title = name) {
+  const text = `Level ${level}${name ? ` · ${name}` : ''}`;
+  g.font = '800 15px system-ui, sans-serif';
+  g.textBaseline = 'middle'; g.textAlign = 'center';
+  const w = g.measureText(text).width + 24;
+  g.fillStyle = 'rgba(10, 6, 3, .62)';
+  g.fillRect(W / 2 - w / 2, y - 11, w, 22);
+  g.fillStyle = '#ffd23f';
+  g.fillText(text, W / 2, y + 1);
+  if (since >= 0 && since < 120) {
+    const a = since < 15 ? since / 15 : since > 95 ? (120 - since) / 25 : 1;
+    g.save();
+    g.globalAlpha = a;
+    g.fillStyle = 'rgba(10, 6, 3, .55)';
+    g.fillRect(0, H / 2 - 54, W, 92);
+    g.fillStyle = '#ffd23f';
+    g.font = '900 46px system-ui, sans-serif';
+    g.fillText(`LEVEL ${level}`, W / 2, H / 2 - 22);
+    if (title) { g.fillStyle = '#fff'; g.font = '700 22px system-ui, sans-serif'; g.fillText(title, W / 2, H / 2 + 18); }
+    g.restore();
+  }
+}

@@ -3,19 +3,19 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-0936';
-import { W, H, TICK } from './video/lib.js?v=20261110-0936';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-0936';
-import { nextForRoom } from './decor.js?v=20261110-0936';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-0936';
-import { MOMENT, linesFor } from './talk.js?v=20261110-0936';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0936';
-import { ask, confirmSpend } from './dialog.js?v=20261110-0936';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0936';
-import { profile } from '../persistence/profile-store.js?v=20261110-0936';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-0936';
+import { hintsLeft, showHint } from './hint.js?v=20261110-1142';
+import { W, H, TICK } from './video/lib.js?v=20261110-1142';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1142';
+import { nextForRoom } from './decor.js?v=20261110-1142';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1142';
+import { MOMENT, linesFor } from './talk.js?v=20261110-1142';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1142';
+import { ask, confirmSpend } from './dialog.js?v=20261110-1142';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1142';
+import { profile } from '../persistence/profile-store.js?v=20261110-1142';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1142';
 
-const V = '?v=20261110-0936';
+const V = '?v=20261110-1142';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 const SCALE = matchMedia('(pointer: fine)').matches ? 1.5 : 1;       // ticks between pictures sent to friends: twenty a second
@@ -116,6 +116,8 @@ export async function runTv(ctx) {
         case 'round': if (game.slug === 'ghost-hostel') { audio('wrong'); story?.emojiPop('👻', 'Ghost level ' + ev.level + '!'); break; }
         if (game.slug === 'pin-spin') { audio('achieve'); seatAct(ev.seat, 'cheer', '📌'); if (ev.level % 5 === 4) story?.emojiPop('🟥', 'Big board next!'); break; }
           audio('confirm'); seatAct(ev.seat, 'cheer', '🎉'); seatAct(ev.victim, 'facepalm', null); botSays(ev.seat, 'good'); setTimeout(() => { seatAct(ev.seat, 'hold'); seatAct(ev.victim, 'hold'); }, 1400); break;
+        // a new level in the endless games: a fanfare, and the players cheer (the TV shows the banner)
+        case 'level': audio('achieve'); if (ev.seat >= 0) seatAct(ev.seat, 'cheer', '⬆️'); else players.forEach((_, i) => seatAct(i, 'cheer', i === 0 ? '⬆️' : null)); break;
         case 'crash': audio('crash'); seatAct(ev.seat, 'facepalm', '😱'); botSays(ev.seat, 'bad'); break;
         default:
       }

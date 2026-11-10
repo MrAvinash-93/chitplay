@@ -1,10 +1,11 @@
 /**
  * Bull Fight: two bulls in a round sand ring, like a wrestling match. Steer your bull, and charge to
  * hit the other one hard. Whoever is pushed out of the ring loses the round; first to three rounds
- * wins. After a while the ring starts to shrink, so a round can never go on for ever.
+ * wins. After a while the ring starts to shrink, so a round can never go on for ever. Every round
+ * starts on a slightly smaller ring than the one before.
  * Nobody gets hurt: it is a pushing contest, like the village bull games where bulls lock horns.
  */
-import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-0936';
+import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1142';
 
 export const CX = W / 2, CY = 221, RING = 165, BODY = 24;
 const ACCEL = 700, DRAG = 3.6, CHARGE = 330, CHARGE_TICKS = 16, COOL = 70, ROUND_WINS = 3, SHRINK_AT = 60 * 25;
@@ -13,7 +14,8 @@ function newRound(s) {
     { x: CX - 90, y: CY, vx: 0, vy: 0, dir: 0, charge: 0, cool: 30, stun: 0 },
     { x: CX + 90, y: CY, vx: 0, vy: 0, dir: Math.PI, charge: 0, cool: 30, stun: 0 },
   ];
-  s.ring = RING;
+  s.round = (s.wins ? s.wins[0] + s.wins[1] : 0) + 1;
+  s.ring = RING - Math.min(40, (s.round - 1) * 10);
   s.clock = 0;
   s.pause = 90;
 }

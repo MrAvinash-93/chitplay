@@ -375,7 +375,8 @@ ${waysToPlay(g)}
 <p>${esc(g.scoring)}</p>
 <h2>Who wins</h2>
 <p>${esc(g.win)}</p>
-${g.house ? `<h2>House rules you can switch on</h2>\n<ul>${g.house.map(([k, d]) => `<li><strong>${esc(k)}:</strong> ${esc(d)}</li>`).join('')}</ul>` : ''}
+${g.levels ? `<h2>Levels</h2>\n<ol>${g.levels.map(([k, d]) => `<li><strong>${esc(k)}:</strong> ${esc(d)}</li>`).join('')}</ol>
+` : ''}${g.house ? `<h2>House rules you can switch on</h2>\n<ul>${g.house.map(([k, d]) => `<li><strong>${esc(k)}:</strong> ${esc(d)}</li>`).join('')}</ul>` : ''}
 <h2>Tips</h2>
 <ul>${g.tips.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
 <h2>Questions</h2>

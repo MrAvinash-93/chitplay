@@ -4,13 +4,13 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS } from './lib.js?v=20261110-0936';
-import { AHEAD as TUNNEL_AHEAD } from './tunnel-race.js?v=20261110-0936';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-0936';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-0936';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-0936';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-0936';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-0936';
+import { SEAT_COLORS } from './lib.js?v=20261110-1142';
+import { AHEAD as TUNNEL_AHEAD } from './tunnel-race.js?v=20261110-1142';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-1142';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-1142';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-1142';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-1142';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-1142';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });
@@ -124,10 +124,12 @@ function tunnelView() {
           else m.add(sector(o.c - o.w / 2, o.w, mat), sector(o.c + Math.PI - o.w / 2, o.w, mat));
           const rim = new THREE.Mesh(new THREE.TorusGeometry(R * 0.99, 0.05, 6, 48), basic('#ffffff'));
           m.add(rim);
+          m.userData.c0 = o.c;
           world.add(m);
           walls.set(key, m);
         }
         m.position.z = -(o.z - s.d) + PZ;
+        m.rotation.z = o.c - m.userData.c0;
       });
       walls.forEach((m, key) => { if (!seen.has(key)) { world.remove(m); m.traverse(x => x.geometry?.dispose()); walls.delete(key); } });
       gems.begin();
@@ -175,6 +177,13 @@ function flyingView() {
     return d;
   });
   const hoops = pool(scene, () => new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 10, 36), std('#ffbf1f', { metalness: 0.6, roughness: 0.25, emissive: '#5a3c00' })));
+  // the golden bangle at the start of a level: thicker, brighter, with sparkles round it
+  const golds = pool(scene, () => {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(1, 0.11, 12, 40), std('#fff06a', { metalness: 0.8, roughness: 0.15, emissive: '#a07800' })));
+    for (let k = 0; k < 8; k++) { const sp = new THREE.Mesh(new THREE.OctahedronGeometry(0.08), basic('#fffbe0')); sp.position.set(Math.cos((k * TAU) / 8) * 1.3, Math.sin((k * TAU) / 8) * 1.3, 0); g.add(sp); }
+    return g;
+  });
   const fanMat = std('#6f7781', { metalness: 0.5 });
   const fans = pool(scene, () => {
     const f = new THREE.Group();
@@ -202,15 +211,16 @@ function flyingView() {
         [-1, 1].forEach((side) => { const d = desks.next(); d.position.set(side * 5.4, -Y - 0.8, Z(z)); });
       }
       desks.end();
-      hoops.begin(); fans.begin(); books.begin();
+      hoops.begin(); golds.begin(); fans.begin(); books.begin();
       s.objs.forEach((o) => {
         const z = o.z - s.d;
         if (z > 72) return;
-        if (o.k === 'hoop') { const m = hoops.next(); m.position.set(o.x * X, o.y * Y, Z(z)); m.scale.setScalar(o.r * X * 1.05); m.rotation.z = s.t * 0.01; }
+        if (o.k === 'hoop' && o.gold) { const m = golds.next(); m.position.set(o.x * X, o.y * Y, Z(z)); m.scale.setScalar(o.r * X * 1.05 * (1 + Math.sin(s.t * 0.15) * 0.04)); m.rotation.z = s.t * 0.04; }
+        else if (o.k === 'hoop') { const m = hoops.next(); m.position.set(o.x * X, o.y * Y, Z(z)); m.scale.setScalar(o.r * X * 1.05); m.rotation.z = s.t * 0.01; }
         else if (o.k === 'fan') { const m = fans.next(); m.position.set(o.x * X, o.y * Y, Z(z)); m.rotation.z += dt * 9; m.scale.setScalar(o.r * 2.6); }
         else { const m = books.next(); m.position.set(o.x * X, o.y * Y, Z(z)); m.scale.setScalar(o.r * 2.6); m.rotation.y = o.z; }
       });
-      hoops.end(); fans.end(); books.end();
+      hoops.end(); golds.end(); fans.end(); books.end();
       s.chits.forEach((c, i) => {
         if (!chits[i]) { chits[i] = wingedChit(SEAT_COLORS[i]); scene.add(chits[i]); }
         const m = chits[i];
@@ -335,7 +345,10 @@ function snakeView() {
   const parts = SEAT_COLORS.map(col => pool(scene, () => box(C * 0.86, C * 0.7, C * 0.86, std(col))));
   const heads = SEAT_COLORS.map((col) => { const h = new THREE.Mesh(new THREE.SphereGeometry(C * 0.55, 14, 10), std(col)); const e = basic('#111111'); const a = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), e), b = a.clone(); a.position.set(0.05, 0.05, -0.06); b.position.set(-0.05, 0.05, -0.06); h.add(a, b); scene.add(h); return h; });
   const samosa = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 3), std('#e9a23b', { roughness: 0.7 }));
-  scene.add(samosa);
+  const golden = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.24, 3), std('#ffd23f', { metalness: 0.7, roughness: 0.2, emissive: '#7a5a00' }));
+  scene.add(samosa, golden);
+  const brickMat = std('#8d8478', { roughness: 0.9 });
+  const bricks = pool(scene, () => box(C * 0.96, C * 0.9, C * 0.96, brickMat));
   const DIR = { u: 0, l: Math.PI / 2, d: Math.PI, r: -Math.PI / 2 };
   return {
     scene, camera,
@@ -351,6 +364,9 @@ function snakeView() {
       heads.forEach((h, i) => { h.visible = i < s.snakes.length; });
       samosa.position.set(cx(s.food[0]), 0.12 + Math.sin(s.t * 0.12) * 0.04, cz(s.food[1]));
       samosa.rotation.y = s.t * 0.05;
+      bricks.begin(); (s.walls || []).forEach(([x, y]) => { bricks.next().position.set(cx(x), C * 0.45, cz(y)); }); bricks.end();
+      golden.visible = !!s.gold && (s.gold.ttl > 90 || Math.floor(s.t / 6) % 2 === 1);
+      if (s.gold) { golden.position.set(cx(s.gold.x), 0.16 + Math.sin(s.t * 0.2) * 0.06, cz(s.gold.y)); golden.rotation.y = -s.t * 0.12; }
     },
   };
 }
@@ -405,7 +421,7 @@ function roadView() {
       for (let k = 0; k < 10; k++) { const z = -((k * 4.2 + (s.dist / 52)) % 42) + 4; [-3.2, 3.2].forEach((x) => { const t = trees.next(); t.position.set(x + (k % 2) * 0.6 * Math.sign(x), 0, z); }); }
       trees.end();
       things.forEach(p => p.begin());
-      s.things.forEach((t) => { const m = things[t.kind].next(); m.position.set(laneX(t.l), 0, zOf(t.x)); m.rotation.y = t.kind === 3 ? 0 : t.kind === 0 ? Math.PI / 2 : 0; });
+      s.things.forEach((t) => { const m = things[t.kind].next(); m.position.set(laneX(t.l), 0, zOf(t.x)); m.rotation.y = t.kind === 3 ? (t.v ? Math.PI : 0) : t.kind === 0 ? Math.PI / 2 : 0; m.position.y = t.v ? Math.abs(Math.sin(s.t * 0.5)) * 0.03 : 0; });
       things.forEach(p => p.end());
       coins.begin(); s.coins.forEach((c) => { const m = coins.next(); m.position.set(laneX(c.l), 0.35, zOf(c.x)); m.rotation.set(Math.PI / 2, 0, s.t * 0.1); }); coins.end();
       s.carts.forEach((c, i) => {

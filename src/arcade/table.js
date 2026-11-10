@@ -10,31 +10,31 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-0936';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-0936';
-import { loadWorld } from '../world/world-loader.js?v=20261110-0936';
-import { PRESETS, lookOf, randomLook } from '../world/character-looks.js?v=20261110-0936';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-0936';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-0936';
-import { isLanguage } from '../i18n/index.js?v=20261110-0936';
-import { profile } from '../persistence/profile-store.js?v=20261110-0936';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1142';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1142';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1142';
+import { PRESETS, lookOf, randomLook } from '../world/character-looks.js?v=20261110-1142';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1142';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1142';
+import { isLanguage } from '../i18n/index.js?v=20261110-1142';
+import { profile } from '../persistence/profile-store.js?v=20261110-1142';
 import { audioManager } from '../audio/audio-manager.js';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-0936';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1142';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-0936';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1142';
 
-import { fill, shellText } from './shell-text.js?v=20261110-0936';
-import { nextForRoom } from './decor.js?v=20261110-0936';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-0936';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-0936';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0936';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-0936';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0936';
-import { ask } from './dialog.js?v=20261110-0936';
-import { startReminder } from './reminder.js?v=20261110-0936';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-0936';
+import { fill, shellText } from './shell-text.js?v=20261110-1142';
+import { nextForRoom } from './decor.js?v=20261110-1142';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1142';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1142';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1142';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1142';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1142';
+import { ask } from './dialog.js?v=20261110-1142';
+import { startReminder } from './reminder.js?v=20261110-1142';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1142';
 
-const V = '?v=20261110-0936';
+const V = '?v=20261110-1142';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -109,6 +109,8 @@ async function openRules(game) {
         h('h1', {}, [`${game.icon} ${say.howTo}: ${game.name}`]),
         h('ol', { class: 'steps' }, r.steps.map(s => h('li', {}, [s]))),
         h('h2', {}, ['Who wins']), h('p', {}, [r.win]),
+        r.levels ? h('h2', {}, ['Levels']) : null,
+        r.levels ? h('ol', {}, r.levels.map(([k, d]) => h('li', {}, [h('strong', {}, [`${k}:`]), ` ${d}`]))) : null,
         r.house ? h('h2', {}, ['House rules']) : null,
         r.house ? h('ul', {}, r.house.map(([k, d]) => h('li', {}, [h('strong', {}, [k]), ` ${d}`]))) : null,
         h('h2', {}, ['Scoring']), h('p', {}, [r.scoring]),

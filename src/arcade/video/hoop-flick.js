@@ -4,9 +4,24 @@
  * other side, higher or lower, and later on the hoops start to move. Miss once and it's over.
  * Endless. 1 or 2 players, each on their own half of the court.
  *
+ * Every five baskets is a new level: first the hoops stand still, then they slide from side to
+ * side, then a wind blows across the court (the arrow shows which way and how hard), then both.
+ *
  * Side view, in screen pixels: x to the right, y down. Gravity pulls down (+y).
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0936';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1142';
+
+export const PER_LEVEL = 5;
+export const STAGES = ['Still hoops', 'Moving hoops', 'Windy court', 'Wind and moving hoops'];
+export const levelOf = (made) => 1 + Math.floor(made / PER_LEVEL);
+export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
+/** How far a hoop slides, and how hard the wind blows (pixels a second, each second), at a level. */
+export function courtAt(level) {
+  return {
+    move: level === 2 ? 22 : level >= 4 ? Math.min(60, 22 + (level - 4) * 8) : 0,
+    wind: level >= 3 ? Math.min(240, 90 + (level - 3) * 30) : 0,
+  };
+}
 
 export const G = 1100, MAX = 1050;
 const BALL = 13, RIM = 30, SHOT_TICKS = 60 * 12;
@@ -16,7 +31,9 @@ function placeHoop(s, p, side) {
   const { x0, w } = laneOf(s, p.i);
   const x = x0 + (side < 0 ? w * 0.24 : w * 0.76);
   const y = 130 + rnd(s) * 170;
-  return { x: r1(x), y: r1(y), side, move: p.score >= 10 ? r1(15 + Math.min(45, (p.score - 10) * 1.5)) : 0, ph: r1(rnd(s) * 6) };
+  const court = courtAt(p.level || 1);
+  const wind = court.wind ? r1((rnd(s) < 0.5 ? -1 : 1) * court.wind * (0.6 + rnd(s) * 0.4)) : 0;
+  return { x: r1(x), y: r1(y), side, move: court.move, ph: r1(rnd(s) * 6), wind };
 }
 function rest(s, p, hoop) {
   p.ball = { x: hoop.x, y: hoop.y - 4, vx: 0, vy: 0 };
@@ -33,8 +50,8 @@ export default {
   analog: 'xy',
   init({ n, seed }) {
     const s = { n, seed, t: 0, ev: [], players: [] };
-    s.players = seats(n).map((i) => ({ i, alive: true, score: 0, combo: 0, aimX: 0.4, aimY: 0.7, pulled: false, was: false, touched: false, clock: 0 }));
-    s.players.forEach((p) => { const { x0, w } = laneOf(s, p.i); rest(s, p, { x: r1(x0 + w * 0.24), y: 270, side: -1, move: 0, ph: 0 }); });
+    s.players = seats(n).map((i) => ({ i, alive: true, score: 0, made: 0, level: 1, levelAt: -999, combo: 0, aimX: 0.4, aimY: 0.7, pulled: false, was: false, touched: false, clock: 0 }));
+    s.players.forEach((p) => { const { x0, w } = laneOf(s, p.i); rest(s, p, { x: r1(x0 + w * 0.24), y: 270, side: -1, move: 0, ph: 0, wind: 0 }); });
     return s;
   },
   step(s, inputs) {
@@ -69,6 +86,7 @@ export default {
       }
       const b = p.ball;
       b.vy += G * TICK;
+      b.vx += (p.next.wind || 0) * TICK;
       b.x += b.vx * TICK; b.y += b.vy * TICK;
       const { x0, w } = laneOf(s, p.i);
       if (b.x < x0 + BALL) { b.x = x0 + BALL; b.vx = Math.abs(b.vx) * 0.7; }
@@ -90,8 +108,14 @@ export default {
         p.combo = swish ? p.combo + 1 : 0;
         const pts = swish ? 1 + Math.min(4, p.combo) : 1;
         p.score += pts;
+        p.made += 1;
         s.ev.push({ k: 'star', seat: i, combo: swish ? p.combo : 0 });
-        rest(s, p, { ...h, x: hx, move: 0 });
+        if (levelOf(p.made) > p.level) {
+          p.level = levelOf(p.made);
+          p.levelAt = s.t;
+          s.ev.push({ k: 'level', seat: i, level: p.level, name: stageName(p.level) });
+        }
+        rest(s, p, { ...h, x: hx, move: 0, wind: 0 });
         return;
       }
       if (b.y > H + 40) { p.alive = false; p.combo = 0; s.ev.push({ k: 'crash', seat: i }); }
@@ -110,7 +134,8 @@ export default {
     if (!p?.alive || p.flying || p.clock < 30) return {};
     const h = p.next, T = 0.85 + ((s.t + seat * 7) % 9) * 0.02;
     const tx = h.x + (h.move ? Math.sin((s.t + T * 60) / 60 + h.ph) * h.move : 0), ty = h.y - 6;   // where the hoop will be when the ball gets there
-    const vx = (tx - p.ball.x) / T, vy = (ty - p.ball.y - 0.5 * G * T * T) / T;
+    // the wind pushes the ball sideways all the way: allow for it
+    const vx = (tx - p.ball.x - 0.5 * (h.wind || 0) * T * T) / T, vy = (ty - p.ball.y - 0.5 * G * T * T) / T;
     const err = 1 + (Math.sin(s.t / 13 + seat) * (0.012 + Math.min(0.035, p.score * 0.0012)));
     const ang = Math.atan2(-vy * err, vx * err), pow = Math.min(1, Math.hypot(vx, vy) * err / MAX);
     return { ang, pow, a: true };
@@ -120,6 +145,16 @@ export default {
     s.players.forEach((p) => {
       const { x0, w } = laneOf(s, p.i);
       if (p.combo > 1 && p.alive) { g.fillStyle = '#ffd23f'; g.font = '900 26px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(`SWISH ×${p.combo}`, x0 + w / 2, 72); }
+      // the wind: an arrow along the top of this player's half
+      if (p.alive && p.next.wind) {
+        const dir = Math.sign(p.next.wind), len = 18 + Math.abs(p.next.wind) / 6, cx = x0 + w / 2, y = 122;
+        g.strokeStyle = '#bfe9ff'; g.fillStyle = '#bfe9ff'; g.lineWidth = 4;
+        g.beginPath(); g.moveTo(cx - (dir * len) / 2, y); g.lineTo(cx + (dir * len) / 2, y); g.stroke();
+        g.beginPath(); g.moveTo(cx + (dir * len) / 2 + dir * 10, y); g.lineTo(cx + (dir * len) / 2 - dir * 2, y - 8); g.lineTo(cx + (dir * len) / 2 - dir * 2, y + 8); g.closePath(); g.fill();
+        g.font = '700 14px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText('Wind', cx, y - 16);
+      }
+      if (s.n === 1) levelTag(g, p.level, stageName(p.level), s.t - p.levelAt);
+      else { g.fillStyle = '#ffd23f'; g.font = '800 14px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(`Level ${p.level}`, x0 + w / 2, 50); }
       if (p.alive && !p.flying) {
         const left = 1 - p.clock / SHOT_TICKS;
         if (left < 0.5) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x0 + 10, H - 12, w - 20, 5); g.fillStyle = '#ff6b5b'; g.fillRect(x0 + 10, H - 12, (w - 20) * left, 5); }
