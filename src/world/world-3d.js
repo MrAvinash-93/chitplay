@@ -8,17 +8,17 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1410';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1415';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-1410';
-import { lookOf, lookKey } from './character-looks.js?v=20261110-1410';
-import { buildRoomDetails } from './room-details.js?v=20261110-1410';
-import { COUNTRIES } from './countries.js?v=20261110-1410';
-import { voiceBox, voiceLangsFor } from './voice.js?v=20261110-1410';
-import { isSpecialEmoji } from './table-talk.js?v=20261110-1410';
-import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-1410';
-import { decorMakers } from './decor-makers.js?v=20261110-1410';
-import * as Themes from './themes.js?v=20261110-1410';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-1415';
+import { lookOf, lookKey } from './character-looks.js?v=20261110-1415';
+import { buildRoomDetails } from './room-details.js?v=20261110-1415';
+import { COUNTRIES } from './countries.js?v=20261110-1415';
+import { voiceBox, voiceLangsFor } from './voice.js?v=20261110-1415';
+import { isSpecialEmoji } from './table-talk.js?v=20261110-1415';
+import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-1415';
+import { decorMakers } from './decor-makers.js?v=20261110-1415';
+import * as Themes from './themes.js?v=20261110-1415';
 
 const TAU = Math.PI * 2;
 
@@ -183,8 +183,8 @@ function createWorld() {
   renderer.shadowMap.type = THREE.PCFShadowMap;
 
   /*
-   * Graphics levels. "low" (shown as Light) is the default: it is what keeps the game smooth on
-   * any phone. "ultra" draws at up to 3840 × 2160 on a screen that has those pixels.
+   * Graphics levels. "medium" is the default: sharp, with dust and the TV's light, and still
+   * smooth on most phones; "low" (shown as Light) is there for the oldest ones. "ultra" draws at up to 3840 × 2160 on a screen that has those pixels.
    * shadowEvery / tvEvery: draw the shadows and the TV's static only on every Nth frame.
    */
   const QUALITY = [
@@ -204,7 +204,7 @@ function createWorld() {
     return physicalHeight >= 1800 ? levelNamed('ultra') : levelNamed('high');
   }
   // ?quality=ultra (or the choice in the profile) fixes the level; "auto" steps down when frames run slow
-  let graphicsChoice = new URLSearchParams(location.search).get('quality') || settingsStore.get('graphics') || 'low';
+  let graphicsChoice = new URLSearchParams(location.search).get('quality') || settingsStore.get('graphics') || 'medium';
   if (levelNamed(graphicsChoice) < 0) graphicsChoice = 'auto';
   let quality = graphicsChoice === 'auto' ? automaticLevel() : levelNamed(graphicsChoice);
   Themes.setTextureDetail(QUALITY[quality].texture, Math.min(16, renderer.capabilities.getMaxAnisotropy()));

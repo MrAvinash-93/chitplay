@@ -1,7 +1,7 @@
 import { describe, it, expect } from './harness.js';
-import { Match, CHEAT_PENALTY, CHEAT_CATCH_CHANCE } from '../src/world/match.js?v=20261110-1410';
-import { COUNTRIES } from '../src/world/countries.js?v=20261110-1410';
-import { nextCaughtScene, nextCloseCall, SCENE_COUNTS } from '../src/world/cheat-lines.js?v=20261110-1410';
+import { Match, CHEAT_PENALTY, CHEAT_CATCH_CHANCE } from '../src/world/match.js?v=20261110-1415';
+import { COUNTRIES } from '../src/world/countries.js?v=20261110-1415';
+import { nextCaughtScene, nextCloseCall, SCENE_COUNTS } from '../src/world/cheat-lines.js?v=20261110-1415';
 
 const withRandom = (value, fn) => {
   const original = Math.random;

@@ -11,10 +11,10 @@ const DEFAULTS = Object.freeze({
   hapticsEnabled: true,
   world3d: true,
   chatEnabled: true,
-  graphics: 'low',       // "Light": smooth on every phone; higher levels are one choice away in the profile
+  graphics: 'medium',    // Medium by default: sharp and smooth on most phones; Light is one choice away in the profile
   playerName: 'Avin',
   voiceEnabled: true,
-  defaultsVersion: 4,
+  defaultsVersion: 5,
 });
 
 let current = { ...DEFAULTS };
@@ -37,6 +37,8 @@ function load() {
       if (current.graphics === 'auto') current.graphics = DEFAULTS.graphics;
       // the voices came back (they were switched off for everyone before): on once, then it's the player's choice
       if ((stored.defaultsVersion || 0) < 4) current.voiceEnabled = true;
+      // Light was the default before: move everyone on it to the new default, Medium, once
+      if ((stored.defaultsVersion || 0) < 5 && current.graphics === 'low') current.graphics = 'medium';
       current.defaultsVersion = DEFAULTS.defaultsVersion;
       save();
     }

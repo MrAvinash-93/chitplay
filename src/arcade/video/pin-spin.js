@@ -7,11 +7,11 @@
  *
  * Angles are measured in the board's own frame. A pin always arrives at the bottom of the screen.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1410';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1415';
 
 const TAU = Math.PI * 2;
-const FLY = 7;                 // ticks a pin is in the air
-const GAP = 0.2;               // how close two pins can be, in radians
+export const FLY = 7;          // ticks a pin is in the air
+export const GAP = 0.2;        // how close two pins can be, in radians
 export const LEVEL_TICKS = 60 * 20;   // twenty seconds a level: nobody can stall a table for ever
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const norm = (a) => ((a % TAU) + TAU) % TAU;
@@ -58,7 +58,7 @@ export default {
   pad: [['a', '📌 Pin']],
   tapToPlay: true,
   init({ n, seed }) {
-    const s = { n, seed, t: 0, ev: [], players: seats(n).map(() => ({ level: 1, rot: 0, alive: true, score: 0, fly: 0, was: false, hitAt: null, lt: 0 })) };
+    const s = { n, seed, t: 0, ev: [], players: seats(n).map(() => ({ level: 1, rot: 0, alive: true, score: 0, fly: 0, was: false, hitAt: null, lt: 0, pop: 0, popAt: -999 })) };
     s.players.forEach(p => setLevel(s, p));
     return s;
   },
@@ -78,11 +78,13 @@ export default {
         p.stuck.push(r3(a));
         p.pins -= 1;
         p.score += 1;
+        p.pop = 1; p.popAt = s.t;
         s.ev.push({ k: 'pass', seat: i });
         const hit = p.stars.findIndex(x => Math.abs(diff(a, x)) < 0.26);
-        if (hit >= 0) { p.stars.splice(hit, 1); p.score += 5; s.ev.push({ k: 'star', seat: i }); }
+        if (hit >= 0) { p.stars.splice(hit, 1); p.score += 5; p.pop += 5; s.ev.push({ k: 'star', seat: i }); }
         if (p.pins === 0) {
           p.score += p.level * 2;
+          p.pop += p.level * 2;
           s.ev.push({ k: 'round', seat: i, level: p.level });
           p.level += 1;
           setLevel(s, p);
@@ -118,6 +120,8 @@ export default {
       const w = W / s.n, x0 = i * w + 14;
       for (let k = 0; k < p.pins; k++) { g.fillStyle = '#c9ced6'; g.fillRect(x0 + k * 12 + 3, H - 24, 2, 14); g.fillStyle = SEAT_COLORS[i]; g.beginPath(); g.arc(x0 + k * 12 + 4, H - 28, 5, 0, TAU); g.fill(); }
       if (p.alive) { const left = 1 - p.lt / LEVEL_TICKS; g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x0, H - 46, w - 28, 5); g.fillStyle = left > 0.3 ? '#7dff9a' : '#ff6b5b'; g.fillRect(x0, H - 46, (w - 28) * Math.max(0, left), 5); }
+      const age = s.t - p.popAt;
+      if (age >= 0 && age < 40) { g.save(); g.globalAlpha = 1 - age / 40; g.font = `900 ${p.pop >= 5 ? 32 : 26}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5; g.fillStyle = p.pop >= 5 ? '#ffd23f' : '#fff'; const y = 70 - age * 0.5; g.strokeText(`+${p.pop}`, x0 + (w - 28) / 2 + 14, y); g.fillText(`+${p.pop}`, x0 + (w - 28) / 2 + 14, y); g.restore(); }
       if (isBigBoard(p.level) && p.alive) { g.fillStyle = '#ffd23f'; g.font = '800 15px system-ui, sans-serif'; g.textAlign = 'left'; g.fillText('BIG BOARD', x0, H - 52); }
     });
   },
