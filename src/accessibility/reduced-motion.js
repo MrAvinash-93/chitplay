@@ -1,4 +1,4 @@
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1142';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1153';
 
 export function prefersReducedMotion() {
   if (settingsStore.get('reducedMotion')) return true;

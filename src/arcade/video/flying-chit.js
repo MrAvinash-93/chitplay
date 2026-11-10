@@ -10,7 +10,7 @@
  *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1142';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1153';
 
 export const LEVEL_D = 320;
 export const STAGES = ['Quiet class', 'Fans on', 'Swinging bangles', 'Paper storm'];

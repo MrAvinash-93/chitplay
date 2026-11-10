@@ -10,31 +10,31 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1142';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1142';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1142';
-import { PRESETS, lookOf, randomLook } from '../world/character-looks.js?v=20261110-1142';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1142';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1142';
-import { isLanguage } from '../i18n/index.js?v=20261110-1142';
-import { profile } from '../persistence/profile-store.js?v=20261110-1142';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1153';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1153';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1153';
+import { PRESETS, lookOf, randomLook } from '../world/character-looks.js?v=20261110-1153';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1153';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1153';
+import { isLanguage } from '../i18n/index.js?v=20261110-1153';
+import { profile } from '../persistence/profile-store.js?v=20261110-1153';
 import { audioManager } from '../audio/audio-manager.js';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1142';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1153';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1142';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1153';
 
-import { fill, shellText } from './shell-text.js?v=20261110-1142';
-import { nextForRoom } from './decor.js?v=20261110-1142';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1142';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1142';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1142';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1142';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1142';
-import { ask } from './dialog.js?v=20261110-1142';
-import { startReminder } from './reminder.js?v=20261110-1142';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1142';
+import { fill, shellText } from './shell-text.js?v=20261110-1153';
+import { nextForRoom } from './decor.js?v=20261110-1153';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1153';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1153';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1153';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1153';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1153';
+import { ask } from './dialog.js?v=20261110-1153';
+import { startReminder } from './reminder.js?v=20261110-1153';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1153';
 
-const V = '?v=20261110-1142';
+const V = '?v=20261110-1153';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);

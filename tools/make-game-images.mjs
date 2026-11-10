@@ -97,6 +97,20 @@ await send('Page.navigate', { url: `file:///${homeTmp.replace(/\\/g, '/')}` });
 await sleep(500);
 const homeShot = await send('Page.captureScreenshot', { format: 'jpeg', quality: 86, clip: { x: 0, y: 0, width: 1200, height: 630, scale: 1 } });
 fs.writeFileSync(path.join(ROOT, 'assets', 'home.jpg'), Buffer.from(homeShot.result.data, 'base64'));
-console.log(`${games.length} games, ${(bytes / 1024 / 1024).toFixed(2)} MB in assets/games/, and assets/home.jpg`);
+// the app icons that can't have rounded corners: the phone rounds them itself
+//   apple-touch-icon.png  180 x 180, square and filled to the edge (iPhone home screen)
+//   icon-maskable-512.png 512 x 512, the chit inside the middle 80% (Android crops to any shape)
+const iconSvg = fs.readFileSync(path.join(ROOT, 'assets', 'icon.svg'), 'utf8').replace(/<\?xml[^>]*>/, '').replace('rx="104"', 'rx="0"');
+const maskSvg = iconSvg.replace(/<g transform="rotate\(-7 256 256\)">([\s\S]*)<\/g>\s*<\/svg>/, '<g transform="translate(51.2 51.2) scale(.8)"><g transform="rotate(-7 256 256)">$1</g></g></svg>');
+for (const [file, size, svg] of [['apple-touch-icon.png', 180, iconSvg], ['icon-maskable-512.png', 512, maskSvg]]) {
+  await send('Emulation.setDeviceMetricsOverride', { width: size, height: size, deviceScaleFactor: 1, mobile: false });
+  const tmp = path.join(prof, `${file}.html`);
+  fs.writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:${size}px;height:${size}px;overflow:hidden;background:#b5341f}svg{display:block;width:${size}px;height:${size}px}</style></head><body>${svg}</body></html>`);
+  await send('Page.navigate', { url: `file:///${tmp.replace(/\\/g, '/')}` });
+  await sleep(300);
+  const r = await send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: size, height: size, scale: 1 } });
+  fs.writeFileSync(path.join(ROOT, 'assets', file), Buffer.from(r.result.data, 'base64'));
+}
+console.log(`${games.length} games, ${(bytes / 1024 / 1024).toFixed(2)} MB in assets/games/, assets/home.jpg and the app icons`);
 ws.close(); chrome.kill();
 process.exit(0);

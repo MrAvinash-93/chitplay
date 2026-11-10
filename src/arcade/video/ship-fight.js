@@ -4,7 +4,7 @@
  * triple shot. Each round is a little different: one more rock every round, and from round three the
  * crates come twice as often.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1142';
+import { H, r1, rnd, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1153';
 
 const SPEED = 170, SHOT = 320, HP = 5, COOL = 42, TOP = 42, ROUND_WINS = 3, STORM_AT = 60 * 45;
 function newRound(s) {

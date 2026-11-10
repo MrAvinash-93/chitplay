@@ -5,7 +5,7 @@
  * starts on a slightly smaller ring than the one before.
  * Nobody gets hurt: it is a pushing contest, like the village bull games where bulls lock horns.
  */
-import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1142';
+import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1153';
 
 export const CX = W / 2, CY = 221, RING = 165, BODY = 24;
 const ACCEL = 700, DRAG = 3.6, CHARGE = 330, CHARGE_TICKS = 16, COOL = 70, ROUND_WINS = 3, SHRINK_AT = 60 * 25;
