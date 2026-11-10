@@ -13,7 +13,7 @@
  */
 // Language packs are loaded on demand: a player only downloads the lines of
 // the language they are actually playing in.
-const V = '?v=20261110-1441';
+const V = '?v=20261110-1448';
 const LOADERS = {
   english: () => import(`./lines/english.js${V}`),
   japanese: () => import(`./lines/japanese.js${V}`),
@@ -23,6 +23,7 @@ const LOADERS = {
   british: () => import(`./lines/british.js${V}`),
   // the player's own language, always written in Latin letters
   hinglish: () => import(`./lines/hinglish.js${V}`),
+  hindi: () => import(`./lines/hindi.js${V}`),   // Hindi in Devanagari, for players who pick हिन्दी
   urdu: () => import(`./lines/urdu.js${V}`),
   nepali: () => import(`./lines/nepali.js${V}`),
   bangla: () => import(`./lines/bangla.js${V}`),

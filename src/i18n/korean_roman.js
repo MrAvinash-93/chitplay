@@ -126,7 +126,7 @@ export default {
     score: 'Jeomsu', matches: 'Gyeonggi', wins: 'Seungni', totalPts: 'Jeomsu', best: 'Choego', nextRank: '{title}-kkaji {pts}jeom', topRank: 'Choego deunggeup-ieyo!',
     badges: 'Baeji', hall: 'I gigi-ui choego gyeonggi', noHall: 'Gyeonggi-reul kkeunnaemyeon yeogi ollayo.',
     resetScore: 'Jeomsu chogihwa', resetSure: 'Han beon deo tap-hamyeon jeomsu, deunggeup, baeji-ga jiwojyeoyo', resetDone: 'Jeomsu chogihwa wallyo',
-    graphics: 'Geuraepik', gLow: 'Gabyeoum (gajang budeureoum)', gAuto: 'Jadong', gMedium: 'Jung', gHigh: 'Sang', gUltra: '4K (goseongneung gigi)', graphicsHelp: 'Gabyeoum-i modeun pon-eseo gajang joayo. Budeureoumyeon ollyeodo dwaeyo.',
+    graphics: 'Geuraepik', gLow: 'Gabyeoum (gajang budeureoum)', gAuto: 'Jadong', gMedium: 'Jung', gHigh: 'Sang', gUltra: '4K (goseongneung gigi)', graphicsHelp: 'Jung-gan-eun daebubun-ui pon-eseo seonmyeonghago budeureowoyo. Oraedoen pon-eun gabyeoum-eul goreuseyo.',
     language: 'Eoneo', languageHelp: 'Menyu, mesiji, daehwa.',
     done: 'Wallyo', rankUp: '{icon} Sae deunggeup: {title}!', newBadge: '{icon} Baeji: {name}!', gained: '+{n} deunggeup jeomsu', hallPlace: '🏅 Choego gyeonggi {n}wi',
     forfeit: '🎲 {name} beolchik', forfeitLine: 'Gateun bang-e itdamyeon: {name}, {text}.',

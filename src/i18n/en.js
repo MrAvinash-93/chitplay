@@ -78,7 +78,7 @@ export default {
     score: 'Score', matches: 'Matches', wins: 'Wins', totalPts: 'Points', best: 'Best', nextRank: '{pts} points to {title}', topRank: 'The highest rank there is!',
     badges: 'Badges', hall: 'Best matches on this device', noHall: 'Finish a match to get on this list.',
     resetScore: 'Reset score', resetSure: 'Tap again to erase your points, rank and badges', resetDone: 'Score reset',
-    graphics: 'Graphics', gLow: 'Light (smoothest)', gAuto: 'Auto', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (for strong devices)', graphicsHelp: 'Light runs best on every phone. Go higher only if your device stays smooth.',
+    graphics: 'Graphics', gLow: 'Light (smoothest)', gAuto: 'Auto', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (for strong devices)', graphicsHelp: 'Medium runs sharp and smooth on most phones. Pick Light for an older phone.',
     language: 'Language', languageHelp: 'Menus, messages and the players’ chat.',
     done: 'Done', rankUp: '{icon} New rank: {title}!', newBadge: '{icon} Badge: {name}!', gained: '+{n} rank points', hallPlace: '🏅 #{n} in your best matches',
     forfeit: '🎲 Forfeit for {name}', forfeitLine: 'If you’re in the same room: {name} has to {text}.',

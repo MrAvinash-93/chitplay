@@ -126,7 +126,7 @@ export default {
     score: 'Sukoa', matches: 'Shiai', wins: 'Kachi', totalPts: 'Pointo', best: 'Saikou', nextRank: '{title} made {pts} pointo', topRank: 'Saikou ranku da!',
     badges: 'Bajji', hall: 'Kono tanmatsu no besuto shiai', noHall: 'Shiai o oeru to koko ni noru yo.',
     resetScore: 'Sukoa o risetto', resetSure: 'Mou ichido tappu de pointo, ranku, bajji o kesu', resetDone: 'Sukoa o risetto shita',
-    graphics: 'Gurafikkusu', gLow: 'Karui (ichiban sumuuzu)', gAuto: 'Jidou', gMedium: 'Chuu', gHigh: 'Kou', gUltra: '4K (kouseinou tanmatsu)', graphicsHelp: 'Karui ga dono sumaho demo ichiban. Sumuuzu nara agete mo ii yo.',
+    graphics: 'Gurafikkusu', gLow: 'Karui (ichiban sumuuzu)', gAuto: 'Jidou', gMedium: 'Chuu', gHigh: 'Kou', gUltra: '4K (kouseinou tanmatsu)', graphicsHelp: 'Futsuu wa hotondo no sumaho de kirei de sumuuzu. Furui sumaho nara Karui o erande.',
     language: 'Gengo', languageHelp: 'Menyuu, messeeji, kaiwa.',
     done: 'Kanryou', rankUp: '{icon} Shin ranku: {title}!', newBadge: '{icon} Bajji: {name}!', gained: '+{n} ranku pointo', hallPlace: '🏅 Besuto shiai no {n}-i',
     forfeit: '🎲 {name} no batsu geemu', forfeitLine: 'Onaji heya ni iru nara: {name} wa {text}.',

@@ -126,7 +126,7 @@ export default {
     score: 'Puntos', matches: 'Partidas', wins: 'Victorias', totalPts: 'Puntos', best: 'Récord', nextRank: '{pts} puntos para {title}', topRank: '¡El rango más alto que existe!',
     badges: 'Insignias', hall: 'Mejores partidas en este dispositivo', noHall: 'Termina una partida para entrar en la lista.',
     resetScore: 'Borrar puntos', resetSure: 'Toca otra vez para borrar puntos, rango e insignias', resetDone: 'Puntos borrados',
-    graphics: 'Gráficos', gLow: 'Ligero (el más fluido)', gAuto: 'Automático', gMedium: 'Medio', gHigh: 'Alto', gUltra: '4K (para equipos potentes)', graphicsHelp: 'Ligero va mejor en cualquier teléfono. Sube solo si sigue fluido.',
+    graphics: 'Gráficos', gLow: 'Ligero (el más fluido)', gAuto: 'Automático', gMedium: 'Medio', gHigh: 'Alto', gUltra: '4K (para equipos potentes)', graphicsHelp: 'Medio se ve nítido y fluido en la mayoría de teléfonos. Elige Ligero para un teléfono antiguo.',
     language: 'Idioma', languageHelp: 'Menús, mensajes y la charla de los jugadores.',
     done: 'Listo', rankUp: '{icon} Nuevo rango: ¡{title}!', newBadge: '{icon} Insignia: ¡{name}!', gained: '+{n} puntos de rango', hallPlace: '🏅 N.º {n} de tus mejores partidas',
     forfeit: '🎲 Prenda para {name}', forfeitLine: 'Si están en la misma sala: {name} tiene que {text}.',

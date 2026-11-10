@@ -126,7 +126,7 @@ export default {
     score: 'Pontos', matches: 'Partidas', wins: 'Vitórias', totalPts: 'Pontos', best: 'Recorde', nextRank: '{pts} pontos até {title}', topRank: 'O maior nível que existe!',
     badges: 'Medalhas', hall: 'Melhores partidas neste aparelho', noHall: 'Termine uma partida para entrar na lista.',
     resetScore: 'Zerar pontos', resetSure: 'Toque de novo para apagar pontos, nível e medalhas', resetDone: 'Pontos zerados',
-    graphics: 'Gráficos', gLow: 'Leve (o mais fluido)', gAuto: 'Automático', gMedium: 'Médio', gHigh: 'Alto', gUltra: '4K (aparelhos fortes)', graphicsHelp: 'Leve roda melhor em qualquer celular. Aumente só se continuar fluido.',
+    graphics: 'Gráficos', gLow: 'Leve (o mais fluido)', gAuto: 'Automático', gMedium: 'Médio', gHigh: 'Alto', gUltra: '4K (aparelhos fortes)', graphicsHelp: 'Médio fica nítido e fluido na maioria dos celulares. Escolha Leve para um celular antigo.',
     language: 'Idioma', languageHelp: 'Menus, mensagens e a conversa dos jogadores.',
     done: 'Pronto', rankUp: '{icon} Novo nível: {title}!', newBadge: '{icon} Medalha: {name}!', gained: '+{n} pontos de nível', hallPlace: '🏅 Nº {n} das suas melhores partidas',
     forfeit: '🎲 Prenda para {name}', forfeitLine: 'Se estiverem na mesma sala: {name} tem que {text}.',

@@ -126,7 +126,7 @@ export default {
     score: 'Fenshu', matches: 'Changci', wins: 'Shengli', totalPts: 'Fen', best: 'Zui gao', nextRank: 'Li {title} hai you {pts} fen', topRank: 'Zui gao dengji!',
     badges: 'Huizhang', hall: 'Zhe tai shebei de zuijia bisai', noHall: 'Wancheng yi chang jiu neng shang bang.',
     resetScore: 'Chongzhi fenshu', resetSure: 'Zai dian yi ci qingchu fen, dengji he huizhang', resetDone: 'Fenshu yi chongzhi',
-    graphics: 'Huazhi', gLow: 'Qingliang (zui liuchang)', gAuto: 'Zidong', gMedium: 'Zhong', gHigh: 'Gao', gUltra: '4K (qiang shebei)', graphicsHelp: 'Qingliang zai renhe shouji shang dou zui hao. Liuchang shi zai tigao.',
+    graphics: 'Huazhi', gLow: 'Qingliang (zui liuchang)', gAuto: 'Zidong', gMedium: 'Zhong', gHigh: 'Gao', gUltra: '4K (qiang shebei)', graphicsHelp: 'Zhongdeng zai dabufen shouji shang qingxi liuchang. Jiu shouji qing xuan qingliang.',
     language: 'Yuyan', languageHelp: 'Caidan, xiaoxi he wanjia duihua.',
     done: 'Wancheng', rankUp: '{icon} Xin dengji: {title}!', newBadge: '{icon} Huizhang: {name}!', gained: '+{n} dengji fen', hallPlace: '🏅 Zuijia bisai di {n} ming',
     forfeit: '🎲 {name} de chengfa', forfeitLine: 'Ruguo zai tong yi ge fangjian: {name} yao {text}.',

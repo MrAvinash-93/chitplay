@@ -2,7 +2,7 @@
  * Dots and Boxes on a 5×5 grid of boxes. Draw a line on your turn. The player who closes a box owns
  * it and draws again. All lines drawn: most boxes wins.
  */
-import { best, seatsOf, turnLine } from '../lib.js?v=20261110-1441';
+import { best, seatsOf, turnLine } from '../lib.js?v=20261110-1448';
 
 export const N = 5;
 // lines: horizontal h(x,y) for x<N, y<=N, then vertical v(x,y) for x<=N, y<N

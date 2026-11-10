@@ -126,7 +126,7 @@ export default {
     score: 'Schyot', matches: 'Matchi', wins: 'Pobedy', totalPts: 'Ochki', best: 'Rekord', nextRank: 'Do {title}: {pts} ochkov', topRank: 'Eto vysshy rang!',
     badges: 'Znachki', hall: 'Luchshie matchi na ustroystve', noHall: 'Zakonchi match, chtoby popast v spisok.',
     resetScore: 'Sbrosit schyot', resetSure: 'Nazhmi eshchyo raz, chtoby steret ochki, rang i znachki', resetDone: 'Schyot sbroshen',
-    graphics: 'Grafika', gLow: 'Lyogkaya (samaya plavnaya)', gAuto: 'Avto', gMedium: 'Srednyaya', gHigh: 'Vysokaya', gUltra: '4K (dlya moshchnykh ustroystv)', graphicsHelp: 'Lyogkaya luchshe vsego na lyubom telefone. Povyshay, tolko esli vsyo plavno.',
+    graphics: 'Grafika', gLow: 'Lyogkaya (samaya plavnaya)', gAuto: 'Avto', gMedium: 'Srednyaya', gHigh: 'Vysokaya', gUltra: '4K (dlya moshchnykh ustroystv)', graphicsHelp: 'Srednyaya chyotkaya i plavnaya na bolshinstve telefonov. Dlya starogo telefona vyberi Lyogkuyu.',
     language: 'Yazyk', languageHelp: 'Menyu, soobshcheniya i razgovory igrokov.',
     done: 'Gotovo', rankUp: '{icon} Novy rang: {title}!', newBadge: '{icon} Znachok: {name}!', gained: '+{n} ochkov ranga', hallPlace: '🏅 №{n} v luchshikh matchakh',
     forfeit: '🎲 Fant dlya: {name}', forfeitLine: 'Esli vy v odnoy komnate: {name}, nuzhno {text}.',

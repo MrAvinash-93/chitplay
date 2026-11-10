@@ -126,7 +126,7 @@ export default {
     score: 'Score', matches: 'Matches', wins: 'Jeet', totalPts: 'Points', best: 'Sabse accha', nextRank: '{title} tak {pts} points', topRank: 'Isse upar koi rank nahi!',
     badges: 'Badges', hall: 'Is device ke sabse acche match', noHall: 'List mein aane ke liye ek match khatam karo.',
     resetScore: 'Score reset karo', resetSure: 'Points, rank aur badges mitane ke liye phir tap karo', resetDone: 'Score reset ho gaya',
-    graphics: 'Graphics', gLow: 'Light (sabse smooth)', gAuto: 'Auto', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (tagde device ke liye)', graphicsHelp: 'Light har phone par sabse accha chalta hai. Device smooth rahe tabhi upar jao.',
+    graphics: 'Graphics', gLow: 'Light (sabse smooth)', gAuto: 'Auto', gMedium: 'Medium', gHigh: 'High', gUltra: '4K (tagde device ke liye)', graphicsHelp: 'Medium zyaadatar phones par saaf aur smooth chalta hai. Purane phone ke liye Light chuno.',
     language: 'Bhasha', languageHelp: 'Menu, messages aur players ki baatcheet.',
     done: 'Ho gaya', rankUp: '{icon} Nayi rank: {title}!', newBadge: '{icon} Badge: {name}!', gained: '+{n} rank points', hallPlace: '🏅 Aapke best matches mein #{n}',
     forfeit: '🎲 {name} ki saza', forfeitLine: 'Agar ek hi kamre mein ho: {name} ko {text}.',
