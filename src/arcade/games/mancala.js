@@ -3,7 +3,7 @@
  * are seat 1's, 13 its store. Sow to the right, skipping the other player's store. The last seed in
  * your own store gives another turn; in an empty pit of yours it captures the seeds opposite.
  */
-import { searchMove, turnLine } from '../lib.js?v=20261110-1504';
+import { searchMove, turnLine } from '../lib.js?v=20261110-1534';
 
 const STORE = [6, 13];
 const mine = (p) => (p === 0 ? [0, 1, 2, 3, 4, 5] : [7, 8, 9, 10, 11, 12]);

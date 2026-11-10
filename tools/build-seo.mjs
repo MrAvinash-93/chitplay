@@ -54,7 +54,9 @@ const logoLink = (up) => `<a href="${up}" style="display:inline-block"><img src=
 const iconLinks = (up) => `<link rel="icon" href="${up}assets/icon-192.png" sizes="192x192" type="image/png">
 <link rel="icon" href="${up}assets/icon.svg" type="image/svg+xml">
 <link rel="icon" href="${up}favicon.ico" sizes="48x48">
-<link rel="apple-touch-icon" sizes="180x180" href="${up}assets/apple-touch-icon.png">`;
+<link rel="apple-touch-icon" sizes="180x180" href="${up}assets/apple-touch-icon.png">
+<link rel="manifest" href="${up}manifest.webmanifest">
+<meta name="theme-color" content="#140b07">`;
 
 const src = readFileSync(join(ROOT, 'src/world/countries.js'), 'utf8');
 const C = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
@@ -310,6 +312,22 @@ const PARTY = TABLE_GAMES.map((g) => {
   if (!RULES[g.slug]) throw new Error(`no rules written for ${g.slug}`);
   return { ...g, ...RULES[g.slug], players: g.min === g.max ? String(g.min) : `${g.min}–${g.max}`, time: `${g.minutes} minutes` };
 });
+/**
+ * The questions people ask a phone or a smart speaker about a game, answered in a sentence or two.
+ * They go after the game's own questions (never twice), on the page and in its FAQ data.
+ */
+function voiceFaq(g) {
+  const n = g.min === g.max ? `${g.min}` : `${g.min} to ${g.max}`;
+  const list = [
+    [`How do you play ${g.name} online with friends?`, `Open ${g.name} on ChitPlay and choose Nearby Play. One phone opens a room and gets a 6-digit code; your friends type the code or scan the QR code on their own phones and join. No sign-up is needed.`],
+    [`Can I play ${g.name} without downloading anything?`, `Yes. ${g.name} runs in the web browser on phones, tablets and computers. Open www.chitplay.com, pick ${g.name} and play as a guest.`],
+    [`How many players can play ${g.name}?`, `${g.name} on ChitPlay is for ${n} player${g.max > 1 ? 's' : ''}. ${g.min === 1 ? 'You can play alone, or with friends and family.' : 'Computer players fill any empty seats, so you can always start a game.'}`],
+    [`Is ${g.name} free to play?`, `Yes, ${g.name} is completely free on ChitPlay. There is no real money, betting or prizes, and points have no value outside the game.`],
+    [`Can I play ${g.name} against the computer?`, g.min === 1 ? `Yes. You can play ${g.name} on your own and try to beat your best score, or race against computer players.` : `Yes. Choose Play and ChitPlay's computer players take the other seats, at an easy, normal or hard level.`],
+  ];
+  const seen = new Set((g.faq || []).map(([q]) => q.toLowerCase()));
+  return list.filter(([q]) => !seen.has(q.toLowerCase()));
+}
 /** Every way this game can be played, with a link straight into each. */
 function waysToPlay(g) {
   const p = (mode) => `../../play/?game=${g.slug}&mode=${mode}`;
@@ -339,7 +357,7 @@ function partyPage(g) {
   const related = PARTY.filter(o => o.slug !== g.slug && o.kind === g.kind).map(o => `<li><a href="../${o.slug}/">${esc(o.name)}</a></li>`).join('');
   const ld = [
     { '@context': 'https://schema.org', '@type': 'VideoGame', name: g.name, url, description: metaDesc, playMode: g.min === 1 ? ['SinglePlayer', 'MultiPlayer', 'CoOp'] : ['MultiPlayer'], inLanguage: 'en', image: [imgSq, img], gamePlatform: 'Web browser', applicationCategory: 'Game', genre: [`${g.kind} game`], numberOfPlayers: { '@type': 'QuantitativeValue', minValue: g.min, maxValue: g.max }, author: DEVELOPER_LD, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } },
-    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: g.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: [...g.faq, ...voiceFaq(g)].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
     { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'ChitPlay', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: 'Games', item: `${SITE}/games/` }, { '@type': 'ListItem', position: 3, name: g.name, item: url }] },
   ];
   return `<!DOCTYPE html>
@@ -390,7 +408,7 @@ ${g.levels ? `<h2>Levels</h2>\n<ol>${g.levels.map(([k, d]) => `<li><strong>${esc
 <h2>Tips</h2>
 <ul>${g.tips.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
 <h2>Questions</h2>
-${g.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
+${[...g.faq, ...voiceFaq(g)].map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
 <h2>More games</h2>
 <ul>${related}<li><a href="../cops-and-robbers/">Cops and Robbers (Raja Rani Chor Police)</a></li><li><a href="../">All games</a></li></ul>
 <p><small>Points in this game have no value. ChitPlay involves no real money, betting or prizes.</small></p>
@@ -403,6 +421,99 @@ ${g.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></
 for (const g of PARTY) {
   mkdirSync(join(ROOT, 'games', g.slug), { recursive: true });
   writeFileSync(join(ROOT, 'games', g.slug, 'index.html'), partyPage(g));
+}
+
+// ── One page per kind of game, for people who search for "board games", "card games"… ──
+const CATEGORIES = [
+  { slug: 'board-games', kinds: ['Board', 'Dice'], name: 'Board games',
+    title: 'Free Board Games Online: Ludo, Chess, Carrom | ChitPlay',
+    desc: 'Play Ludo, Chess, Carrom, Snakes and Ladders, Checkers and more board and dice games free online in 3D, against the computer or with friends.',
+    h1: 'Board games: play free online in 3D',
+    intro: ['The board games families have played at home for generations, set out on a mat in a 3D room: Ludo, Carrom, Chess, Snakes and Ladders, Checkers, Reversi, Mancala, Nine Men\u2019s Morris and Four in a Row, plus the dice games Yacht and Pig.', 'Every game follows its usual rules, with the house rules people argue about switchable on or off. Play the computer at easy, normal or hard, invite friends to join from their own phones with a code, or pass one phone round the table.'],
+    faq: [['What is the best board game to play online with friends?', 'Ludo is the favourite: two to four players, quick to learn and full of comebacks. Chess and Carrom are best for two.'], ['Can I play board games online without signing up?', 'Yes. Every ChitPlay board game can be played as a guest, with no account and no download.']] },
+  { slug: 'card-games', kinds: ['Cards'], name: 'Card games',
+    title: 'Free Card Games Online: Call Break, Crazy Eights | ChitPlay',
+    desc: 'Play Call Break, Color Clash and Crazy Eights free online in 3D: card games for 2 to 4 players against the computer or with friends.',
+    h1: 'Card games: play free online with friends',
+    intro: ['Shuffle up for card games that work as well at a table as they do on a phone. Call Break is the trick-taking favourite of South Asia, where spades are always trumps. Color Clash is a fast colour-and-number shedding game with +2 and Rainbow +4 cards, and Crazy Eights is the classic where an eight changes the suit.', 'Your hand stays hidden on your own screen, the table shows the cards everyone can see, and computer players fill any empty seat.', 'Each game keeps score across several rounds, so one bad hand never decides it: Call Break is played over five rounds, Color Clash to 150 points or five rounds, and Crazy Eights over three. The score for every player stays on the screen, and the rules page of each game explains the scoring with examples, so new players can join a table and keep up from the first deal.'],
+    faq: [['How do you play Call Break online?', 'Open Call Break on ChitPlay, bid how many tricks you will win, then win them. Spades are always trumps. Play the computer or invite three friends.'], ['Are the card games free?', 'Yes, all the card games are free, with no real money, betting or prizes.']] },
+  { slug: 'arcade-games', kinds: ['Arcade'], name: 'Arcade games',
+    title: 'Free 3D Arcade Games Online: Fly, Race, Shoot Hoops | ChitPlay',
+    desc: 'Play 10 free 3D arcade games on the TV in the ChitPlay room: Flying Chit, Tunnel Race, Road Dash, Hoop Flick and more, alone or with friends.',
+    h1: 'Arcade games: 3D, on the room\u2019s TV',
+    intro: ['Ten arcade games of our own, played on the big TV in the ChitPlay room: steer a paper chit through bangles, fly down a turning tunnel, dodge cows in an auto-rickshaw, flick a ball through moving hoops, survive a night in a haunted hostel and more.', 'Each one has levels that bring something new, from wind on the court to spinning walls, and a pause menu when you need a break. Play alone for a high score, or race up to three friends on one screen or on their own phones.'],
+    faq: [['Which arcade game is best to start with?', 'Flying Chit and Road Dash: one finger to steer, and the first levels are gentle.'], ['Do the arcade games work on phones?', 'Yes. Drag to steer on a phone; on a computer use the keys or a gamepad. Turn the phone sideways for a bigger picture.']] },
+  { slug: 'party-games', kinds: ['Party'], name: 'Party games',
+    title: 'Free Party Games Online: Who Is the Spy, Werewolf | ChitPlay',
+    desc: 'Play Who Is the Spy, Werewolf Night, Truth or Dare, Majority Vote and more party games free online, with friends on one phone or their own.',
+    h1: 'Party games for groups: free online',
+    intro: ['Party games for three to ten people, for evenings with friends and family: find the spy from the clues, catch the werewolves before morning, answer a friendly truth or dare, guess what most of the table will choose, or write a folded story one line at a time.', 'Play them on one phone passed round the room, or with everyone on their own phone. And the paper chit game that started ChitPlay, Raja Rani Chor Police, is the classic four-player party game of bluffing.'],
+    faq: [['What is a good party game for a big group?', 'Who Is the Spy and Werewolf Night both work well for five to ten players.'], ['Are the party games suitable for every age?', 'Yes. Questions and dares are friendly, and any prompt can be skipped.']] },
+  { slug: 'pen-and-paper-games', kinds: ['Puzzle'], name: 'Pen and paper games',
+    title: 'Free Pen and Paper Games Online: Tic-Tac-Toe & More | ChitPlay',
+    desc: 'Play Tic-Tac-Toe, Dots and Boxes and Memory Match free online: the pen and paper games from school, against the computer or with friends.',
+    h1: 'Pen and paper games: the school classics online',
+    intro: ['The games from the back of a notebook: Tic-Tac-Toe, Dots and Boxes and Memory Match, quick to learn and always ready for a rematch.', 'They are drawn on paper on the mat in the 3D room, and you can play them against the computer, with a friend on one phone, or with friends on their own phones.', 'They are small games with real thinking in them. Tic-Tac-Toe teaches you to look one move ahead and block a line before it is made. Dots and Boxes rewards patience: the player who avoids giving away the last free box usually wins the chain. Memory Match is all about concentration, remembering where each picture was when somebody else turned it over. A round takes a minute or two, so they are perfect for a short break or for playing with younger brothers, sisters and grandparents.'],
+    faq: [['Can you win every game of Tic-Tac-Toe?', 'No. With perfect play from both sides it is always a draw, so the fun is in catching a mistake.'], ['How do you win Dots and Boxes?', 'Close more boxes than anyone else. Closing a box gives you another turn, so avoid drawing the third side of a box.']] },
+];
+function categoryPage(c) {
+  const url = `${SITE}/games/${c.slug}/`;
+  const games = PARTY.filter(g => c.kinds.includes(g.kind));
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'CollectionPage', name: c.h1, url, description: c.desc, isPartOf: { '@type': 'WebSite', name: 'ChitPlay', url: `${SITE}/` } },
+    { '@context': 'https://schema.org', '@type': 'ItemList', name: c.name, numberOfItems: games.length, itemListElement: games.map((g, i) => ({ '@type': 'ListItem', position: i + 1, name: g.name, url: `${SITE}/games/${g.slug}/`, image: `${SITE}/assets/games/${g.slug}-square.jpg` })) },
+    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: c.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'ChitPlay', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: 'Games', item: `${SITE}/games/` }, { '@type': 'ListItem', position: 3, name: c.name, item: url }] },
+  ];
+  const others = CATEGORIES.filter(o => o !== c).map(o => `<a href="../${o.slug}/">${esc(o.name)}</a>`).join(' · ');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${ANALYTICS}
+<title>${esc(c.title)}</title>
+<meta name="description" content="${esc(c.desc)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChitPlay">
+<meta property="og:title" content="${esc(c.title)}">
+<meta property="og:description" content="${esc(c.desc)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${SITE}/assets/home.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(c.title)}">
+<meta name="twitter:description" content="${esc(c.desc)}">
+<meta name="twitter:image" content="${SITE}/assets/home.jpg">
+${iconLinks('../../')}
+<script type="application/ld+json">${json(ld)}</script>
+<style>body{margin:0;background:#140b07;color:#f6ead2;font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:820px;margin:0 auto;padding:20px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(26px,6vw,38px);line-height:1.2}h2{font-size:22px;margin-top:30px}.games{padding:0;list-style:none}.games li{display:flex;gap:12px;align-items:flex-start;margin:8px 0;padding:10px 12px;border-radius:12px;background:#24140c}.games img{flex:none;border-radius:12px}.games small{color:#d4c2a0}.go{font-weight:700;margin-right:10px}.btn{display:inline-block;padding:14px 24px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}footer{margin-top:40px;font-size:13px;color:#d4c2a0}</style>
+</head>
+<body>
+<main>
+${logoLink('../../')}
+<nav aria-label="Breadcrumb"><a href="../../">ChitPlay</a> › <a href="../">Games</a> › ${esc(c.name)}</nav>
+<h1>${esc(c.h1)}</h1>
+${c.intro.map(t => `<p>${esc(t)}</p>`).join('\n')}
+<h2>${games.length} ${esc(c.name.toLowerCase())} to play</h2>
+<ul class="games">${games.map(g => `<li><img src="../../assets/games/${g.slug}-square.jpg" alt="${esc(g.name.replace('?', ''))} logo" width="64" height="64" loading="lazy" decoding="async"><div><strong>${esc(g.name)}</strong> <small>👥 ${g.players} players · ⏱ ${g.time}</small><br>${esc(g.blurb)}<br><a class="go" href="../../play/?game=${g.slug}&mode=play">▶ Play</a> <a href="../${g.slug}/">Rules and tips</a></div></li>`).join('')}</ul>
+<p><a class="btn" href="../../">▶ Open ChitPlay</a></p>
+<h2>Questions</h2>
+${c.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
+<h2>More kinds of games</h2>
+<p>${others} · <a href="../cops-and-robbers/">Raja Rani Chor Police</a> · <a href="../">All games</a></p>
+<footer>${footerLinks('../../')} · © ${TODAY.slice(0, 4)} ChitPlay</footer>
+</main>
+</body>
+</html>
+`;
+}
+for (const c of CATEGORIES) {
+  mkdirSync(join(ROOT, 'games', c.slug), { recursive: true });
+  writeFileSync(join(ROOT, 'games', c.slug, 'index.html'), categoryPage(c));
 }
 
 function hubPage() {
@@ -461,6 +572,7 @@ ${hreflangLinks()}
 <main>
 ${logoLink('../')}
 <h1>All ChitPlay games: ${PARTY.length + 1} free indoor games online</h1>
+<p>Browse by kind: ${CATEGORIES.map(c => `<a href="${c.slug}/">${esc(c.name)}</a>`).join(' · ')}</p>
 <p>Free games to play with friends and family, at any age. Looking for ideas? See <a href="../indoor-games/">indoor games for four people</a> and <a href="../school-games/">paper games for school</a>.</p>
 <h2>Cops and Robbers (Raja Rani Chor Police) in 3D</h2>
 <p>The four-chit game of bluffing, known by many names around the world. <a href="cops-and-robbers/">Rules and every name →</a></p>
@@ -731,7 +843,12 @@ ${ANALYTICS}
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${SITE}/${slug}/">
 <meta property="og:image" content="${SITE}/assets/home.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(/ChitPlay/.test(headTitle) ? headTitle : `${headTitle} | ChitPlay`)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${SITE}/assets/home.jpg">
 ${iconLinks('../')}
 <style>body{margin:0;background:#140b07;color:#f6ead2;font:16px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(26px,6vw,36px);line-height:1.2}h2{font-size:20px;margin-top:28px}footer{margin-top:40px;font-size:13px;color:#d4c2a0}</style>
 </head>
@@ -941,7 +1058,7 @@ for (const L of LANG_PAGES) {
   writeFileSync(join(ROOT, L.dir, 'index.html'), langPage(L));
 }
 
-const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), MAIN_URL, ...PARTY.map(g => `${SITE}/games/${g.slug}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`), ...LANG_PAGES.map(L => `${SITE}/${L.dir}/`)];
+const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), MAIN_URL, ...PARTY.map(g => `${SITE}/games/${g.slug}/`), ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`), ...LANG_PAGES.map(L => `${SITE}/${L.dir}/`), ...CATEGORIES.map(c => `${SITE}/games/${c.slug}/`)];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.map((u, i) => {

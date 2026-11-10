@@ -10,7 +10,7 @@
  *             round again (straight on to its own start square)
  *  - quick:   everyone starts with one token already out
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261110-1504';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261110-1534';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];
