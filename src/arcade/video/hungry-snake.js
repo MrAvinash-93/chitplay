@@ -5,7 +5,7 @@
  * Every six samosas is a new level: the snakes speed up, a short brick wall goes up somewhere on the
  * field (away from every snake's head), and a golden samosa appears for a few seconds: three points.
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261110-1436';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261110-1441';
 
 export const COLS = 32, ROWS = 18;
 const CELL = 20, TOP = 40;
@@ -53,7 +53,7 @@ export default {
       snakes: seats(n).map((i) => {
         const [x, y, d] = START[i];
         const [dx] = DIRS[d];
-        return { body: [[x, y], [x - dx, y], [x - dx * 2, y]], d, next: d, alive: true, score: 0 };
+        return { body: [[x, y], [x - dx, y], [x - dx * 2, y]], d, next: d, alive: true, score: 0, pop: 0, popAt: -999 };
       }) };
     placeFood(s);
     return s;
@@ -94,11 +94,13 @@ export default {
       n.body.unshift(h);
       if (h[0] === s.food[0] && h[1] === s.food[1]) {
         n.score += 1;
+        n.pop = 1; n.popAt = s.t;
         s.eaten += 1;
         s.ev.push({ k: 'star', seat: i, score: n.score });
         placeFood(s);
       } else if (s.gold && h[0] === s.gold.x && h[1] === s.gold.y) {
         n.score += 3;
+        n.pop = 3; n.popAt = s.t;
         s.gold = null;
         s.ev.push({ k: 'star', seat: i, score: n.score, combo: 3 });
       } else n.body.pop();
@@ -146,6 +148,16 @@ export default {
   },
   hud(g, s, names) {
     scoreBar(g, s.snakes.map((n, i) => [names[i] || `P${i + 1}`, n.alive ? n.score : `${n.score} ✕`, SEAT_COLORS[i]]));
+    // a samosa just eaten: +1 (or +3 for a golden one) rising over that player's score
+    s.snakes.forEach((n, i) => {
+      const age = s.t - n.popAt;
+      if (age < 0 || age >= 36) return;
+      const w = W / s.n;
+      g.save(); g.globalAlpha = 1 - age / 36; g.font = `900 ${n.pop >= 3 ? 30 : 24}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5; g.fillStyle = n.pop >= 3 ? '#ffd23f' : '#fff';
+      const y = 70 - age * 0.5; g.strokeText(`+${n.pop}`, w * (i + 0.5), y); g.fillText(`+${n.pop}`, w * (i + 0.5), y);
+      g.restore();
+    });
     levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 14);
   },
   draw(g, s, names) {

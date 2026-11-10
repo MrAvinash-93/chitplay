@@ -10,33 +10,33 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1436';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1436';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1436';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1436';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1436';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1436';
-import { isLanguage } from '../i18n/index.js?v=20261110-1436';
-import { profile } from '../persistence/profile-store.js?v=20261110-1436';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1441';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1441';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1441';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1441';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1441';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1441';
+import { isLanguage } from '../i18n/index.js?v=20261110-1441';
+import { profile } from '../persistence/profile-store.js?v=20261110-1441';
 import { audioManager } from '../audio/audio-manager.js';
-import { iconSvg } from '../ui/icons.js?v=20261110-1436';
-import { faceHtml } from './photo.js?v=20261110-1436';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1436';
+import { iconSvg } from '../ui/icons.js?v=20261110-1441';
+import { faceHtml } from './photo.js?v=20261110-1441';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1441';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1436';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1441';
 
-import { fill, shellText } from './shell-text.js?v=20261110-1436';
-import { nextForRoom } from './decor.js?v=20261110-1436';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1436';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1436';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1436';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1436';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1436';
-import { ask } from './dialog.js?v=20261110-1436';
-import { startReminder } from './reminder.js?v=20261110-1436';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1436';
+import { fill, shellText } from './shell-text.js?v=20261110-1441';
+import { nextForRoom } from './decor.js?v=20261110-1441';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1441';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1441';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1441';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1441';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1441';
+import { ask } from './dialog.js?v=20261110-1441';
+import { startReminder } from './reminder.js?v=20261110-1441';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1441';
 
-const V = '?v=20261110-1436';
+const V = '?v=20261110-1441';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
