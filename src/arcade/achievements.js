@@ -3,7 +3,7 @@
  * stays on this device. Coins and rank points come from the same profile as the rest of the game,
  * so playing anything moves you up the same ladder. Nothing here is bought or has any real value.
  */
-import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-0233';
+import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-0911';
 
 const KEY = 'chitplay.achievements';
 const load = () => {
@@ -60,8 +60,14 @@ export const ACHIEVEMENTS = [
 /* ─── popups: one at a time, each with its moment ─── */
 const queue = [];
 let showing = false;
+// while a game is being played nothing pops up over it: unlocks wait for the end of the game
+let held = false;
+export function holdPopups(on) {
+  held = !!on;
+  if (!held) setTimeout(nextPopup, 900);
+}
 function nextPopup() {
-  if (showing || !queue.length) return;
+  if (showing || held || !queue.length) return;
   showing = true;
   const { icon, title, sub, tier } = queue.shift();
   const box = document.createElement('div');

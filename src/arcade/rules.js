@@ -69,7 +69,7 @@ export const RULES = {
   'road-dash': {
     title: 'Road Dash', desc: 'Play Road Dash free: an auto-rickshaw on a road that never ends. Dodge cows, potholes and buses and collect coins on a TV in a 3D room. Controls and tips.',
     intro: 'Road Dash puts you at the handlebars of an auto-rickshaw on the busiest road in town. You only have to do one thing: change lanes. But the traffic gets thicker and the road gets faster, and sooner or later a cow will be standing exactly where you need to go.',
-    steps: ['Press up or down to change lanes.', 'Dodge the cows, potholes, buses and other rickshaws.', 'Collect coins for extra points.', 'The road gets faster the longer you last. One crash ends your run.'],
+    steps: ['Press left or right (drag the stick, A and D, or the arrow keys) to change lanes.', 'Dodge the cows, potholes, buses and other rickshaws.', 'Collect coins for extra points.', 'The road gets faster the longer you last. One crash ends your run.'],
     scoring: 'You score for the distance travelled, and 5 for each coin.',
     win: 'Alone, beat your own best score. With others, the highest score wins.',
     tips: ['Stay in the middle lanes: they have two ways out.', 'Don\'t chase every coin.', 'Look ahead down the lane you are about to enter.'],

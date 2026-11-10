@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName, politeName } from '../world/names.js?v=20261110-0233';
-import { cleanLook } from '../world/character-looks.js?v=20261110-0233';
+import { cleanName, politeName } from '../world/names.js?v=20261110-0911';
+import { cleanLook } from '../world/character-looks.js?v=20261110-0911';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261110-0233.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261110-0911.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -264,6 +264,20 @@ export class NearbyGuest {
 
   /** Connect to the host with this code. Resolves once the host has said welcome. */
   async join(code, name, token, extra = {}) {
+    try {
+      return await this.#attempt(code, name, token, extra);
+    } catch (e) {
+      // a first try can miss a room opened a moment ago, or a broker hiccup: once more, on a fresh line
+      if (this.cancelled || !['timeout', 'peer-unavailable', 'network', 'socket-error', 'server-error', 'socket-closed'].includes(e?.type)) throw e;
+      this.closed = false; this.conn = null; this.peer = null; this.w = null;
+      return this.#attempt(code, name, token, extra);
+    }
+  }
+
+  async #attempt(code, name, token, extra) {
+    // a retry starts a new attempt: whatever the old line still says must not touch the new one
+    const run = (this.run = (this.run || 0) + 1);
+    const live = () => run === this.run;
     const Peer = await loadPeer();
     const p = await openPeer(Peer);
     if (this.closed) { p.destroy(); throw new Error('cancelled'); }
@@ -274,19 +288,20 @@ export class NearbyGuest {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        if (err) { this.close(true); reject(err); } else resolve(val);
+        if (err) { this.failing = true; this.close(true); this.failing = false; reject(err); } else resolve(val);
       };
       const timer = setTimeout(() => finish(Object.assign(new Error('timeout'), { type: 'timeout' })), JOIN_TIMEOUT_MS);
-      this.peer.on('error', (e) => finish(e));
+      this.peer.on('error', (e) => { if (live()) finish(e); });
       const conn = this.peer.connect(PREFIX + code, { reliable: true });
       this.conn = conn;
       conn.on('open', () => {
-        this.w = watch(conn, () => this.#lost('lost'));
+        if (!live()) return;
+        this.w = watch(conn, () => { if (live()) this.#lost('lost'); });
         safeSend(conn, { t: 'hello', name, token, v: 2, ...extra });
       });
-      conn.on('error', (e) => finish(e));
+      conn.on('error', (e) => { if (live()) finish(e); });
       conn.on('data', (msg) => {
-        if (this.closed) return;   // already left: a late message must not pull us back in
+        if (this.closed || !live()) return;   // already left: a late message must not pull us back in
         this.w?.seen();
         if (!msg || typeof msg !== 'object' || msg.t === 'ping') return;
         if (msg.t === 'reject') {
@@ -298,7 +313,7 @@ export class NearbyGuest {
         if (msg.t === 'lobby' && !settled) finish(null, msg);
         this.h.onMessage?.(msg);
       });
-      conn.on('close', () => { if (settled) this.#lost('lost'); else finish(Object.assign(new Error('no-room'), { type: 'no-room' })); });
+      conn.on('close', () => { if (!live()) return; if (settled) this.#lost('lost'); else finish(Object.assign(new Error('no-room'), { type: 'no-room' })); });
     });
   }
 
@@ -311,10 +326,12 @@ export class NearbyGuest {
   send(msg) { safeSend(this.conn, msg); }
 
   close(silent = false) {
+    if (!this.failing) this.cancelled = true;
     if (this.closed) return;
     this.closed = true;
     this.w?.stop();
     if (!silent) safeSend(this.conn, { t: 'bye' });
-    setTimeout(() => { try { this.conn?.close(); } catch {} try { this.peer?.destroy(); } catch {} }, 200);
+    const conn = this.conn, peer = this.peer;
+    setTimeout(() => { try { conn?.close(); } catch {} try { peer?.destroy(); } catch {} }, 200);
   }
 }

@@ -8,16 +8,16 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-0233';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-0911';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-0233';
-import { lookOf, lookKey } from './character-looks.js?v=20261110-0233';
-import { buildRoomDetails } from './room-details.js?v=20261110-0233';
-import { COUNTRIES } from './countries.js?v=20261110-0233';
-import { isSpecialEmoji } from './table-talk.js?v=20261110-0233';
-import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-0233';
-import { decorMakers } from './decor-makers.js?v=20261110-0233';
-import * as Themes from './themes.js?v=20261110-0233';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-0911';
+import { lookOf, lookKey } from './character-looks.js?v=20261110-0911';
+import { buildRoomDetails } from './room-details.js?v=20261110-0911';
+import { COUNTRIES } from './countries.js?v=20261110-0911';
+import { isSpecialEmoji } from './table-talk.js?v=20261110-0911';
+import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-0911';
+import { decorMakers } from './decor-makers.js?v=20261110-0911';
+import * as Themes from './themes.js?v=20261110-0911';
 
 const TAU = Math.PI * 2;
 
@@ -1535,12 +1535,20 @@ function createWorld() {
       shot = () => {
         const W = window.innerWidth || 1, H = window.innerHeight || 1;
         const r = panel?.isConnected && !document.body.classList.contains('room-only') ? panel.getBoundingClientRect() : null;
-        const side = r && r.left > W * 0.4 ? r.left : W;
-        const ox = W / 2 - side / 2;
-        if (!viewOffset.on) Object.assign(viewOffset, { x: ox, y: 0, on: true });
+        // the room fills whatever the panel leaves free: beside a side panel, or above a bottom one
+        let freeW = W, freeH = H, cx = W / 2, cy = H / 2;
+        if (r && r.left > W * 0.4) { freeW = Math.max(160, r.left); cx = freeW / 2; }
+        else if (r && r.top > H * 0.25) { freeH = Math.max(140, r.top); cy = freeH / 2; }
+        const ox = W / 2 - cx, oy = H / 2 - cy;
+        if (!viewOffset.on) Object.assign(viewOffset, { x: ox, y: oy, on: true });
         viewOffset.x += (ox - viewOffset.x) * 0.14;
-        camera.setViewOffset(W, H, viewOffset.x, 0, W, H);
-        return { pos: [0, 3.1, side < W ? 5.2 : 4.6], look: [0, 0.6, -1], orbit: 0.05 };
+        viewOffset.y += (oy - viewOffset.y) * 0.14;
+        camera.setViewOffset(W, H, viewOffset.x, viewOffset.y, W, H);
+        // far enough back that the whole decorated corner fits the free space
+        const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
+        const d = Math.min(9.5, Math.max(6.6, 4.6 * H / (freeW * fovK), 3.0 * H / (freeH * fovK)));
+        const look = [0, 0.6, -1], k = d / Math.hypot(2.5, 5.6);
+        return { pos: [0, look[1] + 2.5 * k, look[2] + 5.6 * k], look, orbit: 0.05 };
       };
     },
     /** A picture of the room right now, to show friends. */

@@ -3,19 +3,19 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-0233';
-import { W, H, TICK } from './video/lib.js?v=20261110-0233';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-0233';
-import { nextForRoom } from './decor.js?v=20261110-0233';
-import { achievementList, bestOf, gameFinished, playStats, popup, rankProgress } from './achievements.js?v=20261110-0233';
-import { MOMENT, linesFor } from './talk.js?v=20261110-0233';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0233';
-import { ask, confirmSpend } from './dialog.js?v=20261110-0233';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0233';
-import { profile } from '../persistence/profile-store.js?v=20261110-0233';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-0233';
+import { hintsLeft, showHint } from './hint.js?v=20261110-0911';
+import { W, H, TICK } from './video/lib.js?v=20261110-0911';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-0911';
+import { nextForRoom } from './decor.js?v=20261110-0911';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-0911';
+import { MOMENT, linesFor } from './talk.js?v=20261110-0911';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0911';
+import { ask, confirmSpend } from './dialog.js?v=20261110-0911';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0911';
+import { profile } from '../persistence/profile-store.js?v=20261110-0911';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-0911';
 
-const V = '?v=20261110-0233';
+const V = '?v=20261110-0911';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 const SCALE = matchMedia('(pointer: fine)').matches ? 1.5 : 1;       // ticks between pictures sent to friends: twenty a second
@@ -307,6 +307,7 @@ export async function runTv(ctx) {
     tick = 0;
     if (!resumeState) revives = 0;
     toldBest = false; medalsTold = 0; bestAtStart = bestOf(game.slug);
+    holdPopups(true);
     waitingFirst = !resumeState && !!logic.tapToPlay && players.length === 1 && players[0].kind === 'me';
     countdown = waitingFirst ? 1 : 150;
     sit();
@@ -443,6 +444,7 @@ export async function runTv(ctx) {
     start();
   }
   function finish() {
+    holdPopups(false);
     clearSaved(game.slug);
     againAt = Date.now() + 700;
     cancelAnimationFrame(loop);
@@ -643,6 +645,7 @@ export async function runTv(ctx) {
     removeEventListener('pointerdown', tapDown);
     removeEventListener('pointerup', tapUp);
     bigBox.remove();
+    holdPopups(false);
     room?.close();
     room = null;
     r3?.dispose();

@@ -2,8 +2,8 @@
  * Majority Vote: everyone secretly picks what they think most of the table will pick. One point for
  * being with the majority (two answers level both count).
  */
-import { leaders, pick, seatsOf, shuffle } from '../lib.js?v=20261110-0233';
-import { MAJORITY } from '../content.js?v=20261110-0233';
+import { leaders, pick, seatsOf, shuffle } from '../lib.js?v=20261110-0911';
+import { MAJORITY } from '../content.js?v=20261110-0911';
 
 function open(s) { const [q, choices] = s.deck[s.at]; s.q = q; s.choices = choices; s.picks = seatsOf(s.n).map(() => null); s.reveal = false; }
 function winnersOf(s) {

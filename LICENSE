@@ -1,0 +1,16 @@
+Copyright (c) 2026 Avinash (ChitPlay, https://www.chitplay.com). All rights reserved.
+
+This repository is public only so that the website can be served. It is NOT open source.
+
+No permission is granted to copy, modify, merge, publish, distribute, sublicense,
+sell, host, or otherwise use this code, its game designs, artwork, characters,
+text, or any other content, in whole or in part, without prior written permission
+from the copyright holder.
+
+Viewing the code in a web browser while playing ChitPlay at https://www.chitplay.com
+is permitted. Everything else requires written permission.
+
+Third-party libraries included under src/vendor/ keep their own licenses
+(three.js and PeerJS: MIT; jsQR: Apache-2.0).
+
+Contact: chitplaygame@gmail.com

@@ -1,31 +1,31 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261110-0233';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261110-0233';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261110-0233';
+import { GAME_PHASES } from '../../app/config.js?v=20261110-0911';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261110-0911';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261110-0911';
 import { audioManager } from '../../audio/audio-manager.js';
-import { loadWorld } from '../../world/world-loader.js?v=20261110-0233';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261110-0233';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261110-0233';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261110-0233';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261110-0233';
-import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261110-0233';
+import { loadWorld } from '../../world/world-loader.js?v=20261110-0911';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261110-0911';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261110-0911';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261110-0911';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261110-0911';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261110-0911';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261110-0233';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261110-0233';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261110-0233';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261110-0233';
-import { iconSvg } from '../icons.js?v=20261110-0233';
-import { shellText, fill } from '../../arcade/shell-text.js?v=20261110-0233';
-import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261110-0233';
-import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261110-0233';
-import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261110-0233';
-import { clearPhoto, faceHtml, setPhotoFromFile } from '../../arcade/photo.js?v=20261110-0233';
-import { DECOR, RARITY, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261110-0233';
-import { savedList } from '../../arcade/resume.js?v=20261110-0233';
-import { logoSvg } from '../../arcade/logo.js?v=20261110-0233';
-import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261110-0233';
+} from '../../world/character-looks.js?v=20261110-0911';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261110-0911';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261110-0911';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261110-0911';
+import { iconSvg } from '../icons.js?v=20261110-0911';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261110-0911';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261110-0911';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261110-0911';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261110-0911';
+import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261110-0911';
+import { DECOR, RARITY, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261110-0911';
+import { savedList } from '../../arcade/resume.js?v=20261110-0911';
+import { logoSvg } from '../../arcade/logo.js?v=20261110-0911';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261110-0911';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -1159,7 +1159,7 @@ export function GameScreen({ transition }) {
             details.append(
               el('h2', { className: 'game__title sr-only' }, [table.name]),
               el('p', { className: 'game__sub' }, [`${table.kind} · ${table.min === table.max ? table.min : `${table.min}–${table.max}`} · ${table.minutes} min`]),
-              el('a', { className: 'game__choice game__choice--howto', attrs: { href: `games/${table.slug}/` } }, [el('strong', {}, [`❓ ${ui.howto}`])]),
+              el('a', { className: 'game__choice game__choice--howto', attrs: { href: `games/${table.slug}/` } }, [el('strong', {}, [el('span', { className: 'game__howto-ico', html: iconSvg('book') }), ` ${ui.howto}`])]),
               legalLinks(),
             );
             return;
@@ -1655,7 +1655,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261110-0233').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261110-0911').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -1870,7 +1870,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261110-0233').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261110-0911').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -2076,7 +2076,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261110-0233');
+        const scanner = import('../../net/qr-scan.js?v=20261110-0911');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });
@@ -3260,7 +3260,7 @@ export function GameScreen({ transition }) {
   function closeOverlay() {
     overlay.hidden = true;
     clear(overlay);
-    screen.classList.remove('game--overlay', 'game--profile');
+    screen.classList.remove('game--overlay', 'game--profile'); document.documentElement.classList.remove('overlay-open');
     world?.story?.portrait(null);
   }
   function quitGame() {
@@ -3292,7 +3292,7 @@ export function GameScreen({ transition }) {
     closeTalk();
     clear(overlay);
     overlay.hidden = false;
-    screen.classList.add('game--overlay');
+    document.documentElement.classList.add('overlay-open'); screen.classList.add('game--overlay');
     overlay.append(el('div', { className: 'game__panel' }, [
       el('h2', { className: 'game__title' }, [ui.menuTitle]),
       scoreCard(),
@@ -3319,7 +3319,7 @@ export function GameScreen({ transition }) {
   function showPaused() {
     clear(overlay);
     overlay.hidden = false;
-    screen.classList.add('game--overlay');
+    document.documentElement.classList.add('overlay-open'); screen.classList.add('game--overlay');
     const guest = net?.role === 'guest';
     overlay.append(el('div', { className: 'game__panel game__panel--paused' }, [
       el('h2', { className: 'game__title' }, [guest ? ui.pausedHost : ui.paused]),
@@ -3363,7 +3363,7 @@ export function GameScreen({ transition }) {
     closeTalk();
     clear(overlay);
     overlay.hidden = false;
-    screen.classList.add('game--overlay');
+    document.documentElement.classList.add('overlay-open'); screen.classList.add('game--overlay');
     const finish = () => {
       closeOverlay();
       if (hold) holdTimers(false);
@@ -3400,7 +3400,7 @@ export function GameScreen({ transition }) {
   function openLoginReward(onDone) {
     clear(overlay);
     overlay.hidden = false;
-    screen.classList.add('game--overlay');
+    document.documentElement.classList.add('overlay-open'); screen.classList.add('game--overlay');
     const l = profile.login;
     overlay.append(el('div', { className: 'game__panel game__panel--login' }, [
       el('h2', { className: 'game__title' }, [ui.loginTitle]),
@@ -3435,7 +3435,7 @@ export function GameScreen({ transition }) {
     closeTalk();
     clear(overlay);
     overlay.hidden = false;
-    screen.classList.add('game--overlay', ...(canPreview ? ['game--profile'] : []));
+    document.documentElement.classList.add('overlay-open'); screen.classList.add('game--overlay', ...(canPreview ? ['game--profile'] : []));
 
     const applyLook = (look) => {
       const saved = profile.setLook(look);
@@ -3470,8 +3470,9 @@ export function GameScreen({ transition }) {
       photoInput, photoNote,
     ]);
     photoInput.addEventListener('change', async () => {
-      try { await setPhotoFromFile(photoInput.files?.[0]); paintProfileBtn(); rankRefresh?.(); showToast('Profile photo saved', 1600); } catch { showToast('That picture could not be used', 2000); }
+      const file = photoInput.files?.[0];
       photoInput.value = '';
+      try { if (await cropPhotoFromFile(file)) { paintProfileBtn(); rankRefresh?.(); showToast('Profile photo saved', 1600); } } catch { showToast('That picture could not be used', 2000); }
     });
     const row = (label, control) => el('label', { className: 'game__row-field' }, [el('span', {}, [label]), control]);
 

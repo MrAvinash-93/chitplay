@@ -2,7 +2,7 @@
  * Road Dash: an auto-rickshaw on a busy road that never ends. Switch lanes past cows, potholes and
  * buses, collect coins. It keeps getting faster until something stops you.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0233';
+import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0911';
 
 export const LANES = 4;
 const laneY = (l) => 76 + l * 78;
@@ -22,11 +22,11 @@ function spawn(s) {
 }
 export const speedOf = (dist) => Math.min(520, 210 + dist * 0.045);
 export default {
-  hint: 'Drag to change lanes',
-  pad: [['u', '▲'], ['d', '▼']],
+  hint: 'Drag left or right to change lanes',
+  pad: [['l', '◀'], ['r', '▶']],
   init({ n, seed }) {
     return { n, seed, t: 0, dist: 0, next: 30, things: [], coins: [], ev: [],
-      carts: seats(n).map(i => ({ l: i % LANES, y: laneY(i % LANES), alive: true, score: 0, coins: 0, wu: false, wd: false, x: 110 + i * 26 })) };
+      carts: seats(n).map(i => ({ l: i % LANES, y: laneY(i % LANES), alive: true, score: 0, coins: 0, wl: false, wr: false, x: 110 + i * 26 })) };
   },
   step(s, inputs) {
     s.t += 1;
@@ -40,9 +40,9 @@ export default {
     s.carts.forEach((c, i) => {
       if (!c.alive) { c.x -= v * TICK; return; }
       const inp = inputs[i] || {};
-      if (inp.u && !c.wu && c.l > 0) { c.l -= 1; s.ev.push({ k: 'flap', seat: i }); }
-      if (inp.d && !c.wd && c.l < LANES - 1) { c.l += 1; s.ev.push({ k: 'flap', seat: i }); }
-      c.wu = !!inp.u; c.wd = !!inp.d;
+      if (inp.l && !c.wl && c.l > 0) { c.l -= 1; s.ev.push({ k: 'flap', seat: i }); }
+      if (inp.r && !c.wr && c.l < LANES - 1) { c.l += 1; s.ev.push({ k: 'flap', seat: i }); }
+      c.wl = !!inp.l; c.wr = !!inp.r;
       c.y = r1(c.y + (laneY(c.l) - c.y) * 0.24);
       c.score = Math.floor(s.dist / 40) + c.coins * 5;
       s.coins = s.coins.filter((k) => {
@@ -69,8 +69,8 @@ export default {
     const clear = (l) => !s.things.some(t => t.l === l && t.x > c.x - 44 && t.x - c.x < 90 + speedOf(s.dist) * 0.34);
     if (s.t % 4) return {};
     if (clear(c.l)) return {};
-    if (c.l > 0 && clear(c.l - 1)) return { u: true };
-    if (c.l < LANES - 1 && clear(c.l + 1)) return { d: true };
+    if (c.l > 0 && clear(c.l - 1)) return { l: true };
+    if (c.l < LANES - 1 && clear(c.l + 1)) return { r: true };
     return {};
   },
   hud(g, s, names) {

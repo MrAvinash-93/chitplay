@@ -3,7 +3,7 @@
  * Steer to dodge and line up your shots; sink the other ship three times to win. Crates heal or give a
  * triple shot.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-0233';
+import { H, r1, rnd, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-0911';
 
 const SPEED = 170, SHOT = 320, HP = 5, COOL = 42, TOP = 42, ROUND_WINS = 3, STORM_AT = 60 * 45;
 function newRound(s) {

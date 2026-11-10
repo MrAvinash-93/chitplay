@@ -6,7 +6,7 @@
  *
  * Angles are measured in the target's own frame. A knife always arrives at the bottom of the screen.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0233';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0911';
 
 const TAU = Math.PI * 2;
 const FLY = 7;                 // ticks a knife is in the air

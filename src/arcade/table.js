@@ -10,31 +10,31 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-0233';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-0233';
-import { loadWorld } from '../world/world-loader.js?v=20261110-0233';
-import { PRESETS, lookOf, randomLook } from '../world/character-looks.js?v=20261110-0233';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-0233';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-0233';
-import { isLanguage } from '../i18n/index.js?v=20261110-0233';
-import { profile } from '../persistence/profile-store.js?v=20261110-0233';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-0911';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-0911';
+import { loadWorld } from '../world/world-loader.js?v=20261110-0911';
+import { PRESETS, lookOf, randomLook } from '../world/character-looks.js?v=20261110-0911';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-0911';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-0911';
+import { isLanguage } from '../i18n/index.js?v=20261110-0911';
+import { profile } from '../persistence/profile-store.js?v=20261110-0911';
 import { audioManager } from '../audio/audio-manager.js';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-0233';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-0911';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-0233';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-0911';
 
-import { fill, shellText } from './shell-text.js?v=20261110-0233';
-import { nextForRoom } from './decor.js?v=20261110-0233';
-import { achievementList, bestOf, bump, gameFinished, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-0233';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-0233';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0233';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-0233';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0233';
-import { ask } from './dialog.js?v=20261110-0233';
-import { startReminder } from './reminder.js?v=20261110-0233';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-0233';
+import { fill, shellText } from './shell-text.js?v=20261110-0911';
+import { nextForRoom } from './decor.js?v=20261110-0911';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-0911';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-0911';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0911';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-0911';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0911';
+import { ask } from './dialog.js?v=20261110-0911';
+import { startReminder } from './reminder.js?v=20261110-0911';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-0911';
 
-const V = '?v=20261110-0233';
+const V = '?v=20261110-0911';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -91,7 +91,7 @@ const topBar = (game) => h('header', { class: 'bar' }, [
   h('strong', {}, [game ? `${game.icon} ${game.name}` : 'ChitPlay']),
   h('span', { class: 'rankchip', title: rankProgress().title, 'aria-label': `Rank: ${rankProgress().title}` }, [rankProgress().icon]),
   h('a', { href: '../?scan=1', class: 'back scanlink', 'aria-label': 'Scan to join', title: 'Scan to join', onclick: (e) => { if (match && !Logic?.result?.(match.s) && !window.confirm('Scan to join? This game will end.')) { e.preventDefault(); return; } leaveAll(); } }, ['📷']),
-  game ? h('button', { type: 'button', class: 'back rulesbtn', 'aria-label': say.howTo, title: say.howTo, onclick: () => openRules(game) }, ['❓', h('span', { class: 'wideonly' }, [` ${say.howTo}`])]) : null,
+  game ? h('button', { type: 'button', class: 'back rulesbtn', 'aria-label': say.howTo, title: say.howTo, onclick: () => openRules(game) }, ['📖', h('span', { class: 'wideonly' }, [` ${say.howTo}`])]) : null,
 ]);
 function message(title, lead, ...buttons) {
   show(topBar(G), h('section', { class: 'panel' }, [h('h1', {}, [title]), lead ? h('p', { class: 'lead' }, [lead]) : null, ...buttons]));
@@ -322,6 +322,12 @@ function paintPanel(p, ctx, send) {
     h('div', { class: 'head' }, [
       Number.isInteger(p.die) && p.die >= 1 && p.die <= 6 ? h('span', { class: 'dieface', 'aria-label': `Die shows ${p.die}` }, [String.fromCodePoint(0x2680 + p.die - 1)]) : null,
       h('h1', {}, [p.title || '']),
+      ctx.me >= 0 && !ctx.pass ? h('button', { type: 'button', class: `chatbtn emojibtn${trollOpen ? ' on' : ''}`, 'aria-label': 'Emojis', 'aria-pressed': String(trollOpen), title: 'Emojis', onclick: (e) => {
+        trollOpen = !trollOpen;
+        e.currentTarget.classList.toggle('on', trollOpen);
+        e.currentTarget.setAttribute('aria-pressed', String(trollOpen));
+        document.querySelector('.troll-wrap')?.classList.toggle('troll-wrap--shut', !trollOpen);
+      } }, ['😀']) : null,
       ctx.me >= 0 && !ctx.pass ? h('button', { type: 'button', class: 'chatbtn', 'aria-label': say.chat, title: say.chat, onclick: openChat }, ['💬']) : null,
     ]),
     p.lead ? h('p', { class: 'lead' }, [p.lead]) : null,
@@ -467,6 +473,8 @@ const playersNow = () => match?.players || guestState.players;
 let emojiAt = 0;
 /** Always on screen in a game: one tap and everybody sees it, big, right in front of them. */
 let emojiTo = null;          // null: everybody; otherwise one player's seat
+// on a phone the emoji row folds away behind a button, so the board gets the room
+let trollOpen = !matchMedia('(max-width: 600px)').matches;
 function trollBar(ctx) {
   if (ctx.me < 0 || ctx.pass) return null;
   const others = ctx.names.map((n, i) => (i === ctx.me ? null : [i, n])).filter(Boolean);
@@ -474,7 +482,7 @@ function trollBar(ctx) {
   const who = h('div', { class: 'troll__to', role: 'radiogroup', 'aria-label': 'Send to' });
   const paintWho = () => who.replaceChildren(h('span', {}, ['To:']), ...[[null, '👥 All'], ...others].map(([i, n]) => h('button', { type: 'button', class: `troll__who${emojiTo === i ? ' on' : ''}`, role: 'radio', 'aria-checked': String(emojiTo === i), onclick: () => { emojiTo = i; paintWho(); } }, [n])));
   paintWho();
-  return h('div', { class: 'troll-wrap' }, [
+  return h('div', { class: `troll-wrap${trollOpen ? '' : ' troll-wrap--shut'}` }, [
     who,
     h('div', { class: 'troll', role: 'group', 'aria-label': say.chat }, myEmojis().map(e => h('button', { type: 'button', 'aria-label': e, onclick: () => { if (Date.now() - emojiAt < 500) return; emojiAt = Date.now(); sendEmoji(e); } }, [e]))),
   ]);
@@ -515,6 +523,7 @@ function seededPlayers(humans, total) {
 }
 function startMatch(players, opts = {}, resumeState = null) {
   recorded = false;
+  holdPopups(true);
   thinking = -1;
   wasMine = false;
   clearMatchTimers();
@@ -642,6 +651,7 @@ function celebrate(result) {
 /** Your record in each game, and your coins and rank: a finished game always counts for something. */
 let recorded = false;
 function recordResult(result, ctx) {
+  holdPopups(false);
   if (recorded || ctx.me < 0 || ctx.pass) return null;
   recorded = true;
   const won = (result.winners || []).includes(ctx.me);
@@ -731,7 +741,7 @@ function intro(game) {
     h('div', { class: 'grid two' }, [btn('📶 Nearby', () => nearby(size)), btn('📱 Pass the phone', () => passSetup(size))]),
     btn('👀 Watch the computer play', () => watch(size)),
     btn('Join a friend’s code', () => joinForm()),
-    btn(`❓ ${say.howTo}`, () => openRules(game)),
+    btn(`📖 ${say.howTo}`, () => openRules(game)),
   ]));
 }
 function solo(size) {
@@ -1077,6 +1087,7 @@ function joinForm(code = '') {
 }
 
 function leaveAll() {
+  holdPopups(false);
   clearMatchTimers();
   guest?.close();
   room?.close();

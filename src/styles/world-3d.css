@@ -33,6 +33,8 @@
 .world3d[hidden] { display: none; }
 html.has-world body { background: #140b07; }
 html.has-world #app { z-index: 1; }
+/* menu, profile, settings: above the game's TV, board and sheets (they sit outside #app) */
+html.overlay-open #app, html:has(.game--overlay) #app { z-index: 80; }
 html.has-world #app::before { background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 60%, rgba(8, 4, 2, .55) 100%); background-size: auto; }
 html.has-world #app::after { opacity: .1; }
 
@@ -93,7 +95,7 @@ html:has(.game__sheet--start) .player-bubbles { display: none; }
 @media (min-width: 1800px) and (min-height: 950px) { .game { zoom: 1.25; } }
 @media (min-width: 2400px) and (min-height: 1300px) { .game { zoom: 1.6; } }
 .game--overlay .game__top, .game--overlay .game__mychit, .game--overlay .game__talkbtn, .game--overlay .game__whisper, .game--overlay .game__talk,
-.game--overlay .game__dock, .game--overlay .game__toast { visibility: hidden; }
+.game--overlay .game__dock, .game--overlay .game__toast, .game--overlay .game__troll { visibility: hidden; }
 
 /* top bar */
 .game__top {
@@ -686,7 +688,11 @@ html:has(.game__sheet--start) .player-bubbles { display: none; }
 .myroom { position: fixed; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 65; display: flex; flex-direction: column; gap: 10px; width: min(94vw, 460px); max-height: 70vh; overflow-y: auto; padding: 14px; border-radius: 18px; border: 1.5px solid #ffd27a; background: rgba(26, 14, 7, .95); color: #fff3d6; transform: translateX(-50%); font-family: system-ui, sans-serif; }
 /* My Room, seen with nothing in the way */
 body.room-edit #app { opacity: 0 !important; pointer-events: none !important; transition: opacity .25s ease; }
-body.room-edit .myroom { max-height: 52vh; }
+body.room-edit .myroom { max-height: 46vh; max-height: 46dvh; }
+/* phones: the room on top, the decorating panel docked along the bottom */
+@media (max-width: 899px) {
+  body.room-edit .myroom { left: 0; right: 0; bottom: 0; width: auto; transform: none; border-radius: 18px 18px 0 0; border-bottom: 0; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+}
 /* on a wide screen My Room is a panel down the right side, so the room stays in view */
 @media (min-width: 900px) {
   .myroom { left: auto; right: 16px; top: 16px; bottom: 16px; width: min(380px, 32vw); max-height: none; transform: none; }
@@ -811,3 +817,18 @@ body.room-only #app, body.room-only .myroom, body.room-only .player-tags, body.r
 .myroom__actions > * { flex: 1 1 160px; }
 .myroom__tabs .myroom__opt { flex: 1 1 auto; padding: 4px 10px; }
 @media (max-width: 380px) { .myroom__shop { grid-template-columns: repeat(2, minmax(0, 1fr)); } .myroom { padding: 10px; } }
+
+/* framing the profile photo */
+.crop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(8, 4, 2, .82); font-family: system-ui, sans-serif; }
+.crop__box { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(92vw, 360px); padding: 16px; border-radius: 18px; border: 1.5px solid #ffd27a; background: #1f1209; color: #fff3d6; }
+.crop__title { font-size: 15px; text-align: center; color: #ffd27a; }
+.crop__view { position: relative; width: min(78vw, 280px); aspect-ratio: 1; overflow: hidden; border-radius: 14px; background: #000; touch-action: none; cursor: grab; }
+.crop__view::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0, 0, 0, .5); border: 2px solid rgba(255, 210, 122, .9); pointer-events: none; }
+.crop__img { position: absolute; left: 50%; top: 50%; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.crop__zoom { width: 100%; accent-color: #ffd27a; }
+.crop__row { display: flex; gap: 10px; width: 100%; }
+.crop__btn { flex: 1; min-height: 44px; border-radius: 12px; border: 1.5px solid #ffd27a; background: transparent; color: #fff3d6; font: 700 15px system-ui, sans-serif; cursor: pointer; }
+.crop__btn--go { background: #ffd27a; color: #2a1607; }
+
+.game__howto-ico { display: inline-flex; vertical-align: -0.2em; }
+.game__howto-ico .ico { width: 1.15em; height: 1.15em; }

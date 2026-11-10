@@ -257,3 +257,9 @@ body.tv-full .tvbig { z-index: 4; }
 @keyframes teaser-glow { 50% { box-shadow: 0 0 16px rgba(255, 210, 63, .55); } }
 @media (max-width: 360px) { .roomteaser { flex-wrap: wrap; } .roomteaser b { width: 100%; text-align: right; } }
 @media (prefers-reduced-motion: reduce) { .roomteaser--ready { animation: none; } }
+
+/* the emoji row, folded away on phones until the 😀 button opens it */
+.troll-wrap--shut { display: none; }
+.head .emojibtn { margin-left: auto; }
+.head .emojibtn + .chatbtn { margin-left: 6px; }
+.head .emojibtn.on { border-color: var(--gold); background: #3a2410; }

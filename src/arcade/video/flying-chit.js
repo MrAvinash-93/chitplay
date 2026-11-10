@@ -6,7 +6,7 @@
  *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0233';
+import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0911';
 
 export const AHEAD = 70;
 export const speedAt = (d) => Math.min(27, 10 + d * 0.01);
