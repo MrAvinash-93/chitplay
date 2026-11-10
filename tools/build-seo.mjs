@@ -186,7 +186,7 @@ function pageFor(id) {
       countryOfOrigin: { '@type': 'Country', name: country },
       gamePlatform: 'Web browser', applicationCategory: 'Game', operatingSystem: 'Any',
       numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 }, playMode: ['https://schema.org/SinglePlayer', 'https://schema.org/MultiPlayer'],
-      inLanguage: ['en', LANG[id]], image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/og-image.jpg`],
+      inLanguage: ['en', LANG[id]], image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/home.jpg`],
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       author: DEVELOPER_LD,
       isPartOf: { '@type': 'WebSite', name: 'CHITPLAY', url: `${SITE}/` },
@@ -226,13 +226,13 @@ ${ANALYTICS}
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${SITE}/assets/og-image.jpg">
+<meta property="og:image" content="${SITE}/assets/home.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
-<meta name="twitter:image" content="${SITE}/assets/og-image.jpg">
+<meta name="twitter:image" content="${SITE}/assets/home.jpg">
 ${iconLinks('../../')}
 <link rel="manifest" href="../../manifest.webmanifest">
 <script type="application/ld+json">${json(ld)}</script>
@@ -431,9 +431,9 @@ ${ANALYTICS}
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${SITE}/assets/og-image.jpg">
+<meta property="og:image" content="${SITE}/assets/home.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="${SITE}/assets/og-image.jpg">
+<meta name="twitter:image" content="${SITE}/assets/home.jpg">
 ${iconLinks('../')}
 <script type="application/ld+json">${json([ld, faqLd])}</script>
 <style>body{margin:0;background:#140b07;color:#f6ead2;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:820px;margin:0 auto;padding:20px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(26px,6vw,38px);line-height:1.2}li{margin:14px 0}small{color:#d4c2a0}.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;background:#24140c;font-size:14px}td,th{padding:8px 10px;border-bottom:1px solid #3a2414;text-align:left}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}.btn{display:inline-block;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6}</style>
@@ -642,7 +642,7 @@ function topicPage(slug, t) {
   const title = `${t.title} | ChitPlay`;
   const items = COUNTRY_ORDER.map(id => `<li><a href="../games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a> (${esc(COUNTRIES[id].name)})</li>`).join('');
   const ld = [
-    { '@context': 'https://schema.org', '@type': 'Article', headline: t.h1, description: t.desc, url, image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/og-image.jpg`], author: DEVELOPER_LD, publisher: { '@type': 'Organization', name: 'ChitPlay', logo: { '@type': 'ImageObject', url: `${SITE}/assets/icon-512.png` } }, dateModified: TODAY },
+    { '@context': 'https://schema.org', '@type': 'Article', headline: t.h1, description: t.desc, url, image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/home.jpg`], author: DEVELOPER_LD, publisher: { '@type': 'Organization', name: 'ChitPlay', logo: { '@type': 'ImageObject', url: `${SITE}/assets/icon-512.png` } }, dateModified: TODAY },
     { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: t.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
     { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'CHITPLAY', item: `${SITE}/` }, { '@type': 'ListItem', position: 2, name: t.title, item: url }] },
   ];
@@ -661,11 +661,11 @@ ${ANALYTICS}
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(t.desc)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${SITE}/assets/og-image.jpg">
+<meta property="og:image" content="${SITE}/assets/home.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(t.desc)}">
-<meta name="twitter:image" content="${SITE}/assets/og-image.jpg">
+<meta name="twitter:image" content="${SITE}/assets/home.jpg">
 ${iconLinks('../')}
 <script type="application/ld+json">${json(ld)}</script>
 <style>body{margin:0;background:#140b07;color:#f6ead2;font:17px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(28px,6vw,40px);line-height:1.2}h2{font-size:21px;margin-top:28px}.btn{display:inline-block;padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6}details{background:#24140c;border-radius:10px;padding:10px 14px;margin:8px 0}summary{cursor:pointer;font-weight:700}.others{columns:2}footer{margin-top:40px;font-size:13px;color:#d4c2a0}</style>
@@ -711,7 +711,7 @@ ${ANALYTICS}
 <meta property="og:title" content="${esc(/ChitPlay$/.test(title) ? title : `${title} | ChitPlay`)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${SITE}/${slug}/">
-<meta property="og:image" content="${SITE}/assets/og-image.jpg">
+<meta property="og:image" content="${SITE}/assets/home.jpg">
 <meta name="twitter:card" content="summary_large_image">
 ${iconLinks('../')}
 <style>body{margin:0;background:#140b07;color:#f6ead2;font:16px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px 48px}a{color:#ffd27a}h1{color:#ffd27a;font-size:clamp(26px,6vw,36px);line-height:1.2}h2{font-size:20px;margin-top:28px}footer{margin-top:40px;font-size:13px;color:#d4c2a0}</style>
@@ -864,8 +864,8 @@ writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
 // ── refresh the SEO blocks inside index.html ────────────────
 const mainNames = [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id].slice(0, 4)]))];
 // ChitPlay is the name people should see; the title carries the names the game is searched by in each country
-const homeTitle = 'ChitPlay: 30+ Free Indoor Games Online – Raja Rani Chor Police, Ludo, Carrom';
-const homeDesc = 'Play 30+ indoor games free in a 3D room: Raja Rani Chor Police, Ludo, Carrom, Chess, Call Break, card and arcade games. No sign-up: play the computer, online or with friends.';
+const homeTitle = 'ChitPlay: Raja Rani Chor Police & 30+ Indoor Games';
+const homeDesc = 'Play Raja Rani Chor Police, Ludo, Carrom, Chess and 30+ free indoor games in 3D. No sign-up: play the computer, online or with friends.';
 const homeLd = [
   // Google's site name comes from this block on the home page: https://developers.google.com/search/docs/appearance/site-names
   { '@context': 'https://schema.org', '@type': 'WebSite', name: 'ChitPlay', alternateName: ['CHITPLAY', 'Chit Play'], url: `${SITE}/`, inLanguage: 'en' },
@@ -878,7 +878,7 @@ const homeLd = [
     '@context': 'https://schema.org', '@type': 'VideoGame', name: 'ChitPlay',
     alternateName: mainNames, url: `${SITE}/`, description: homeDesc, author: DEVELOPER_LD,
     genre: ['Party game', 'Social deduction game', 'Paper chit game', 'Indoor game'], audience: { '@type': 'PeopleAudience', suggestedMinAge: 6 }, gamePlatform: 'Web browser',
-    applicationCategory: 'Game', operatingSystem: 'Any', image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/og-image.jpg`],
+    applicationCategory: 'Game', operatingSystem: 'Any', image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/home.jpg`],
     numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 },
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   },
@@ -893,14 +893,14 @@ const head = `<!-- seo:head -->
   <meta property="og:title" content="${esc(homeTitle)}" />
   <meta property="og:description" content="${esc(homeDesc)}" />
   <meta property="og:url" content="${SITE}/" />
-  <meta property="og:image" content="${SITE}/assets/og-image.jpg" />
+  <meta property="og:image" content="${SITE}/assets/home.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="ChitPlay: four players at a chit game in a 3D room" />
+  <meta property="og:image:alt" content="ChitPlay: Raja Rani Chor Police, Ludo, Carrom, Chess and more free indoor games" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(homeTitle)}" />
   <meta name="twitter:description" content="${esc(homeDesc)}" />
-  <meta name="twitter:image" content="${SITE}/assets/og-image.jpg" />
+  <meta name="twitter:image" content="${SITE}/assets/home.jpg" />
   <script type="application/ld+json">${json(homeLd)}</script>
   <!-- /seo:head -->`;
 const body = `<!-- seo:body -->

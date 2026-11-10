@@ -3,11 +3,23 @@
  * stays on this device. Coins and rank points come from the same profile as the rest of the game,
  * so playing anything moves you up the same ladder. Nothing here is bought or has any real value.
  */
-import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-0911';
+import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-0936';
 
 const KEY = 'chitplay.achievements';
+// games that were renamed keep their scores under the new name
+const MOVED = { 'knife-throw': 'pin-spin' };
+const carry = (a) => {
+  for (const [from, to] of Object.entries(MOVED)) {
+    for (const k of ['plays', 'wins', 'best']) {
+      if (a[k]?.[from] == null) continue;
+      a[k][to] = k === 'best' ? Math.max(a[k][to] || 0, a[k][from]) : (a[k][to] || 0) + a[k][from];
+      delete a[k][from];
+    }
+  }
+  return a;
+};
 const load = () => {
-  try { return { done: [], plays: {}, wins: {}, best: {}, ...JSON.parse(localStorage.getItem(KEY)) }; } catch { return { done: [], plays: {}, wins: {}, best: {} }; }
+  try { return carry({ done: [], plays: {}, wins: {}, best: {}, ...JSON.parse(localStorage.getItem(KEY)) }); } catch { return { done: [], plays: {}, wins: {}, best: {} }; }
 };
 const save = (a) => { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch {} };
 const sum = (o) => Object.values(o).reduce((x, y) => x + y, 0);
@@ -27,8 +39,8 @@ export const ACHIEVEMENTS = [
   { id: 'tunnel-600', tier: 'legend', icon: '⚡', name: 'Light Speed', hint: 'Score 600 in Tunnel Race', coins: 1000, test: a => a.best['tunnel-race'] >= 600 },
   { id: 'road-400', tier: 'gold', icon: '🛺', name: 'King of the Road', hint: 'Score 400 in Road Dash', coins: 300, test: a => a.best['road-dash'] >= 400 },
   { id: 'snake-50', tier: 'gold', icon: '🐍', name: 'Very Long Snake', hint: 'Score 50 in Hungry Snake', coins: 300, test: a => a.best['hungry-snake'] >= 50 },
-  { id: 'knife-10', tier: 'silver', icon: '🎯', name: 'Steady Hand', hint: 'Score 60 in Knife Throw', coins: 150, test: a => a.best['knife-throw'] >= 60 },
-  { id: 'knife-250', tier: 'legend', icon: '🗡️', name: 'Knife Master', hint: 'Score 250 in Knife Throw', coins: 1000, test: a => a.best['knife-throw'] >= 250 },
+  { id: 'knife-10', tier: 'silver', icon: '📌', name: 'Steady Hand', hint: 'Score 60 in Pin Spin', coins: 150, test: a => a.best['pin-spin'] >= 60 },
+  { id: 'knife-250', tier: 'legend', icon: '🏅', name: 'Pin Master', hint: 'Score 250 in Pin Spin', coins: 1000, test: a => a.best['pin-spin'] >= 250 },
   { id: 'hoop-50', tier: 'silver', icon: '🏀', name: 'Soft Touch', hint: 'Score 50 in Hoop Flick', coins: 150, test: a => a.best['hoop-flick'] >= 50 },
   { id: 'hoop-200', tier: 'legend', icon: '🔥', name: 'Nothing but Net', hint: 'Score 200 in Hoop Flick', coins: 1000, test: a => a.best['hoop-flick'] >= 200 },
   { id: 'ghost-5', tier: 'silver', icon: '👻', name: 'Night Owl', hint: 'Last till sunrise 5 times in Ghost Hostel', coins: 200, test: a => a.wins['ghost-hostel'] >= 5 },

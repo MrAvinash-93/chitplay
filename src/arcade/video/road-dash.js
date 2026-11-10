@@ -2,7 +2,7 @@
  * Road Dash: an auto-rickshaw on a busy road that never ends. Switch lanes past cows, potholes and
  * buses, collect coins. It keeps getting faster until something stops you.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0911';
+import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0936';
 
 export const LANES = 4;
 const laneY = (l) => 76 + l * 78;

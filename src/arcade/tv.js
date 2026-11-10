@@ -3,19 +3,19 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-0911';
-import { W, H, TICK } from './video/lib.js?v=20261110-0911';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-0911';
-import { nextForRoom } from './decor.js?v=20261110-0911';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-0911';
-import { MOMENT, linesFor } from './talk.js?v=20261110-0911';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0911';
-import { ask, confirmSpend } from './dialog.js?v=20261110-0911';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0911';
-import { profile } from '../persistence/profile-store.js?v=20261110-0911';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-0911';
+import { hintsLeft, showHint } from './hint.js?v=20261110-0936';
+import { W, H, TICK } from './video/lib.js?v=20261110-0936';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-0936';
+import { nextForRoom } from './decor.js?v=20261110-0936';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-0936';
+import { MOMENT, linesFor } from './talk.js?v=20261110-0936';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-0936';
+import { ask, confirmSpend } from './dialog.js?v=20261110-0936';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-0936';
+import { profile } from '../persistence/profile-store.js?v=20261110-0936';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-0936';
 
-const V = '?v=20261110-0911';
+const V = '?v=20261110-0936';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 const SCALE = matchMedia('(pointer: fine)').matches ? 1.5 : 1;       // ticks between pictures sent to friends: twenty a second
@@ -114,7 +114,7 @@ export async function runTv(ctx) {
         case 'buy': if (localSeats().includes(ev.seat)) audio('confirm'); seatAct(ev.seat, 'clap', { bed: '🛏️', door: '🚪', fan: '🌀', fix: '🔧' }[ev.item] || null); break;
         case 'nope': if (localSeats().includes(ev.seat)) audio('wrong'); break;
         case 'round': if (game.slug === 'ghost-hostel') { audio('wrong'); story?.emojiPop('👻', 'Ghost level ' + ev.level + '!'); break; }
-        if (game.slug === 'knife-throw') { audio('achieve'); seatAct(ev.seat, 'cheer', '💥'); if (ev.level % 5 === 4) story?.emojiPop('👹', 'Boss level next!'); break; }
+        if (game.slug === 'pin-spin') { audio('achieve'); seatAct(ev.seat, 'cheer', '📌'); if (ev.level % 5 === 4) story?.emojiPop('🟥', 'Big board next!'); break; }
           audio('confirm'); seatAct(ev.seat, 'cheer', '🎉'); seatAct(ev.victim, 'facepalm', null); botSays(ev.seat, 'good'); setTimeout(() => { seatAct(ev.seat, 'hold'); seatAct(ev.victim, 'hold'); }, 1400); break;
         case 'crash': audio('crash'); seatAct(ev.seat, 'facepalm', '😱'); botSays(ev.seat, 'bad'); break;
         default:
@@ -234,11 +234,16 @@ export async function runTv(ctx) {
   let emojiTo = null;
   function trollRow() {
     const me = guestLink ? guestSeat : (localSeats()[0] ?? 0);
-    const others = players.map((p, i) => (i === me ? null : [i, p.name])).filter(Boolean);
-    const who = h('div', { class: 'troll__to' });
-    const paintWho = () => who.replaceChildren(h('span', {}, ['To:']), ...[[null, '👥 All'], ...others].map(([i, n]) => h('button', { type: 'button', class: `troll__who${emojiTo === i ? ' on' : ''}`, onclick: () => { emojiTo = i; paintWho(); } }, [n])));
-    paintWho();
-    return h('div', { class: 'troll-wrap' }, [who, trollButtons()]);
+    const others = players.map((p, i) => (i === me ? null : i)).filter(i => i != null);
+    if (emojiTo != null && !others.includes(emojiTo)) emojiTo = null;
+    const order = [null, ...others];
+    const nameOf = (i) => (i == null ? '👥 All' : players[i]?.name || '');
+    const who = h('button', { type: 'button', class: 'chatrow__to', 'aria-label': `Send to: ${nameOf(emojiTo)}. Tap to change.`, onclick: (e) => {
+      emojiTo = order[(order.indexOf(emojiTo) + 1) % order.length];
+      e.currentTarget.firstChild.textContent = nameOf(emojiTo);
+      e.currentTarget.setAttribute('aria-label', `Send to: ${nameOf(emojiTo)}. Tap to change.`);
+    } }, [h('span', {}, [nameOf(emojiTo)]), h('b', { 'aria-hidden': 'true' }, ['▾'])]);
+    return h('div', { class: 'chatrow' }, [who, trollButtons()]);
   }
   function trollButtons() {
     return h('div', { class: 'troll', role: 'group', 'aria-label': say.chat }, emojis().map(e => h('button', {
@@ -290,12 +295,12 @@ export async function runTv(ctx) {
     const seatsHere = localSeats();
     const twoHere = seatsHere.length > 1;
     show(topBar(game), h('section', { class: 'panel panel--tight tvpanel' }, [
-      players.length > 1 || room ? trollRow() : null,
       hint(),
       h('div', { class: `pads${twoHere ? ' pads--two' : ''}` }, seatsHere.length
         ? seatsHere.map(seat => padFor(seat, twoHere ? players[seat].name : ''))
         : [h('p', { class: 'lead' }, ['The computer players are at it. Sit back and watch.'])]),
       bigToggle(),
+      players.length > 1 || room ? trollRow() : null,
     ]));
     story?.tvPanel(panelNow());
   }
@@ -686,7 +691,7 @@ export async function runTv(ctx) {
         loop = requestAnimationFrame(frameIdle);
       } else if (m.t === 'seat' && Number.isInteger(m.seat)) {
         guestSeat = m.seat;
-        show(topBar(game), h('section', { class: 'panel panel--tight tvpanel' }, [trollRow(), h('div', { class: 'pads' }, [padFor(guestSeat, '')]), bigToggle()]));
+        show(topBar(game), h('section', { class: 'panel panel--tight tvpanel' }, [h('div', { class: 'pads' }, [padFor(guestSeat, '')]), bigToggle(), trollRow()]));
         story?.tvPanel(panelNow());
       } else if (m.t === 's' && m.s) { state = m.s; countdown = Number(m.c) || 0; }
       else if (m.t === 'ev' && Array.isArray(m.ev)) react(m.ev);

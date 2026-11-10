@@ -1,5 +1,5 @@
 /** Reversi: trap the other colour between yours to flip it. Most discs at the end wins. */
-import { best, turnLine } from '../lib.js?v=20261110-0911';
+import { best, turnLine } from '../lib.js?v=20261110-0936';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 function flips(b, c, p) {

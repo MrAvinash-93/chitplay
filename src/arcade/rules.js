@@ -39,14 +39,14 @@ export const RULES = {
     tips: ['A better bed early pays for everything later.', 'Buy your first fan before the ghost reaches your door.', 'Upgrade the door before it is nearly broken: an upgrade adds its full extra strength.'],
     faq: [['How long is a game?', 'One night: two and a half minutes.'], ['Can I play with friends?', 'Yes, up to four, each in their own room. Computer players take any empty rooms.']],
   },
-  'knife-throw': {
-    title: 'Knife Throw', desc: 'Play Knife Throw free in 3D: throw knives into a spinning wooden target without touching the others. Levels, boss targets, apples and medals.',
-    intro: 'Knife Throw is a game of timing. A round wooden target spins in front of you, and every knife you throw has to land in a free spot between the knives already in it. Throw all the knives of a level and the target breaks: the next one spins faster, changes direction or already has knives in the way. Every fifth level is a boss target.',
-    steps: ['Tap the screen, press the Throw button, Space or Enter, or a gamepad button to throw a knife. It always flies straight up into the bottom of the target.', 'Wait for a gap: if your knife touches one already in the target, the run is over.', 'Throw all the knives shown at the bottom of the screen to finish the level.', 'Hit an apple on the rim for 5 bonus points.', 'Every fifth level is a boss: it changes speed and direction.', 'Each level has a time limit (the thin bar at the bottom): throw all its knives before it runs out.'],
-    scoring: 'Each knife that sticks scores 1, each apple 5, and finishing a level scores twice the level number. Medals at 25, 60, 120 and 250 points.',
-    win: 'Alone, beat your own best. With others, everyone throws at their own target at the same time and the highest score wins.',
-    tips: ['Throw just after a knife passes the bottom, not just before the next one arrives.', 'On targets that change direction, wait for the change before you throw.', 'Apples are worth a risk early in a level, not when the target is full.'],
-    faq: [['Does it ever end?', 'No: the levels keep coming, and you play until a knife touches another.'], ['Can friends play together?', 'Yes, up to four, each with their own target, on one screen, nearby or online.']],
+  'pin-spin': {
+    title: 'Pin Spin', desc: 'Play Pin Spin free in 3D: push pins into a spinning corkboard without touching the others. Levels, big boards, star stickers and medals.',
+    intro: 'Pin Spin is a game of timing, played on a classroom wall. A round corkboard spins in front of you, and every push pin you send has to land in a free spot between the pins already in it. Use up all the pins of a level and the board is full: the next one spins faster, changes direction or already has pins in the way. Every fifth level is a big red board that spins in fits and starts.',
+    steps: ['Tap the screen, press the Pin button, Space or Enter, or a gamepad button to send a pin. It always flies straight up into the bottom of the board.', 'Wait for a gap: if your pin touches one already in the board, the run is over.', 'Use all the pins shown at the bottom of the screen to finish the level.', 'Pin a gold star sticker for 5 bonus points.', 'Every fifth level is a big board: it changes speed and direction.', 'Each level has a time limit (the thin bar at the bottom): use all its pins before it runs out.'],
+    scoring: 'Each pin that sticks scores 1, each star 5, and finishing a level scores twice the level number. Medals at 25, 60, 120 and 250 points.',
+    win: 'Alone, beat your own best. With others, everyone pins their own board at the same time and the highest score wins.',
+    tips: ['Send a pin just after another one passes the bottom, not just before the next one arrives.', 'On boards that change direction, wait for the change before you tap.', 'Stars are worth a risk early in a level, not when the board is nearly full.'],
+    faq: [['Does it ever end?', 'No: the levels keep coming, and you play until a pin touches another.'], ['Can friends play together?', 'Yes, up to four, each with their own board, on one screen, nearby or online.'], ['Is it safe for every age?', 'Yes. It is a timing game with push pins and a corkboard: nothing sharp is thrown at anyone, and points have no value.']],
   },
   'bull-fight': {
     title: 'Bull Fight', desc: 'Play Bull Fight free in 3D: two bulls in a sand ring, charge and push the other one out. Two players on one screen, gamepads, online or against the computer.',

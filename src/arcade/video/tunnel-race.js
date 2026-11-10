@@ -4,7 +4,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0911';
+import { H, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0936';
 
 export const AHEAD = 60;
 const TAU = Math.PI * 2;

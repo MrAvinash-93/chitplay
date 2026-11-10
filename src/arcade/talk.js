@@ -69,7 +69,7 @@ Object.assign(GAME, {
   'hoop-flick': { en: ['Swish!', 'Nothing but net!', 'Hit the rim!', 'Too hard!', 'Nice soft arc…', 'That hoop is moving!'], hinglish: ['Swish!', 'Seedha net mein!', 'Rim se takra gaya!', 'Bahut zor se!', 'Aaram se arc banao…', 'Ye hoop to hil raha hai!'] },
   'ghost-hostel': { en: ['My door holds!', 'Fans on full!', 'It’s at my door!', 'My door is breaking!', 'Sleep and earn…', 'Make it to sunrise!'], hinglish: ['Mera darwaza majboot hai!', 'Pankhe full speed pe!', 'Bhoot mere darwaze pe hai!', 'Darwaza toot raha hai!', 'So jao aur kamao…', 'Subah tak bachna hai!'] },
   'werewolf': { en: ['I knew you were a werewolf!', 'The village is safe… for now.', 'It wasn’t me, I promise!', 'Why vote for me?', 'Who was quiet last night?', 'Trust nobody.'], hinglish: ['Mujhe pata tha tu werewolf hai!', 'Gaon abhi safe hai… abhi ke liye.', 'Main nahi hoon, kasam se!', 'Mujhe vote kyun?', 'Kal raat kaun chup tha?', 'Kisi pe bharosa mat karo.'] },
-  'knife-throw': { en: ['Bullseye!', 'Apple hit!', 'So close!', 'It clinked!', 'Wait for the gap…', 'Boss level!'], hinglish: ['Ekdum nishane pe!', 'Seb pe laga!', 'Bas zara sa!', 'Takra gaya!', 'Gap ka intezaar karo…', 'Boss level!'] },
+  'pin-spin': { en: ['Right in the gap!', 'Got the star!', 'So close!', 'Pin clash!', 'Wait for the gap…', 'Big board!'], hinglish: ['Ekdum gap mein!', 'Star mil gaya!', 'Bas zara sa!', 'Pin takra gaya!', 'Gap ka intezaar karo…', 'Bada board!'] },
   'bull-fight': { en: ['Out of the ring!', 'Full charge!', 'He got me!', 'Too close to the edge!', 'Lock horns!', 'Stay in the middle.'], hinglish: ['Bahar ho gaya!', 'Poori takkar!', 'Usne maar diya!', 'Kinare pe aa gaya!', 'Seeng se seeng!', 'Beech mein raho.'] },
   'ship-fight': { en: ['Direct hit!', 'Your ship is sinking!', 'I’m hit!', 'Man the pumps!', 'Fire at will!', 'Watch the rocks.'], hinglish: ['Seedha nishana!', 'Tumhara jahaz doob raha hai!', 'Mujhe lag gaya!', 'Jahaz bachao!', 'Fire karo!', 'Chattanon se bacho.'] },
   'road-dash': { en: ['Too easy!', 'Coins for me!', 'Who parked a cow there?!', 'Brakes! Brakes!', 'Faster, faster!', 'Mind the pothole.'], hinglish: ['Bahut aasan!', 'Coins mere!', 'Gaay yahan kisne khadi ki?!', 'Brake! Brake!', 'Aur tez, aur tez!', 'Gaddhe se bacho.'] },
@@ -315,13 +315,13 @@ const HINDI = {
   "hoop-flick": ["स्विश!", "सीधा जाल में!", "रिम से टकरा गया!", "बहुत ज़ोर से!", "आराम से आर्क बनाओ…", "ये हूप तो हिल रहा है!"],
   "ghost-hostel": ["मेरा दरवाज़ा मज़बूत है!", "पंखे फ़ुल स्पीड पे!", "भूत मेरे दरवाज़े पे है!", "दरवाज़ा टूट रहा है!", "सो जाओ और कमाओ…", "सुबह तक बचना है!"],
   "werewolf": ["मुझे पता था तू भेड़िया है!", "गाँव अभी सुरक्षित है… अभी के लिए।", "मैं नहीं हूँ, क़सम से!", "मुझे वोट क्यों?", "कल रात कौन चुप था?", "किसी पे भरोसा मत करो।"],
-  "knife-throw": [
-    "एकदम निशाने पे!",
-    "सेब पे लगा!",
+  "pin-spin": [
+    "एकदम गैप में!",
+    "स्टार मिल गया!",
     "बस ज़रा सा!",
-    "टकरा गया!",
+    "पिन टकरा गया!",
     "गैप का इंतज़ार करो…",
-    "बॉस लेवल!"
+    "बड़ा बोर्ड!"
   ]
 };
 Object.entries(HINDI).forEach(([slug, lines]) => { if (GAME[slug]) GAME[slug].hindi = lines; });

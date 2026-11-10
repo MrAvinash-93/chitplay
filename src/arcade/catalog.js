@@ -9,7 +9,7 @@ export const VIDEO_GAMES = [
   { slug: 'tunnel-race', video: true, hot: true, aka: 'paper plane tunnel 3d endless race hawai jahaz', name: 'Tunnel Race', icon: '✈️', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#7b3fe4', medals: [50, 150, 300, 600], blurb: 'A paper plane in an endless tunnel. Steer round the walls and grab the gems.' },
   { slug: 'hoop-flick', video: true, hot: true, aka: 'basketball dunk shot hoop throw swish ball endless', name: 'Hoop Flick', icon: '🏀', min: 1, max: 2, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#e8742a', medals: [20, 50, 100, 200], blurb: 'Pull back, let go, and drop the ball through the next hoop. Swish them in a row for combos.' },
   { slug: 'ghost-hostel', video: true, hot: true, aka: 'haunted dorm ghost defense survive night bed door upgrade tower', name: 'Ghost Hostel', icon: '👻', min: 1, max: 4, seats: 4, minutes: '3', kind: 'Arcade', accent: '#6b4fd8', blurb: 'One night in a haunted hostel. Sleep for coins, build up your door and fans, and last till sunrise.' },
-  { slug: 'knife-throw', video: true, aka: 'knife hit throw target log levels boss apple', name: 'Knife Throw', icon: '🎯', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#8b5a2b', medals: [25, 60, 120, 250], blurb: 'Throw knives into a spinning target without touching the others. Beat level after level.' },
+  { slug: 'pin-spin', video: true, aka: 'pin spin push pin corkboard spinning board timing levels stars', name: 'Pin Spin', icon: '📌', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#2f7d5a', medals: [25, 60, 120, 250], blurb: 'Push pins into a spinning corkboard without touching the others. Fill board after board.' },
   { slug: 'ship-fight', video: true, hot: true, aka: 'boat battleship navy jahaz', name: 'Ship Fight', icon: '🚢', min: 2, max: 2, seats: 2, minutes: '2–5', kind: 'Arcade', accent: '#1f7ab8', blurb: 'Two ships, cannons firing non-stop. Dodge, line up your shots and sink your friend.' },
   { slug: 'bull-fight', video: true, hot: true, aka: 'bull saand sumo push ring jallikattu', name: 'Bull Fight', icon: '🐂', min: 2, max: 2, seats: 2, minutes: '2–5', kind: 'Arcade', accent: '#b5651d', blurb: 'Two bulls, one sand ring. Charge, lock horns and push the other one out.' },
   { slug: 'road-dash', video: true, hot: true, aka: 'auto rickshaw car lane endless race', name: 'Road Dash', icon: '🛺', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#c7502a', medals: [40, 100, 200, 400], blurb: 'An auto-rickshaw on a road that never ends. Dodge cows and buses, grab the coins.' },
@@ -46,7 +46,7 @@ export const GAMES = [
 /** Everything on the home screen. */
 export const ALL_GAMES = [...VIDEO_GAMES, ...GAMES];
 /** Old names that links or saved lists may still use. */
-const RENAMED = { 'rang-patti': 'color-clash', 'gully-rally': 'backyard-rally' };
+const RENAMED = { 'rang-patti': 'color-clash', 'gully-rally': 'backyard-rally', 'knife-throw': 'pin-spin' };
 export const gameBySlug = (slug) => ALL_GAMES.find(g => g.slug === (RENAMED[slug] || slug)) || null;
 /** The categories, in the order the home screen shows them. Cops and Robbers is in Party too. */
 /** The Hot row on a first visit: five quick, come-back-for-more games. Players can change it. */

@@ -73,6 +73,30 @@ for (const g of games) {
     fs.writeFileSync(path.join(OUT, `${g.slug}${suffix}.jpg`), buf);
   }
 }
-console.log(`${games.length} games, ${(bytes / 1024 / 1024).toFixed(2)} MB in assets/games/`);
+// the home page's picture: what ChitPlay is, at a glance, with the games people search for most
+const FEATURED = ['ludo', 'carrom', 'chess', 'call-break', 'color-clash', 'snakes-and-ladders', 'flying-chit'];
+const tiles = [MAIN, ...FEATURED.map(s => ALL_GAMES.find(g => g.slug === s)).filter(Boolean)].map(g => `<div class="t">${logoSvg(g, 150)}</div>`).join('');
+const home = `<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1200px;height:630px;overflow:hidden}
+body{display:flex;align-items:center;gap:40px;padding:0 56px;box-sizing:border-box;font-family:"Segoe UI",system-ui,sans-serif;color:#fff3d6;
+background:radial-gradient(ellipse 70% 90% at 20% 40%,#b5341f77,transparent 70%),linear-gradient(160deg,#2a1509,#110804)}
+.l{display:flex;flex-direction:column;gap:14px;width:440px;flex:none}
+.brand{display:flex;align-items:center;gap:16px}.brand svg{width:84px;height:84px}
+h1{margin:0;font-size:66px;line-height:1;color:#ffd27a;font-weight:900;letter-spacing:2px;text-shadow:0 4px 0 #5a2a0c}
+h2{margin:0;font-size:40px;line-height:1.1;font-weight:900}
+p{margin:0;font-size:24px;font-weight:600;opacity:.9}
+.cta{align-self:flex-start;margin-top:6px;padding:12px 26px;border-radius:16px;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6;font-size:28px;font-weight:800}
+.g{display:grid;grid-template-columns:repeat(4,150px);gap:14px}.t{line-height:0;filter:drop-shadow(0 10px 16px rgba(0,0,0,.5))}
+</style></head><body><div class="l"><div class="brand">${fs.readFileSync(path.join(ROOT, 'assets', 'icon.svg'), 'utf8').replace(/<\?xml[^>]*>/, '')}<h1>CHITPLAY</h1></div>
+<h2>30+ free indoor games</h2><p>Raja Rani Chor Police, Ludo, Carrom, Chess, card and arcade games in 3D</p><span class="cta">▶ Play free · chitplay.com</span></div>
+<div class="g">${tiles}</div></body></html>`;
+await send('Emulation.setDeviceMetricsOverride', { width: 1200, height: 630, deviceScaleFactor: 1, mobile: false });
+const homeTmp = path.join(prof, 'home.html');
+fs.writeFileSync(homeTmp, home);
+await send('Page.navigate', { url: `file:///${homeTmp.replace(/\\/g, '/')}` });
+await sleep(500);
+const homeShot = await send('Page.captureScreenshot', { format: 'jpeg', quality: 86, clip: { x: 0, y: 0, width: 1200, height: 630, scale: 1 } });
+fs.writeFileSync(path.join(ROOT, 'assets', 'home.jpg'), Buffer.from(homeShot.result.data, 'base64'));
+console.log(`${games.length} games, ${(bytes / 1024 / 1024).toFixed(2)} MB in assets/games/, and assets/home.jpg`);
 ws.close(); chrome.kill();
 process.exit(0);

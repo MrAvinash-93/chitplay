@@ -4,7 +4,7 @@
  * wins. After a while the ring starts to shrink, so a round can never go on for ever.
  * Nobody gets hurt: it is a pushing contest, like the village bull games where bulls lock horns.
  */
-import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-0911';
+import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-0936';
 
 export const CX = W / 2, CY = 221, RING = 165, BODY = 24;
 const ACCEL = 700, DRAG = 3.6, CHARGE = 330, CHARGE_TICKS = 16, COOL = 70, ROUND_WINS = 3, SHRINK_AT = 60 * 25;

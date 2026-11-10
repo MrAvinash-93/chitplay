@@ -7,7 +7,7 @@
  * to show, and only after the result is public.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { lookKey, OUTFITS, isFancyHat } from './character-looks.js?v=20261110-0911';
+import { lookKey, OUTFITS, isFancyHat } from './character-looks.js?v=20261110-0936';
 
 const TAU = Math.PI * 2;
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
@@ -1090,6 +1090,12 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
   const emoteSprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, toneMapped: false, depthTest: false, depthWrite: false }));
   emoteSprite.renderOrder = 11;
   emoteSprite.visible = false;
+  // drawn on top of everything, so right in front of the camera (an over-the-shoulder shot) it would
+  // cover half the screen: it fades out as the camera comes close
+  emoteSprite.onBeforeRender = (renderer, sc, cam) => {
+    const d = cam.position.distanceTo(emoteSprite.position);
+    emoteSprite.material.opacity = d < 1.1 ? 0 : d < 1.8 ? (d - 1.1) / 0.7 : 1;
+  };
   scene.add(emoteSprite);
   let emoteUntil = 0, emoteStart = 0;
 

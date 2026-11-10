@@ -8,16 +8,16 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-0911';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-0936';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-0911';
-import { lookOf, lookKey } from './character-looks.js?v=20261110-0911';
-import { buildRoomDetails } from './room-details.js?v=20261110-0911';
-import { COUNTRIES } from './countries.js?v=20261110-0911';
-import { isSpecialEmoji } from './table-talk.js?v=20261110-0911';
-import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-0911';
-import { decorMakers } from './decor-makers.js?v=20261110-0911';
-import * as Themes from './themes.js?v=20261110-0911';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-0936';
+import { lookOf, lookKey } from './character-looks.js?v=20261110-0936';
+import { buildRoomDetails } from './room-details.js?v=20261110-0936';
+import { COUNTRIES } from './countries.js?v=20261110-0936';
+import { isSpecialEmoji } from './table-talk.js?v=20261110-0936';
+import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-0936';
+import { decorMakers } from './decor-makers.js?v=20261110-0936';
+import * as Themes from './themes.js?v=20261110-0936';
 
 const TAU = Math.PI * 2;
 
@@ -795,12 +795,15 @@ function createWorld() {
     if (listener != null && actors[listener]) {
       const L = actors[listener].headWorld(tB);
       tDir.copy(S).sub(L); tDir.y = 0; tDir.normalize();
-      const back = narrow ? 0.72 : 0.46;
+      // on a phone the listener's head would fill half the screen this close: stand further back,
+      // higher and more to the side, so they stay a small shoulder at the edge of the picture
+      const back = narrow ? 1.05 : 0.5;
+      const off = narrow ? 0.42 : 0.24;
       // the shoulder on the side away from the room's centre keeps the third player out of the way
       const px = -tDir.z, pz = tDir.x;
       const side = (L.x + px) ** 2 + (L.z + pz) ** 2 > (L.x - px) ** 2 + (L.z - pz) ** 2 ? 1 : -1;
       return {
-        pos: [L.x - tDir.x * back + side * px * 0.2, Math.max(0.55, L.y + 0.17), L.z - tDir.z * back + side * pz * 0.2],
+        pos: [L.x - tDir.x * back + side * px * off, Math.max(0.55, L.y + (narrow ? 0.3 : 0.19)), L.z - tDir.z * back + side * pz * off],
         look: [S.x, S.y - 0.03, S.z], orbit: 0, exact: true,
       };
     }
@@ -1286,18 +1289,19 @@ function createWorld() {
     if (now - barSeen > 500) { barSeen = now; const b = document.querySelector('header.bar, .game__top'); const r = b?.getBoundingClientRect(); barAt = r && r.height && getComputedStyle(b).visibility !== 'hidden' ? r.bottom : 0; }
     return barAt;
   };
-  function placeLabel(label, angle = '') {
+  function placeLabel(label, angle = '', apply = true) {
     const W = window.innerWidth, H = window.innerHeight;
     proj.project(camera);
     // never under the bar along the top (back button, title, menu): a name there would be hidden
     const y = Math.max(topBarBottom() + 14, (1 - proj.y) / 2 * H);
     const off = proj.z > 1 || (1 - proj.y) / 2 * H < -40 || y > H + 24;
     label.el.style.visibility = off ? 'hidden' : 'visible';
-    if (off) return;
+    if (off) return null;
     // stays whole at the screen edges, where a player can sit partly out of view on phones
     const half = label.width / 2 + 4;
     const x = half * 2 > W ? W / 2 : Math.max(half, Math.min(W - half, (proj.x + 1) / 2 * W));
-    label.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)${angle}`;
+    if (apply) label.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)${angle}`;
+    return { label, x, y, w: label.width || 80 };
   }
 
   function updateTags() {
@@ -1318,6 +1322,7 @@ function createWorld() {
       proj.y += 0.1;
       placeLabel(chit, i % 2 ? ' rotate(2deg)' : ' rotate(-2deg)');
     });
+    const spots = [];
     tags.forEach((tag, i) => {
       const text = actors[i].name;
       if (text !== tag.text) {
@@ -1329,28 +1334,60 @@ function createWorld() {
       if (!text) return;
       actors[i].headWorld(proj);
       proj.y += 0.3;
-      placeLabel(tag);
+      const spot = placeLabel(tag, '', false);
+      if (spot) spots.push(spot);
+    });
+    // two names that land on each other: the lower one moves down a line, so both stay readable
+    spots.sort((p, q) => p.y - q.y);
+    const done = [];
+    spots.forEach((p) => {
+      for (let k = 0; k < 3; k++) {
+        const q = done.find(o => Math.abs(o.x - p.x) < (o.w + p.w) / 2 + 4 && Math.abs(o.y - p.y) < 26);
+        if (!q) break;
+        p.y = q.y + 27;
+      }
+      done.push(p);
+      p.label.el.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, -50%)`;
     });
   }
 
   function updateBubbles() {
     if (!story.active) return;
     const W = window.innerWidth, H = window.innerHeight;
+    // keep clear of the score chips at the top and the prompts at the bottom,
+    // scaled for short landscape phones as well as tall screens
+    const top = Math.min(190, H * 0.3), bottom = Math.min(150, H * 0.24);
+    // and below the narrator's line while it shows
+    const capBottom = caption.classList.contains('world-caption--show') ? caption.getBoundingClientRect().bottom + 6 : 0;
+    const shown = [];
     bubbles.forEach((b, i) => {
       if (!b.el.classList.contains('player-bubble--show')) return;
       if (time > b.until) { b.el.classList.remove('player-bubble--show'); return; }
       actors[i].headWorld(proj);
       proj.y += 0.5;
       proj.project(camera);
-      const off = proj.z > 1;
       const half = Math.min(120, W * 0.24);
       const x = Math.max(half, Math.min(W - half, (proj.x + 1) / 2 * W));
-      // keep clear of the score chips at the top and the prompts at the bottom,
-      // scaled for short landscape phones as well as tall screens
-      const top = Math.min(190, H * 0.3), bottom = Math.min(150, H * 0.24);
-      const y = Math.max(top, Math.min(H - bottom, (1 - proj.y) / 2 * H));
-      b.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
-      b.el.style.visibility = off ? 'hidden' : 'visible';
+      const bh = b.el.offsetHeight || 50;
+      const y = Math.max(top, capBottom + bh, Math.min(H - bottom, (1 - proj.y) / 2 * H));
+      shown.push({ b, x, y, off: proj.z > 1, w: b.el.offsetWidth || 160, h: bh });
+    });
+    // two people talking at once: the lower bubble steps aside instead of covering the other one
+    shown.sort((p, q) => p.y - q.y);
+    const placed = [];
+    const hits = (p, q) => Math.abs(p.x - q.x) < (p.w + q.w) / 2 + 6 && p.y > q.y - q.h - 6 && p.y - p.h < q.y + 6;
+    shown.forEach((p) => {
+      if (!p.off) {
+        for (let tries = 0; tries < 4; tries++) {
+          const q = placed.find(o => hits(p, o));
+          if (!q) break;
+          const down = q.y + 6 + p.h;
+          p.y = down <= H - bottom + p.h * 0.5 ? down : Math.max(top * 0.6, q.y - q.h - 6);
+        }
+        placed.push(p);
+      }
+      p.b.el.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`;
+      p.b.el.style.visibility = p.off ? 'hidden' : 'visible';
     });
   }
 

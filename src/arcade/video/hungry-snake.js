@@ -2,7 +2,7 @@
  * Hungry Snake: eat the samosas, grow longer, don't hit a wall, yourself or anyone else. It speeds
  * up as you eat. Endless alone; with others, the last snake alive also scores a bonus.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261110-0911';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261110-0936';
 
 export const COLS = 32, ROWS = 18;
 const CELL = 20, TOP = 40;

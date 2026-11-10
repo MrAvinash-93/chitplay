@@ -6,7 +6,7 @@
  *
  * Side view, in screen pixels: x to the right, y down. Gravity pulls down (+y).
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0911';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-0936';
 
 export const G = 1100, MAX = 1050;
 const BALL = 13, RIM = 30, SHOT_TICKS = 60 * 12;

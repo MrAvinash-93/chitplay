@@ -4,13 +4,13 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS } from './lib.js?v=20261110-0911';
-import { AHEAD as TUNNEL_AHEAD } from './tunnel-race.js?v=20261110-0911';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-0911';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-0911';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-0911';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-0911';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-0911';
+import { SEAT_COLORS } from './lib.js?v=20261110-0936';
+import { AHEAD as TUNNEL_AHEAD } from './tunnel-race.js?v=20261110-0936';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-0936';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-0936';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-0936';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-0936';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-0936';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });
@@ -479,55 +479,73 @@ function bullView() {
   };
 }
 
-/* ─── Knife Throw: wooden targets spinning on a dark wall ─── */
-function knifeView() {
+/* ─── Pin Spin: round corkboards spinning on a classroom wall ─── */
+function pinView() {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#1b1430');
+  scene.background = new THREE.Color('#20352a');
   const camera = new THREE.PerspectiveCamera(45, 1.6, 0.1, 60);
   camera.position.set(0, -0.2, 7.2);
   camera.lookAt(0, -0.2, 0);
-  scene.add(new THREE.HemisphereLight('#fff3e0', '#2a1a40', 1.4));
+  scene.add(new THREE.HemisphereLight('#fff6e6', '#1d2b22', 1.4));
   const key = new THREE.DirectionalLight('#ffffff', 1.6);
   key.position.set(2, 3, 6);
   scene.add(key);
-  const face = canvasTex(256, 256, (g, w) => {
-    const r = w / 2;
-    const grd = g.createRadialGradient(r, r, 4, r, r, r);
-    grd.addColorStop(0, '#c49058'); grd.addColorStop(1, '#8a5a2f');
-    g.fillStyle = grd; g.beginPath(); g.arc(r, r, r, 0, TAU); g.fill();
-    g.strokeStyle = 'rgba(60,30,10,.45)'; g.lineWidth = 3;
-    for (let k = 1; k < 7; k++) { g.beginPath(); g.arc(r, r, (r * k) / 7, 0, TAU); g.stroke(); }
-    g.strokeStyle = 'rgba(60,30,10,.3)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.moveTo(r, r); g.lineTo(r + Math.cos(k) * r, r + Math.sin(k) * r); g.stroke(); }
+  // a chalkboard wall behind: faint chalk sums, so it reads as a classroom
+  const wall = canvasTex(1024, 512, (g, w, h) => {
+    g.fillStyle = '#20352a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(255,255,255,.045)'; g.font = '20px system-ui, sans-serif';
+    ['2 + 3 = 5', 'A B C', '7 × 8 = 56', '★', '3.14', 'x + y'].forEach((t, k) => g.fillText(t, 60 + (k % 3) * 330, 90 + Math.floor(k / 3) * 300));
   });
-  const bark = std('#5a3a20', { roughness: 0.9 });
-  const steel = std('#dfe7ee', { metalness: 0.8, roughness: 0.25 });
-  const grip = std('#3a2412', { roughness: 0.7 });
-  const knife = () => {
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(18, 9), new THREE.MeshBasicMaterial({ map: wall }));
+  back.position.z = -2;
+  scene.add(back);
+  const cork = (big) => canvasTex(256, 256, (g, w) => {
+    const r = w / 2;
+    g.fillStyle = big ? '#c0412b' : '#c89b62'; g.beginPath(); g.arc(r, r, r, 0, TAU); g.fill();
+    // cork speckles
+    for (let k = 0; k < 900; k++) { const a = k * 2.399, d = Math.sqrt(k / 900) * (r - 6); g.fillStyle = k % 3 ? 'rgba(110,70,30,.35)' : 'rgba(255,235,200,.25)'; g.fillRect(r + Math.cos(a) * d, r + Math.sin(a) * d, 2.4, 2.4); }
+    // a coloured paper ring and a pinned note in the middle
+    g.strokeStyle = big ? '#ffd23f' : '#ff9a3d'; g.lineWidth = 10; g.beginPath(); g.arc(r, r, r * 0.62, 0, TAU); g.stroke();
+    g.fillStyle = '#fff8e6'; g.save(); g.translate(r, r); g.rotate(-0.12); g.fillRect(-34, -26, 68, 52); g.fillStyle = '#c0412b'; g.font = '800 22px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('CP', 0, 2); g.restore();
+  });
+  const faces = { plain: cork(false), big: cork(true) };
+  const rim = std('#7a5530', { roughness: 0.85 });
+  const steel = std('#d7dde4', { metalness: 0.85, roughness: 0.25 });
+  const heads = SEAT_COLORS.map(c => std(c, { roughness: 0.3 }));
+  // a push pin pointing up (+y): needle below, plastic head on top
+  const pin = (seat) => {
     const k = new THREE.Group();
-    const blade = box(0.09, 0.55, 0.03, steel); blade.position.y = 0.27;
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.14, 4), steel); tip.position.y = 0.6; tip.rotation.y = Math.PI / 4;
-    const guard = box(0.2, 0.04, 0.06, grip); guard.position.y = -0.02;
-    const handle = box(0.08, 0.32, 0.06, grip); handle.position.y = -0.2;
-    k.add(blade, tip, guard, handle);
+    const needle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.006, 0.42, 8), steel); needle.position.y = 0.21;
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.11, 0.16, 14), heads[seat % heads.length]); neck.position.y = -0.05;
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.07, 18), heads[seat % heads.length]); cap.position.y = -0.16;
+    k.add(needle, neck, cap);
     return k;
   };
+  const starTex = canvasTex(128, 128, (g, w) => {
+    const r = w / 2;
+    g.beginPath();
+    for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + (k * Math.PI) / 5, rr = k % 2 ? r * 0.42 : r * 0.95; g.lineTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr); }
+    g.closePath(); g.fillStyle = '#ffd23f'; g.fill(); g.lineWidth = 5; g.strokeStyle = '#b07a00'; g.stroke();
+  });
+  const starMat = new THREE.MeshBasicMaterial({ map: starTex, transparent: true });
   const targets = [];
   const slots = (n) => ({ 1: [0], 2: [-1.7, 1.7], 3: [-2.4, 0, 2.4], 4: [-2.7, -0.9, 0.9, 2.7] })[n] || [0];
   const make = (i) => {
     const grp = new THREE.Group();
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.35, 40), [bark, std('#ffffff', { map: face }), std('#ffffff', { map: face })]);
+    const faceMat = std('#ffffff', { map: faces.plain, roughness: 0.95 });
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.22, 48), [rim, faceMat, faceMat]);
     disc.rotation.x = Math.PI / 2;
     const spin = new THREE.Group();
     spin.add(disc);
     grp.add(spin);
-    const flying = knife();
+    const flying = pin(i);
     grp.add(flying);
-    const waiting = knife();
+    const waiting = pin(i);
     grp.add(waiting);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1.03, 0.03, 6, 48), basic(SEAT_COLORS[i]));
     grp.add(ring);
     scene.add(grp);
-    return { grp, spin, flying, waiting, ring, knives: [], apples: [], level: 0, shake: 0 };
+    return { grp, spin, faceMat, flying, waiting, ring, pins: [], stars: [], level: 0, shake: 0, seat: i };
   };
   return {
     scene, camera,
@@ -539,26 +557,26 @@ function knifeView() {
         const T = targets[i];
         T.grp.position.set(xs[i], 0.35, 0);
         T.grp.scale.setScalar(scale);
-        // a new level: a fresh target pops in
-        if (T.level !== p.level) { T.level = p.level; T.shake = 0.35; T.spin.children[0].material[0].color.set(p.level % 5 === 0 ? '#5a2a6a' : '#5a3a20'); }
-        if (T.shake > 0) { T.shake -= dt; T.spin.scale.setScalar(1 + Math.sin(T.shake * 40) * 0.04); } else T.spin.scale.setScalar(1);
+        // a new level: a fresh board pops in; every fifth one is the big red board
+        if (T.level !== p.level) { T.level = p.level; T.shake = 0.35; T.faceMat.map = p.level % 5 === 0 ? faces.big : faces.plain; T.faceMat.needsUpdate = true; }
+        if (T.shake > 0) { T.shake -= dt; T.spin.scale.setScalar((p.level % 5 === 0 ? 1.08 : 1) + Math.sin(T.shake * 40) * 0.04); } else T.spin.scale.setScalar(p.level % 5 === 0 ? 1.08 : 1);
         T.spin.rotation.z = p.rot;
-        while (T.knives.length < p.stuck.length) { const k = knife(); T.spin.add(k); T.knives.push(k); }
-        T.knives.forEach((k, n) => {
+        while (T.pins.length < p.stuck.length) { const k = pin(i); T.spin.add(k); T.pins.push(k); }
+        T.pins.forEach((k, n) => {
           const a = p.stuck[n];
           k.visible = a != null;
           if (a == null) return;
-          // the blade points into the target
-          k.position.set(Math.cos(a) * 1.55, Math.sin(a) * 1.55, 0.05);
+          // the needle points into the board, the head sticks out past the rim
+          k.position.set(Math.cos(a) * 1.24, Math.sin(a) * 1.24, 0.05);
           k.rotation.z = a + Math.PI / 2;
         });
-        while (T.apples.length < p.apples.length) { const ap = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 10), std('#e53935', { roughness: 0.35 })); T.spin.add(ap); T.apples.push(ap); }
-        T.apples.forEach((ap, n) => { const a = p.apples[n]; ap.visible = a != null; if (a != null) ap.position.set(Math.cos(a) * 1.12, Math.sin(a) * 1.12, 0.1); });
-        // the knife in the air, and the next one waiting
+        while (T.stars.length < p.stars.length) { const st = new THREE.Mesh(new THREE.CircleGeometry(0.2, 20), starMat); T.spin.add(st); T.stars.push(st); }
+        T.stars.forEach((st, n) => { const a = p.stars[n]; st.visible = a != null; if (a != null) { st.position.set(Math.cos(a) * 0.8, Math.sin(a) * 0.8, 0.125); st.rotation.z = a; } });
+        // the pin in the air, and the next one waiting
         T.flying.visible = p.alive && p.fly > 0;
-        T.flying.position.set(0, -1.55 - (p.fly / 7) * 1.6, 0.05);
-        T.waiting.visible = p.alive && p.fly === 0 && p.knives > 0;
-        T.waiting.position.set(0, -3.1, 0.05);
+        T.flying.position.set(0, -1.3 - (p.fly / 7) * 1.6, 0.05);
+        T.waiting.visible = p.alive && p.fly === 0 && p.pins > 0;
+        T.waiting.position.set(0, -2.9, 0.05);
         T.ring.visible = s.n > 1;
         T.grp.rotation.z = p.alive ? 0 : Math.sin(s.t * 0.5) * 0.04;
       });
@@ -828,6 +846,6 @@ function ghostView() {
   };
 }
 
-const VIEWS = { 'ghost-hostel': ghostView, 'hoop-flick': hoopView, 'knife-throw': knifeView, 'bull-fight': bullView, 'tunnel-race': tunnelView, 'flying-chit': flyingView, 'ship-fight': shipView, 'backyard-rally': rallyView, 'hungry-snake': snakeView, 'road-dash': roadView };
+const VIEWS = { 'ghost-hostel': ghostView, 'hoop-flick': hoopView, 'pin-spin': pinView, 'bull-fight': bullView, 'tunnel-race': tunnelView, 'flying-chit': flyingView, 'ship-fight': shipView, 'backyard-rally': rallyView, 'hungry-snake': snakeView, 'road-dash': roadView };
 export const hasView = (slug) => !!VIEWS[slug];
 export function createView(slug) { return VIEWS[slug] ? VIEWS[slug]() : null; }

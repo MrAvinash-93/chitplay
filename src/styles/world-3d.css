@@ -832,3 +832,14 @@ body.room-only #app, body.room-only .myroom, body.room-only .player-tags, body.r
 
 .game__howto-ico { display: inline-flex; vertical-align: -0.2em; }
 .game__howto-ico .ico { width: 1.15em; height: 1.15em; }
+
+/* Cops and Robbers chat row: the emojis in one line along the bottom, the message button at its end */
+.game__troll { left: calc(var(--safe-l) + 8px); right: calc(var(--safe-r) + 66px); top: auto; bottom: calc(var(--safe-b) + 8px); flex-direction: row; align-items: center; max-height: none; overflow-x: auto; overflow-y: hidden; padding: 4px; border-radius: 14px; background: rgba(20, 10, 5, .62); border: 1px solid rgba(255, 230, 176, .18); }
+.game__troll button { width: 40px; height: 40px; }
+.game__talkbtn { top: auto; bottom: calc(var(--safe-b) + 6px); margin-top: 0; z-index: 23; }
+/* while the chat row is up, the prompts, choices and hints sit just above it */
+.game__troll:not([hidden]) ~ .game__dock { bottom: calc(var(--safe-b) + 66px); }
+.game__troll:not([hidden]) ~ .game__rotatehint { bottom: calc(var(--safe-b) + 74px); }
+@media (min-width: 900px) { .game__troll { right: auto; max-width: min(560px, calc(100% - 100px)); } }
+/* phones: the narrator's line sits under "Your chit", not on top of it */
+@media (max-width: 600px) { .world-caption { top: calc(var(--hud-h) + 48px); } }

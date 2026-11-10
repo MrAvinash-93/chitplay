@@ -258,8 +258,13 @@ body.tv-full .tvbig { z-index: 4; }
 @media (max-width: 360px) { .roomteaser { flex-wrap: wrap; } .roomteaser b { width: 100%; text-align: right; } }
 @media (prefers-reduced-motion: reduce) { .roomteaser--ready { animation: none; } }
 
-/* the emoji row, folded away on phones until the 😀 button opens it */
-.troll-wrap--shut { display: none; }
-.head .emojibtn { margin-left: auto; }
-.head .emojibtn + .chatbtn { margin-left: 6px; }
-.head .emojibtn.on { border-color: var(--gold); background: #3a2410; }
+/* the chat row: who it goes to, the emojis and the message button, in one line at the bottom */
+.chatrow { display: flex; align-items: center; gap: 6px; flex: none; order: 99; margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line); }
+.chatrow .troll { flex: 1; min-width: 0; margin: 0; }
+.chatrow .troll button { flex: 0 0 38px; }
+.chatrow__to { flex: none; display: inline-flex; align-items: center; gap: 4px; max-width: 34%; min-height: 38px; padding: 0 10px; border-radius: 999px; border: 1.5px solid var(--gold); background: #3a2410; color: #fff3d6; font: 700 13px system-ui, sans-serif; cursor: pointer; }
+.chatrow__to span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chatrow__to b { font-size: 11px; opacity: .8; }
+.chatrow .chatbtn { flex: none; width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--tile); font-size: 19px; cursor: pointer; }
+/* the chat row stays in view at the bottom even while the panel scrolls */
+body.room .panel > .chatrow { position: sticky; bottom: 0; z-index: 2; padding-bottom: 2px; background: rgba(36, 20, 12, .97); }

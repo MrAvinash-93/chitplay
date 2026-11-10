@@ -5,12 +5,12 @@
  * A piece the player may tap carries its move's number in userData.pick.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261110-0911';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261110-0911';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261110-0911';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261110-0911';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261110-0911';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261110-0911';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261110-0936';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261110-0936';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261110-0936';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261110-0936';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261110-0936';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261110-0936';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
