@@ -2,7 +2,7 @@
  * Backyard Rally: bat and tennis ball in the backyard. Keep the rally going: the ball
  * speeds up with every hit. First to seven points wins.
  */
-import { H, r1, scoreBar, SEAT_COLORS, rnd, TICK, W } from './lib.js?v=20261110-1540';
+import { H, r1, scoreBar, SEAT_COLORS, rnd, TICK, W } from './lib.js?v=20261110-1548';
 
 export const TOP = 42, BAT = 66, WIN = 7;
 const SPEED = 300;

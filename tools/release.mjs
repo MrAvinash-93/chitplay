@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SKIP_DIRS = new Set(['.git', 'node_modules', 'archive']);
+const SKIP_DIRS = new Set(['.git', 'node_modules', 'archive', 'dist']);
 const UPLOAD_LIMIT = 25 * 1024 * 1024;
 
 function walk(dir, out = []) {

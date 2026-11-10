@@ -3,19 +3,20 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-1540';
-import { W, H, TICK } from './video/lib.js?v=20261110-1540';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1540';
-import { nextForRoom } from './decor.js?v=20261110-1540';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1540';
-import { MOMENT, linesFor } from './talk.js?v=20261110-1540';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1540';
-import { ask, confirmSpend } from './dialog.js?v=20261110-1540';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1540';
-import { profile } from '../persistence/profile-store.js?v=20261110-1540';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1540';
+import { hintsLeft, showHint } from './hint.js?v=20261110-1548';
+import { W, H, TICK } from './video/lib.js?v=20261110-1548';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1548';
+import { nextForRoom } from './decor.js?v=20261110-1548';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1548';
+import { MOMENT, linesFor } from './talk.js?v=20261110-1548';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1548';
+import { ask, confirmSpend } from './dialog.js?v=20261110-1548';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1548';
+import { profile } from '../persistence/profile-store.js?v=20261110-1548';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1548';
+import { adBreak, gameplayStart, gameplayStop } from '../platform/portal.js?v=20261110-1548';
 
-const V = '?v=20261110-1540';
+const V = '?v=20261110-1548';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -335,6 +336,7 @@ export async function runTv(ctx) {
 
   /* ─── the game ─── */
   function start(resumeState = null) {
+    gameplayStart();
     state = resumeState || logic.init({ n: players.length, seed: (Math.random() * 2 ** 31) | 0 });
     result = null;
     tick = 0;
@@ -482,6 +484,7 @@ export async function runTv(ctx) {
     start();
   }
   function finish() {
+    gameplayStop();
     holdPopups(false);
     clearSaved(game.slug);
     againAt = Date.now() + 700;
@@ -529,11 +532,11 @@ export async function runTv(ctx) {
         info?.coins ? h('small', {}, [`+${info.gained} rank points · +${info.coins} coins`]) : null,
       ]),
       roomTeaser(),
-      guestLink ? h('p', { class: 'lead' }, ['Waiting for the host to play again…']) : btn(lost || r.endless ? '🔁 Try again' : `🔁 ${say.playAgain}`, () => rematch(), 'primary'),
+      guestLink ? h('p', { class: 'lead' }, ['Waiting for the host to play again…']) : btn(lost || r.endless ? '🔁 Try again' : `🔁 ${say.playAgain}`, () => { adBreak().then(rematch); }, 'primary'),
       btn(won || info?.newBest ? '📤 Share my win' : '📤 Share my score', async () => {
         const pic = resultImage({ picture: canvas, game, headline: won ? 'I won!' : r.endless ? `I scored ${myScore}!` : 'Rematch?', sub: r.endless ? 'Can you beat me?' : names.join(' vs ') });
         await shareResult({ canvas: pic, text: r.endless ? `I scored ${myScore} in ${game.name} on ChitPlay. Can you beat it?` : `${won ? 'I won' : 'I played'} ${game.name} on ChitPlay!`, slug: game.slug });
-      }),
+      }, 'sharebtn'),
       suggestionRow(game.slug, '../', lost || r.endless ? 'Or try another game' : 'Try these next'),
       offer ? btn('🔔 Remind me to play every day', async (e) => {
         const b = e.currentTarget;

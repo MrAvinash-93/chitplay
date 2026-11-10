@@ -10,33 +10,34 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1540';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1540';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1540';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1540';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1540';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1540';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261110-1540';
-import { profile } from '../persistence/profile-store.js?v=20261110-1540';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1548';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1548';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1548';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1548';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1548';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1548';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261110-1548';
+import { profile } from '../persistence/profile-store.js?v=20261110-1548';
 import { audioManager } from '../audio/audio-manager.js';
-import { iconSvg } from '../ui/icons.js?v=20261110-1540';
-import { faceHtml } from './photo.js?v=20261110-1540';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1540';
+import { iconSvg } from '../ui/icons.js?v=20261110-1548';
+import { faceHtml } from './photo.js?v=20261110-1548';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1548';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1540';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1548';
 
-import { fill, shellText } from './shell-text.js?v=20261110-1540';
-import { nextForRoom } from './decor.js?v=20261110-1540';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1540';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1540';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1540';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1540';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1540';
-import { ask } from './dialog.js?v=20261110-1540';
-import { startReminder } from './reminder.js?v=20261110-1540';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1540';
+import { fill, shellText } from './shell-text.js?v=20261110-1548';
+import { nextForRoom } from './decor.js?v=20261110-1548';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1548';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1548';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1548';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1548';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1548';
+import { ask } from './dialog.js?v=20261110-1548';
+import { startReminder } from './reminder.js?v=20261110-1548';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1548';
+import { adBreak, gameplayStart, gameplayStop, loadingDone } from '../platform/portal.js?v=20261110-1548';
 
-const V = '?v=20261110-1540';
+const V = '?v=20261110-1548';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -140,6 +141,7 @@ let paused = false;
 function setPaused(on) {
   if (paused === on) return;
   paused = on;
+  if (on) gameplayStop(); else if (match && !Logic.result(match.s)) gameplayStart();
   if (match) {
     if (on) clearMatchTimers();
     else if (!Logic.result(match.s)) scheduleActive(Logic.active(match.s));
@@ -638,6 +640,7 @@ function seededPlayers(humans, total) {
   return players;
 }
 function startMatch(players, opts = {}, resumeState = null) {
+  gameplayStart();
   recorded = false;
   holdPopups(true);
   thinking = -1;
@@ -772,6 +775,7 @@ function celebrate(result) {
 /** Your record in each game, and your coins and rank: a finished game always counts for something. */
 let recorded = false;
 function recordResult(result, ctx) {
+  gameplayStop();
   holdPopups(false);
   if (recorded || ctx.me < 0 || ctx.pass) return null;
   recorded = true;
@@ -821,13 +825,13 @@ function showResult(result, ctx, players) {
       return h('div', { class: 'rankline' }, [h('span', {}, [`${rp.icon} ${rp.title}`]), h('div', { class: 'rankbar' }, [h('i', { style: `width:${Math.round(rp.share * 100)}%` })]), lastRecord?.gained ? h('small', {}, [`+${lastRecord.gained} rank points`]) : null]);
     })(),
     roomTeaser(),
-    iAmHost ? btn(say.playAgain, () => { startMatch(match.players.map(p => ((p.kind === 'guest' && !guestLive(p)) ? { ...p, kind: 'bot' } : p)), match.opts); }, 'primary') : h('p', { class: 'lead' }, ['Waiting for the host to play again…']),
+    iAmHost ? btn(say.playAgain, async () => { await adBreak(); startMatch(match.players.map(p => ((p.kind === 'guest' && !guestLive(p)) ? { ...p, kind: 'bot' } : p)), match.opts); }, 'primary') : h('p', { class: 'lead' }, ['Waiting for the host to play again…']),
     btn(won.includes(ctx.me) ? '📤 Share my win' : '📤 Share', async () => {
       let pic = null;
       try { const img = new Image(); img.src = world?.story?.snapshot?.() || ''; await img.decode(); pic = img; } catch {}
       const card = resultImage({ picture: pic, game: G, headline: won.includes(ctx.me) ? 'I won!' : title.replace(/^\S+ /, ''), sub: names.join(' · ') });
       await shareResult({ canvas: card, text: `${won.includes(ctx.me) ? 'I won' : 'I played'} ${G.name} on ChitPlay!`, slug: G.slug });
-    }),
+    }, 'sharebtn'),
     suggestionRow(G.slug, '../', won.includes(ctx.me) ? 'Try these next' : 'Or try another game'),
     h('a', { class: 'btn', href: '../', onclick: leaveAll }, [say.allGames]),
     h('a', { class: 'rules', href: `../games/${G.slug}/` }, ['Tips and the full guide →']),
@@ -1210,6 +1214,7 @@ function joinForm(code = '') {
 
 function leaveAll() {
   paused = false;
+  gameplayStop();
   holdPopups(false);
   clearMatchTimers();
   guest?.close();
@@ -1241,6 +1246,7 @@ async function main() {
   if (!game && !isCode(join)) { location.replace('../'); return; }
   G = game;
   const w = await loadWorld();
+  loadingDone();
   if (w?.story) {
     world = w;
     document.body.classList.add('room');

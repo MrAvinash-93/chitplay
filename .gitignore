@@ -5,3 +5,6 @@ __pycache__/
 Thumbs.db
 .vscode/
 .claude/
+
+# portal builds (made by tools/build-portal.mjs, not part of the website)
+dist/

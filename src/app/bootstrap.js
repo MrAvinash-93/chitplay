@@ -1,8 +1,9 @@
-import { createApp } from './lifecycle.js?v=20261110-1540';
-import { GAME_PHASES } from './config.js?v=20261110-1540';
+import { createApp } from './lifecycle.js?v=20261110-1548';
+import { GAME_PHASES } from './config.js?v=20261110-1548';
 import { audioManager } from '../audio/audio-manager.js';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1540';
-import { GameScreen } from '../ui/screens/game-screen.js?v=20261110-1540';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1548';
+import { GameScreen } from '../ui/screens/game-screen.js?v=20261110-1548';
+import { PORTAL, portalInit } from '../platform/portal.js?v=20261110-1548';
 
 /**
  * ChitPlay is now a single 3D game: one screen (the 3D room) that hosts the
@@ -47,7 +48,9 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 // Offline + instant repeat visits in production (skipped on localhost so edits show up right away).
-if ('serviceWorker' in navigator && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0|192\.168\.|10\.)/.test(location.hostname)) {
+portalInit();
+// on www.chitplay.com only: a game portal serves its own copy, and needs no service worker
+if (!PORTAL && 'serviceWorker' in navigator && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0|192\.168\.|10\.)/.test(location.hostname)) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('[ChitPlay] service worker:', e));
   });

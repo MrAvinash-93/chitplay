@@ -51,5 +51,5 @@ export const gameBySlug = (slug) => ALL_GAMES.find(g => g.slug === (RENAMED[slug
 /** The categories, in the order the home screen shows them. Cops and Robbers is in Party too. */
 /** The Hot row on a first visit: five quick, come-back-for-more games. Players can change it. */
 // the hot games everyone sees first; 'chitplay' stands for Raja Rani Chor Police (Cops and Robbers), whatever its local name
-export const HOT_DEFAULT = ['ludo', 'memory-match', 'chess', 'chitplay', 'dots-and-boxes', 'tunnel-race'];
+export const HOT_DEFAULT = ['ludo', 'memory-match', 'chess', 'chitplay', 'dots-and-boxes', 'tunnel-race', 'bull-fight'];
 export const CATEGORIES = ['Arcade', 'Board', 'Cards', 'Dice', 'Party', 'Puzzle'];

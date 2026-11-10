@@ -857,3 +857,6 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 .hotask__btn { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 0; background: linear-gradient(180deg, #ff9a3d, #e0572a); color: #fff8e6; font: 800 14px system-ui, sans-serif; cursor: pointer; box-shadow: 0 3px 0 #8a2f12; }
 .hotask__btn--on { background: transparent; border: 1.5px solid rgba(255, 210, 122, .6); color: #ffd27a; box-shadow: none; font-weight: 700; }
 .hotask__btn:active { transform: scale(.96); }
+
+/* on a game portal (CrazyGames, Poki): no links out to the website, no sharing links */
+html.portal :is(.game__legal, .game__choice--howto, a.rules, .seo-intro, .sharebtn, .game__invite) { display: none !important; }
