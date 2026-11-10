@@ -10,31 +10,33 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1311';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1311';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1311';
-import { PRESETS, lookOf, randomLook } from '../world/character-looks.js?v=20261110-1311';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1311';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1311';
-import { isLanguage } from '../i18n/index.js?v=20261110-1311';
-import { profile } from '../persistence/profile-store.js?v=20261110-1311';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1337';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1337';
+import { loadWorld } from '../world/world-loader.js?v=20261110-1337';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1337';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1337';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1337';
+import { isLanguage } from '../i18n/index.js?v=20261110-1337';
+import { profile } from '../persistence/profile-store.js?v=20261110-1337';
 import { audioManager } from '../audio/audio-manager.js';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1311';
+import { iconSvg } from '../ui/icons.js?v=20261110-1337';
+import { faceHtml } from './photo.js?v=20261110-1337';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1337';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1311';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1337';
 
-import { fill, shellText } from './shell-text.js?v=20261110-1311';
-import { nextForRoom } from './decor.js?v=20261110-1311';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1311';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1311';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1311';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1311';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1311';
-import { ask } from './dialog.js?v=20261110-1311';
-import { startReminder } from './reminder.js?v=20261110-1311';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1311';
+import { fill, shellText } from './shell-text.js?v=20261110-1337';
+import { nextForRoom } from './decor.js?v=20261110-1337';
+import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1337';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1337';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1337';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1337';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1337';
+import { ask } from './dialog.js?v=20261110-1337';
+import { startReminder } from './reminder.js?v=20261110-1337';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1337';
 
-const V = '?v=20261110-1311';
+const V = '?v=20261110-1337';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -55,6 +57,7 @@ function h(tag, props = {}, kids = []) {
     if (v == null || v === false) continue;
     if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
     else if (k === 'class') e.className = v;
+    else if (k === 'html') e.innerHTML = v;   // only our own icons and portraits, never anything a player typed
     else e.setAttribute(k, v === true ? '' : v);
   }
   for (const c of [].concat(kids)) if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c)));
@@ -86,13 +89,83 @@ function show(...kids) {
   fitBoard();
 }
 function panelOf() { return app.querySelector('.panel'); }
+// while playing there is one button up here: it pauses the game and holds everything else (rules, profile, sound, quit)
 const topBar = (game) => h('header', { class: 'bar' }, [
-  h('a', { href: '../', class: 'back', 'aria-label': 'Back to all games', onclick: leaveAll }, [`‹ ${say.games}`]),
+  h('button', { type: 'button', class: 'back pausebtn', 'aria-label': 'Pause and menu', title: 'Pause and menu (Esc)', onclick: () => openPauseMenu() }, [h('span', { class: 'pausebtn__ico', html: iconSvg('pause') }), h('span', { class: 'wideonly' }, [' Menu'])]),
   h('strong', {}, [game ? `${game.icon} ${game.name}` : 'ChitPlay']),
-  h('span', { class: 'rankchip', title: rankProgress().title, 'aria-label': `Rank: ${rankProgress().title}` }, [rankProgress().icon]),
-  h('a', { href: '../?scan=1', class: 'back scanlink', 'aria-label': 'Scan to join', title: 'Scan to join', onclick: (e) => { if (match && !Logic?.result?.(match.s) && !window.confirm('Scan to join? This game will end.')) { e.preventDefault(); return; } leaveAll(); } }, ['📷']),
-  game ? h('button', { type: 'button', class: 'back rulesbtn', 'aria-label': say.howTo, title: say.howTo, onclick: () => openRules(game) }, ['📖', h('span', { class: 'wideonly' }, [` ${say.howTo}`])]) : null,
 ]);
+
+/* ─── the pause menu ─── */
+// alone (with or without computer players) the game really stops; with people online or nearby it can't, and says so
+const playingWithPeople = () => !!(room || guest || match?.opts?.public || window.__tvOnline);
+let paused = false;
+function setPaused(on) {
+  if (paused === on) return;
+  paused = on;
+  if (match) {
+    if (on) clearMatchTimers();
+    else if (!Logic.result(match.s)) scheduleActive(Logic.active(match.s));
+  }
+  dispatchEvent(new CustomEvent('chitplay:pause', { detail: { on } }));
+}
+/**
+ * The game menu, the same as in Raja Rani Chor Police: who you are, then Pause game, Restart match,
+ * How to play, Quit game, Your profile and Sound, and Back to the game. Alone, opening it already
+ * holds the game; Pause game shows the paused screen until Resume.
+ */
+function openPauseMenu() {
+  if (document.querySelector('.pausemenu')) return;
+  const solo = !playingWithPeople();
+  if (solo) setPaused(true);
+  const sheet = h('div', { class: 'sheet pausemenu', role: 'dialog', 'aria-modal': 'true' });
+  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } };
+  const close = () => { sheet.remove(); removeEventListener('keydown', onKey, true); if (solo) setPaused(false); };
+  const leave = () => { sheet.remove(); removeEventListener('keydown', onKey, true); };
+  const row = (label, onclick, icon, cls = '') => h('button', { type: 'button', class: `game__choice game__choice--row ${cls}`, onclick: () => { audioManager.unlock(); audioManager.play('button'); onclick(); } }, [
+    icon ? h('span', { class: 'game__choice-ico', html: iconSvg(icon) }) : null,
+    h('strong', {}, [label]),
+  ]);
+  const back = (label, onclick) => h('button', { type: 'button', class: 'game__back', onclick }, [h('span', { html: iconSvg('left') }), label]);
+  const card = () => {
+    const rp = rankProgress();
+    return h('div', { class: 'game__card' }, [
+      h('span', { class: 'game__avatar', html: faceHtml(portraitSvg(profile.look)) }),
+      h('div', { class: 'game__card-text' }, [
+        h('strong', {}, [myName()]),
+        h('span', {}, [`${rp.icon} ${rp.title}`]),
+        h('span', { class: 'game__card-points' }, [`${rp.points.toLocaleString('en')} points${rp.next ? ` · next ${rp.next.icon} ${rp.next.title}` : ''}`]),
+      ]),
+    ]);
+  };
+  const soundOn = () => audioManager.enabled !== false;
+  const paint = (kids) => { sheet.replaceChildren(h('div', { class: 'game__panel' }, kids.filter(Boolean))); sheet.querySelector('.game__choice--primary')?.focus({ preventScroll: true }); };
+  const menu = () => paint([
+    h('h2', { class: 'game__title' }, ['Game menu']),
+    card(),
+    solo ? null : h('p', { class: 'game__sub' }, ['You are playing with other people: the game goes on for them while this menu is open.']),
+    solo ? row('Pause game', showPaused, 'pause', 'game__choice--primary') : null,
+    solo && match ? row('Restart match', () => { if (!window.confirm('Restart this match from the beginning?')) return; leaveAll(); clearSaved(G.slug); location.reload(); }, 'restart') : null,
+    G ? row(say.howTo, async () => { leave(); await openRules(G); if (solo) setPaused(false); }, 'book') : null,
+    row('Quit game', () => { leaveAll(); location.href = '../'; }, 'exit'),
+    row('Your profile', () => { if (match && !Logic?.result?.(match.s) && !window.confirm('Open your profile? This game will end.')) return; leaveAll(); location.href = '../?profile=1'; }, 'user'),
+    row(soundOn() ? 'Sound: on' : 'Sound: off', () => { const next = !soundOn(); audioManager.setEnabled(next); settingsStore.set('soundEnabled', next); menu(); }, soundOn() ? 'sound' : 'soundOff'),
+    back('Back to the game', close),
+  ]);
+  // the paused screen: nothing moves until Resume
+  function showPaused() {
+    paint([
+      h('h2', { class: 'game__title' }, ['⏸ Paused']),
+      h('p', { class: 'game__sub' }, ['The game is waiting for you. Nothing moves until you come back.']),
+      row('Resume', close, 'play', 'game__choice--primary'),
+      back('Game menu', menu),
+    ]);
+  }
+  menu();
+  addEventListener('keydown', onKey, true);
+  document.body.append(sheet);
+}
+// Esc opens it on a computer
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.querySelector('.sheet')) { e.preventDefault(); openPauseMenu(); } });
 function message(title, lead, ...buttons) {
   show(topBar(G), h('section', { class: 'panel' }, [h('h1', {}, [title]), lead ? h('p', { class: 'lead' }, [lead]) : null, ...buttons]));
 }
@@ -575,6 +648,11 @@ function pump(events) {
   match.timers.forEach(t => clearTimeout(t));
   match.timers.clear();
   if (result) return;
+  if (!paused) scheduleActive(active);
+}
+/** Whoever's turn it is and isn't a person here: a computer player, or someone who has gone. */
+function scheduleActive(active) {
+  const players = match.players;
   active.forEach((seat) => {
     const p = players[seat];
     if (p.kind === 'bot') schedule(seat, rand(...BOT_MS));
@@ -1090,6 +1168,7 @@ function joinForm(code = '') {
 }
 
 function leaveAll() {
+  paused = false;
   holdPopups(false);
   clearMatchTimers();
   guest?.close();

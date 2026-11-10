@@ -2,8 +2,8 @@
  * After a game: a picture of the moment with the score and the chitplay.com link, ready to send to
  * friends; and a few other games to try next.
  */
-import { ALL_GAMES, HOT_DEFAULT, gameBySlug } from './catalog.js?v=20261110-1311';
-import { logoSvg } from './logo.js?v=20261110-1311';
+import { ALL_GAMES, HOT_DEFAULT, gameBySlug } from './catalog.js?v=20261110-1337';
+import { logoSvg } from './logo.js?v=20261110-1337';
 
 const SITE = 'https://www.chitplay.com';
 /** A shareable card: the game picture, a banner with the result, and the link. */

@@ -273,3 +273,11 @@ body.tv-full .tvbig { z-index: 4; }
 .chatrow .chatbtn { flex: none; width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--tile); font-size: 19px; cursor: pointer; }
 /* the chat row stays in view at the bottom even while the panel scrolls */
 body.room .panel > .chatrow { position: sticky; bottom: 0; z-index: 2; padding-bottom: 2px; background: rgba(36, 20, 12, .97); }
+
+/* the game menu: one ⏸ button in the top bar while playing; the menu itself looks like Raja Rani Chor Police's */
+.pausebtn { font-size: 16px; min-width: 44px; min-height: 40px; }
+.pausemenu .game__panel { max-height: calc(100dvh - 32px); }
+.pausemenu .game__title { font-family: var(--font-display, Georgia, serif); }
+.pausemenu { z-index: 400; }
+.pausebtn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.pausebtn__ico { display: grid; place-items: center; } .pausebtn__ico .ico { width: 20px; height: 20px; }

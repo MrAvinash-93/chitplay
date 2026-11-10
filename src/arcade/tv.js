@@ -3,19 +3,19 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-1311';
-import { W, H, TICK } from './video/lib.js?v=20261110-1311';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1311';
-import { nextForRoom } from './decor.js?v=20261110-1311';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1311';
-import { MOMENT, linesFor } from './talk.js?v=20261110-1311';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1311';
-import { ask, confirmSpend } from './dialog.js?v=20261110-1311';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1311';
-import { profile } from '../persistence/profile-store.js?v=20261110-1311';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1311';
+import { hintsLeft, showHint } from './hint.js?v=20261110-1337';
+import { W, H, TICK } from './video/lib.js?v=20261110-1337';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1337';
+import { nextForRoom } from './decor.js?v=20261110-1337';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1337';
+import { MOMENT, linesFor } from './talk.js?v=20261110-1337';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1337';
+import { ask, confirmSpend } from './dialog.js?v=20261110-1337';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1337';
+import { profile } from '../persistence/profile-store.js?v=20261110-1337';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1337';
 
-const V = '?v=20261110-1311';
+const V = '?v=20261110-1337';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -336,9 +336,14 @@ export async function runTv(ctx) {
     acc = 0;
     loop = requestAnimationFrame(frame);
   }
-  let last = 0, acc = 0;
+  let last = 0, acc = 0, paused = false;
+  // the pause menu: alone the game stops where it is; with people on other phones it can't, so it goes on
+  window.__tvOnline = false;
+  addEventListener('chitplay:pause', (e) => { if (!room && !guestLink) paused = !!e.detail?.on; });
   function frame(now) {
     loop = requestAnimationFrame(frame);
+    window.__tvOnline = !!(room || guestLink);
+    if (paused) { last = now; readPads(); paint(); return; }
     acc += Math.min(0.1, (now - last) / 1000);
     last = now;
     readPads();
@@ -376,7 +381,7 @@ export async function runTv(ctx) {
   function paint() {
     if (!state) return;
     const now = performance.now();
-    const dt = Math.min(0.1, (now - lastPaint) / 1000);
+    const dt = paused ? 0 : Math.min(0.1, (now - lastPaint) / 1000);   // paused: the picture holds still too
     lastPaint = now;
     g.setTransform(SCALE, 0, 0, SCALE, 0, 0);
     let flat = true;
