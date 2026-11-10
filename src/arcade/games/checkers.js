@@ -4,7 +4,7 @@
  * continues with the same piece while it can; reaching the far row ends the turn with a crown.
  * No moves left loses. 40 moves each without a capture or a man moving is a draw.
  */
-import { searchMove, turnLine } from '../lib.js?v=20261110-1402';
+import { searchMove, turnLine } from '../lib.js?v=20261110-1410';
 
 const owner = (x) => x % 2;
 const isKing = (x) => x >= 2;

@@ -8,7 +8,7 @@
  *
  * Screen pixels: the rooms are a row along the top, the corridor runs underneath.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1402';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1410';
 
 export const NIGHT = 60 * 150;          // two and a half minutes until sunrise
 export const WAKE = 60 * 15;            // the ghost sleeps for the first fifteen seconds
@@ -159,6 +159,14 @@ export default {
     if (gh.mode !== 'sleep' && gh.mode !== 'gone') { g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(W / 2 - 80, 70, 160, 6); g.fillStyle = '#b48cff'; g.fillRect(W / 2 - 80, 70, 160 * (gh.hp / gh.max), 6); }
     s.players.forEach((p, i) => {
       const w = W / s.rooms, x0 = i * w;
+      // the ghost is coming for this room: say so over it, big, so nobody misses it
+      if (p.alive && gh.target === i && (gh.mode === 'attack' || gh.mode === 'walk')) {
+        const hot = gh.mode === 'attack';
+        g.fillStyle = hot ? (Math.floor(s.t / 10) % 2 ? 'rgba(200,20,40,.85)' : 'rgba(120,10,30,.85)') : 'rgba(80,20,60,.75)';
+        g.fillRect(x0 + 10, 84, w - 20, 26);
+        g.fillStyle = '#fff'; g.font = '900 16px system-ui, sans-serif'; g.textAlign = 'center';
+        g.fillText(hot ? '👻 ATTACK! Buy 🌀 or 🔧' : '👻 coming!', x0 + w / 2, 102);
+      }
       // the door's health under each room
       g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(x0 + 12, H - 46, w - 24, 6);
       g.fillStyle = p.hp / DOOR.hp[p.door] > 0.4 ? '#7dff9a' : '#ff6b5b'; g.fillRect(x0 + 12, H - 46, (w - 24) * (p.hp / DOOR.hp[p.door]), 6);
