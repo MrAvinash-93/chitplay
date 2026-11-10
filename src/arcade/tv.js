@@ -3,22 +3,23 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-1222';
-import { W, H, TICK } from './video/lib.js?v=20261110-1222';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1222';
-import { nextForRoom } from './decor.js?v=20261110-1222';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1222';
-import { MOMENT, linesFor } from './talk.js?v=20261110-1222';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1222';
-import { ask, confirmSpend } from './dialog.js?v=20261110-1222';
-import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1222';
-import { profile } from '../persistence/profile-store.js?v=20261110-1222';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1222';
+import { hintsLeft, showHint } from './hint.js?v=20261110-1259';
+import { W, H, TICK } from './video/lib.js?v=20261110-1259';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1259';
+import { nextForRoom } from './decor.js?v=20261110-1259';
+import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1259';
+import { MOMENT, linesFor } from './talk.js?v=20261110-1259';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1259';
+import { ask, confirmSpend } from './dialog.js?v=20261110-1259';
+import { resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1259';
+import { profile } from '../persistence/profile-store.js?v=20261110-1259';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1259';
 
-const V = '?v=20261110-1222';
+const V = '?v=20261110-1259';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
-const SCALE = matchMedia('(pointer: fine)').matches ? 1.5 : 1;       // ticks between pictures sent to friends: twenty a second
+// the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
+const SCALE = matchMedia('(pointer: fine)').matches ? (Math.max(screen.width, screen.height) >= 1600 ? 2 : 1.5) : 1;       // ticks between pictures sent to friends: twenty a second
 const KEYS = [
   { KeyW: 'u', KeyS: 'd', KeyA: 'l', KeyD: 'r', Space: 'a', KeyF: 'a' },
   { ArrowUp: 'u', ArrowDown: 'd', ArrowLeft: 'l', ArrowRight: 'r', Enter: 'a', KeyL: 'a' },
@@ -51,13 +52,15 @@ export async function runTv(ctx) {
   } catch (e) { console.warn('[tv] no 3D, using the flat picture', e); view = null; r3 = null; }
   const bigBox = h('div', { class: 'tvbig', hidden: true });
   document.body.append(bigBox);
-  let big = !story || matchMedia('(pointer: fine) and (min-width: 900px)').matches;
+  // big on a computer, and on a phone held sideways, where the TV in the room would be too small to play
+  let big = !story || matchMedia('(pointer: fine) and (min-width: 900px)').matches || matchMedia('(orientation: landscape) and (max-height: 560px)').matches;
   if (big) document.body.classList.add('tv-full');
   const setBig = (on) => {
     big = on;
     document.body.classList.toggle('tv-full', on);
     bigBox.hidden = !on;
     if (on) bigBox.append(canvas);
+    story?.tvShow?.(!on);
   };
   setBig(big);
 
@@ -82,6 +85,7 @@ export async function runTv(ctx) {
       ? { name: players[k].name, look: players[k].look, color: '#d4a017', isHuman: false, label: players[k].name }
       : { name: '', look: players[0].look, color: '#d4a017', isHuman: false, label: '', hidden: true })));
     story.tvMode(true, { canvas, panel: panelNow(), players: players.length });
+    story.tvShow?.(!big);
   }
   const seatAct = (seat, pose, emoji) => {
     if (!story || !players[seat]) return;

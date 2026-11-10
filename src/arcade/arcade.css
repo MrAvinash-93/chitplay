@@ -224,10 +224,15 @@ button.card:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px;
 .revive__count { align-self: center; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--gold); color: var(--gold); font: 800 18px system-ui, sans-serif; }
 /* on a computer the TV game fills the screen beside the controls */
 @media (pointer: fine) and (min-width: 900px) {
-  body.tv-full .tvbig { top: 56px; bottom: 12px; left: 12px; right: calc(min(400px, 44vw) + 22px); align-items: center; padding: 0; }
-  body.tv-full .tvcanvas { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+  body.tv-full .tvbig { top: 56px; bottom: 12px; left: 12px; right: calc(min(400px, 44vw) + 22px); align-items: center; padding: 0; border-radius: 14px; background: radial-gradient(ellipse at center, rgba(20, 11, 7, .82), rgba(20, 11, 7, .96)); }
+  body.tv-full .tvcanvas { box-sizing: border-box; width: min(100%, calc((100dvh - 68px) * 1.6)); max-width: none; height: auto; max-height: 100%; aspect-ratio: 16 / 10; }
 }
 body.tv-full .tvbig { z-index: 4; }
+/* a phone held sideways: the TV fills the space to the left of the controls, whole and never cut off */
+@media (orientation: landscape) and (max-height: 560px) {
+  body.tv-full .tvbig { top: calc(env(safe-area-inset-top) + 50px); bottom: 6px; left: max(6px, env(safe-area-inset-left)); right: calc(46vw + 28px); align-items: center; padding: 0; border-radius: 12px; background: rgba(20, 11, 7, .96); }
+  body.tv-full .tvcanvas { box-sizing: border-box; width: min(100%, calc((100dvh - 56px - env(safe-area-inset-top)) * 1.6)); max-width: none; height: auto; max-height: 100%; aspect-ratio: 16 / 10; }
+}
 /* who a troll emoji goes to */
 .troll-wrap { display: flex; flex-direction: column; gap: 4px; flex: none; }
 .troll__to { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; font: 600 12px system-ui, sans-serif; color: #e8d6b0; }
@@ -260,7 +265,7 @@ body.tv-full .tvbig { z-index: 4; }
 
 /* the chat row: who it goes to, the emojis and the message button, in one line at the bottom */
 .chatrow { display: flex; align-items: center; gap: 6px; flex: none; order: 99; margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line); }
-.chatrow .troll { flex: 1; min-width: 0; margin: 0; }
+.chatrow .troll { flex: 1; min-width: 0; margin: 0; -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }   /* the fade says: more emojis this way */
 .chatrow .troll button { flex: 0 0 38px; }
 .chatrow__to { flex: none; display: inline-flex; align-items: center; gap: 4px; max-width: 34%; min-height: 38px; padding: 0 10px; border-radius: 999px; border: 1.5px solid var(--gold); background: #3a2410; color: #fff3d6; font: 700 13px system-ui, sans-serif; cursor: pointer; }
 .chatrow__to span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

@@ -8,16 +8,16 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1222';
+import { settingsStore } from '../persistence/settings-store.js?v=20261110-1259';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-1222';
-import { lookOf, lookKey } from './character-looks.js?v=20261110-1222';
-import { buildRoomDetails } from './room-details.js?v=20261110-1222';
-import { COUNTRIES } from './countries.js?v=20261110-1222';
-import { isSpecialEmoji } from './table-talk.js?v=20261110-1222';
-import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-1222';
-import { decorMakers } from './decor-makers.js?v=20261110-1222';
-import * as Themes from './themes.js?v=20261110-1222';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-1259';
+import { lookOf, lookKey } from './character-looks.js?v=20261110-1259';
+import { buildRoomDetails } from './room-details.js?v=20261110-1259';
+import { COUNTRIES } from './countries.js?v=20261110-1259';
+import { isSpecialEmoji } from './table-talk.js?v=20261110-1259';
+import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-1259';
+import { decorMakers } from './decor-makers.js?v=20261110-1259';
+import * as Themes from './themes.js?v=20261110-1259';
 
 const TAU = Math.PI * 2;
 
@@ -851,7 +851,7 @@ function createWorld() {
    * a slight angle so the pieces look solid and the players around it stay in the picture.
    */
   const TV = { w: 2.3, h: 1.4375, y: 1.46, z: -1.75 };
-  let tvBig = null, tvTexture = null, tvPads = [], sofa = null, seatLift = null;
+  let tvBig = null, tvTexture = null, tvPads = [], sofa = null, seatLift = null, tvHidden = false;
   const SEAT_H = 0.34;
   function buildSofa() {
     const g = new THREE.Group();
@@ -1323,7 +1323,10 @@ function createWorld() {
       placeLabel(chit, i % 2 ? ' rotate(2deg)' : ' rotate(-2deg)');
     });
     const spots = [];
+    // on the sofa in front of the TV the names would sit on the screen; the TV's score line shows them
+    const watching = boardShot === tvFraming;
     tags.forEach((tag, i) => {
+      if (watching) { tag.el.style.visibility = 'hidden'; return; }
       const text = actors[i].name;
       if (text !== tag.text) {
         tag.text = text;
@@ -1523,6 +1526,7 @@ function createWorld() {
         };
         tvPads = actors.map(pad);
       } else if (tvTexture.image !== canvas) tvTexture.image = canvas;
+      tvBig.visible = !tvHidden;
       if (!sofa) {
         sofa = buildSofa();
         scene.add(sofa);
@@ -1543,6 +1547,8 @@ function createWorld() {
       if (boardShot !== tvFraming) { boardShot = tvFraming; snapCamera = true; }
     },
     tvPanel(panel) { boardPanel = panel; },
+    /** The game is shown big on its own: the TV in the room steps aside, so it never peeks out from behind. */
+    tvShow(on) { tvHidden = !on; if (tvBig) tvBig.visible = on; },
     tvRefresh() { if (tvTexture) tvTexture.needsUpdate = true; },
     tvCanvasBack() {},
     /** The room as the player has made it: lights, wall colour, decorations. Remembered on this device. */
