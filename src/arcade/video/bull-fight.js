@@ -9,7 +9,7 @@
  * comes back quickly, and near the edge the hooves grip the sand, so a bull doesn't slide out on its
  * own: it has to be pushed.
  */
-import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1427';
+import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261110-1436';
 
 export const CX = W / 2, CY = 221, RING = 165, BODY = 24;
 const ACCEL = 700, DRAG = 3.6, CHARGE = 330, CHARGE_TICKS = 16, ROUND_WINS = 3, SHRINK_AT = 60 * 25;

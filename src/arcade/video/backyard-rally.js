@@ -2,9 +2,10 @@
  * Backyard Rally: bat and tennis ball in the backyard. Keep the rally going: the ball
  * speeds up with every hit. First to seven points wins.
  */
-import { H, r1, scoreBar, SEAT_COLORS, rnd, TICK, W } from './lib.js?v=20261110-1427';
+import { H, r1, scoreBar, SEAT_COLORS, rnd, TICK, W } from './lib.js?v=20261110-1436';
 
-const TOP = 42, BAT = 66, SPEED = 300, WIN = 7;
+export const TOP = 42, BAT = 66, WIN = 7;
+const SPEED = 300;
 function serve(s, to) {
   const a = (rnd(s) - 0.5) * 0.9;
   s.ball = { x: W / 2, y: r1(TOP + 60 + rnd(s) * (H - TOP - 120)), vx: to * 235 * Math.cos(a), vy: 235 * Math.sin(a) };
@@ -58,6 +59,10 @@ export default {
   },
   hud(g, s, names) {
     scoreBar(g, s.points.map((v, i) => [names[i] || `P${i + 1}`, v, SEAT_COLORS[i]]));
+    // match point, and a long rally gets a name
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (s.pause > 0 && Math.max(...s.points) === WIN - 1) { g.fillStyle = '#ffd23f'; g.font = '900 30px system-ui, sans-serif'; g.fillText('MATCH POINT!', W / 2, 110); }
+    if (s.rally >= 8) { g.fillStyle = s.rally >= 14 ? '#ff5a4f' : '#ffb03b'; g.font = '900 22px system-ui, sans-serif'; g.fillText(s.rally >= 14 ? '🔥 FIRE RALLY!' : '⚡ SUPER RALLY!', W / 2, 96); }
     if (s.rally > 2) { g.fillStyle = '#fff'; g.font = '800 26px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`Rally ${s.rally}`, W / 2, 66); }
   },
   draw(g, s, names) {
