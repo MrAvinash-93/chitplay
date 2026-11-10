@@ -848,3 +848,12 @@ body.room-only #app, body.room-only .myroom, body.room-only .player-tags, body.r
 .game--playing .game__top-right > :is(.game__scanbtn, .game__langbtn, .game__profilebtn, .game__toolsbtn, .game__tools) { display: none; }
 /* paused: names, speech and emojis from the room wait behind the menu */
 html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-fx, .player-chit) { display: none; }
+/* after a game: liked it? put it in the Hot games */
+.hotask { display: flex; align-items: center; gap: 10px; margin-top: 4px; padding: 10px 12px; border-radius: 14px; border: 1.5px dashed rgba(255, 154, 61, .7); background: linear-gradient(135deg, rgba(255, 120, 40, .16), rgba(255, 210, 122, .08)); color: #fff3d6; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+.hotask--on { border-style: solid; border-color: rgba(255, 210, 122, .5); }
+.hotask__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.hotask__text strong { font-size: 15px; }
+.hotask__text span { font-size: 12.5px; opacity: .85; }
+.hotask__btn { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 0; background: linear-gradient(180deg, #ff9a3d, #e0572a); color: #fff8e6; font: 800 14px system-ui, sans-serif; cursor: pointer; box-shadow: 0 3px 0 #8a2f12; }
+.hotask__btn--on { background: transparent; border: 1.5px solid rgba(255, 210, 122, .6); color: #ffd27a; box-shadow: none; font-weight: 700; }
+.hotask__btn:active { transform: scale(.96); }

@@ -12,7 +12,7 @@ function loadJsQr() {
   if (jsQrLoading) return jsQrLoading;
   jsQrLoading = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/jsqr.min.js?v=20261110-1351.4.0', import.meta.url).href;
+    s.src = new URL('../vendor/jsqr.min.js?v=20261110-1402.4.0', import.meta.url).href;
     s.onload = () => (window.jsQR ? resolve(window.jsQR) : reject(new Error('load')));
     s.onerror = () => { jsQrLoading = null; reject(new Error('load')); };
     document.head.append(s);

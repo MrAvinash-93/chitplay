@@ -2,8 +2,8 @@
  * After a game: a picture of the moment with the score and the chitplay.com link, ready to send to
  * friends; and a few other games to try next.
  */
-import { ALL_GAMES, HOT_DEFAULT, gameBySlug } from './catalog.js?v=20261110-1351';
-import { logoSvg } from './logo.js?v=20261110-1351';
+import { ALL_GAMES, HOT_DEFAULT, gameBySlug } from './catalog.js?v=20261110-1402';
+import { logoSvg } from './logo.js?v=20261110-1402';
 
 const SITE = 'https://www.chitplay.com';
 /** A shareable card: the game picture, a banner with the result, and the link. */
@@ -52,7 +52,7 @@ export async function shareResult({ canvas, text, slug }) {
 /** Three other games to try: your hot list first, then what's popular, never the one you just played. */
 export function suggestions(currentSlug) {
   let hot = [];
-  try { hot = JSON.parse(localStorage.getItem('chitplay.hot')) || []; } catch {}
+  hot = readHot();
   const pool = [...hot.map(gameBySlug).filter(Boolean), ...HOT_DEFAULT.map(gameBySlug).filter(Boolean), ...ALL_GAMES];
   const seen = new Set([currentSlug]);
   const out = [];
@@ -60,6 +60,51 @@ export function suggestions(currentSlug) {
   return out;
 }
 /** The "try these next" row, as plain DOM. up: the path back to the site's root. */
+/* ─── the player's own hot games: kept on this device, shown first on the home screen ─── */
+const HOT_KEY = 'chitplay.hot';
+export function readHot() {
+  try { const h = JSON.parse(localStorage.getItem(HOT_KEY)); if (Array.isArray(h) && h.length) return h; } catch {}
+  return HOT_DEFAULT.slice();
+}
+/** Put a game in (first) or take it out; `ids` are the names one game goes by ('chitplay' and its country code). */
+export function setHot(ids, on) {
+  const all = [].concat(ids);
+  let list = readHot().filter(x => !all.includes(x));
+  if (on) list = [all[0], ...list];
+  if (!list.length) list = HOT_DEFAULT.slice();
+  try { localStorage.setItem(HOT_KEY, JSON.stringify(list.slice(0, 12))); } catch {}
+}
+export const isHot = (ids) => [].concat(ids).some(x => readHot().includes(x));
+/**
+ * After a game: liked it? One tap puts it in the Hot games on the home screen (and one more takes it
+ * out again).
+ */
+export function hotPrompt(ids, name) {
+  const box = document.createElement('div');
+  box.className = 'hotask';
+  const text = document.createElement('div');
+  text.className = 'hotask__text';
+  const b = document.createElement('button');
+  b.type = 'button';
+  const paint = () => {
+    const on = isHot(ids);
+    box.classList.toggle('hotask--on', on);
+    text.innerHTML = '';
+    const t = document.createElement('strong');
+    t.textContent = on ? `🔥 ${name} is in your Hot games` : `❤️ Liked ${name}?`;
+    const sub = document.createElement('span');
+    sub.textContent = on ? 'It is first on your home screen, one tap away.' : 'Put it in your 🔥 Hot games on the home screen.';
+    text.append(t, sub);
+    b.className = on ? 'hotask__btn hotask__btn--on' : 'hotask__btn';
+    b.textContent = on ? '✓ Hot · Remove' : '🔥 Add to Hot';
+    b.setAttribute('aria-pressed', String(on));
+  };
+  b.addEventListener('click', () => { setHot(ids, !isHot(ids)); paint(); });
+  paint();
+  box.append(text, b);
+  return box;
+}
+
 export function suggestionRow(currentSlug, up = '../', title = 'Try these next') {
   const box = document.createElement('div');
   box.className = 'next';

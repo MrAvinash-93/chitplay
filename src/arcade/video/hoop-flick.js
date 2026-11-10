@@ -9,7 +9,7 @@
  *
  * Side view, in screen pixels: x to the right, y down. Gravity pulls down (+y).
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1351';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1402';
 
 export const PER_LEVEL = 5;
 export const STAGES = ['Still hoops', 'Moving hoops', 'Windy court', 'Wind and moving hoops'];
@@ -50,7 +50,7 @@ export default {
   analog: 'xy',
   init({ n, seed }) {
     const s = { n, seed, t: 0, ev: [], players: [] };
-    s.players = seats(n).map((i) => ({ i, alive: true, score: 0, made: 0, level: 1, levelAt: -999, combo: 0, aimX: 0.4, aimY: 0.7, pulled: false, was: false, touched: false, clock: 0 }));
+    s.players = seats(n).map((i) => ({ i, alive: true, score: 0, pop: 0, popAt: -999, made: 0, level: 1, levelAt: -999, combo: 0, aimX: 0.4, aimY: 0.7, pulled: false, was: false, touched: false, clock: 0 }));
     s.players.forEach((p) => { const { x0, w } = laneOf(s, p.i); rest(s, p, { x: r1(x0 + w * 0.24), y: 270, side: -1, move: 0, ph: 0, wind: 0 }); });
     return s;
   },
@@ -108,6 +108,7 @@ export default {
         p.combo = swish ? p.combo + 1 : 0;
         const pts = swish ? 1 + Math.min(4, p.combo) : 1;
         p.score += pts;
+        p.pop = pts; p.popAt = s.t;
         p.made += 1;
         s.ev.push({ k: 'star', seat: i, combo: swish ? p.combo : 0 });
         if (levelOf(p.made) > p.level) {
@@ -145,6 +146,9 @@ export default {
     s.players.forEach((p) => {
       const { x0, w } = laneOf(s, p.i);
       if (p.combo > 1 && p.alive) { g.fillStyle = '#ffd23f'; g.font = '900 26px system-ui, sans-serif'; g.textAlign = 'center'; g.fillText(`SWISH ×${p.combo}`, x0 + w / 2, 72); }
+      // the points a basket just gave, rising over the court
+      const age = s.t - p.popAt;
+      if (age >= 0 && age < 45) { g.save(); g.globalAlpha = 1 - age / 45; g.font = '900 30px system-ui, sans-serif'; g.textAlign = 'center'; g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = 5; g.fillStyle = '#fff'; const y = 170 - age * 0.7; g.strokeText(`+${p.pop}`, x0 + w / 2, y); g.fillText(`+${p.pop}`, x0 + w / 2, y); g.restore(); }
       // the wind: an arrow along the top of this player's half
       if (p.alive && p.next.wind) {
         const dir = Math.sign(p.next.wind), len = 18 + Math.abs(p.next.wind) / 6, cx = x0 + w / 2, y = 122;
@@ -167,7 +171,7 @@ export default {
       const { x0 } = laneOf(s, p.i);
       if (i) { g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(x0, 40, 2, H); }
       [p.home, p.next].forEach((h, k) => { const hx = k ? hoopX(s, h) : h.x; g.strokeStyle = '#ff7a1a'; g.lineWidth = 5; g.beginPath(); g.moveTo(hx - RIM, h.y); g.lineTo(hx + RIM, h.y); g.stroke(); });
-      if (!p.flying && p.alive) { g.fillStyle = 'rgba(255,255,255,.7)'; for (let k = 1; k < 9; k++) { const t = k * 0.07; g.beginPath(); g.arc(p.ball.x + p.aimX * MAX * t, p.ball.y - p.aimY * MAX * t + 0.5 * G * t * t, 3, 0, 7); g.fill(); } }
+      if (!p.flying && p.alive) { g.fillStyle = 'rgba(255,255,255,.7)'; for (let k = 1; k < 9; k++) { const t = k * 0.07; g.beginPath(); g.arc(p.ball.x + p.aimX * MAX * t + 0.5 * (p.next.wind || 0) * t * t, p.ball.y - p.aimY * MAX * t + 0.5 * G * t * t, 3, 0, 7); g.fill(); } }
       g.fillStyle = p.alive ? '#e8742a' : '#777'; g.beginPath(); g.arc(p.ball.x, p.ball.y, BALL, 0, 7); g.fill();
     });
     this.hud(g, s, names);
