@@ -1,5 +1,5 @@
 /** Four in a Row: drop discs into a 7×6 upright grid; four in a line wins. */
-import { searchMove, turnLine, strip, who } from '../lib.js?v=20261114-1435';
+import { searchMove, turnLine, strip, who } from '../lib.js?v=20261114-1448';
 
 export const COLS = 7, ROWS = 6;
 const DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];

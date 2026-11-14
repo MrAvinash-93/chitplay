@@ -448,7 +448,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1435">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1448">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -521,6 +521,7 @@ function localizedPartyPage(g, L) {
 ${guide.scoring ? `<h3>${esc(guide.headings.scoring)}</h3>\n<p>${esc(guide.scoring)}</p>` : ''}
 ${guide.win ? `<h3>${esc(guide.headings.win)}</h3>\n<p>${esc(guide.win)}</p>` : ''}
 </section>
+${adSlot('guide')}
 <section aria-labelledby="local-faq">
 <h2 id="local-faq">${esc(guide.headings.faq)}</h2>
 ${guide.faq.map(([q, a]) => `<details open><summary><strong>${esc(q)}</strong></summary><p>${esc(a)}</p></details>`).join('\n')}
@@ -557,7 +558,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1435">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1448">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -578,6 +579,7 @@ ${guideHtml}
 <ul class="ways">${L.ways.map(([heading, detail]) => `<li><strong>${esc(heading)}:</strong> ${esc(detail)}</li>`).join('')}</ul>
 <h2>${esc(L.ui.langs)}</h2>
 <ul class="language-names">${otherLanguages}<li><a href="${enUrl}" hreflang="en" lang="en">English: ${esc(g.name)} · ${esc(L.ui.rules)}</a></li></ul>
+${bannerSlot()}
 ${featuredIn(g.slug, L.code, '../../../', L.dir)}
 <h2>${esc(L.gamesTitle)}</h2>
 <ul class="more-games">${related.map(other => `<li><a href="../../../${L.dir}/games/${other.slug}/" hreflang="${L.code}" title="${esc(L.names[other.slug][1])}"><img src="../../../assets/${imageFor(other.slug, true)}" alt="" width="72" height="72" loading="lazy" decoding="async"><span>${esc(L.names[other.slug][0])}</span></a></li>`).join('')}</ul>
@@ -634,7 +636,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1435">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1448">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -1291,10 +1293,12 @@ ${logoLink('../')}
 <p><a class="btn" href="../">▶ Play free now</a></p>
 ${t.sections.map(([h, p]) => `<h2>${esc(h)}</h2>\n<p>${esc(p)}</p>`).join('\n')}
 ${slug === 'indoor-games' ? `<h2>All our indoor games</h2>\n<ul>${PARTY.map(g => `<li><a href="../games/${g.slug}/">${esc(g.name)}</a>: ${esc(g.blurb)}</li>`).join('')}</ul>` : ''}
+${adSlot('article')}
 <h2>Play it now</h2>
 <p><a href="../games/cops-and-robbers/">Cops and Robbers</a>, also known as Raja Rani Chor Police, Chor Sipahi, Mafia or Räuber und Gendarm: one game, every name.</p>
 <h2>Questions</h2>
 ${t.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
+${bannerSlot()}
 <footer>${footerLinks('../')} · © ${TODAY.slice(0, 4)} CHITPLAY</footer>
 </main>
 </body>

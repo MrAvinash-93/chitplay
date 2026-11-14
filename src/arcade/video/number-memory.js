@@ -6,7 +6,7 @@
  * question showed there. While players are answering, friends' phones are not sent the number at all
  * (publicState), so nobody can peek at it.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1435';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1448';
 
 export const START = 3;
 export const LIVES = 3;
