@@ -4,8 +4,8 @@
  * with none of the suit you must trump (and over-trump if you can). Make your call: score the call,
  * plus 0.1 per extra trick. Miss it: lose the call. Five rounds. Points have no value.
  */
-import { best, turnLine, seatsOf, strip, who } from '../lib.js?v=20261114-1459';
-import { newPack, power, rankOf, sortHand, showCard, SUIT_ICON, suitOf } from '../cards.js?v=20261114-1459';
+import { best, turnLine, seatsOf, strip, who } from '../lib.js?v=20261114-1515';
+import { newPack, power, rankOf, sortHand, showCard, SUIT_ICON, suitOf } from '../cards.js?v=20261114-1515';
 
 const ROUNDS = 5;
 const TRUMP = 'S';

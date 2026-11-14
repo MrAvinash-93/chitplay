@@ -1,5 +1,5 @@
 /** Tic-Tac-Toe (noughts and crosses): three in a line on a 3×3 grid. */
-import { best, turnLine, strip, who } from '../lib.js?v=20261114-1459';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1515';
 
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 const SQUARES = ['Top left', 'Top middle', 'Top right', 'Middle left', 'Centre', 'Middle right', 'Bottom left', 'Bottom middle', 'Bottom right'];

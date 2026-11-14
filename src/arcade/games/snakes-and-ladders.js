@@ -7,7 +7,7 @@
  *  - bounce: a roll past 100 bounces back by the squares left over, instead of staying put
  *  - three:  three sixes in a row send the token back to where that turn began, and the turn ends
  */
-import { roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1459';
+import { roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1515';
 
 export const LADDERS = { 3: 22, 9: 31, 20: 41, 28: 76, 36: 57, 51: 67, 63: 81, 71: 92 };
 export const SNAKES = { 26: 7, 39: 18, 47: 25, 58: 40, 66: 44, 83: 61, 89: 68, 95: 74, 98: 79 };

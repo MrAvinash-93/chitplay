@@ -10,43 +10,43 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1459';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1459';
-import { loadWorld } from '../world/world-loader.js?v=20261114-1459';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1459';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1459';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1459';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1459';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1459';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1515';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1515';
+import { loadWorld } from '../world/world-loader.js?v=20261114-1515';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1515';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1515';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1515';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1515';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1515';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261114-1459';
-import { faceHtml } from './photo.js?v=20261114-1459';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1459';
+import { iconSvg } from '../ui/icons.js?v=20261114-1515';
+import { faceHtml } from './photo.js?v=20261114-1515';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1515';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261114-1459';
+import { settingsStore } from '../persistence/settings-store.js?v=20261114-1515';
 
-import { fill, shellText } from './shell-text.js?v=20261114-1459';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1459';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1459';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1459';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1459';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1459';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1459';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1459';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1459';
-import { startReminder } from './reminder.js?v=20261114-1459';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1459';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1459';
-import { roomLevel } from './decor.js?v=20261114-1459';
+import { fill, shellText } from './shell-text.js?v=20261114-1515';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1515';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1515';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1515';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1515';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1515';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1515';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1515';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1515';
+import { startReminder } from './reminder.js?v=20261114-1515';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1515';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1515';
+import { roomLevel } from './decor.js?v=20261114-1515';
 
-import { viewButton } from './view-mode.js?v=20261114-1459';
-import { adBreak } from './ad-breaks.js?v=20261114-1459';
-import { resultAd } from './ads.js?v=20261114-1459';
-import { gameStrip } from './game-strip.js?v=20261114-1459';
-import { mountParty, partyChip, offerParty, inParty, joinParty } from '../net/party.js?v=20261114-1459';
-const V = '?v=20261114-1459';
+import { viewButton } from './view-mode.js?v=20261114-1515';
+import { adBreak } from './ad-breaks.js?v=20261114-1515';
+import { resultAd } from './ads.js?v=20261114-1515';
+import { gameStrip } from './game-strip.js?v=20261114-1515';
+import { mountParty, partyChip, offerParty, inParty, joinParty } from '../net/party.js?v=20261114-1515';
+const V = '?v=20261114-1515';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -194,9 +194,11 @@ function compactStatus() {
 const statusKids = () => {
   const best = compactBest();
   const scores = compactStatus();
+  const bestEl = best ? h('b', { class: 'barbest', title: bestNow }, [best]) : null;
+  const scoreEl = scores ? h('span', { class: 'barstatus__summary' }, [scores]) : null;
   return [
-    best ? h('b', { class: 'barbest', title: bestNow }, [best]) : null,
-    scores ? h('span', { class: 'barstatus__summary' }, [scores]) : null,
+    // a TV game: your score now, then your best beside it
+    ...(G?.video ? [scoreEl, bestEl] : [bestEl, scoreEl]),
     h('button', { type: 'button', class: 'barstatus__more', title: say.more, 'aria-label': say.more, onclick: openStatusDetails }, [say.more]),
   ];
 };
@@ -205,6 +207,14 @@ function paintStatus() {
     el.replaceChildren(...statusKids().filter(Boolean));
     el.title = [bestNow, statusNow].filter(Boolean).join(' · ');
   });
+}
+/** A TV game's score, live: the chip at the top shows it beside your best (racing, flying, every scored run). */
+let liveScoreNow = null;
+function liveScore(score) {
+  if (!Number.isFinite(score) || score === liveScoreNow) return;
+  liveScoreNow = score;
+  statusRows = [{ name: say.you, score: String(score), active: true, mine: true }];
+  paintStatus();
 }
 /** A TV game's score going past your best, live: the chip at the top says so. */
 function liveBest(score) {
@@ -2145,7 +2155,7 @@ async function startTv(game, extra) {
   G = game;
   applyTheme(game);
   refreshBest();
-  return runTv({ game, world, h, btn, show, topBar, say, LANG, myName, myLook, localName, localLook, leaveAll, music: on => (on ? audioManager.musicStart('arcade') : audioManager.musicStop()), audio: n => audioManager.play(n), haptic: k => audioManager.haptic(k), liveBest, refreshBest: () => { refreshBest(); paintStatus(); }, emojis: myEmojis, join: code => joinGame(code, myName(), true), ...extra });
+  return runTv({ game, world, h, btn, show, topBar, say, LANG, myName, myLook, localName, localLook, leaveAll, liveScore, music: on => (on ? audioManager.musicStart('arcade') : audioManager.musicStop()), audio: n => audioManager.play(n), haptic: k => audioManager.haptic(k), liveBest, refreshBest: () => { refreshBest(); paintStatus(); }, emojis: myEmojis, join: code => joinGame(code, myName(), true), ...extra });
 }
 
 async function main() {

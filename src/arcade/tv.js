@@ -3,21 +3,21 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261114-1459';
-import { is2d } from './view-mode.js?v=20261114-1459';
-import { adBreak } from './ad-breaks.js?v=20261114-1459';
-import { resultAd } from './ads.js?v=20261114-1459';
-import { W, H, TICK } from './video/lib.js?v=20261114-1459';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1459';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1459';
-import { MOMENT, linesFor } from './talk.js?v=20261114-1459';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1459';
-import { ask, confirmSpend } from './dialog.js?v=20261114-1459';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1459';
-import { profile } from '../persistence/profile-store.js?v=20261114-1459';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1459';
+import { hintsLeft, showHint } from './hint.js?v=20261114-1515';
+import { is2d } from './view-mode.js?v=20261114-1515';
+import { adBreak } from './ad-breaks.js?v=20261114-1515';
+import { resultAd } from './ads.js?v=20261114-1515';
+import { W, H, TICK } from './video/lib.js?v=20261114-1515';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1515';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1515';
+import { MOMENT, linesFor } from './talk.js?v=20261114-1515';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1515';
+import { ask, confirmSpend } from './dialog.js?v=20261114-1515';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1515';
+import { profile } from '../persistence/profile-store.js?v=20261114-1515';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1515';
 
-const V = '?v=20261114-1459';
+const V = '?v=20261114-1515';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -736,6 +736,8 @@ export async function runTv(ctx) {
     if (seat == null || localSeats().length > 1) return;
     const sc = liveScore(seat);
     if (!Number.isFinite(sc)) return;
+    // the score, live, in the chip at the top beside the best (table.js liveScore)
+    ctx.liveScore?.(sc);
     if (!toldBest && bestAtStart > 0 && sc > bestAtStart) { toldBest = true; popup('🏅', 'New best score!', `You passed ${bestAtStart}. Keep going!`); }
     // past your best: the chip at the top keeps count
     if (bestAtStart > 0 && sc > bestAtStart && sc !== liveShown) { liveShown = sc; ctx.liveBest?.(sc); }

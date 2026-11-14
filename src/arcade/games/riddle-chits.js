@@ -2,8 +2,8 @@
  * Riddle Chits: a riddle on a chit, four answers to pick from, everyone answers in secret. Right
  * scores 2, or 1 if you took the hint. Then the answer is shown and the next chit opens.
  */
-import { leaders, seatsOf, shuffle, turnLine, strip } from '../lib.js?v=20261114-1459';
-import { RIDDLES } from '../content.js?v=20261114-1459';
+import { leaders, seatsOf, shuffle, turnLine, strip } from '../lib.js?v=20261114-1515';
+import { RIDDLES } from '../content.js?v=20261114-1515';
 
 function open(s, rng) {
   const [q, answer, hint] = s.deck[s.at];

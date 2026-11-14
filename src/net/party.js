@@ -16,10 +16,10 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261114-1459';
-import { logoSvg } from '../arcade/logo.js?v=20261114-1459';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261114-1459';
-import { profile } from '../persistence/profile-store.js?v=20261114-1459';
+import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261114-1515';
+import { logoSvg } from '../arcade/logo.js?v=20261114-1515';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261114-1515';
+import { profile } from '../persistence/profile-store.js?v=20261114-1515';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
@@ -333,7 +333,7 @@ function openPanel() {
       el('p', {}, [status === 'on' ? (iAmHost ? 'Friends join with this code or the link:' : 'You are in. The host picks the game; you can suggest one.') : status === 'error' ? 'Could not reach the party. Check the internet and try again.' : 'Connecting…']),
       el('div', { class: 'party-code', 'aria-label': `Party code ${p.code.split('').join(' ')}` }, [p.code]),
       // a QR of the invite link: friends point their camera at it and are asked to join
-      iAmHost ? (() => { const q = el('div', { class: 'party-qr', 'aria-label': 'Scan to join the party' }); import(`./qr.js?v=20261114-1459`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join the party'); if (svg) q.append(svg); }).catch(() => {}); return q; })() : null,
+      iAmHost ? (() => { const q = el('div', { class: 'party-qr', 'aria-label': 'Scan to join the party' }); import(`./qr.js?v=20261114-1515`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join the party'); if (svg) q.append(svg); }).catch(() => {}); return q; })() : null,
       iAmHost ? el('div', { class: 'party-row' }, [
         el('button', { class: 'party-btn', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(link); toast('Invite link copied'); } catch { toast(link); } } }, ['🔗 Copy invite link']),
         navigator.share ? el('button', { class: 'party-btn', type: 'button', onclick: () => navigator.share({ title: 'Play with me on ChitPlay', text: `Join my ChitPlay party: code ${p.code}`, url: link }).catch(() => {}) }, ['📤 Share']) : null,

@@ -6,13 +6,13 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { audioManager } from '../audio/audio-manager.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261114-1459';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261114-1459';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261114-1459';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261114-1459';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261114-1459';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261114-1459';
-import { selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1459';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261114-1515';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261114-1515';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261114-1515';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261114-1515';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261114-1515';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261114-1515';
+import { selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1515';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
