@@ -7,7 +7,7 @@
  * points come from how many letters were still hidden at that moment on the player's own screen.
  * Friends' phones are only ever sent the letters already showing (publicState), never the word.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1549';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
 
 /** Everyday words for every age, grouped by the clue shown with them. */
 export const WORDS = {

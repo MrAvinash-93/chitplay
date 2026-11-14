@@ -1,4 +1,4 @@
-import { H, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1549';
+import { H, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
 
 const LEFT = 38, RIGHT = W - 38, TOP = 48, BOTTOM = H - 24;
 const DURATION = 60 * 75, HIDE_TICKS = 60 * 5, TAG_DISTANCE = 28;

@@ -43,7 +43,7 @@ const AD_SLOTS = { guide: '', article: '', category: '' };
  * Empty ADSTERRA_NATIVE turns it off everywhere.
  */
 const ADSTERRA_NATIVE = { src: 'https://bauval.org/21/d5795ad3a6b91ea89d9d71ba6f70c273', id: 'd5795ad3a6b91ea89d9d71ba6f70c273' };
-const adsterraBox = () => (ADSTERRA_NATIVE.id ? `<aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><div id="container-${ADSTERRA_NATIVE.id}" style="min-height:120px"></div><script async="async" data-cfasync="false" src="${ADSTERRA_NATIVE.src}"></script></aside>` : '');
+const adsterraBox = () => (ADSTERRA_NATIVE.id ? `<style>.adbox:not(:has(iframe, [id^=container-] *)){display:none}</style><aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><div id="container-${ADSTERRA_NATIVE.id}" style="min-height:120px"></div><script async="async" data-cfasync="false" src="${ADSTERRA_NATIVE.src}"></script></aside>` : '');
 /**
  * Adsterra display banner, near the end of a reading page (after its questions). Both sizes share the
  * network's global atOptions, so a page runs exactly one: 300×250 on a phone, 728×90 on a wide screen,
@@ -51,7 +51,7 @@ const adsterraBox = () => (ADSTERRA_NATIVE.id ? `<aside class="adbox" aria-label
  * is read in (document.write), as the network's own code does. Empty keys turn it off.
  */
 const ADSTERRA_BANNER = { phone: '0d0ef2bd40ba59e938dff27d3e6fd82c', wide: '8097c2bfb6769d5f4e6978f1fb86828a' };
-const bannerSlot = () => (ADSTERRA_BANNER.phone ? `<aside class="adbox adbox--banner" aria-label="Advertisement"><small>Advertisement</small><div class="adbanner" style="display:flex;justify-content:center;overflow:hidden;min-height:90px"><script>(function(){var w=window.innerWidth>=760&&'${ADSTERRA_BANNER.wide}';var k=w||'${ADSTERRA_BANNER.phone}';window.atOptions={key:k,format:'iframe',height:w?90:250,width:w?728:300,params:{}};document.write('<scr'+'ipt src="https://bauval.org/22/'+k+'"><\\/scr'+'ipt>');})();</script></div></aside>` : '');
+const bannerSlot = () => (ADSTERRA_BANNER.phone ? `<style>.adbox:not(:has(iframe, [id^=container-] *)){display:none}</style><aside class="adbox adbox--banner" aria-label="Advertisement"><small>Advertisement</small><div class="adbanner" style="display:flex;justify-content:center;overflow:hidden;min-height:90px"><script>(function(){var w=window.innerWidth>=760&&'${ADSTERRA_BANNER.wide}';var k=w||'${ADSTERRA_BANNER.phone}';window.atOptions={key:k,format:'iframe',height:w?90:250,width:w?728:300,params:{}};document.write('<scr'+'ipt src="https://bauval.org/22/'+k+'"><\\/scr'+'ipt>');})();</script></div></aside>` : '');
 const adSlot = (name) => (HAS_ADS && AD_SLOTS[name] ? `<aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><ins class="adsbygoogle" style="display:block;min-height:250px" data-ad-client="ca-${PUB}" data-ad-slot="${AD_SLOTS[name]}" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></aside>` : adsterraBox());
 
 const CONTACT_EMAIL = 'chitplaygame@gmail.com';
@@ -448,7 +448,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1549">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1604">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -558,7 +558,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1549">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1604">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -636,7 +636,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1549">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1604">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>

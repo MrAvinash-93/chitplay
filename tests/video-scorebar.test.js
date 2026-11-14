@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { scoreBar, W } = await import('../src/arcade/video/lib.js?v=20261114-1549');
+const { scoreBar, W } = await import('../src/arcade/video/lib.js?v=20261114-1604');
 
 test('score cards stay compact and centered for one to four players', () => {
   for (const count of [1, 2, 4]) {

@@ -2,9 +2,9 @@
  * The player's profile, kept on this device only: name, gender, character,
  * points (solo and Nearby apart), rank, badges, best matches and pinned games.
  */
-import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261114-1549';
-import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261114-1549';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1549';
+import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261114-1604';
+import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261114-1604';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1604';
 
 const KEY = 'chitplay.profile.v1';
 const OLD_STATS_KEY = 'chitplay.stats.v1';

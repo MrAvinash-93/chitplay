@@ -2,7 +2,7 @@
  * Pen Fight: a quick school-desk flick duel. Swipe toward the other pen; knock it off the desk or
  * outlast it. Both players get three seconds to make one flick, and the match is first to three.
  */
-import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1549';
+import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
 
 export const LAUNCH_TICKS = 180;
 export const ROUND_WINS = 3;
