@@ -7,8 +7,8 @@
  * of the tunnel and its z along it, so anything put on its floor (y = -R) stands on the tunnel wall.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, TICK } from './lib.js?v=20261114-1334';
-import { AHEAD, KINDS, gateAt, speedAt, touches, zOf } from './turbo-tunnel.js?v=20261114-1334';
+import { SEAT_COLORS, TICK } from './lib.js?v=20261114-1428';
+import { AHEAD, KINDS, gateAt, speedAt, touches, zOf } from './turbo-tunnel.js?v=20261114-1428';
 
 const TAU = Math.PI * 2;
 const R = 3, PZ = -1.2;

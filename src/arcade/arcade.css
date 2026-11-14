@@ -516,3 +516,7 @@ body.room.in-play.tv-keys .tvpanel { max-height: min(64dvh, 480px); }
 
 /* the 3D / 2D switch in a game bar: as wide as its two labels */
 .back.viewbtn.vtoggle { width: auto; min-width: 0; padding: 3px; }
+
+/* the ad on a result screen: last, below every button, with room around it */
+.adbox--result { margin: 14px 0 4px; padding: 8px 0 0; border-top: 1px solid rgba(255,210,122,.15); text-align: center; }
+.adbox--result small { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .55; margin-bottom: 4px; }

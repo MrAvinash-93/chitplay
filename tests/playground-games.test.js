@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import barafPani from '../src/arcade/video/baraf-pani.js?v=20261114-1334';
-import pakdaPadi from '../src/arcade/video/pakda-padi.js?v=20261114-1334';
+import barafPani from '../src/arcade/video/baraf-pani.js?v=20261114-1428';
+import pakdaPadi from '../src/arcade/video/pakda-padi.js?v=20261114-1428';
 
 // who is "it" is counted out afresh each match (like "eeny meeny"), so these tests read it from the state
 

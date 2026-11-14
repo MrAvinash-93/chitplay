@@ -37,7 +37,14 @@ const ADSENSE_TAG = HAS_ADS ? `\n<meta name="google-adsense-account" content="ca
  * slot number here and rebuild. An empty slot writes nothing at all, so no page shows an empty box.
  */
 const AD_SLOTS = { guide: '', article: '', category: '' };
-const adSlot = (name) => (HAS_ADS && AD_SLOTS[name] ? `<aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><ins class="adsbygoogle" style="display:block;min-height:250px" data-ad-client="ca-${PUB}" data-ad-slot="${AD_SLOTS[name]}" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></aside>` : '');
+/**
+ * Adsterra native banner (4:1): used in an ad place that has no AdSense unit. Its container id may
+ * appear only once on a page, and every reading page has exactly one ad place, so that holds.
+ * Empty ADSTERRA_NATIVE turns it off everywhere.
+ */
+const ADSTERRA_NATIVE = { src: 'https://bauval.org/21/d5795ad3a6b91ea89d9d71ba6f70c273', id: 'd5795ad3a6b91ea89d9d71ba6f70c273' };
+const adsterraBox = () => (ADSTERRA_NATIVE.id ? `<aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><div id="container-${ADSTERRA_NATIVE.id}" style="min-height:120px"></div><script async="async" data-cfasync="false" src="${ADSTERRA_NATIVE.src}"></script></aside>` : '');
+const adSlot = (name) => (HAS_ADS && AD_SLOTS[name] ? `<aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><ins class="adsbygoogle" style="display:block;min-height:250px" data-ad-client="ca-${PUB}" data-ad-slot="${AD_SLOTS[name]}" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></aside>` : adsterraBox());
 
 const CONTACT_EMAIL = 'chitplaygame@gmail.com';
 const DEVELOPER = 'Mr Avinash';
@@ -433,7 +440,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1334">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1428">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -541,7 +548,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1334">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1428">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -618,7 +625,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1334">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1428">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>

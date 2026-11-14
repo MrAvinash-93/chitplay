@@ -10,42 +10,43 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1334';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1334';
-import { loadWorld } from '../world/world-loader.js?v=20261114-1334';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1334';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1334';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1334';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1334';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1334';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1428';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1428';
+import { loadWorld } from '../world/world-loader.js?v=20261114-1428';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1428';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1428';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1428';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1428';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1428';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261114-1334';
-import { faceHtml } from './photo.js?v=20261114-1334';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1334';
+import { iconSvg } from '../ui/icons.js?v=20261114-1428';
+import { faceHtml } from './photo.js?v=20261114-1428';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1428';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261114-1334';
+import { settingsStore } from '../persistence/settings-store.js?v=20261114-1428';
 
-import { fill, shellText } from './shell-text.js?v=20261114-1334';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1334';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1334';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1334';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1334';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1334';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1334';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1334';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1334';
-import { startReminder } from './reminder.js?v=20261114-1334';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1334';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1334';
-import { roomLevel } from './decor.js?v=20261114-1334';
+import { fill, shellText } from './shell-text.js?v=20261114-1428';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1428';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1428';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1428';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1428';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1428';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1428';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1428';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1428';
+import { startReminder } from './reminder.js?v=20261114-1428';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1428';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1428';
+import { roomLevel } from './decor.js?v=20261114-1428';
 
-import { viewButton } from './view-mode.js?v=20261114-1334';
-import { adBreak } from './ad-breaks.js?v=20261114-1334';
-import { gameStrip } from './game-strip.js?v=20261114-1334';
-import { mountParty, partyChip, offerParty, inParty, joinParty } from '../net/party.js?v=20261114-1334';
-const V = '?v=20261114-1334';
+import { viewButton } from './view-mode.js?v=20261114-1428';
+import { adBreak } from './ad-breaks.js?v=20261114-1428';
+import { resultAd } from './ads.js?v=20261114-1428';
+import { gameStrip } from './game-strip.js?v=20261114-1428';
+import { mountParty, partyChip, offerParty, inParty, joinParty } from '../net/party.js?v=20261114-1428';
+const V = '?v=20261114-1428';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -1503,6 +1504,8 @@ function showResult(result, ctx, players) {
       await shareResult({ canvas: card, text: `${won.includes(ctx.me) ? 'I won' : 'I played'} ${G.name} on ChitPlay!`, slug: G.slug });
     }, 'result-share'),
     resultMore,
+    // the only ad in a game: last on the result screen, below every button (src/arcade/ads.js)
+    resultAd(),
   ]));
 }
 

@@ -13,7 +13,7 @@
  *           can't (or won't) draws the whole pile-up and misses their turn
  *  - till:  no card to play? keep drawing until you get one
  */
-import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261114-1334';
+import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261114-1428';
 
 export const COLOURS = ['R', 'G', 'B', 'Y'];
 export const COLOUR_NAME = { R: 'Red', G: 'Green', B: 'Blue', Y: 'Yellow' };
