@@ -5,7 +5,7 @@
  * Every six samosas is a new level: the snakes speed up, a short brick wall goes up somewhere on the
  * field (away from every snake's head), and a golden samosa appears for a few seconds: three points.
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261110-1548';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261114-1146';
 
 export const COLS = 32, ROWS = 18;
 const CELL = 20, TOP = 40;
@@ -45,6 +45,15 @@ function addWall(s) {
     return;
   }
 }
+
+/* the flat picture */
+let fieldPicture = null;
+/** A colour made lighter (k > 0) or darker (k < 0). */
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255];
+  return `rgb(${c.map(v => Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k))).join(',')})`;
+}
+
 export default {
   hint: 'Drag to turn',
   pad: [['u', '▲'], ['d', '▼'], ['l', '◀'], ['r', '▶']],
@@ -115,9 +124,11 @@ export default {
     }
   },
   over(s) {
-    const alive = s.snakes.filter(n => n.alive).length;
-    if (s.n === 1 ? alive : alive > 1) return null;
-    if (s.n > 1 && alive === 1) s.snakes.find(n => n.alive).score += 3;
+    const alive = s.snakes.map((n, i) => n.alive ? i : -1).filter(i => i >= 0);
+    if (s.n > 1 && alive.length === 1) {
+      return { scores: s.snakes.map((n, i) => n.score + (i === alive[0] ? 3 : 0)), winners: alive, endless: true };
+    }
+    if (alive.length) return null;
     const scores = s.snakes.map(n => n.score), top = Math.max(...scores);
     return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true };
   },
@@ -161,26 +172,99 @@ export default {
     levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 14);
   },
   draw(g, s, names) {
-    g.fillStyle = '#20301f'; g.fillRect(0, 0, W, H);
-    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      g.fillStyle = (x + y) % 2 ? '#3f7a3b' : '#467f40';
-      g.fillRect(x * CELL, TOP + y * CELL, CELL, CELL);
+    // the field: drawn once and kept (soft chequered grass, tufts and a darker edge)
+    if (!fieldPicture && typeof document !== 'undefined') {
+      fieldPicture = document.createElement('canvas');
+      fieldPicture.width = W * 2; fieldPicture.height = H * 2;
+      const f = fieldPicture.getContext('2d');
+      f.scale(2, 2);
+      f.fillStyle = '#1d2c1b'; f.fillRect(0, 0, W, H);
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+        f.fillStyle = (x + y) % 2 ? '#4d8a44' : '#559349';
+        f.fillRect(x * CELL, TOP + y * CELL, CELL, CELL);
+      }
+      let seed = 5;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      for (let i = 0; i < 700; i++) {
+        const x = rnd() * W, y = TOP + rnd() * ROWS * CELL;
+        f.strokeStyle = `rgba(${rnd() < 0.5 ? '30,70,25' : '150,205,110'},${0.3 + rnd() * 0.3})`; f.lineWidth = 1;
+        f.beginPath(); f.moveTo(x, y); f.lineTo(x + (rnd() - 0.5) * 3, y - 2 - rnd() * 3); f.stroke();
+      }
+      const v = f.createRadialGradient(W / 2, TOP + ROWS * CELL / 2, 120, W / 2, TOP + ROWS * CELL / 2, W * 0.6);
+      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.3)');
+      f.fillStyle = v; f.fillRect(0, TOP, W, ROWS * CELL);
     }
-    g.font = '19px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = '#e9a23b';
-    g.beginPath(); g.moveTo(s.food[0] * CELL + 10, TOP + s.food[1] * CELL + 2); g.lineTo(s.food[0] * CELL + 18, TOP + s.food[1] * CELL + 17); g.lineTo(s.food[0] * CELL + 2, TOP + s.food[1] * CELL + 17); g.closePath(); g.fill();
-    g.strokeStyle = '#7a4a10'; g.lineWidth = 2; g.stroke();
-    s.walls.forEach(([x, y]) => { g.fillStyle = '#6f675d'; g.fillRect(x * CELL + 1, TOP + y * CELL + 1, CELL - 2, CELL - 2); g.fillStyle = '#9a9184'; g.fillRect(x * CELL + 2, TOP + y * CELL + 2, CELL - 4, 7); g.fillRect(x * CELL + 2, TOP + y * CELL + 11, 7, 7); g.fillRect(x * CELL + 11, TOP + y * CELL + 11, 7, 7); });
-    if (s.gold && (s.gold.ttl > 90 || Math.floor(s.t / 6) % 2)) { g.fillStyle = '#ffd23f'; g.beginPath(); g.moveTo(s.gold.x * CELL + 10, TOP + s.gold.y * CELL + 1); g.lineTo(s.gold.x * CELL + 19, TOP + s.gold.y * CELL + 18); g.lineTo(s.gold.x * CELL + 1, TOP + s.gold.y * CELL + 18); g.closePath(); g.fill(); g.strokeStyle = '#fff6b0'; g.stroke(); }
+    if (fieldPicture) g.drawImage(fieldPicture, 0, 0, W, H);
+    else { g.fillStyle = '#4d8a44'; g.fillRect(0, 0, W, H); }
+    const cx = (x) => x * CELL + CELL / 2, cy = (y) => TOP + y * CELL + CELL / 2;
+    // a samosa: golden pastry with a crimped edge and a little shadow
+    const samosa = (x, y, gold) => {
+      const X = cx(x), Y = cy(y);
+      g.save();
+      if (gold) { g.fillStyle = 'rgba(255,215,64,.35)'; g.beginPath(); g.arc(X, Y, 14 + Math.sin(s.t / 6) * 2, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(X + 2, Y + 8, 9, 3.5, 0, 0, Math.PI * 2); g.fill();
+      const crust = g.createLinearGradient(X, Y - 9, X, Y + 8);
+      crust.addColorStop(0, gold ? '#fff2a8' : '#f6c36a'); crust.addColorStop(1, gold ? '#e0a400' : '#b8701f');
+      g.fillStyle = crust; g.strokeStyle = gold ? '#8a6400' : '#6e3d0c'; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(X, Y - 9); g.quadraticCurveTo(X + 3, Y - 4, X + 9, Y + 7); g.quadraticCurveTo(X, Y + 9, X - 9, Y + 7); g.quadraticCurveTo(X - 3, Y - 4, X, Y - 9); g.fill(); g.stroke();
+      g.strokeStyle = 'rgba(110,60,15,.55)'; g.beginPath(); g.moveTo(X - 6, Y + 6); g.lineTo(X + 6, Y + 6); g.stroke();
+      g.restore();
+    };
+    samosa(s.food[0], s.food[1], false);
+    if (s.gold && (s.gold.ttl > 90 || Math.floor(s.t / 6) % 2)) samosa(s.gold.x, s.gold.y, true);
+    // brick walls, each with its shadow and mortar lines
+    s.walls.forEach(([x, y]) => {
+      const X = x * CELL, Y = TOP + y * CELL;
+      g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(X + 3, Y + 4, CELL, CELL);
+      g.fillStyle = '#a4563a'; g.fillRect(X, Y, CELL, CELL);
+      g.strokeStyle = '#e8d6c0'; g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(X, Y + 7); g.lineTo(X + CELL, Y + 7); g.moveTo(X, Y + 14); g.lineTo(X + CELL, Y + 14);
+      g.moveTo(X + 10, Y); g.lineTo(X + 10, Y + 7); g.moveTo(X + 5, Y + 7); g.lineTo(X + 5, Y + 14); g.moveTo(X + 15, Y + 7); g.lineTo(X + 15, Y + 14); g.moveTo(X + 10, Y + 14); g.lineTo(X + 10, Y + CELL); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.15)'; g.fillRect(X, Y, CELL, 2);
+    });
+    // the snakes: one smooth round body, darker underneath, a stripe pattern, then the head
     s.snakes.forEach((n, i) => {
+      if (!n.body.length) return;
+      g.save();
       g.globalAlpha = n.alive ? 1 : 0.35;
-      n.body.forEach(([x, y], k) => {
-        g.fillStyle = k === 0 ? '#fff' : SEAT_COLORS[i];
-        g.fillRect(x * CELL + 1, TOP + y * CELL + 1, CELL - 2, CELL - 2);
-        if (k === 0) { g.fillStyle = SEAT_COLORS[i]; g.fillRect(x * CELL + 4, TOP + y * CELL + 4, CELL - 8, CELL - 8); g.fillStyle = '#111'; g.fillRect(x * CELL + 6, TOP + y * CELL + 7, 3, 3); g.fillRect(x * CELL + 11, TOP + y * CELL + 7, 3, 3); }
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      const path = (dx = 0, dy = 0) => {
+        g.beginPath();
+        n.body.forEach(([x, y], k) => {
+          const prev = n.body[k - 1];
+          if (k === 0 || !prev || Math.abs(prev[0] - x) + Math.abs(prev[1] - y) > 1) g.moveTo(cx(x) + dx, cy(y) + dy);
+          else g.lineTo(cx(x) + dx, cy(y) + dy);
+        });
+      };
+      const color = SEAT_COLORS[i];
+      g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 16; path(2, 3); g.stroke();
+      g.strokeStyle = shade(color, -0.35); g.lineWidth = 17; path(); g.stroke();
+      g.strokeStyle = color; g.lineWidth = 13; path(); g.stroke();
+      g.strokeStyle = shade(color, 0.35); g.lineWidth = 4; path(-2, -2); g.stroke();
+      // a darker band every few segments, like the markings on a real snake
+      g.fillStyle = shade(color, -0.25);
+      n.body.forEach(([x, y], k) => { if (k > 1 && k % 3 === 0) { g.beginPath(); g.arc(cx(x), cy(y), 4, 0, Math.PI * 2); g.fill(); } });
+      // the head, looking the way it is going
+      const [hx, hy] = n.body[0], next = n.body[1] || [hx - 1, hy];
+      let dx = hx - next[0], dy = hy - next[1];
+      if (Math.abs(dx) + Math.abs(dy) !== 1) { dx = 1; dy = 0; }
+      const X = cx(hx), Y = cy(hy);
+      g.fillStyle = color; g.strokeStyle = shade(color, -0.4); g.lineWidth = 2;
+      g.beginPath(); g.ellipse(X + dx * 2, Y + dy * 2, dx ? 11 : 9, dy ? 11 : 9, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      const px = -dy, py = dx;   // across the head
+      [-1, 1].forEach((side) => {
+        const ex = X + dx * 4 + px * 4.5 * side, ey = Y + dy * 4 + py * 4.5 * side;
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(ex, ey, 3.4, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#111'; g.beginPath(); g.arc(ex + dx * 1.2, ey + dy * 1.2, 1.7, 0, Math.PI * 2); g.fill();
       });
-      g.globalAlpha = 1;
+      if (n.alive && Math.floor((s.t + i * 7) / 9) % 4 === 0) {
+        g.strokeStyle = '#e0303a'; g.lineWidth = 1.6;
+        const tx = X + dx * 12, ty = Y + dy * 12;
+        g.beginPath(); g.moveTo(X + dx * 10, Y + dy * 10); g.lineTo(tx, ty); g.lineTo(tx + dx * 3 + px * 2, ty + dy * 3 + py * 2); g.moveTo(tx, ty); g.lineTo(tx + dx * 3 - px * 2, ty + dy * 3 - py * 2); g.stroke();
+      }
+      g.restore();
     });
     this.hud(g, s, names);
   },
 };
+

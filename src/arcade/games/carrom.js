@@ -8,7 +8,7 @@
  * Coordinates: the board is -1…1 on both axes. Seat 0 shoots from the near baseline (y = +0.72)
  * towards -y; seat 1 from the far one. The physics is in plain JS so the host alone decides.
  */
-import { best, turnLine } from '../lib.js?v=20261110-1548';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 export const WALL = 1;
 export const R = 0.052;           // a coin's radius
@@ -201,10 +201,12 @@ export default {
   },
   ui(v, ctx) {
     const left = [count(v.coins, 'w'), count(v.coins, 'b')];
+    const queen = v.queen >= 0 ? `👑 ${who(ctx, v.queen)} has the queen` : v.cover >= 0 ? `👑 ${who(ctx, v.cover)} must cover the queen on this shot` : '👑 The queen is still on the board';
     return {
       title: turnLine(ctx, 'aim and shoot'),
-      lead: `${ctx.names[0]} ⚪ ${left[0]} · ${ctx.names[1]} ⚫ ${left[1]}${v.note ? ` · ${v.note}` : ''}`,
+      lead: `${v.note ? `${v.note} · ` : ''}${queen}`,
       aim: ctx.active.includes(ctx.me),
+      players: strip(ctx, ['#f4ead5', '#3a2a1c'], p => `${p ? '⚫' : '⚪'} ${left[p]} left${v.queen === p ? ' · 👑' : ''}`),
     };
   },
 };

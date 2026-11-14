@@ -1,7 +1,7 @@
 import { describe, it, expect } from './harness.js';
-import { Match, CHEAT_PENALTY, CHEAT_CATCH_CHANCE } from '../src/world/match.js?v=20261110-1548';
-import { COUNTRIES } from '../src/world/countries.js?v=20261110-1548';
-import { nextCaughtScene, nextCloseCall, SCENE_COUNTS } from '../src/world/cheat-lines.js?v=20261110-1548';
+import { Match, CHEAT_PENALTY, CHEAT_CATCH_CHANCE } from '../src/world/match.js?v=20261114-1146';
+import { COUNTRIES } from '../src/world/countries.js?v=20261114-1146';
+import { nextCaughtScene, nextCloseCall, SCENE_COUNTS, resetSceneDecks } from '../src/world/cheat-lines.js?v=20261114-1146';
 
 const withRandom = (value, fn) => {
   const original = Math.random;
@@ -75,9 +75,11 @@ describe('Cheat scenes', () => {
     expect(SCENE_COUNTS.closeCall >= 20).toBe(true);
   });
   it('20 catches in a row are 20 different scenes', () => {
+    resetSceneDecks();
     expect(allDifferent(nextCaughtScene, 20)).toBe(20);
   });
   it('20 close calls in a row are 20 different scenes', () => {
+    resetSceneDecks();
     expect(allDifferent(nextCloseCall, 20)).toBe(20);
   });
   it('every scene is a full exchange with names filled in', () => {

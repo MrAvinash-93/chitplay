@@ -1,7 +1,8 @@
 /** Tic-Tac-Toe (noughts and crosses): three in a line on a 3×3 grid. */
-import { best, turnLine } from '../lib.js?v=20261110-1548';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+const SQUARES = ['Top left', 'Top middle', 'Top right', 'Middle left', 'Centre', 'Middle right', 'Bottom left', 'Bottom middle', 'Bottom right'];
 const winner = (b) => LINES.find(([x, y, z]) => b[x] >= 0 && b[x] === b[y] && b[y] === b[z]) || null;
 const free = (b) => b.map((v, i) => (v < 0 ? i : -1)).filter(i => i >= 0);
 
@@ -36,5 +37,14 @@ export default {
     if (rng() < 0.18) return moves[Math.floor(rng() * moves.length)];
     return best(moves, (m) => { const x = s.b.slice(); x[m.c] = seat; return minimax(x, 1 - seat, seat); }, rng);
   },
-  ui: (v, ctx) => ({ title: turnLine(ctx, 'tap a square'), lead: `${ctx.names[0]} ✕ · ${ctx.names[1]} ◯` }),
+  ui(v, ctx) {
+    const placed = v.b.filter(x => x >= 0).length;
+    return {
+      title: turnLine(ctx, 'tap a square'),
+      lead: placed ? `Move ${Math.min(placed + 1, 9)} of 9 · three in a line wins` : '✕ goes first. The centre is a strong start.',
+      players: strip(ctx, ['#d32f2f', '#2e7dd1'], p => (p ? '◯' : '✕')),
+      compact: true,
+      buttons: ctx.active.includes(ctx.me) ? ctx.legal.map((m, i) => ({ label: `${SQUARES[m.c]} square`, i })) : [],
+    };
+  },
 };

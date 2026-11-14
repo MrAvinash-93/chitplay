@@ -4,8 +4,8 @@
  * votes. Catch the spy and they get one guess at the real word. Works with bots and strangers,
  * because clues are cards rather than speech.
  */
-import { best, leaders, pick, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1548';
-import { SPY_PAIRS, CLUES } from '../content.js?v=20261110-1548';
+import { best, leaders, pick, seatsOf, shuffle, turnLine, strip } from '../lib.js?v=20261114-1146';
+import { SPY_PAIRS, CLUES } from '../content.js?v=20261114-1146';
 
 const ROUNDS = 3;
 const cluesFor = (word) => CLUES[word] || [];
@@ -133,16 +133,19 @@ export default {
   },
   ui(v, ctx) {
     const mine = ctx.active.includes(ctx.me);
-    const lead = `Round ${v.round} of ${ROUNDS} · ${seatsOf(v.n).map(p => `${ctx.names[p]} ${v.scores[p]}`).join(' · ')}`;
+    const small = v.n <= 6;
+    const lead = `Round ${v.round} of ${ROUNDS}${small ? '' : ` · ${seatsOf(v.n).map(p => `${ctx.names[p]} ${v.scores[p]}`).join(' · ')}`}`;
+    // who has played a clue (or voted) and who we're waiting for
+    const players = (v.n <= 6 ? strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f', '#8e44ad', '#e67e22'], p => `${v.scores[p]} pts${v.phase === 'clue' ? (v.clues[p] ? ' · ✓' : ctx.active.includes(p) ? ' · …' : '') : v.phase === 'vote' ? (ctx.active.includes(p) ? ' · …' : ' · ✓') : ''}`) : undefined);
     const said = seatsOf(v.n).filter(p => v.clues[p]).map(p => `${ctx.names[p]}: “${v.clues[p]}”`);
     if (v.phase === 'read') {
       return { title: mine ? 'Your secret word' : 'Reading the secret words…', big: mine ? v.word : '', lead: mine ? 'Remember it. You might be the spy without knowing!' : `Waiting for: ${ctx.active.map(p => ctx.names[p]).join(', ')}`, buttons: mine ? [{ label: 'Got it', i: 0, primary: true }] : [] };
     }
     if (v.phase === 'clue') {
-      return { title: turnLine(ctx, 'play a clue for your word'), lead: mine ? `Your word: ${v.word}` : lead, list: said, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.clue, i })) : [] };
+      return { title: turnLine(ctx, 'play a clue for your word'), lead: mine ? `Your word: ${v.word}` : lead, players, list: said, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.clue, i })) : [] };
     }
     if (v.phase === 'vote') {
-      return { title: mine ? 'Who is the spy?' : 'Waiting for votes…', lead: mine ? `Your word: ${v.word}` : `Waiting for: ${ctx.active.map(p => ctx.names[p]).join(', ')}`, list: said, buttons: mine ? ctx.legal.map((m, i) => ({ label: ctx.names[m.vote], i })) : [] };
+      return { title: mine ? 'Who is the spy?' : 'Waiting for votes…', lead: mine ? `Your word: ${v.word} · listen to the clues: who sounds unsure?` : `Waiting for: ${ctx.active.map(p => ctx.names[p]).join(', ')}`, players, list: said, buttons: mine ? ctx.legal.map((m, i) => ({ label: ctx.names[m.vote], i })) : [] };
     }
     if (v.phase === 'guess') {
       return { title: `Caught! ${ctx.names[v.caught]} was the spy.`, lead: mine ? 'One last chance: what was everyone else’s word?' : `${ctx.names[v.caught]} gets one guess at the word.`, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.guess, i })) : [] };

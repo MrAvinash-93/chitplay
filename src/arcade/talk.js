@@ -77,7 +77,28 @@ Object.assign(GAME, {
   'hungry-snake': { en: ['Yum, a snack!', 'I’m so long now!', 'I bit myself!', 'Who put that wall there?', 'So hungry…', 'Watch your tail.'], hinglish: ['Wah, samosa!', 'Kitna lamba ho gaya!', 'Khud ko kaat liya!', 'Yeh deewar kisne rakhi?', 'Bahut bhookh lagi hai…', 'Apni poonch dekho.'] },
 });
 /* Tunnel Race had only the shared lines */
+GAME['number-memory'] = { en: ['Got it in one!', 'Too many digits!', 'Was it a seven or a one?', 'My memory just quit.', 'Say it in your head…', 'Group them in threes.'], hinglish: ['Ek baar mein yaad!', 'Bahut saare digit!', 'Saat tha ya ek?', 'Yaaddasht ne jawab de diya.', 'Mann mein dohraao…', 'Teen-teen ki jodi banao.'] };
+GAME['word-guess'] = { en: ['I know this one!', 'One more letter…', 'Too early, too early!', 'It fits the clue!', 'Spell it right!', 'Big points if I go now…'], hinglish: ['Ye to pata hai!', 'Bas ek akshar aur…', 'Bahut jaldi kar diya!', 'Ishaare se match karta hai!', 'Spelling sahi likhna!', 'Abhi bola to bade points…'] };
+GAME['fast-typing'] = { en: ['Fingers on fire!', 'Oops, a typo!', 'Read it first…', 'Ten letters? Easy.', 'Faster, faster!', 'Check before ✓!'], hinglish: ['Ungliyan aag pe!', 'Oops, spelling galat!', 'Pehle padh lo…', 'Das akshar? Aasaan.', 'Tez, aur tez!', '✓ se pehle check karo!'] };
+GAME['bingo'] = { en: ['One more for my line!', 'Who called that?!', 'B-I-N-G… almost!', 'Take the middle!', 'That one helps me too.', 'BINGO incoming!'], hinglish: ['Bas ek aur meri line ke liye!', 'Ye number kisne bola?!', 'B-I-N-G… bas thoda sa!', 'Beech waala lo!', 'Ye to mere bhi kaam ka hai.', 'BINGO aane waala hai!'] };
+GAME['unblock-puzzle'] = { en: ['Move the truck first!', 'Who parked like this?!', 'One more and I am out!', 'Think from the gate back.', 'That was a wasted move.', 'Beep beep, coming through!'], hinglish: ['Pehle truck hatao!', 'Ye kisne aise park kiya?!', 'Bas ek aur aur main bahar!', 'Gate se ulta socho.', 'Ye chaal bekaar gayi.', 'Peep peep, raasta do!'] };
+GAME['stroop-test'] = { en: ['Blue! No, red!', 'I read the word again…', 'Ink, not the word!', 'My brain is tangled.', 'Focus, focus…', 'Watch for "Tap the WORD".'], hinglish: ['Neela! Nahi, laal!', 'Phir se shabd padh liya…', 'Syahi, shabd nahi!', 'Dimaag ulajh gaya.', 'Dhyaan, dhyaan…', '"WORD" wale card dekho.'] };
+GAME['reaction-time'] = { en: ['Too slow!', 'Did you see that?', 'Blue! I fell for blue!', 'My finger was asleep.', 'Wait for it…', 'Eyes on the screen.'], hinglish: ['Bahut dheere!', 'Dekha kitna tez tha?', 'Neela! Neele mein phas gaya!', 'Meri ungli so gayi thi.', 'Ruko… ruko…', 'Screen pe nazar rakho.'] };
+GAME['turbo-tunnel'] = { en: ['Missed it by a whisker!', 'Nitro on!', 'Where did that truck come from?!', 'My car!', 'Faster, faster!', 'Follow the green arrows.'], hinglish: ['Baal-baal bacha!', 'Nitro chalu!', 'Yeh truck kahan se aaya?!', 'Meri gaadi!', 'Aur tez, aur tez!', 'Hare teer dekho.'] };
 GAME['tunnel-race'] = GAME['tunnel-race'] || { en: ['Through the gap!', 'Gem collected!', 'That wall came fast!', 'I scraped the wall!', 'Faster, faster!', 'Stay in the middle.'], hinglish: ['Gap se nikal gaya!', 'Gem mil gaya!', 'Deewar achanak aa gayi!', 'Deewar se ragad gaya!', 'Aur tez, aur tez!', 'Beech mein raho.'] };
+/* the playground games: what everyone shouted in the schoolyard */
+GAME['lapa-chupi'] = {
+  en: ['Found you!', 'Nobody will find me here!', 'Oh no, spotted!', 'Who giggled?!', 'Ready or not, here I come!', 'Shh… don’t laugh!'],
+  hinglish: ['Dhappa! Mil gaya!', 'Yahan koi nahi dhoondh payega!', 'Arre, dikh gaya!', 'Kaun hasa?!', 'Aa raha hoon, chhup jao!', 'Shh… hasna mat!'],
+};
+GAME['baraf-pani'] = {
+  en: ['Freeze! Got you!', 'Unfrozen, I’m free!', 'Frozen solid!', 'Somebody unfreeze me!', 'Quick, come and save me!', 'Can’t catch me!'],
+  hinglish: ['Baraf! Pakda gaya!', 'Pani! Main azaad!', 'Jam gaya yaar!', 'Koi mujhe pani karo!', 'Jaldi aao, bachao!', 'Pakad ke dikhao!'],
+};
+GAME['pakda-padi'] = {
+  en: ['Tag, you’re it!', 'Too slow!', 'Aw, I’m it now!', 'Out of breath…', 'No tag-backs!', 'Can’t catch me!'],
+  hinglish: ['Pakda! Ab teri baari!', 'Itna dheere?', 'Arre, ab main pakdunga!', 'Saans phool gayi…', 'Wapas nahi pakad sakte!', 'Pakad ke dikhao!'],
+};
 /* every game's own lines in Hindi (Devanagari) */
 const HINDI = {
   "ludo": [
@@ -264,6 +285,14 @@ const HINDI = {
     "कितनी दूर जाओगे?",
     "नीचे मत देखना।"
   ],
+  "turbo-tunnel": [
+    "बाल-बाल बचा!",
+    "नाइट्रो चालू!",
+    "ये ट्रक कहाँ से आया!",
+    "मेरी गाड़ी!",
+    "और तेज़, और तेज़!",
+    "हरे तीर देखो।"
+  ],
   "tunnel-race": [
     "गैप से निकल गया!",
     "जेम मिल गया!",
@@ -315,6 +344,9 @@ const HINDI = {
   "hoop-flick": ["स्विश!", "सीधा जाल में!", "रिम से टकरा गया!", "बहुत ज़ोर से!", "आराम से आर्क बनाओ…", "ये हूप तो हिल रहा है!"],
   "ghost-hostel": ["मेरा दरवाज़ा मज़बूत है!", "पंखे फ़ुल स्पीड पे!", "भूत मेरे दरवाज़े पे है!", "दरवाज़ा टूट रहा है!", "सो जाओ और कमाओ…", "सुबह तक बचना है!"],
   "werewolf": ["मुझे पता था तू भेड़िया है!", "गाँव अभी सुरक्षित है… अभी के लिए।", "मैं नहीं हूँ, क़सम से!", "मुझे वोट क्यों?", "कल रात कौन चुप था?", "किसी पे भरोसा मत करो।"],
+  "lapa-chupi": ["धप्पा! मिल गया!", "यहाँ कोई नहीं ढूँढ पाएगा!", "अरे, दिख गया!", "कौन हँसा?!", "आ रहा हूँ, छुप जाओ!", "श्श… हँसना मत!"],
+  "baraf-pani": ["बर्फ़! पकड़ा गया!", "पानी! मैं आज़ाद!", "जम गया यार!", "कोई मुझे पानी करो!", "जल्दी आओ, बचाओ!", "पकड़ के दिखाओ!"],
+  "pakda-padi": ["पकड़ा! अब तेरी बारी!", "इतना धीरे?", "अरे, अब मैं पकड़ूँगा!", "साँस फूल गई…", "वापस नहीं पकड़ सकते!", "पकड़ के दिखाओ!"],
   "pin-spin": [
     "एकदम गैप में!",
     "स्टार मिल गया!",

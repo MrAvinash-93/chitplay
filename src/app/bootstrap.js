@@ -1,9 +1,10 @@
-import { createApp } from './lifecycle.js?v=20261110-1548';
-import { GAME_PHASES } from './config.js?v=20261110-1548';
+import { createApp } from './lifecycle.js?v=20261114-1146';
+import { GAME_PHASES } from './config.js?v=20261114-1146';
 import { audioManager } from '../audio/audio-manager.js';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1548';
-import { GameScreen } from '../ui/screens/game-screen.js?v=20261110-1548';
-import { PORTAL, portalInit } from '../platform/portal.js?v=20261110-1548';
+import { loadWorld } from '../world/world-loader.js?v=20261114-1146';
+import { GameScreen } from '../ui/screens/game-screen.js?v=20261114-1146';
+import { mountParty } from '../net/party.js?v=20261114-1146';
+import { maybeShowIntro } from '../ui/intro.js?v=20261114-1146';
 
 /**
  * ChitPlay is now a single 3D game: one screen (the 3D room) that hosts the
@@ -29,6 +30,11 @@ function boot() {
 
   app.transition(GAME_PHASES.HOME);
 
+  // Play with Friends: a party that follows its host from game to game (src/net/party.js)
+  try { mountParty({ root: '', place: 'home' }); } catch (e) { console.warn('[party]', e); }
+  // the first visit: a few short screens about ChitPlay, skippable (src/ui/intro.js)
+  try { maybeShowIntro(); } catch (e) { console.warn('[intro]', e); }
+
   // Expose for debugging (non-enumerable, dev-only)
   Object.defineProperty(window, '__chitplay', {
     value: app,
@@ -48,9 +54,7 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 // Offline + instant repeat visits in production (skipped on localhost so edits show up right away).
-portalInit();
-// on www.chitplay.com only: a game portal serves its own copy, and needs no service worker
-if (!PORTAL && 'serviceWorker' in navigator && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0|192\.168\.|10\.)/.test(location.hostname)) {
+if ('serviceWorker' in navigator && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0|192\.168\.|10\.)/.test(location.hostname)) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('[ChitPlay] service worker:', e));
   });

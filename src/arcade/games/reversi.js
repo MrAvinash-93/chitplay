@@ -1,5 +1,5 @@
 /** Reversi: trap the other colour between yours to flip it. Most discs at the end wins. */
-import { best, turnLine } from '../lib.js?v=20261110-1548';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 function flips(b, c, p) {
@@ -58,6 +58,15 @@ export default {
   },
   ui(v, ctx) {
     const [a, b] = count(v.b);
-    return { title: turnLine(ctx, 'tap a marked square'), lead: `${ctx.names[0]} ⚫ ${a} · ${ctx.names[1]} ⚪ ${b}${v.passed ? ' · no move, turn skipped' : ''}` };
+    const mine = ctx.active.includes(ctx.me);
+    const corner = mine && ctx.legal.some(m => [0, 7, 56, 63].includes(m.c));
+    const lead = v.passed ? `${who(ctx, 1 - v.p)} had no move: turn skipped.`
+      : mine ? `${ctx.legal.length} place${ctx.legal.length === 1 ? '' : 's'} to play${corner ? ' · 💡 a corner is open: corners can never be flipped' : ''}`
+        : a === b ? 'Level on discs.' : `${who(ctx, a > b ? 0 : 1)} ahead by ${Math.abs(a - b)}.`;
+    return {
+      title: turnLine(ctx, 'tap a marked square'),
+      lead,
+      players: strip(ctx, ['#2a2a2a', '#f3efe4'], p => `${p ? '⚪' : '⚫'} ${p ? b : a}`),
+    };
   },
 };

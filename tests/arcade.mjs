@@ -57,7 +57,8 @@ for (const g of GAMES) {
     for (let k = 0; k < games; k++) {
       const rng = seeded(k * 97 + n * 13 + 5);
       const names = Array.from({ length: n }, (_, i) => `P${i}`);
-      const opts = k % 2 ? { public: true } : {};
+      // every way of playing gets played: each mode in turn, and every house rule switched on in a third of the matches
+      const opts = { ...(k % 2 ? { public: true } : {}), ...(g.modes ? { style: g.modes[k % g.modes.length][0] } : {}), ...(g.rules && k % 3 === 2 ? { rules: Object.fromEntries(g.rules.map(([r]) => [r, true])) } : {}) };
       let s = game.init({ n, rng, opts, names });
       let steps = 0;
       while (!game.result(s)) {
@@ -117,6 +118,48 @@ for (const g of GAMES) {
     for (const lang of ['en', 'hinglish', 'hindi', 'german', 'italian']) ok(linesFor(g.slug, lang).length === lineCount(g.slug), `${g.slug}: ${lang} lines line up`);
   }
   ok(Object.values(MOMENT).flat().every(i => i < 14), 'bot lines point at real lines');
+}
+{ // how-to-play translations stay in step with the English rules: same games, same number of steps
+  const { RULES } = await import('../src/arcade/rules.js');
+  const fs = await import('node:fs');
+  const dir = new URL('../src/arcade/rules-i18n/', import.meta.url);
+  const cover = [];
+  for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.js'))) {
+    const pack = (await import(new URL(file, dir))).default;
+    for (const [slug, r] of Object.entries(pack)) {
+      ok(!!RULES[slug], `rules ${file}: ${slug} is not a game`);
+      if (!RULES[slug]) continue;
+      ok(r.steps?.length === RULES[slug].steps.length, `rules ${file}: ${slug} has ${r.steps?.length} steps, English has ${RULES[slug].steps.length}`);
+      ok([...(r.steps || []), r.win, r.scoring].every(t => typeof t === 'string' && t.trim().length > 3), `rules ${file}: ${slug} has an empty line`);
+      if (r.house) ok(r.house.length === RULES[slug].house?.length, `rules ${file}: ${slug} house rules out of step`);
+    }
+    cover.push(`${file.replace('.js', '')} ${Object.keys(pack).length}/${Object.keys(RULES).length}`);
+  }
+  const { RULES_IN } = await import('../src/arcade/shell-text-more.js');
+  ok(RULES_IN.slice().sort().join() === fs.readdirSync(dir).filter(f => f.endsWith('.js')).map(f => f.replace('.js', '')).sort().join(), 'RULES_IN lists every rules-i18n file');
+  console.log('How to play translated:', cover.join(' · '));
+}
+{ // chess: a level for every rating, a clock that can run out, and ludo never moves for you
+  const { LEVELS } = await import('../src/arcade/games/chess.js');
+  ok(LEVELS.map(l => l.id).join() === 'beginner,novice,intermediate,good,advanced,expert,master,grandmaster', 'chess: eight rating levels in order');
+  const c = chess.init({ opts: { clock: '180+2', rating: 'novice' } });
+  ok(c.clock?.left[0] === 180000 && c.clock.inc === 2000 && c.level === 'novice', 'chess: the clock and level come from the options');
+  ok(chess.init({ opts: {} }).clock === null, 'chess: no clock unless one is chosen');
+  chess.timeout(c, 0);
+  ok(chess.result(c)?.winners[0] === 1, 'chess: running out of time loses');
+  const bare = chess.init({ opts: { clock: '60' } });
+  bare.b = '....k...........................................Q.......K.......'.split(''); bare.b[60] = 'K'; bare.b[4] = 'k'; bare.b[48] = 'Q'; bare.p = 1;
+  chess.timeout(bare, 1);
+  ok(chess.result(bare)?.winners.length === 1, 'chess: black out of time against a queen loses');
+  const lone = chess.init({ opts: { clock: '60' } });
+  lone.b = '.'.repeat(64).split(''); lone.b[60] = 'K'; lone.b[4] = 'k'; lone.b[12] = 'q'; lone.p = 1;
+  chess.timeout(lone, 0 + 1);
+  ok(chess.result(lone)?.winners.length === 0, 'chess: out of time against a lone king is a draw');
+  const quick = chess.init({ opts: { rating: 'beginner' } });
+  const t0 = Date.now(); chess.bot(quick, 0, seeded(2), chess.moves(quick, 0));
+  ok(Date.now() - t0 < 500, 'chess: the beginner level answers at once');
+  const l = ludo.init({ n: 2, rng: seeded(3) });
+  ok(ludo.ui(ludo.view ? ludo.view(l, 0) : l, { me: 0, active: [0], legal: ludo.moves(l, 0), names: ['a', 'b'], mine: true }).auto === undefined, 'ludo: never moves for you');
 }
 console.log('\nRules');
 const r0 = seeded(1);
@@ -289,6 +332,14 @@ const place = (fen) => fen.replace(/\s/g, '').split('');
   const hits = Array.from({ length: 40 }, (_, i) => ticTacToe.bot(s, 0, seeded(i + 100), ticTacToe.moves(s, 0)).c === 2).filter(Boolean).length;
   ok(hits > 28, 'tic-tac-toe: the bot usually takes a winning square');
 }
+{ // tic-tac-toe: every open square has an accessible equivalent to the 3D board
+  const s = ticTacToe.init({});
+  const panel = ticTacToe.ui(s, { me: 0, active: [0], names: ['You', 'Bot'], legal: ticTacToe.moves(s, 0) });
+  ok(panel.buttons.length === 9 && panel.buttons[4].label === 'Centre square' && panel.buttons[8].i === 8, 'tic-tac-toe: available squares are labeled for keyboard and screen-reader play');
+  s.b[4] = 0;
+  const next = ticTacToe.ui(s, { me: 0, active: [0], names: ['You', 'Bot'], legal: ticTacToe.moves(s, 0) });
+  ok(next.buttons.length === 8 && next.buttons.every(b => b.label !== 'Centre square'), 'tic-tac-toe: occupied squares are not offered');
+}
 { // carrom: a coin in the way moves, the striker stops within the board; a straight shot can sink a coin
   const r = simulate([{ id: 'w1', x: 0.95 - 0.1, y: -0.95 + 0.1 }], 0, { x: 0.3, a: Math.atan2(-0.95 + 0.1 - 0.72, 0.85 - 0.3), p: 0.9 });
   ok(r.frames.length > 3 && r.left.every(c => Math.abs(c.x) <= 1 && Math.abs(c.y) <= 1), 'carrom: everything stays on the board');
@@ -308,6 +359,80 @@ const place = (fen) => fen.replace(/\s/g, '').split('');
   const s = spy.init({ n: 4, rng: seeded(3) });
   const v = spy.view(s, 0);
   ok(v.reveal === null && !JSON.stringify(v).includes('"spies"'), 'spy: the view has no spy list before the end');
+}
+
+{ // the house rules and modes taken from the best-loved versions of each game
+  const fixed = (...rolls) => () => (rolls.shift() - 1) / 6 + 0.01;
+  const play = (game, s, rng, cap = 20000) => { let k = 0; while (!game.result(s) && k++ < cap) { const seat = game.active(s)[0]; game.apply(s, seat, game.bot(s, seat, rng, game.moves(s, seat)), rng); } return game.result(s); };
+
+  // ludo: playing on for places gives a full finishing order
+  for (let k = 0; k < 10; k++) {
+    const rng = seeded(900 + k);
+    const n = 3 + (k % 2);
+    const s = ludo.init({ n, rng, opts: { rules: { places: true } }, names: ['A', 'B', 'C', 'D'].slice(0, n) });
+    const r = play(ludo, s, rng);
+    ok(r && s.order.length === n && new Set(s.order).size === n && r.winners[0] === s.order[0], `ludo places: ${n} players all get a place`);
+  }
+  { const s = ludo.init({ n: 2, opts: { rules: { places: true } } }); s.t[0] = [56, 56, 56, 55]; ludo.apply(s, 0, { roll: 1 }, fixed(1)); ludo.apply(s, 0, { t: 3 }); ok(s.won === 0 && !!ludo.result(s), 'ludo places: with two players the first home still wins'); }
+  { // score mode never stalls when the first seat has finished
+    const s = ludo.init({ n: 3, opts: { style: 'score', rules: { places: true } } }); s.order = [0]; s.p = 2; s.round = 4;
+    ludo.apply(s, 2, { roll: 1 }, fixed(2));
+    ok(s.round === 5, 'ludo places: rounds still count when seat 0 is out'); }
+
+  const snakes = (await import('../src/arcade/games/snakes-and-ladders.js')).default;
+  { const s = snakes.init({ n: 2, opts: { rules: { six: true } } }); snakes.apply(s, 0, { roll: 1 }, fixed(5)); ok(s.at[0] === 0 && s.p === 1, 'snakes six: no 6, no start');
+    snakes.apply(s, 1, { roll: 1 }, fixed(6)); ok(s.at[1] === 1 && s.p === 1, 'snakes six: a 6 brings you on and rolls again'); }
+  { const s = snakes.init({ n: 2, opts: { rules: { bounce: true } } }); s.at[0] = 97; snakes.apply(s, 0, { roll: 1 }, fixed(5)); ok(s.at[0] === 79, 'snakes bounce: 97 + 5 bounces back to 98, onto its snake');
+    const t = snakes.init({ n: 2 }); t.at[0] = 97; snakes.apply(t, 0, { roll: 1 }, fixed(5)); ok(t.at[0] === 97, 'snakes: without bounce, too high stays put'); }
+  { const s = snakes.init({ n: 2, opts: { rules: { three: true } } }); s.at[0] = 10; snakes.apply(s, 0, { roll: 1 }, fixed(6)); snakes.apply(s, 0, { roll: 1 }, fixed(6)); snakes.apply(s, 0, { roll: 1 }, fixed(6));
+    ok(s.at[0] === 10 && s.p === 1, 'snakes three sixes: back to the start of the turn'); }
+
+  const pig = (await import('../src/arcade/games/pig.js')).default;
+  { // the players after the one who reached the target still get a turn
+    const s = pig.init({ n: 3 }); s.bank = [0, 45, 0]; s.p = 1; s.run = 6;
+    pig.apply(s, 1, { hold: 1 });
+    ok(!pig.result(s) && s.p === 2 && s.last === 1, 'pig: reaching the target starts a last round');
+    pig.apply(s, 2, { roll: 1 }, fixed(1));
+    ok(s.p === 0 && !pig.result(s), 'pig: seat 0 still plays after seat 2');
+    pig.apply(s, 0, { roll: 1 }, fixed(1));
+    ok(pig.result(s)?.winners[0] === 1, 'pig: the game ends back at the player who got there first'); }
+  { const s = pig.init({ n: 2, opts: { style: 'classic' } }); s.bank[0] = 60; s.run = 10; pig.apply(s, 0, { hold: 1 }); ok(s.last < 0, 'pig classic: 70 is not yet 100'); }
+  { const s = pig.init({ n: 2, opts: { style: 'two' } }); s.bank[0] = 40; pig.apply(s, 0, { roll: 1 }, fixed(1, 1)); ok(s.bank[0] === 0 && s.p === 1, 'pig two dice: two 1s lose the bank');
+    pig.apply(s, 1, { roll: 1 }, fixed(3, 3)); ok(s.run === 6 && pig.moves(s, 1).length === 1, 'pig two dice: doubles must roll again'); }
+  for (const style of ['quick', 'classic', 'two']) { const rng = seeded(77); ok(!!play(pig, pig.init({ n: 3, rng, opts: { style } }), rng), `pig ${style}: finishes`); }
+
+  { const card = { ones: 3, twos: 6, threes: 9, fours: 12, fives: 15, sixes: 18 };
+    const y = (await import('../src/arcade/games/yacht.js')).default;
+    const on = y.init({ n: 2, opts: { rules: { bonus: true } } }), off = y.init({ n: 2 });
+    [on, off].forEach((s) => { s.cards = [{ ...card, choice: 20, four: 0, full: 0, small: 0, big: 0, yacht: 0 }, { ...card, sixes: 12, choice: 20, four: 0, full: 0, small: 0, big: 0, yacht: 0 }]; s.done = true; });
+    ok(y.result(on).scores[0] === 63 + 20 + 35 && y.result(on).scores[1] === 57 + 20, 'yacht bonus: 63 in the top half earns 35, 57 does not');
+    ok(y.result(off).scores[0] === 83, 'yacht: no bonus unless the house rule is on'); }
+
+  const clash = (await import('../src/arcade/games/color-clash.js')).default;
+  { const s = clash.init({ n: 3, rng: seeded(3), opts: { rules: { stack: true } } });
+    s.hands = [['RD', 'G5'], ['BD', 'Y1'], ['Y2', 'Y3']]; s.colour = 'R'; s.pile = ['R4']; s.p = 0;
+    clash.apply(s, 0, { c: 'RD' }, seeded(1));
+    ok(s.owe === 2 && s.p === 1 && s.hands[1].length === 2, 'clash stack: a +2 waits for the next player');
+    ok(clash.moves(s, 1).some(m => m.c === 'BD') && clash.moves(s, 1).some(m => m.take), 'clash stack: pass it on or take it');
+    clash.apply(s, 1, { c: 'BD' }, seeded(1));
+    ok(s.owe === 4 && s.p === 2, 'clash stack: it grows');
+    clash.apply(s, 2, { take: 1 }, seeded(1));
+    ok(s.hands[2].length === 6 && s.owe === 0 && s.p === 0, 'clash stack: whoever takes it draws the lot and misses the turn'); }
+  { const s = clash.init({ n: 2, rng: seeded(4), opts: { rules: { till: true } } }); s.hands[0] = ['G5']; s.colour = 'R'; s.pile = ['R4'];
+    clash.apply(s, 0, { draw: 1 }, seeded(2));
+    ok(s.hands[0].some(c => c[0] === 'W' || c[0] === 'R' || c.slice(1) === '4') || !s.stock.length, 'clash till: draws until a card fits'); }
+
+  const eights = (await import('../src/arcade/games/crazy-eights.js')).default;
+  { const s = eights.init({ n: 3, rng: seeded(5), opts: { rules: { twos: true, jacks: true, aces: true } } });
+    s.pile = ['5H']; s.suit = 'H'; s.hands = [['2H', 'JH', 'AH', '9C'], ['2S', '4D'], ['6D', '7D']]; s.p = 0;
+    eights.apply(s, 0, { c: '2H' }, seeded(1));
+    ok(s.owe === 2 && s.p === 1 && eights.moves(s, 1).some(m => m.c === '2S'), 'eights twos: the next player may pass a 2 on');
+    eights.apply(s, 1, { c: '2S' }, seeded(1));
+    eights.apply(s, 2, { take: 1 }, seeded(1));
+    ok(s.hands[2].length === 6 && s.p === 0, 'eights twos: four picked up');
+    eights.apply(s, 0, { c: 'JH' }, seeded(1)); ok(s.p === 2, 'eights jacks: the next player is skipped');
+    s.p = 0; eights.apply(s, 0, { c: 'AH' }, seeded(1)); ok(s.dir === -1 && s.p === 2, 'eights aces: the direction turns round'); }
+  { const rng = seeded(6); ok(!!play(eights, eights.init({ n: 4, rng, opts: { rules: { twos: true, jacks: true, aces: true } } }), rng), 'eights: every house rule still finishes'); }
 }
 
 console.log(`\n${failures ? `${failures} FAILED` : 'All good'} · ${passed} checks passed`);

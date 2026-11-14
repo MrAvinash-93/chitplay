@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName, politeName } from '../world/names.js?v=20261110-1548';
-import { cleanLook } from '../world/character-looks.js?v=20261110-1548';
+import { cleanName, politeName } from '../world/names.js?v=20261114-1146';
+import { cleanLook } from '../world/character-looks.js?v=20261114-1146';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261110-1548.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261114-1146.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -62,13 +62,15 @@ export async function peekTables(codes, ms = 3500) {
       const t = setTimeout(() => finish(null), ms);
       const conn = me.connect(PREFIX + code, { reliable: true });
       conn.on('open', () => safeSend(conn, { t: 'peek' }));
-      conn.on('data', (m) => { if (m?.t === 'info') finish({ code, country: String(m.country || ''), seats: Number(m.seats) || 0, locked: !!m.locked }); });
+      conn.on('data', (m) => { if (m?.t === 'info') finish({ code, country: String(m.country || ''), seats: Number(m.seats) || 0, locked: !!m.locked, level: cleanLevel(m.level) }); });
       conn.on('error', () => finish(null));
     })))).filter(Boolean);
   } finally {
     setTimeout(() => { try { me.destroy(); } catch {} }, 300);
   }
 }
+/** A chess level as sent by another phone: one of the known names, or nothing. */
+const cleanLevel = (v) => (['beginner', 'novice', 'intermediate', 'good', 'advanced', 'expert', 'master', 'grandmaster'].includes(v) ? v : '');
 export const isCode = (c) => /^\d{6}$/.test(String(c || ''));
 /** A phone's private ticket back to its seat if the connection drops. */
 export const newToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -144,6 +146,12 @@ export class NearbyHost {
     this.guests.forEach(g => this.known.add(g.token));
   }
 
+  /** Back in the room between games: friends can join again, up to this many guests. */
+  unlock(maxGuests = this.max) {
+    this.locked = false;
+    this.max = maxGuests;
+  }
+
   /** Stay findable: friends who lost the connection need the broker to reach us again. */
   #stayOnline() {
     clearTimeout(this.retry);
@@ -194,7 +202,7 @@ export class NearbyHost {
       if (msg.t === 'bye') { this.#drop(id); return; }
       // somebody looking for a table: tell them where we're from and how full we are, nothing else
       if (msg.t === 'peek') {
-        safeSend(conn, { t: 'info', country: this.isPublic ? this.country || '' : '', seats: this.guests.size, locked: this.locked || !this.isPublic });
+        safeSend(conn, { t: 'info', country: this.isPublic ? this.country || '' : '', seats: this.guests.size, locked: this.locked || !this.isPublic, level: this.isPublic ? this.level || '' : '' });
         setTimeout(() => { try { conn.close(); } catch {} }, 400);
         return;
       }
@@ -212,7 +220,7 @@ export class NearbyHost {
         const weekly = Number.isFinite(msg.weekly) ? Math.max(0, Math.min(10000000, Math.floor(msg.weekly))) : 0;
         // the icon of their rank or badge: a short string, checked against the real list by the game screen
         const flair = typeof msg.flair === 'string' ? msg.flair.slice(0, 8) : '';
-        const guest = { id, name, gender: msg.gender === 'f' ? 'f' : 'm', look: cleanLook(msg.look, msg.look?.id), weekly, flair, token, conn, w: watch(conn, () => this.#drop(id)) };
+        const guest = { id, name, gender: msg.gender === 'f' ? 'f' : 'm', look: cleanLook(msg.look, msg.look?.id), weekly, flair, token, level: cleanLevel(msg.level), conn, w: watch(conn, () => this.#drop(id)) };
         this.guests.set(id, guest);
         this.h.onChange?.();
         if (returning) this.h.onRejoin?.(id, token);
@@ -235,7 +243,7 @@ export class NearbyHost {
 
   get list() {
     const labels = this.labels();
-    return [...this.guests.values()].map((g, i) => ({ id: g.id, name: labels[i + 1], gender: g.gender, look: g.look, weekly: g.weekly, flair: g.flair, token: g.token }));
+    return [...this.guests.values()].map((g, i) => ({ id: g.id, name: labels[i + 1], gender: g.gender, look: g.look, weekly: g.weekly, flair: g.flair, token: g.token, level: g.level }));
   }
   get hostLabel() { return this.labels()[0]; }
   send(id, msg) { safeSend(this.guests.get(id)?.conn, msg); }

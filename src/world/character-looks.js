@@ -14,7 +14,7 @@ export const HAIR_STYLES = [
 ];
 export const OUTFITS = [
   { id: 'tshirt', label: 'T-shirt', sleeve: 'short' }, { id: 'stripes', label: 'Striped tee', sleeve: 'short' },
-  { id: 'jersey', label: 'Sports jersey', sleeve: 'short' }, { id: 'school', label: 'School shirt & tie', sleeve: 'short' },
+  { id: 'jersey', label: 'Sports jersey', sleeve: 'short' }, { id: 'school', label: 'Shirt & tie', sleeve: 'short' },
   { id: 'check', label: 'Check shirt', sleeve: 'long' }, { id: 'hoodie', label: 'Hoodie', sleeve: 'long' },
   { id: 'sweater', label: 'Sweater vest', sleeve: 'long' }, { id: 'blazer', label: 'Blazer', sleeve: 'long' },
   { id: 'kurta', label: 'Kurta', sleeve: 'long' }, { id: 'frock', label: 'Frock', sleeve: 'short', skirt: true },
@@ -66,8 +66,8 @@ export const PANTS_COLORS = ['#2f3e6b', '#1d2a4d', '#3b3b3b', '#6b4a2f', '#5a3a6
 
 /** The ready-made cast: every age, every kind of person. */
 export const PRESETS = [
-  { id: 'school-boy', label: 'School Boy', gender: 'm', age: 'child', skin: '#c58c5c', hair: 'side', hairColor: '#1b1410', eyes: '#2a1608', outfit: 'school', color: '#f4efe4', color2: '#1d2a4d', pants: '#2f3e6b' },
-  { id: 'school-girl', label: 'School Girl', gender: 'f', age: 'child', skin: '#d9a273', hair: 'plaits', hairColor: '#120d0a', eyes: '#2a1608', outfit: 'school', color: '#f4efe4', color2: '#c62828', pants: '#1d2a4d' },
+  { id: 'school-boy', label: 'Little Brother', gender: 'm', age: 'child', skin: '#c58c5c', hair: 'side', hairColor: '#1b1410', eyes: '#2a1608', outfit: 'school', color: '#f4efe4', color2: '#1d2a4d', pants: '#2f3e6b' },
+  { id: 'school-girl', label: 'Little Sister', gender: 'f', age: 'child', skin: '#d9a273', hair: 'plaits', hairColor: '#120d0a', eyes: '#2a1608', outfit: 'school', color: '#f4efe4', color2: '#c62828', pants: '#1d2a4d' },
   { id: 'cricket-fan', label: 'Cricket Fan', gender: 'm', age: 'teen', skin: '#a86f45', hair: 'spiky', hairColor: '#0f0b08', eyes: '#2a1608', outfit: 'jersey', color: '#2196f3', color2: '#f4efe4', pants: '#1d2a4d', headwear: 'cap' },
   { id: 'hoodie-teen', label: 'Hoodie Teen', gender: 'm', age: 'teen', skin: '#d9a273', hair: 'curly', hairColor: '#2a1a10', eyes: '#4a2c12', outfit: 'hoodie', color: '#37474f', color2: '#ef6c00', pants: '#222222' },
   { id: 'college-girl', label: 'College Girl', gender: 'f', age: 'teen', skin: '#c58c5c', hair: 'ponytail', hairColor: '#2a1a10', eyes: '#2a1608', outfit: 'stripes', color: '#e91e63', color2: '#f4efe4', pants: '#2f3e6b' },
@@ -81,7 +81,7 @@ export const PRESETS = [
   { id: 'salwar-woman', label: 'Salwar Suit', gender: 'f', age: 'adult', skin: '#c58c5c', hair: 'long', hairColor: '#0f0b08', eyes: '#2a1608', outfit: 'salwar', color: '#00838f', color2: '#f4efe4', pants: '#00838f' },
   { id: 'sardar', label: 'Turban Man', gender: 'm', age: 'adult', skin: '#c58c5c', hair: 'short', hairColor: '#0f0b08', eyes: '#2a1608', outfit: 'check', color: '#1d2a4d', color2: '#f4efe4', pants: '#3b3b3b', headwear: 'pagri', facial: 'beard', headColor: '#ef6c00' },
   { id: 'hijab-woman', label: 'Hijab Woman', gender: 'f', age: 'adult', skin: '#d9a273', hair: 'bun', hairColor: '#120d0a', eyes: '#4a2c12', outfit: 'dress', color: '#37474f', color2: '#8d6e63', pants: '#37474f', headwear: 'hijab', headColor: '#8d6e63' },
-  { id: 'teacher', label: 'Teacher', gender: 'm', age: 'adult', skin: '#e8bd96', hair: 'balding', hairColor: '#2a1a10', eyes: '#3a6a9a', outfit: 'sweater', color: '#8d6e63', color2: '#f4efe4', pants: '#6b4a2f', glasses: 'square', facial: 'moustache' },
+  { id: 'teacher', label: 'Uncle', gender: 'm', age: 'adult', skin: '#e8bd96', hair: 'balding', hairColor: '#2a1a10', eyes: '#3a6a9a', outfit: 'sweater', color: '#8d6e63', color2: '#f4efe4', pants: '#6b4a2f', glasses: 'square', facial: 'moustache' },
   { id: 'strong-man', label: 'Big Brother', gender: 'm', age: 'adult', skin: '#4a2d1b', hair: 'buzz', hairColor: '#0f0b08', eyes: '#2a1608', outfit: 'jersey', color: '#c62828', color2: '#f4efe4', pants: '#222222', facial: 'beard' },
   { id: 'big-sister', label: 'Big Sister', gender: 'f', age: 'adult', skin: '#f6d7bd', hair: 'wavy', hairColor: '#8a2c1a', eyes: '#3f6b3a', outfit: 'check', color: '#43a047', color2: '#f4efe4', pants: '#2f3e6b' },
   { id: 'grandpa', label: 'Grandpa', gender: 'm', age: 'elder', skin: '#c58c5c', hair: 'balding', hairColor: '#e6e2da', eyes: '#2a1608', outfit: 'kurta', color: '#f4efe4', color2: '#8d6e63', pants: '#f4efe4', glasses: 'round', facial: 'moustache' },
@@ -89,7 +89,7 @@ export const PRESETS = [
   { id: 'old-professor', label: 'Old Professor', gender: 'm', age: 'elder', skin: '#f6d7bd', hair: 'short', hairColor: '#8a8a8a', eyes: '#6a7a86', outfit: 'blazer', color: '#6b4a2f', color2: '#37474f', pants: '#3b3b3b', glasses: 'square', facial: 'beard' },
   { id: 'old-aunty', label: 'Wise Aunty', gender: 'f', age: 'elder', skin: '#8d5a35', hair: 'bob', hairColor: '#8a8a8a', eyes: '#2a1608', outfit: 'dress', color: '#00838f', color2: '#d4a017', pants: '#00838f' },
   { id: 'frock-girl', label: 'Frock Girl', gender: 'f', age: 'child', skin: '#8d5a35', hair: 'bob', hairColor: '#0f0b08', eyes: '#2a1608', outfit: 'frock', color: '#e91e63', color2: '#f4efe4', pants: '#e91e63' },
-  { id: 'naughty-boy', label: 'Class Clown', gender: 'm', age: 'child', skin: '#e8bd96', hair: 'spiky', hairColor: '#4a2c17', eyes: '#4a2c12', outfit: 'stripes', color: '#43a047', color2: '#d4a017', pants: '#6b4a2f' },
+  { id: 'naughty-boy', label: 'Naughty Boy', gender: 'm', age: 'child', skin: '#e8bd96', hair: 'spiky', hairColor: '#4a2c17', eyes: '#4a2c12', outfit: 'stripes', color: '#43a047', color2: '#d4a017', pants: '#6b4a2f' },
 ];
 
 const DEFAULTS = { glasses: 'none', facial: 'none', headwear: 'none', headColor: '#c62828', bindi: false };

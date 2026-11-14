@@ -3,7 +3,7 @@
  * are seat 1's, 13 its store. Sow to the right, skipping the other player's store. The last seed in
  * your own store gives another turn; in an empty pit of yours it captures the seeds opposite.
  */
-import { searchMove, turnLine } from '../lib.js?v=20261110-1548';
+import { searchMove, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 const STORE = [6, 13];
 const mine = (p) => (p === 0 ? [0, 1, 2, 3, 4, 5] : [7, 8, 9, 10, 11, 12]);
@@ -63,5 +63,23 @@ export default {
     const pit = searchMove({ b: s.b, p: seat }, 6, search, rng, moves.map(m => m.pit));
     return { pit };
   },
-  ui: (v, ctx) => ({ title: turnLine(ctx, 'tap one of your pits'), lead: `${ctx.names[0]} ${v.b[6]} · ${ctx.names[1]} ${v.b[13]} in store` }),
+  ui(v, ctx) {
+    const turn = ctx.active.includes(ctx.me);
+    let lead = 'Last seed in your store: go again. In an empty pit of yours: take the seeds opposite.';
+    if (turn) {
+      const tips = [];
+      mine(ctx.me).forEach((pit) => {
+        if (!v.b[pit]) return;
+        const r = sow({ b: v.b, p: ctx.me }, pit);
+        if (r.again) tips.push(`the pit with ${v.b[pit]} gives you another turn`);
+        else if (r.captured) tips.push(`the pit with ${v.b[pit]} captures ${r.captured}`);
+      });
+      if (tips.length) lead = `💡 ${tips.slice(0, 2).join(' · ')}`;
+    }
+    return {
+      title: turnLine(ctx, 'tap one of your pits'),
+      lead,
+      players: strip(ctx, ['#e0a050', '#6fa8dc'], p => `🏺 ${v.b[STORE[p]]} · ${mine(p).reduce((t, i) => t + v.b[i], 0)} in pits`),
+    };
+  },
 };

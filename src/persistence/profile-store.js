@@ -2,24 +2,24 @@
  * The player's profile, kept on this device only: name, gender, character,
  * points (solo and Nearby apart), rank, badges, best matches and pinned games.
  */
-import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261110-1548';
-import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261110-1548';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1548';
+import { randomName, cleanName, isValidName, detectNameRegion } from '../world/names.js?v=20261114-1146';
+import { cleanLook, PRESETS, FANCY_HATS, PREMIUM_COLORS } from '../world/character-looks.js?v=20261114-1146';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1146';
 
 const KEY = 'chitplay.profile.v1';
 const OLD_STATS_KEY = 'chitplay.stats.v1';
 const emptyStats = () => ({ points: 0, matches: 0, wins: 0, best: 0, catches: 0, escapes: 0, cheats: 0, caught: 0 });
 
-/** Rank titles run on lifetime points, from the back bench up. */
+/** Rank titles run on lifetime points: a gamer's career, from a new player in a small room up. */
 export const RANKS = [
-  { at: 0, title: 'New in Class', icon: '🎒' },
-  { at: 1500, title: 'Back Bencher', icon: '🪑' },
+  { at: 0, title: 'New Gamer', icon: '🎮' },
+  { at: 1500, title: 'Casual Player', icon: '🕹️' },
   { at: 5000, title: 'Chit Folder', icon: '📝' },
-  { at: 10000, title: 'Homework Copier', icon: '📚' },
-  { at: 18000, title: 'Class Monitor', icon: '📋' },
+  { at: 10000, title: 'Skilled Player', icon: '🎯' },
+  { at: 18000, title: 'Pro Gamer', icon: '⚡' },
   { at: 30000, title: 'Sharp Eye', icon: '🕵️' },
   { at: 50000, title: 'Master Bluffer', icon: '🎭' },
-  { at: 80000, title: 'School Captain', icon: '🎖️' },
+  { at: 80000, title: 'Tournament Star', icon: '🎖️' },
   { at: 125000, title: 'Neighbourhood Legend', icon: '🏅' },
   { at: 200000, title: 'Chit Emperor', icon: '👑' },
 ];
@@ -36,7 +36,7 @@ export const BADGES = [
   { id: 'friends', icon: '📶', name: 'With Friends', hint: 'Finish a Nearby match', test: (s) => s.nearby.matches >= 1 },
   { id: 'big-score', icon: '💰', name: 'Big Score', hint: 'Score 8000 in one match', test: (s) => s.all.best >= 8000 },
   { id: 'streak-3', icon: '🔥', name: 'Three-Day Habit', hint: 'Play 3 days in a row', test: (s) => s.streak >= 3 },
-  { id: 'streak-7', icon: '🌟', name: 'Full School Week', hint: 'Play 7 days in a row', test: (s) => s.streak >= 7 },
+  { id: 'streak-7', icon: '🌟', name: 'A Whole Week', hint: 'Play 7 days in a row', test: (s) => s.streak >= 7 },
   { id: 'world-tour', icon: '🌍', name: 'World Tour', hint: 'Play 5 different games', test: (s) => s.gamesPlayed >= 5 },
 ];
 

@@ -8,21 +8,22 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1548';
+import { settingsStore } from '../persistence/settings-store.js?v=20261114-1146';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261110-1548';
-import { lookOf, lookKey } from './character-looks.js?v=20261110-1548';
-import { buildRoomDetails } from './room-details.js?v=20261110-1548';
-import { COUNTRIES } from './countries.js?v=20261110-1548';
-import { voiceBox, voiceLangsFor } from './voice.js?v=20261110-1548';
-import { isSpecialEmoji } from './table-talk.js?v=20261110-1548';
-import { decorState, placeOf, SPOTS, themeOf } from '../arcade/decor.js?v=20261110-1548';
-import { decorMakers } from './decor-makers.js?v=20261110-1548';
-import * as Themes from './themes.js?v=20261110-1548';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261114-1146';
+import { lookOf, lookKey } from './character-looks.js?v=20261114-1146';
+import { buildRoomDetails } from './room-details.js?v=20261114-1146';
+import { COUNTRIES } from './countries.js?v=20261114-1146';
+import { voiceBox, voiceLangsFor } from './voice.js?v=20261114-1146';
+import { isSpecialEmoji } from './table-talk.js?v=20261114-1146';
+import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261114-1146';
+import { decorMakers } from './decor-makers.js?v=20261114-1146';
+import * as Themes from './themes.js?v=20261114-1146';
 
 const TAU = Math.PI * 2;
 
 const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const easeOut = p => 1 - (1 - p) ** 3;
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
 
@@ -144,6 +145,14 @@ const SHOTS = {
   result: { pos: [0, 2.0, 3.1],  look: [0, 0.45, -0.2], orbit: 0.08 },
   overhead: { pos: [0, 3.6, 2.0], look: [0, 0.1, -0.05], orbit: 0.05 },
 };
+/* 2D view of the chit game: from nearly straight above, just far enough that the four players fit the screen */
+const FLAT_REACH = 2.9;   // metres across that must show: the mat and everyone sitting round it
+function flatTopShot(camera) {
+  const k = 2 * Math.tan(camera.fov * Math.PI / 360);
+  // sideways the bars above and below take a bigger share of the height, so stand further back
+  const d = Math.min(10, Math.max(FLAT_REACH / (k * Math.min(1, camera.aspect)), (FLAT_REACH / k) * (camera.aspect > 1 ? 1.35 : 1)));
+  return { pos: [0, d * 0.96, d * 0.28 - 0.05], look: [0, 0, -0.05], orbit: 0, exact: true };
+}
 
 let instance = null;
 
@@ -183,7 +192,7 @@ function createWorld() {
   renderer.shadowMap.type = THREE.PCFShadowMap;
 
   /*
-   * Graphics levels. "medium" is the default: sharp, with dust and the TV's light, and still
+   * Graphics levels. "auto" is the default: it starts at medium on phones (low on the weakest) and steps down by itself when frames run slow; medium is sharp, with dust and the TV's light, and still
    * smooth on most phones; "low" (shown as Light) is there for the oldest ones. "ultra" draws at up to 3840 × 2160 on a screen that has those pixels.
    * shadowEvery / tvEvery: draw the shadows and the TV's static only on every Nth frame.
    */
@@ -200,11 +209,13 @@ function createWorld() {
   function automaticLevel() {
     if (memory <= 2 || cores <= 2) return levelNamed('low');
     const physicalHeight = Math.min(screen.width, screen.height) * (window.devicePixelRatio || 1);
-    if (coarse) return memory <= 3 ? levelNamed('medium') : levelNamed('high');
-    return physicalHeight >= 1800 ? levelNamed('ultra') : levelNamed('high');
+    // phones start light and smooth; a computer starts sharp. Either steps down by itself if frames run slow,
+    // and ultra is only ever a choice the player makes
+    if (coarse) return memory <= 3 ? levelNamed('low') : levelNamed('medium');
+    return physicalHeight >= 1800 && memory >= 8 ? levelNamed('high') : levelNamed('medium');
   }
   // ?quality=ultra (or the choice in the profile) fixes the level; "auto" steps down when frames run slow
-  let graphicsChoice = new URLSearchParams(location.search).get('quality') || settingsStore.get('graphics') || 'medium';
+  let graphicsChoice = new URLSearchParams(location.search).get('quality') || settingsStore.get('graphics') || 'auto';
   if (levelNamed(graphicsChoice) < 0) graphicsChoice = 'auto';
   let quality = graphicsChoice === 'auto' ? automaticLevel() : levelNamed(graphicsChoice);
   Themes.setTextureDetail(QUALITY[quality].texture, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
@@ -339,6 +350,8 @@ function createWorld() {
   let room = { mood: 'warm', wall: '', fairy: false, neon: false };
   try { room = { ...room, ...JSON.parse(localStorage.getItem(ROOM_KEY)) }; } catch {}
   let fairy = null, neonStrip = null;
+  // how far each side wall stands from the middle: the room starts small and grows as the player upgrades it
+  let roomHalf = (ROOM_SIZES[decorState().size] || ROOM_SIZES[0]).half;
   let themeReady = false;   // the floor, mat and wall can change once the room is fully built
   function buildFairy() {
     const g = new THREE.Group();
@@ -372,9 +385,9 @@ function createWorld() {
     if (m.color) moodLight.color.set(m.color);
     wallMat.color.set(room.wall || '#ffffff');
     if (room.fairy && !fairy) { fairy = buildFairy(); scene.add(fairy); }
-    if (fairy) fairy.visible = !!room.fairy;
+    if (fairy) { fairy.visible = !!room.fairy; fairy.scale.x = roomHalf / 4.1; }
     if (room.neon && !neonStrip) { neonStrip = buildNeon(); scene.add(neonStrip); }
-    if (neonStrip) neonStrip.visible = !!room.neon;
+    if (neonStrip) { neonStrip.visible = !!room.neon; neonStrip.scale.x = roomHalf / 4.1; }
     if (themeReady) applyTheme(country);
   }
   tubeLight.position.set(0.4, 2.3, -2.3);
@@ -403,11 +416,16 @@ function createWorld() {
   Object.assign(DECOR_MAKERS, decorMakers(THREE, { M, glowMat, box3, cyl3, shadowy: (o) => shadowy(o) }));
   const decorMeshes = new Map();
   function placeDecor() {
-    const { placed } = decorState();
-    decorMeshes.forEach((m, id) => { if (!placed[id]) { decorRoot.remove(m); decorMeshes.delete(id); } });
+    const { placed, size } = decorState();
+    // the room's size first: the side walls slide to it, and the lights along the wall follow
+    const half = (ROOM_SIZES[size] || ROOM_SIZES[0]).half;
+    if (half !== roomHalf) { roomHalf = half; applyRoom(); }
+    roomDetails?.setHalfWidth?.(roomHalf);
+    const fits = (id) => { const s = SPOTS.find(x => x.id === placed[id]); return s && spotFits(s, size); };
+    decorMeshes.forEach((m, id) => { if (!placed[id] || !fits(id)) { decorRoot.remove(m); decorMeshes.delete(id); } });
     Object.entries(placed).forEach(([id, spotId]) => {
       const spot = SPOTS.find(s => s.id === spotId);
-      if (!spot || !DECOR_MAKERS[id]) return;
+      if (!spot || !DECOR_MAKERS[id] || !spotFits(spot, size)) return;
       let m = decorMeshes.get(id);
       if (!m) { m = DECOR_MAKERS[id](); decorRoot.add(m); decorMeshes.set(id, m); }
       const onFloor = placeOf(spot) === 'floor';
@@ -451,6 +469,28 @@ function createWorld() {
   const heldPaper = std({ map: paperTexture(42), roughness: 0.85 });
   const STARTING_CAST = ['office-man', 'saree-lady', 'hoodie-teen', 'college-girl'];
   const actors = SEATS.map((seat, i) => createCharacter(scene, lookOf(STARTING_CAST[i]), { seat, paperMaterial: heldPaper }));
+  /*
+   * Room for the board: sitting cross-legged, a player's knees, feet and skirt reach well in front of
+   * them. With a board on the mat, everyone shuffles back just far enough that none of that touches it
+   * (every point of their legs stays outside the board's edge, with a finger's width to spare).
+   */
+  const LEG_REACH = [[0.245, 0.19], [-0.245, 0.19], [0.2, 0.3], [-0.2, 0.3], [0.13, 0.3], [-0.13, 0.3], [0.36, 0.04], [-0.36, 0.04], [0, 0.36], [0.26, 0.24], [-0.26, 0.24]];
+  function makeRoom(half) {
+    actors.forEach((a, i) => {
+      const base = SEATS[i];
+      let k = 1;
+      if (half) {
+        const yaw = Math.atan2(-base.x, -base.z), c = Math.cos(yaw), sn = Math.sin(yaw), size = a.root.scale.x;
+        const clear = (f) => LEG_REACH.every(([lx, lz]) => {
+          const x = base.x * f + (lx * c + lz * sn) * size, z = base.z * f + (-lx * sn + lz * c) * size;
+          return Math.abs(x) >= half[0] + 0.04 || Math.abs(z) >= half[1] + 0.04;
+        });
+        while (k < 1.6 && !clear(k)) k += 0.02;
+      }
+      a.root.position.x = base.x * k;
+      a.root.position.z = base.z * k;
+    });
+  }
   let country = COUNTRIES.IN;
   const roleInfo = (slot) => country.roles[slot] || null;
   const roleAcc = (slot) => roleInfo(slot)?.acc || null;
@@ -633,6 +673,8 @@ function createWorld() {
   let last = 0, lastRender = 0, time = 0;
   let distMul = 1;
   let shot = SHOTS.home;
+  // Room Tour: the player's own character walks round their gaming room (see updateTour)
+  const tour = { on: false, walker: null, x: 0, z: 1.7, heading: Math.PI, mx: 0, mz: 0, emoteUntil: 0, blocks: [], before: null, shown: [] };
   const camPos = new THREE.Vector3(...SHOTS.home.pos);
   const camLook = new THREE.Vector3(...SHOTS.home.look);
   const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3(), tmpOff = new THREE.Vector3();
@@ -785,6 +827,7 @@ function createWorld() {
       pos: [h.x * 0.55, y, h.z + back],
       look: [h.x * 0.85, h.y - 0.15 + lift, h.z],
       orbit: 0.03,
+      actor: true,   // about one person: on an upright phone, keep them in the middle of the picture
     };
   };
 
@@ -813,6 +856,11 @@ function createWorld() {
     const d = narrow ? 1.35 : 1.0;
     return { pos: [S.x + tDir.x * d, S.y + 0.06, S.z + tDir.z * d], look: [S.x, S.y - 0.05, S.z], orbit: 0, exact: true };
   };
+  let tableBar = null;
+  const tableHudBottom = () => {
+    if (!tableBar?.isConnected) tableBar = document.querySelector('#party > .bar');
+    return tableBar ? Math.ceil(tableBar.getBoundingClientRect().bottom + 8) : 52;
+  };
   /*
    * The whole character, centred in whatever part of the screen the panel leaves free, at every
    * screen size. The camera stays on the character and the picture itself slides over (a view
@@ -824,10 +872,11 @@ function createWorld() {
   const portraitFraming = (seat) => () => {
     const W = window.innerWidth || 1, H = window.innerHeight || 1;
     const r = portraitPanel?.isConnected ? portraitPanel.getBoundingClientRect() : null;
-    let freeW = W, freeH = H, cx = W / 2, cy = H / 2;
+    const TOP = tableHudBottom();
+    let freeW = W, freeH = Math.max(1, H - TOP), cx = W / 2, cy = TOP + freeH / 2;
     if (r) {
       if (r.height > H * 0.8 && r.width < W * 0.8) { freeW = Math.max(120, r.left); cx = freeW / 2; }
-      else { freeH = Math.max(120, r.top); cy = freeH / 2; }
+      else { freeH = Math.max(1, r.top - TOP); cy = TOP + freeH / 2; }
     }
     const head = actors[seat].headWorld(tA);
     const top = head.y + 0.2;
@@ -880,11 +929,11 @@ function createWorld() {
   const tvFraming = () => {
     const W = window.innerWidth || 1, H = window.innerHeight || 1;
     const r = boardPanel?.isConnected ? boardPanel.getBoundingClientRect() : null;
-    const TOP = 52;
-    let freeW = W, freeH = H - TOP, cx = W / 2, cy = TOP + freeH / 2;
+    const TOP = tableHudBottom();
+    let freeW = W, freeH = Math.max(1, H - TOP), cx = W / 2, cy = TOP + freeH / 2;
     if (r) {
       if (r.left > W * 0.4) { freeW = Math.max(160, r.left); cx = freeW / 2; freeH = H; cy = H / 2; }
-      else { freeH = Math.max(120, r.top - TOP); cy = TOP + freeH / 2; }
+      else { freeH = Math.max(1, r.top - TOP); cy = TOP + freeH / 2; }
     }
     const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
     const d = Math.max((TV.w + 0.16) * H / (0.97 * freeW * fovK), (TV.h + 0.16) * H / (0.95 * freeH * fovK));
@@ -899,26 +948,90 @@ function createWorld() {
   };
   let boardShot = null, boardPanel = null;
   const BOARD_TILT = 0.52;
+  /* 2D view (chosen per phone, on <html data-view>): straight down, a narrow lens so it looks flat */
+  const FOV = 42, FLAT_FOV = 16;
+  const flat2d = () => !!boardShot && document.documentElement.dataset.view === '2d';
+  function setFov(fov) { if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); } }
   const boardFraming = (span) => () => {
+    const flat = flat2d();
+    flatSpan = span;
+    setFov(flat ? FLAT_FOV : FOV);
     const W = window.innerWidth || 1, H = window.innerHeight || 1;
     const r = boardPanel?.isConnected ? boardPanel.getBoundingClientRect() : null;
-    const TOP = 52;   // the bar with the back button
-    let freeW = W, freeH = H - TOP, cx = W / 2, cy = TOP + freeH / 2;
+    const TOP = tableHudBottom();
+    let freeW = W, freeH = Math.max(1, H - TOP), cx = W / 2, cy = TOP + freeH / 2;
     if (r) {
       // the panel is at the side (wide screens, a phone on its side) or along the bottom
       if (r.left > W * 0.4) { freeW = Math.max(160, r.left); cx = freeW / 2; freeH = H; cy = H / 2; }
-      else { freeH = Math.max(120, r.top - TOP); cy = TOP + freeH / 2; }
+      else { freeH = Math.max(1, r.top - TOP); cy = TOP + freeH / 2; }
     }
     const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
-    const d = Math.min(7.5, Math.max(span * H / (0.9 * freeH * fovK), span * H / (0.94 * freeW * fovK)));
+    const d = Math.min(flat ? 30 : 7.5, Math.max(span * H / (0.9 * freeH * fovK), span * H / (0.94 * freeW * fovK)));
     // when the panel changes height the picture slides over, instead of jumping
     const ox = W / 2 - cx, oy = H / 2 - cy;
     if (!viewOffset.on) Object.assign(viewOffset, { x: ox, y: oy, on: true });
     viewOffset.x += (ox - viewOffset.x) * 0.14;
     viewOffset.y += (oy - viewOffset.y) * 0.14;
     camera.setViewOffset(W, H, viewOffset.x, viewOffset.y, W, H);
-    return { pos: [0, d * Math.cos(BOARD_TILT), d * Math.sin(BOARD_TILT)], look: [0, 0, 0], orbit: 0, exact: true };
+    const tilt = flat ? 0.002 : BOARD_TILT;
+    return { pos: [0, d * Math.cos(tilt), d * Math.sin(tilt)], look: [0, 0, 0], orbit: 0, exact: true };
   };
+  /*
+   * 2D: only the board is drawn, lying on a dark wooden table top with a soft shadow under it and the
+   * corners in shade, with no fog. Everything hidden for the 2D frame is put back straight after.
+   */
+  let flatBg = null, flatShadow = null, flatSpan = 2;
+  function flatTable() {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const g = c.getContext('2d');
+    g.fillStyle = '#3b2416'; g.fillRect(0, 0, 512, 512);
+    // wood grain: long soft streaks of lighter and darker brown, the same every time
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 140; i++) {
+      const y = rnd() * 512, h = 1 + rnd() * 5;
+      g.fillStyle = rnd() < 0.5 ? `rgba(255, 214, 160, ${0.02 + rnd() * 0.05})` : `rgba(20, 8, 2, ${0.05 + rnd() * 0.1})`;
+      g.beginPath();
+      g.moveTo(0, y);
+      for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 3);
+      g.lineTo(512, y + h); g.lineTo(0, y + h); g.fill();
+    }
+    const v = g.createRadialGradient(256, 256, 120, 256, 256, 380);
+    v.addColorStop(0, 'rgba(0, 0, 0, 0)'); v.addColorStop(1, 'rgba(8, 3, 1, .78)');
+    g.fillStyle = v; g.fillRect(0, 0, 512, 512);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+  function flatShadowMesh() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const r = g.createRadialGradient(64, 64, 30, 64, 64, 64);
+    r.addColorStop(0, 'rgba(0, 0, 0, .62)'); r.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = -0.004;
+    m.renderOrder = -1;
+    m.visible = false;
+    return m;
+  }
+  function renderFlat() {
+    if (!flatBg) { flatBg = flatTable(); flatShadow = flatShadowMesh(); boardRoot.add(flatShadow); }
+    flatShadow.scale.set(flatSpan * 1.32, flatSpan * 1.32, 1);
+    flatShadow.visible = true;
+    const hidden = [];
+    for (const o of scene.children) if (o !== boardRoot && !o.isLight && o.visible) { o.visible = false; hidden.push(o); }
+    const fog = scene.fog, bg = scene.background;
+    scene.fog = null; scene.background = flatBg;
+    try { renderer.render(scene, camera); } finally {
+      scene.fog = fog; scene.background = bg;
+      flatShadow.visible = false;
+      hidden.forEach((o) => { o.visible = true; });
+    }
+  }
 
   function startGuesserScan(guesser, acc = 'cap') {
     const others = actors.filter(a => a !== guesser);
@@ -929,6 +1042,52 @@ function createWorld() {
       a.setPose('nervous');
       a.lookAt(headOf(guesser));
     });
+  }
+
+  /* ─── Room Tour ─────────────────────────────────────────────── */
+  const TOUR_SPEED = 1.5;   // metres a second at a full push
+  // what you can't walk through: the TV on its stool and the things standing on the floor
+  function tourBlocks() {
+    const { placed, size } = decorState();
+    const list = [{ x: 2.15, z: -1.85, r: 0.5 }];
+    Object.values(placed).forEach((id) => {
+      const s = SPOTS.find(x => x.id === id);
+      if (s && placeOf(s) === 'floor' && spotFits(s, size)) list.push({ x: s.x, z: s.z, r: 0.4 });
+    });
+    return list;
+  }
+  // behind and above the player; further back on a tall, narrow phone so the room still shows round them
+  const tourShot = () => {
+    const k = camera.aspect < 1 ? 1 + (1 - camera.aspect) * 1.3 : 1;
+    const look = [tour.x * 0.85, 0.55, tour.z - 0.7];
+    return { pos: [look[0] - tour.x * 0.3 * k, look[1] + 1.55 * k, look[2] + 3.6 * k], look, orbit: 0, exact: true };
+  };
+  function updateTour(dt) {
+    const w = tour.walker;
+    if (!tour.on || !w) return;
+    const push = Math.min(1, Math.hypot(tour.mx, tour.mz));
+    if (push > 0.08) {
+      const len = Math.hypot(tour.mx, tour.mz);
+      tour.x += (tour.mx / len) * push * TOUR_SPEED * dt;
+      tour.z += (tour.mz / len) * push * TOUR_SPEED * dt;
+      tour.heading = Math.atan2(tour.mx, tour.mz);
+      if (w.pose !== 'stand') { w.setPose('stand'); w.emote(null); }   // walking ends an emote
+    } else if (w.pose !== 'stand' && time > tour.emoteUntil) w.setPose('stand');
+    // stay inside the walls, and step round the furniture
+    const BODY = 0.22;
+    tour.x = clamp(tour.x, -(roomHalf - 0.3), roomHalf - 0.3);
+    tour.z = clamp(tour.z, -2.3, 2.9);
+    for (const b of tour.blocks) {
+      const dx = tour.x - b.x, dz = tour.z - b.z, d = Math.hypot(dx, dz), min = b.r + BODY;
+      if (d < min && d > 1e-4) { tour.x = b.x + (dx / d) * min; tour.z = b.z + (dz / d) * min; }
+    }
+    w.root.position.x = tour.x;
+    w.root.position.z = tour.z;
+    let turn = tour.heading - w.root.rotation.y;
+    turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+    w.root.rotation.y += turn * Math.min(1, dt * (reduced ? 30 : 12));
+    w.setWalk(push > 0.08 ? push : 0);
+    w.update(dt, time, reduced);
   }
 
   function updateActors(dt) {
@@ -1052,14 +1211,18 @@ function createWorld() {
     pointer.sx = damp(pointer.sx, pointer.x, 3, dt);
     pointer.sy = damp(pointer.sy, pointer.y, 3, dt);
     updateActors(dt);
+    updateTour(dt);
     tvPads.forEach((m, i) => { if (actors[i]?.root.visible) { actors[i].handWorld(m.position); m.rotation.y = actors[i].root.rotation.y; } });
     const talking = talkShot && time < talkUntil;
-    const framing = boardShot || portraitShot || (talking ? talkShot : shot);
-    const sway = boardShot ? 0 : motion;   // a board you tap on has to hold still
+    // 2D in the chit game: one still picture from straight above the mat, no cuts to whoever talks
+    const flatTop = story.active && !boardShot && !portraitShot && document.documentElement.dataset.view === '2d';
+    const framing = boardShot || portraitShot || (flatTop ? () => flatTopShot(camera) : talking ? talkShot : shot);
+    const sway = boardShot || tour.on || flatTop ? 0 : motion;   // a board you tap on (or a walk you steer) has to hold still
     const sh = typeof framing === 'function' ? framing() : framing;
     tmpLook.set(...sh.look);
     tmpOff.set(...sh.pos).sub(tmpLook).multiplyScalar(sh.exact ? 1 : distMul);
-    if (distMul > 1 && !sh.exact) {
+    // (a shot of one person keeps looking at them: tipping it down to the mat left them at the top of an empty floor)
+    if (distMul > 1 && !sh.exact && !sh.actor) {
       // portrait phones: look more top-down so the mat fills the frame
       tmpOff.y *= 1 + (distMul - 1) * 0.5;
       tmpLook.y *= 0.2;
@@ -1091,6 +1254,9 @@ function createWorld() {
     const q = QUALITY[quality];
     dust.visible = q.dust;
     tvLight.visible = q.tvLight;
+    // soft-edged shadows wherever the phone can afford them; the lightest level keeps the cheap hard ones
+    const shadowType = q.name === 'low' ? THREE.PCFShadowMap : (THREE.PCFSoftShadowMap ?? 2);   // 2 = PCF soft (not exported by our slim build)
+    if (renderer.shadowMap.type !== shadowType) { renderer.shadowMap.type = shadowType; renderer.shadowMap.needsUpdate = true; }
     sun.shadow.autoUpdate = q.shadowEvery === 1;
     sun.shadow.needsUpdate = true;
     if (sun.shadow.mapSize.x !== q.shadow) {
@@ -1134,7 +1300,7 @@ function createWorld() {
     rafId = requestAnimationFrame(frame);
     const q = QUALITY[quality];
     const goalMs = boardShot && !boardSlow ? Math.min(q.frameMs, 1000 / 60) : q.frameMs;
-    if (now - lastRender < (calm ? Math.max(CALM_MS, goalMs) : goalMs) - 2) return;
+    if (now - lastRender < (calm && !tour.on ? Math.max(CALM_MS, goalMs) : goalMs) - 2) return;
     // a phone that can't hold it goes back to its steady rate rather than stutter
     if (boardShot && !boardSlow && lastRender) {
       boardMs = boardMs * 0.97 + (now - lastRender) * 0.03;
@@ -1148,7 +1314,7 @@ function createWorld() {
     time += dt;
     try {
       update(dt);
-      renderer.render(scene, camera);
+      if (flat2d()) renderFlat(); else { setFov(FOV); renderer.render(scene, camera); }
     } catch (e) {
       // one bad frame must never freeze the room; report it once
       if (!frameErrorShown) { frameErrorShown = true; console.error('[World3D] frame error:', e); }
@@ -1608,6 +1774,46 @@ function createWorld() {
         return { pos: [0, look[1] + 2.5 * k, look[2] + 5.6 * k], look, orbit: 0.05 };
       };
     },
+    /**
+     * Room Tour: the player stands up as their own character and walks round their gaming room.
+     * The people on the mat step out while you look round, and come back when the tour ends.
+     */
+    tour(on, look) {
+      if (on && !tour.on) {
+        if (!tour.walker) {
+          tour.walker = createCharacter(scene, look, { seat: { x: 0, z: 1.7 }, paperMaterial: heldPaper, standing: true });
+        } else tour.walker.setLook(look);
+        tour.walker.setPose('stand', 50);
+        tour.walker.root.visible = true;
+        Object.assign(tour, { on: true, x: 0, z: 1.7, heading: Math.PI, mx: 0, mz: 0, blocks: tourBlocks(), before: shot });
+        tour.walker.root.position.set(tour.x, 0, tour.z);
+        tour.walker.root.rotation.y = Math.PI;
+        tour.shown = actors.filter(a => a.root.visible);
+        tour.shown.forEach((a) => { a.root.visible = false; });
+        viewOffset.on = false;
+        camera.clearViewOffset();
+        shot = tourShot;
+      } else if (!on && tour.on) {
+        tour.on = false;
+        tour.walker.root.visible = false;
+        tour.walker.emote(null);
+        tour.shown.forEach((a) => { a.root.visible = true; });
+        tour.shown = [];
+        shot = tour.before || SHOTS.home;
+      }
+    },
+    get touring() { return tour.on; },
+    /** Which way to walk, as the camera sees it: x to the right, z towards the camera; length 0 to 1. */
+    tourMove(x, z) { tour.mx = Number(x) || 0; tour.mz = Number(z) || 0; },
+    /** An emote on the tour: a pose and an emoji over the head for a moment. */
+    tourEmote(pose, symbol) {
+      const w = tour.walker;
+      if (!tour.on || !w) return;
+      tour.mx = 0; tour.mz = 0;
+      w.setPose(pose, 9);
+      w.emote(symbol, 2.4);
+      tour.emoteUntil = time + (pose === 'jump' ? 1.8 : 2.6);
+    },
     /** A picture of the room right now, to show friends. */
     snapshot() {
       update(0);
@@ -1619,11 +1825,12 @@ function createWorld() {
     /** The group a table game builds its board in. */
     get boardRoot() { return boardRoot; },
     /** Frame the board above (or beside) the panel, and clear the chits off the mat. */
-    boardMode(on, { span = 2, panel = null } = {}) {
+    boardMode(on, { span = 2, panel = null, half = [0.9, 0.9] } = {}) {
       const opening = on && !boardShot;
+      makeRoom(on ? (Array.isArray(half) ? half : [half, half]) : null);
       boardPanel = panel;
       if (opening || !on) boardShot = on ? boardFraming(span) : null;
-      if (!on) { viewOffset.on = false; camera.clearViewOffset(); }
+      if (!on) { viewOffset.on = false; camera.clearViewOffset(); setFov(FOV); }
       chits.forEach((c) => { c.mesh.visible = !on && !matCleared; });
       // only the first time: after that the camera glides, so a new panel doesn't shake the room
       if (opening || !on) snapCamera = true;
@@ -1750,12 +1957,16 @@ function createWorld() {
         else flyEmoji(from, i, symbol, n * 90);
       });
     },
-    /** An emoji right in front of everybody, big, with who sent it. */
+    /**
+     * A moment everybody should notice (a capture, two sixes, night falls), as a small banner just
+     * under the top bar: seen at once, and never over the board in the middle. Several at once stack.
+     */
     emojiPop(symbol, name = '') {
+      const row = document.querySelectorAll('.emoji-pop').length % 3;
       const box = document.createElement('div');
       box.className = 'emoji-pop';
       box.setAttribute('aria-hidden', 'true');
-      box.style.left = `${32 + Math.random() * 36}%`;
+      box.style.setProperty('--row', String(row));
       const big = document.createElement('span');
       big.textContent = String(symbol).slice(0, 8);
       box.append(big);
@@ -1765,7 +1976,7 @@ function createWorld() {
         box.append(who);
       }
       document.body.append(box);
-      setTimeout(() => box.remove(), 1900);
+      setTimeout(() => box.remove(), 2300);
     },
     mood(i, name, sec = 2.5) { actors[i]?.mood(name, sec); },
     /**

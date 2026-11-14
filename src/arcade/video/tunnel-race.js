@@ -7,7 +7,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1548';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1146';
 
 export const LEVEL_D = 360;
 export const STAGES = ['Paper tunnel', 'Twin walls', 'Turning walls', 'Spin cycle'];
@@ -20,6 +20,27 @@ const PLANE = 0.16;                       // half the plane's width, as an angle
 export const speedAt = (d) => Math.min(30, 12 + d * 0.006);
 const angDiff = (a, b) => { let x = (a - b) % TAU; if (x > Math.PI) x -= TAU; if (x < -Math.PI) x += TAU; return x; };
 const r3 = (v) => Math.round(v * 1000) / 1000;
+
+function drawLevelCue(g, s) {
+  const since = s.t - s.levelAt;
+  levelTag(g, s.level, stageName(s.level), 120, H - 18);
+  if (since < 0 || since >= 120) return;
+
+  const label = `LEVEL ${s.level} UP · ${stageName(s.level)}`;
+  g.save();
+  g.globalAlpha = since < 15 ? since / 15 : since > 95 ? (120 - since) / 25 : 1;
+  g.font = '800 14px system-ui, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  const width = Math.min(W - 20, g.measureText(label).width + 24);
+  const left = (W - width) / 2, top = 39;
+  g.fillStyle = 'rgba(10, 6, 3, .82)';
+  g.fillRect(left, top, width, 24);
+  g.strokeStyle = '#7dffe3'; g.lineWidth = 1;
+  g.strokeRect(left + 0.5, top + 0.5, width - 1, 23);
+  g.fillStyle = '#fff';
+  g.fillText(label, W / 2, top + 12);
+  g.restore();
+}
 
 /** Does this obstacle touch a plane at angle a? */
 export function blocks(o, a) {
@@ -56,7 +77,7 @@ function spawn(s) {
 }
 
 export default {
-  hint: 'Drag left or right',
+  hint: 'Drag to steer or use the arrow keys',
   pad: [['l', '◀'], ['r', '▶']],
   analog: 'x',
   init({ n, seed }) {
@@ -82,7 +103,7 @@ export default {
     s.planes.forEach((p, i) => {
       if (!p.alive) return;
       const inp = inputs[i] || {};
-      const x = Number.isFinite(inp.x) ? Math.max(-1, Math.min(1, inp.x)) : (inp.r ? 1 : 0) - (inp.l ? 1 : 0);
+      const x = Number.isFinite(inp.x) ? Math.max(-1, Math.min(1, inp.x)) : (inp.r || inp.u ? 1 : 0) - (inp.l || inp.d ? 1 : 0);
       p.w += (x * 3.4 - p.w) * 0.2;
       p.a = r3(((p.a + p.w * TICK) % TAU + TAU) % TAU);
       for (const o of s.obs) {
@@ -100,7 +121,9 @@ export default {
     s.obs = s.obs.filter(o => o.z > s.d + 16);
   },
   over(s) {
-    if (s.planes.some(p => p.alive)) return null;
+    const alive = s.planes.map((p, i) => p.alive ? i : -1).filter(i => i >= 0);
+    if (s.n > 1 && alive.length === 1) return { scores: s.planes.map(p => p.score), winners: alive, endless: true };
+    if (alive.length) return null;
     const scores = s.planes.map(p => p.score), top = Math.max(...scores);
     return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true };
   },
@@ -133,7 +156,7 @@ export default {
       g.strokeText('+10', w * (i + 0.5), y); g.fillText('+10', w * (i + 0.5), y);
       g.restore();
     });
-    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 18);
+    drawLevelCue(g, s);
   },
   // without 3D: the same tunnel, seen as rings coming at you
   draw(g, s, names) {

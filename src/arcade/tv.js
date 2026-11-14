@@ -3,24 +3,27 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261110-1548';
-import { W, H, TICK } from './video/lib.js?v=20261110-1548';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261110-1548';
-import { nextForRoom } from './decor.js?v=20261110-1548';
-import { achievementList, bestOf, gameFinished, holdPopups, playStats, popup, rankProgress } from './achievements.js?v=20261110-1548';
-import { MOMENT, linesFor } from './talk.js?v=20261110-1548';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1548';
-import { ask, confirmSpend } from './dialog.js?v=20261110-1548';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1548';
-import { profile } from '../persistence/profile-store.js?v=20261110-1548';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261110-1548';
-import { adBreak, gameplayStart, gameplayStop } from '../platform/portal.js?v=20261110-1548';
+import { hintsLeft, showHint } from './hint.js?v=20261114-1146';
+import { is2d } from './view-mode.js?v=20261114-1146';
+import { adBreak } from './ad-breaks.js?v=20261114-1146';
+import { W, H, TICK } from './video/lib.js?v=20261114-1146';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1146';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1146';
+import { MOMENT, linesFor } from './talk.js?v=20261114-1146';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1146';
+import { ask, confirmSpend } from './dialog.js?v=20261114-1146';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1146';
+import { profile } from '../persistence/profile-store.js?v=20261114-1146';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1146';
 
-const V = '?v=20261110-1548';
+const V = '?v=20261114-1146';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
-const SCALE = matchMedia('(pointer: fine)').matches ? (Math.max(screen.width, screen.height) >= 1600 ? 2 : 1.5) : 1;       // ticks between pictures sent to friends: twenty a second
+// on a phone the picture follows the screen's sharpness too (a retina phone at 1 looked soft and jagged),
+// held back on phones with little memory so the game stays smooth
+const SCALE = matchMedia('(pointer: fine)').matches ? (Math.max(screen.width, screen.height) >= 1600 ? 2 : 1.5)
+  : ((window.devicePixelRatio || 1) >= 2 && (navigator.deviceMemory || 4) >= 4 ? 2 : (window.devicePixelRatio || 1) >= 1.5 ? 1.5 : 1);       // ticks between pictures sent to friends: twenty a second
 const KEYS = [
   { KeyW: 'u', KeyS: 'd', KeyA: 'l', KeyD: 'r', Space: 'a', KeyF: 'a' },
   { ArrowUp: 'u', ArrowDown: 'd', ArrowLeft: 'l', ArrowRight: 'r', Enter: 'a', KeyL: 'a' },
@@ -28,6 +31,10 @@ const KEYS = [
 
 export async function runTv(ctx) {
   const { game, mode, world, h, btn, show, topBar, say, LANG, myName, myLook, localName, localLook, audio, emojis } = ctx;
+  const haptic = ctx.haptic || (() => {});
+  /** A fanfare if someone on this phone won, a shrug if they all lost. */
+  const music = ctx.music || (() => {});
+  const endSound = (res, seats) => { music(false); const w = res?.winners || []; audio(w.length && seats.length && !seats.some(x => w.includes(x)) ? 'lose' : 'victory'); haptic(w.length && seats.length && !seats.some(x => w.includes(x)) ? 'lose' : 'win'); };
   const logic = (await import(`./video/${game.slug}.js${V}`)).default;
   const story = world?.story || null;
   const lines = linesFor(game.slug, LANG);
@@ -35,7 +42,7 @@ export async function runTv(ctx) {
   /* the screen itself: on the TV in the room, and on its own when a phone wants it bigger */
   const canvas = document.createElement('canvas');
   canvas.width = W * SCALE; canvas.height = H * SCALE;
-  canvas.className = 'tvcanvas';
+  canvas.className = `tvcanvas${logic.swipe ? ' tvcanvas--swipe' : ''}`;
   const g = canvas.getContext('2d');
   let r3 = null, view = null;
   try {
@@ -49,6 +56,8 @@ export async function runTv(ctx) {
       r3.outputColorSpace = THREE.SRGBColorSpace;
       view.camera.aspect = W / H;
       view.camera.updateProjectionMatrix();
+      // real shadows on the ground, where the phone has the power for them (the same phones that get the sharp picture)
+      if (SCALE >= 1.5) { r3.shadowMap.enabled = true; r3.shadowMap.type = THREE.PCFSoftShadowMap ?? 2; }
     }
   } catch (e) { console.warn('[tv] no 3D, using the flat picture', e); view = null; r3 = null; }
   const bigBox = h('div', { class: 'tvbig', hidden: true });
@@ -63,7 +72,16 @@ export async function runTv(ctx) {
     if (on) bigBox.append(canvas);
     story?.tvShow?.(!on);
   };
-  setBig(big);
+  // 2D: the flat picture, full screen, with no room behind it; back in 3D it goes where it was
+  let bigIn3d = big;
+  setBig(is2d() ? true : big);
+  const onView = () => {
+    if (is2d()) { bigIn3d = big; setBig(true); } else setBig(bigIn3d);
+    // a game steered the other way in 2D gets its stick turned to match
+    if (logic.flatAxis && document.querySelector('.tvpanel .stick')) { if (guestLink) guestPanel(); else playPanel(); }
+    paint();
+  };
+  addEventListener('chitplay:view', onView);
 
   let players = [];       // { name, look, kind: 'me' | 'local' | 'bot' | 'guest', token }
   let state = null;
@@ -78,6 +96,17 @@ export async function runTv(ctx) {
   const guestHeld = new Map();
   const localSeats = () => players.map((p, i) => (p.kind === 'me' || p.kind === 'local' ? i : -1)).filter(i => i >= 0);
   const panelNow = () => document.querySelector('#party .panel');
+  function shareState(countdown = 0) {
+    if (!room || !state) return;
+    if (typeof logic.publicState !== 'function') {
+      room.broadcast({ t: 's', s: state, c: countdown });
+      return;
+    }
+    room.guests.forEach((guest) => {
+      const seat = players.findIndex(p => p.token === guest.token);
+      room.send(guest.id, { t: 's', s: logic.publicState(state, seat), c: countdown });
+    });
+  }
 
   /* ─── the people in front of the TV ─── */
   function sit() {
@@ -107,10 +136,13 @@ export async function runTv(ctx) {
       switch (ev.k) {
         case 'flap': if (story && Math.random() < 0.5) story.reachOut(ev.seat); audio('flap'); break;
         // cannons fire all the time: a soft puff only for the people playing here
-        case 'fire': if (game.slug === 'bull-fight') { audio('whoosh'); seatAct(ev.seat, null, '💨'); } else if (localSeats().includes(ev.seat)) audio('flap'); break;
+        case 'fire': if (game.slug === 'bull-fight') { audio('whoosh'); seatAct(ev.seat, null, '💨'); } else if (game.slug === 'spin-duel' || game.slug === 'pen-fight') { if (localSeats().includes(ev.seat)) { audio('whoosh'); haptic('tap'); } } else if (localSeats().includes(ev.seat)) audio('flap'); break;
         case 'pass': audio('select'); break;
         case 'star': audio(ev.combo > 2 ? 'combo' : 'score'); if (ev.combo > 2) seatAct(ev.seat, 'cheer', '🔥'); else seatAct(ev.seat, 'clap', '⭐'); botSays(ev.seat, 'good'); break;
-        case 'hit': audio('wrong'); seatAct(ev.victim, null, '😵'); botSays(ev.victim, 'bad'); break;
+        case 'hit': audio('wrong'); if (localSeats().includes(ev.victim)) haptic('hit'); seatAct(ev.victim, null, '😵'); botSays(ev.victim, 'bad'); break;
+        // the playground shouts: "Baraf!" from the tagger, a groan from whoever is caught, "Pani!" from a rescue
+        case 'tag': case 'freeze': audio('wrong'); if (localSeats().includes(ev.victim)) haptic('hit'); seatAct(ev.victim, null, ev.k === 'freeze' ? '🧊' : '🏃'); botSays(ev.seat, 'good'); botSays(ev.victim, 'bad'); break;
+        case 'thaw': audio('confirm'); if (localSeats().includes(ev.victim)) haptic('win'); seatAct(ev.victim, 'cheer', '💧'); botSays(ev.seat, 'good'); break;
         // Ghost Hostel
         case 'wake': audio('wrong'); story?.emojiPop('👻', 'The ghost is awake!'); break;
         case 'rage': audio('wrong'); story?.emojiPop('😡', 'Angry ghost! Hold on till sunrise'); break;
@@ -123,7 +155,7 @@ export async function runTv(ctx) {
           audio('confirm'); seatAct(ev.seat, 'cheer', '🎉'); seatAct(ev.victim, 'facepalm', null); botSays(ev.seat, 'good'); setTimeout(() => { seatAct(ev.seat, 'hold'); seatAct(ev.victim, 'hold'); }, 1400); break;
         // a new level in the endless games: a fanfare, and the players cheer (the TV shows the banner)
         case 'level': audio('achieve'); if (ev.seat >= 0) seatAct(ev.seat, 'cheer', '⬆️'); else players.forEach((_, i) => seatAct(i, 'cheer', i === 0 ? '⬆️' : null)); break;
-        case 'crash': audio('crash'); seatAct(ev.seat, 'facepalm', '😱'); botSays(ev.seat, 'bad'); break;
+        case 'crash': audio('crash'); if (localSeats().includes(ev.seat)) haptic('hit'); seatAct(ev.seat, 'facepalm', '😱'); botSays(ev.seat, 'bad'); break;
         default:
       }
     }
@@ -161,24 +193,201 @@ export async function runTv(ctx) {
       if (padHeld[seat].a) { firstPress(); if (result) rematchKey(); }
     });
   }
+  /*
+   * A game whose left-right runs up and down the flat picture (Road Dash: in 3D the lanes run left to
+   * right behind the rickshaw, in 2D they are stacked top to bottom) is steered with up and down in 2D.
+   * Each phone does this for its own view, before its input is used or sent.
+   */
+  const turned = () => is2d() && logic.flatAxis === 'y';
+  const turn = (o) => {
+    if (!turned()) return o;
+    return { ...o, l: !!(o.l || o.u), r: !!(o.r || o.d), u: false, d: false };
+  };
   const inputOf = (seat) => {
     const a = held[seat] || {}, b = padHeld[seat] || {};
-    const o = { a: a.a || b.a, u: a.u || b.u, d: a.d || b.d, l: a.l || b.l, r: a.r || b.r };
+    const o = turn({ a: a.a || b.a, u: a.u || b.u, d: a.d || b.d, l: a.l || b.l, r: a.r || b.r });
+    if (a.swipe) { o.swipe = a.swipe; delete a.swipe; }
+    if (a.drag) { o.drag = a.drag; delete a.drag; }
     if (logic.analog) {
       o.x = Number.isFinite(a.x) ? a.x : Number.isFinite(b.x) ? b.x : (o.r ? 1 : 0) - (o.l ? 1 : 0);
       o.y = Number.isFinite(a.y) ? a.y : Number.isFinite(b.y) ? b.y : (o.d ? 1 : 0) - (o.u ? 1 : 0);
     }
     return o;
   };
+  /*
+   * Reaction games (logic.signal): every phone times its own players, from the moment the signal was
+   * drawn on this screen to the moment of the tap, and sends that time with the tap. A slow network then
+   * delays when the time arrives, never the time itself. A tap before the signal is sent as a false start.
+   */
+  const reflex = typeof logic.signal === 'function' ? { seen: new Map(), lastTap: 0, out: new Map() } : null;
+  if (reflex) {
+    const mark = (e) => { reflex.lastTap = Number.isFinite(e.timeStamp) && e.timeStamp > 0 ? e.timeStamp : performance.now(); };
+    addEventListener('pointerdown', mark, true);
+    addEventListener('keydown', (e) => { if (!e.repeat) mark(e); }, true);
+  }
+  /** Called after a frame is drawn: remember when this screen first showed each round's signal. */
+  function reflexSeen() {
+    if (!reflex || !state) return;
+    const sig = logic.signal(state);
+    if (sig?.go && !reflex.seen.has(sig.round)) reflex.seen.set(sig.round, performance.now());
+    // a new question: whatever was typed for the last one is cleared
+    if (keypad && sig && sig.round !== keypad.round) { keypad.round = sig.round; keypad.buf.clear(); paintKeypads(); }
+  }
+  /**
+   * The timing fields for one seat's input; a new press is timed once and then carried until the next.
+   * In a game with answer buttons (logic.choices) the press also says which answer it was (pick).
+   */
+  const CHOICE_KEYS = (logic.choices || [['a']]).map(c => c[0]);
+  function reflexStamp(seat, input) {
+    if (!reflex || !state) return {};
+    const pick = CHOICE_KEYS.find(k => input?.[k]) || null;
+    let o = reflex.out.get(seat) || {};
+    const sig = logic.signal(state);
+    // taps during the countdown before the game are someone trying the button, not a false start
+    if (countdown > 0) { reflex.out.set(seat, { down: !!pick }); return {}; }
+    if (pick && !o.down && sig) {
+      const now = performance.now();
+      const at = now - reflex.lastTap < 120 ? reflex.lastTap : now;
+      const seen = reflex.seen.get(sig.round);
+      o = sig.go && seen != null ? { rr: sig.round, rt: Math.max(0, Math.round(at - seen)), pick } : { early: sig.round };
+    }
+    o.down = !!pick;
+    reflex.out.set(seat, o);
+    return { rr: o.rr, rt: o.rt, early: o.early, pick: o.pick };
+  }
+  /*
+   * Typed answers (logic.keypad = 'digits' or 'letters'): each phone keeps what its own player types and
+   * sends the whole answer at once on OK, timed from when the question showed on that screen. Nothing
+   * typed travels until it is sent, so quick typing never loses a key on a slow network.
+   */
+  const keypad = logic.keypad ? { buf: new Map(), sent: new Map(), round: null, views: new Map() } : null;
+  const KEYPAD_MAX = 24;
+  const keypadOk = (ch) => (logic.keypad === 'digits' ? /^[0-9]$/.test(ch) : /^[a-z]$/i.test(ch));
+  const keypadSeatHere = () => (guestLink ? guestSeat : localSeats()[0]);
+  function paintKeypads() {
+    if (!keypad) return;
+    keypad.views.forEach((view, seat) => {
+      const sent = keypad.sent.get(seat);
+      const done = sent && sent.rr === keypad.round;
+      view.textContent = done ? `✓ ${sent.ans}` : (keypad.buf.get(seat) || '');
+      view.classList.toggle('keypad__show--sent', !!done);
+    });
+  }
+  function keypadType(seat, ch) {
+    if (!keypad || seat == null || seat < 0 || !state) return;
+    const sig = logic.signal?.(state);
+    const sent = keypad.sent.get(seat);
+    if (sent && sig && sent.rr === sig.round) return;            // one answer per question
+    let b = keypad.buf.get(seat) || '';
+    if (ch === 'back') b = b.slice(0, -1);
+    else if (ch === 'ok') {
+      if (!b || !sig?.go) return;
+      const seen = reflex?.seen.get(sig.round);
+      keypad.sent.set(seat, { rr: sig.round, ans: b, rt: seen != null ? Math.max(0, Math.round(performance.now() - seen)) : 0 });
+      b = '';
+      audio('select');
+      if (guestLink) guestSendInput();
+    } else if (keypadOk(ch) && b.length < KEYPAD_MAX) b += logic.keypad === 'letters' ? ch.toUpperCase() : ch;
+    keypad.buf.set(seat, b);
+    paintKeypads();
+  }
+  const keypadFields = (seat) => { const s = keypad?.sent.get(seat); return s ? { rr: s.rr, ans: s.ans, rt: s.rt } : {}; };
+  if (keypad) {
+    addEventListener('keydown', (e) => {
+      if (e.target.closest?.('input, textarea, [contenteditable]')) return;
+      const ch = e.key === 'Backspace' ? 'back' : e.key === 'Enter' ? 'ok' : e.key.length === 1 ? e.key : null;
+      if (!ch || (ch.length === 1 && !keypadOk(ch))) return;
+      e.preventDefault();
+      keypadType(keypadSeatHere(), ch);
+    });
+  }
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  function bindSwipe(element, seatFor) {
+    if (!logic.swipe) return () => {};
+    let pointerId = null, start = null;
+    const down = (e) => {
+      if (pointerId != null || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      e.preventDefault();
+      pointerId = e.pointerId;
+      start = { x: e.clientX, y: e.clientY, at: performance.now(), eligible: countdown === 0 && !result };
+      element.setPointerCapture?.(pointerId);
+      element.classList.add('swipe--on');
+    };
+    const finish = (e) => {
+      if (e.pointerId !== pointerId) return;
+      const from = start, dx = e.clientX - from.x, dy = e.clientY - from.y;
+      const distance = Math.hypot(dx, dy), elapsed = performance.now() - from.at;
+      pointerId = null; start = null;
+      element.classList.remove('swipe--on');
+      if (!from.eligible || countdown > 0 || result || elapsed > 3000 || distance < 18) return;
+      const speed = distance / Math.max(1, elapsed);
+      const swipe = {
+        x: Math.round(dx / distance * 1000) / 1000,
+        y: Math.round(dy / distance * 1000) / 1000,
+        power: Math.round(clamp(speed / 1.25, 0.12, 1) * 1000) / 1000,
+      };
+      const seat = seatFor();
+      if (!Number.isInteger(seat) || seat < 0) return;
+      if (guestLink) {
+        guestHeld.set('swipe', swipe);
+        guestSendInput();
+        guestHeld.delete('swipe');
+      } else {
+        held[seat].swipe = swipe;
+        firstPress();
+      }
+    };
+    const cancel = (e) => {
+      if (e.pointerId !== pointerId) return;
+      pointerId = null; start = null;
+      element.classList.remove('swipe--on');
+    };
+    element.addEventListener('pointerdown', down);
+    element.addEventListener('pointerup', finish);
+    element.addEventListener('pointercancel', cancel);
+    return () => {
+      element.removeEventListener('pointerdown', down);
+      element.removeEventListener('pointerup', finish);
+      element.removeEventListener('pointercancel', cancel);
+    };
+  }
+  const swipeCanvasCleanup = bindSwipe(canvas, () => guestLink ? guestSeat : localSeats()[0]);
+  /*
+   * Drag on the TV picture (logic.drag): press on something, let go somewhere else. The two points are
+   * sent in the picture's own units (W × H), so every screen size means the same thing. A game showing
+   * more than one board here says whose board a point is on (logic.dragSeat).
+   */
+  const dragCleanup = (() => {
+    if (!logic.drag) return () => {};
+    let from = null;
+    const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: Math.round((e.clientX - r.left) / r.width * W), y: Math.round((e.clientY - r.top) / r.height * H) }; };
+    const down = (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; e.preventDefault(); from = { ...at(e), id: e.pointerId }; canvas.setPointerCapture?.(e.pointerId); };
+    const up = (e) => {
+      if (!from || e.pointerId !== from.id) return;
+      const to = at(e), drag = { x0: from.x, y0: from.y, x1: to.x, y1: to.y, n: guestLink ? 1 : Math.min(2, localSeats().length) };
+      from = null;
+      if (countdown > 0 || result || !state) return;
+      if (guestLink) { guestHeld.set('drag', drag); guestSendInput(); guestHeld.delete('drag'); return; }
+      const here = localSeats();
+      const seat = logic.dragSeat ? logic.dragSeat(state, drag.x0, drag.y0, here) : here[0];
+      if (Number.isInteger(seat) && held[seat]) { held[seat].drag = drag; firstPress(); }
+    };
+    const cancel = () => { from = null; };
+    canvas.addEventListener('pointerdown', down);
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', cancel);
+    if (logic.drag) canvas.style.touchAction = 'none';
+    return () => { canvas.removeEventListener('pointerdown', down); canvas.removeEventListener('pointerup', up); canvas.removeEventListener('pointercancel', cancel); };
+  })();
   function firstPress() { if (waitingFirst) { waitingFirst = false; countdown = 0; } }
   // tap anywhere on the room or the TV: the first player's main button, in one-button games
   const oneButton = logic.pad.length === 1;
   const tapDown = (e) => {
-    if (!oneButton || e.target.closest?.('.panel, .bar, .sheet, a, button')) return;
+    if (!oneButton || logic.swipe || e.target.closest?.('.panel, .bar, .sheet, a, button')) return;
     const seat = localSeats()[0];
     if (seat != null) { held[seat].a = true; firstPress(); }
   };
-  const tapUp = () => { const seat = localSeats()[0]; if (seat != null && oneButton) held[seat].a = false; };
+  const tapUp = () => { const seat = localSeats()[0]; if (seat != null && oneButton && !logic.swipe) held[seat].a = false; };
   addEventListener('pointerdown', tapDown);
   addEventListener('pointerup', tapUp);
 
@@ -221,8 +430,39 @@ export async function runTv(ctx) {
     return base;
   }
   function padFor(seat, label) {
+    // a keypad for typed answers: what you type shows above it, OK sends it
+    if (keypad) {
+      const view = h('output', { class: 'keypad__show', 'aria-live': 'polite' });
+      keypad.views.set(seat, view);
+      const key = (ch, text, extra = '') => h('button', { type: 'button', class: `keypad__key${extra}`, 'aria-label': ch === 'back' ? 'Delete' : ch === 'ok' ? 'Send answer' : text,
+        onpointerdown: (e) => { e.preventDefault(); keypadType(seat, ch); } }, [text]);
+      const rows = logic.keypad === 'digits'
+        ? ['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => key(d, d)).concat([key('back', '⌫', ' keypad__key--soft'), key('0', '0'), key('ok', '✓', ' keypad__key--ok')])
+        // a phone keyboard's rows: the second and third start half a key in
+        : 'QWERTYUIOPASDFGHJKLZXCVBNM'.split('').map(c => key(c, c, c === 'A' || c === 'Z' ? ' keypad__key--indent' : '')).concat([key('back', '⌫', ' keypad__key--soft'), key('ok', '✓', ' keypad__key--ok')]);
+      setTimeout(paintKeypads);
+      return h('div', { class: `pad pad--keypad pad--keypad-${logic.keypad}`, 'data-seat': seat }, [
+        label ? h('span', { class: 'pad__who' }, [label]) : null, view, h('div', { class: 'keypad' }, rows),
+      ]);
+    }
+    // answer buttons (a Stroop-style quiz): big coloured buttons, each held like a key while pressed
+    if (logic.choices) {
+      const press = (key, on) => (e) => {
+        e.preventDefault();
+        if (guestLink) { guestHeld.set(key, on); guestSendInput(); return; }
+        held[seat][key] = on;
+        if (on) firstPress();
+      };
+      return h('div', { class: 'pad pad--choices', 'data-seat': seat }, [
+        label ? h('span', { class: 'pad__who' }, [label]) : null,
+        ...logic.choices.map(([key, text, color, hint]) => h('button', { type: 'button', class: 'choicebtn', style: `--choice:${color}`, 'aria-label': text,
+          onpointerdown: press(key, true), onpointerup: press(key, false), onpointercancel: press(key, false), onpointerleave: press(key, false), oncontextmenu: (e) => e.preventDefault() },
+        [h('strong', {}, [text]), hint ? h('small', {}, [hint]) : null])),
+      ]);
+    }
     const dirs = logic.pad.map(p => p[0]).filter(k => 'udlr'.includes(k));
-    const axes = logic.analog || (dirs.includes('l') ? (dirs.includes('u') ? 'xy' : 'x') : 'y');
+    let axes = logic.analog === true ? 'xy' : logic.analog || (dirs.includes('l') ? (dirs.includes('u') ? 'xy' : 'x') : 'y');
+    if (turned() && axes === 'x') axes = 'y';   // see turn(): the same steering, shown the way the picture runs
     const action = logic.pad.find(p => p[0] === 'a');
     const set = (on) => (e) => {
       e.preventDefault();
@@ -230,9 +470,17 @@ export async function runTv(ctx) {
       held[seat].a = on;
       if (on) firstPress();
     };
-    return h('div', { class: `pad${dirs.length && action ? ' pad--both' : ''}`, 'data-seat': seat }, [
+    return h('div', { class: `pad${dirs.length && action ? ' pad--both' : ''}${logic.swipe ? ' pad--swipe' : ''}`, 'data-seat': seat }, [
       label ? h('span', { class: 'pad__who' }, [label]) : null,
       dirs.length ? stick(seat, axes) : null,
+      logic.swipe ? (() => {
+        const zone = h('div', { class: 'swipe-zone', role: 'application', 'aria-label': logic.swipeHint || 'Swipe quickly to launch' }, [
+          h('strong', {}, [logic.swipeHint || 'Swipe quickly to launch']),
+          h('small', {}, ['Fast swipe = more power']),
+        ]);
+        bindSwipe(zone, () => seat);
+        return zone;
+      })() : null,
       action ? h('button', { type: 'button', class: 'padbtn padbtn--a', 'aria-label': action[1], onpointerdown: set(true), onpointerup: set(false), onpointercancel: set(false), onpointerleave: set(false), oncontextmenu: (e) => e.preventDefault() }, [action[1]]) : null,
     ]);
   }
@@ -305,6 +553,8 @@ export async function runTv(ctx) {
   function hint() {
     if (matchMedia('(pointer: coarse)').matches) return null;
     const twoHere = localSeats().length > 1;
+    if (keypad) return h('p', { class: 'lead keyhint' }, [logic.keypad === 'digits' ? 'Keys: type the digits · Backspace deletes · Enter sends' : 'Keys: type the letters · Backspace deletes · Enter sends']);
+    if (logic.choices) return h('p', { class: 'lead keyhint' }, [`Keys: ${logic.choices.map(c => `${c[3] || c[0]} ${c[1]}`).join(' · ')}`]);
     const a = logic.pad.map(p => p[0]);
     const k1 = a.length === 1 ? 'Space' : `W A S D${a.includes('a') ? ' + Space' : ''}`;
     const k2 = a.length === 1 ? 'Enter' : `arrows${a.includes('a') ? ' + Enter' : ''}`;
@@ -315,7 +565,8 @@ export async function runTv(ctx) {
     setTimeout(() => {
       const stickEl = document.querySelector('.tvpanel .stick');
       const a = document.querySelector('.tvpanel .padbtn--a');
-      if (logic.hint && (stickEl || a)) showHint(game.slug, stickEl || a, logic.hint, { drag: !!stickEl, max: 2 });
+      const tip = turned() && logic.flatHint ? logic.flatHint : logic.hint;
+      if (tip && (stickEl || a)) showHint(game.slug, stickEl || a, tip, { drag: !!stickEl, max: 2 });
       else if (stickEl) showHint(game.slug, stickEl, 'Drag to steer', { drag: true, max: 2 });
       else if (a) showHint(game.slug, a, logic.tapToPlay ? 'Tap here, or anywhere on the TV' : `Tap to ${(logic.pad.find(p => p[0] === 'a')?.[1] || 'play').replace(/^\P{L}+/u, '').toLowerCase()}`, { max: 2 });
     }, 700);
@@ -336,12 +587,12 @@ export async function runTv(ctx) {
 
   /* ─── the game ─── */
   function start(resumeState = null) {
-    gameplayStart();
+    music(true);
     state = resumeState || logic.init({ n: players.length, seed: (Math.random() * 2 ** 31) | 0 });
     result = null;
     tick = 0;
     if (!resumeState) revives = 0;
-    toldBest = false; medalsTold = 0; bestAtStart = bestOf(game.slug);
+    toldBest = false; medalsTold = 0; bestAtStart = bestOf(game.slug); liveShown = 0; ctx.refreshBest?.();
     holdPopups(true);
     waitingFirst = !resumeState && !!logic.tapToPlay && players.length === 1 && players[0].kind === 'me';
     countdown = waitingFirst ? 1 : 150;
@@ -353,7 +604,7 @@ export async function runTv(ctx) {
       const seat = players.findIndex(p => p.token === guest.token);
       room.send(guest.id, { t: 'seat', seat });
     });
-    room?.broadcast({ t: 's', s: state, c: countdown });
+    shareState(countdown);
     playPanel();
     cancelAnimationFrame(loop);
     last = performance.now();
@@ -375,10 +626,16 @@ export async function runTv(ctx) {
       acc -= TICK;
       if (countdown > 0) {
         if (!waitingFirst) countdown -= 1;
-        if (room && countdown % 12 === 0) room.broadcast({ t: 's', s: state, c: countdown });
+        if (room && countdown % 12 === 0) shareState(countdown);
         continue;
       }
-      const inputs = players.map((p, i) => (p.kind === 'bot' || (p.kind === 'guest' && !guestLive(p)) ? logic.bot(state, i) : p.kind === 'guest' ? (guestInputs.get(p.token) || {}) : inputOf(i)));
+      const inputs = players.map((p, i) => {
+        if (p.kind === 'bot' || (p.kind === 'guest' && !guestLive(p))) return logic.bot(state, i);
+        if (p.kind !== 'guest') { const own = inputOf(i); return reflex ? { ...own, ...(keypad ? keypadFields(i) : reflexStamp(i, own)) } : own; }
+        const input = guestInputs.get(p.token) || {};
+        if (input.swipe || input.drag) guestInputs.set(p.token, { ...input, swipe: null, drag: null });
+        return input;
+      });
       logic.step(state, inputs);
       tick += 1;
       if (state.ev.length) {
@@ -386,19 +643,44 @@ export async function runTv(ctx) {
         react(ev);
         room?.broadcast({ t: 'ev', ev });
       }
-      if (room && tick % SEND_EVERY === 0) room.broadcast({ t: 's', s: state, c: 0 });
+      if (room && tick % SEND_EVERY === 0) shareState();
       milestones();
       if (!room && !guestLink && tick % 120 === 0) saveGame(game.slug, { tv: true, players: players.map(({ name, kind, look }) => ({ name, kind, look })), state, revives });
       const over = logic.over(state);
       if (over) {
         result = over;
         if (canRevive()) { offerRevive(); break; }
-        room?.broadcast({ t: 's', s: state });
+        shareState();
         room?.broadcast({ t: 'over', result });
         finish();
       }
     }
     paint();
+  }
+  /*
+   * Shadows for any 3D view: its sun casts them, solid things cast them and the ground takes them.
+   * Looked over now and then, because things keep arriving (traffic, coins, rocks).
+   */
+  let shadeTick = 0;
+  function shadeScene(scene) {
+    scene.traverse((o) => {
+      if (o.userData.shaded) return;
+      o.userData.shaded = true;
+      if (o.isDirectionalLight) {
+        o.castShadow = true;
+        o.shadow.mapSize.set(1024, 1024);
+        Object.assign(o.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 0.5, far: 40 });
+        o.shadow.camera.updateProjectionMatrix();
+        o.shadow.bias = -0.0006; o.shadow.normalBias = 0.02;
+      } else if (o.isMesh) {
+        const m = Array.isArray(o.material) ? o.material[0] : o.material;
+        const lit = !!m && !m.isMeshBasicMaterial;
+        o.receiveShadow = lit;
+        o.castShadow = lit && !m.transparent && o.geometry?.type !== 'PlaneGeometry' && o.geometry?.type !== 'CircleGeometry';
+        // a material already drawn once has to be rebuilt to start taking shadows
+        if (lit) (Array.isArray(o.material) ? o.material : [o.material]).forEach((mm) => { mm.needsUpdate = true; });
+      }
+    });
   }
   const namesNow = () => players.map(p => p.name);
   let lastPaint = performance.now();
@@ -409,16 +691,27 @@ export async function runTv(ctx) {
     lastPaint = now;
     g.setTransform(SCALE, 0, 0, SCALE, 0, 0);
     let flat = true;
-    if (view && r3) {
+    if (view && r3 && !is2d()) {
       try {
-        view.update(state, dt, Math.min(1, acc / TICK));
+        // the camera follows this phone's own player: on a friend's phone that is their seat, not the host's
+        const mine = guestLink ? guestSeat : players.findIndex(p => p.kind === 'me');
+        view.update(state, dt, Math.min(1, acc / TICK), mine >= 0 ? mine : 0);
+        if (r3.shadowMap.enabled && (shadeTick++ % 30 === 0)) shadeScene(view.scene);
         r3.render(view.scene, view.camera);
         g.drawImage(r3.domElement, 0, 0, W, H);
         (logic.hud || (() => {})).call(logic, g, state, namesNow());
         flat = false;
       } catch (e) { console.warn('[tv] 3D frame failed, using the flat picture', e); view = null; }
     }
-    if (flat) logic.draw(g, state, namesNow());
+    // the seats played on this screen, for games with private things to show (a Bingo card)
+    if (flat) logic.draw(g, state, namesNow(), guestLink ? [guestSeat] : localSeats());
+    reflexSeen();
+    // our name, small, in the corner of every TV game: a recording or a copy still says where it's from
+    g.save();
+    g.globalAlpha = 0.5; g.font = '700 11px system-ui, sans-serif'; g.textAlign = 'right'; g.textBaseline = 'bottom';
+    g.fillStyle = '#000'; g.fillText('chitplay.com', W - 7, H - 5);
+    g.fillStyle = '#fff'; g.fillText('chitplay.com', W - 8, H - 6);
+    g.restore();
     if (waitingFirst) banner(oneButton ? 'Tap to fly!' : 'Press to start');
     else if (countdown > 0) banner(String(Math.ceil(countdown / 50)));
     story?.tvRefresh();
@@ -433,14 +726,16 @@ export async function runTv(ctx) {
   }
 
   /* ─── while playing: a new best or a medal shows up, but nothing stops ─── */
-  const liveScore = (seat) => (state?.chits || state?.planes || state?.carts || state?.snakes || state?.birds || state?.players)?.[seat]?.score;
-  let bestAtStart = 0, toldBest = false, medalsTold = 0, revives = 0;
+  const liveScore = (seat) => (state?.chits || state?.planes || state?.carts || state?.cars || state?.snakes || state?.birds || state?.players)?.[seat]?.score;
+  let bestAtStart = 0, toldBest = false, medalsTold = 0, revives = 0, liveShown = 0;
   function milestones() {
     const seat = localSeats()[0];
     if (seat == null || localSeats().length > 1) return;
     const sc = liveScore(seat);
     if (!Number.isFinite(sc)) return;
     if (!toldBest && bestAtStart > 0 && sc > bestAtStart) { toldBest = true; popup('🏅', 'New best score!', `You passed ${bestAtStart}. Keep going!`); }
+    // past your best: the chip at the top keeps count
+    if (bestAtStart > 0 && sc > bestAtStart && sc !== liveShown) { liveShown = sc; ctx.liveBest?.(sc); }
     const medals = game.medals || [];
     const got = medals.filter(m => sc >= m).length;
     if (got > medalsTold) { medalsTold = got; popup(['🥉', '🥈', '🥇', '💎'][got - 1], `${['Bronze', 'Silver', 'Gold', 'Diamond'][got - 1]} medal!`, `${sc} points in ${game.name}`); }
@@ -479,18 +774,22 @@ export async function runTv(ctx) {
   /* ─── the end of a game ─── */
   let againAt = 0;
   function rematchKey() { if (!guestLink && Date.now() > againAt) rematch(); }
-  function rematch() {
+  let rematching = false;   // one Play again at a time, even while an ad break is showing
+  async function rematch() {
+    if (rematching) return;
+    rematching = true;
     players = players.map(p => (p.kind === 'guest' && !guestLive(p) ? { ...p, kind: 'bot' } : p));
+    // between games only, and only alone: friends on other phones are never kept waiting for an ad
+    try { if (!room && !guestLink) await adBreak(`${game.slug}-again`); } finally { rematching = false; }
     start();
   }
   function finish() {
-    gameplayStop();
     holdPopups(false);
     clearSaved(game.slug);
     againAt = Date.now() + 700;
     cancelAnimationFrame(loop);
     loop = requestAnimationFrame(frameIdle);
-    audio('victory');
+    endSound(result, localSeats());
     (result.winners || []).forEach(w => seatAct(w, 'cheer', '🏆'));
     if ((result.winners || []).length) story?.effect('confetti');
     const seat = localSeats()[0];
@@ -498,20 +797,12 @@ export async function runTv(ctx) {
     resultPanel(seat, counted, result);
   }
   function frameIdle() { loop = requestAnimationFrame(frameIdle); readPads(); paint(); }
-  /** After a game: what your room gets next, as a link to My Room. */
-  function roomTeaser() {
-    try {
-      const st = playStats();
-      const next = nextForRoom({ wins: Object.values(st.wins || {}).reduce((x, y) => x + y, 0), achievements: achievementList().filter(a => a.done).length, coins: profile.coins });
-      if (!next) return null;
-      return h('a', { class: `roomteaser${next.ready ? ' roomteaser--ready' : ''}`, href: '../', onclick: () => { try { sessionStorage.setItem('chitplay.openRoom', '1'); } catch {} ctx.leaveAll?.(); } }, [h('span', { class: 'roomteaser__icon' }, [next.icon]), h('span', {}, [next.text]), h('b', {}, ['🛋️ My Room →'])]);
-    } catch { return null; }
-  }
   function resultPanel(seat, counted, r) {
     const names = namesNow();
     const myScore = seat != null ? r.scores[seat] : 0;
     const won = seat != null && (r.winners || []).includes(seat);
     const info = counted || guestLink ? gameFinished({ slug: game.slug, won, score: myScore, endless: !!r.endless, mode: room || guestLink ? 'nearby' : 'local' }) : null;
+    ctx.refreshBest?.();
     const medals = game.medals || [];
     const medalNames = ['🥉', '🥈', '🥇', '💎'];
     const got = medals.filter(m => myScore >= m).length;
@@ -525,18 +816,17 @@ export async function runTv(ctx) {
     show(topBar(game), h('section', { class: 'panel tvpanel' }, [
       h('h1', {}, [title]),
       r.endless && players.length === 1 ? h('p', { class: 'lead' }, [`${got ? `${medalNames[got - 1]} ` : ''}Best: ${info?.best ?? bestOf(game.slug)}${nextMedal ? ` · ${nextMedal - myScore} more for ${medalNames[got]}` : ''}`])
-        : h('ol', { class: 'board' }, names.map((n, i) => [n, r.scores[i], i]).sort((a, b) => b[1] - a[1]).map(([n, v, i], k) => h('li', { class: (r.winners || []).includes(i) ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][k] || k + 1} ${n}`]), h('strong', {}, [String(v)])]))),
+        : h('ol', { class: 'board' }, names.map((n, i) => [n, r.scores[i], i]).sort((a, b) => Number((r.winners || []).includes(b[2])) - Number((r.winners || []).includes(a[2])) || b[1] - a[1]).map(([n, v, i], k) => h('li', { class: (r.winners || []).includes(i) ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][k] || k + 1} ${n}`]), h('strong', {}, [String(v)])]))),
       h('div', { class: 'rankline' }, [
         h('span', {}, [`${rp.icon} ${rp.title}`]),
         h('div', { class: 'rankbar' }, [h('i', { style: `width:${Math.round(rp.share * 100)}%` })]),
         info?.coins ? h('small', {}, [`+${info.gained} rank points · +${info.coins} coins`]) : null,
       ]),
-      roomTeaser(),
-      guestLink ? h('p', { class: 'lead' }, ['Waiting for the host to play again…']) : btn(lost || r.endless ? '🔁 Try again' : `🔁 ${say.playAgain}`, () => { adBreak().then(rematch); }, 'primary'),
+      guestLink ? h('p', { class: 'lead' }, ['Waiting for the host to play again…']) : btn(lost || r.endless ? '🔁 Try again' : `🔁 ${say.playAgain}`, () => rematch(), 'primary'),
       btn(won || info?.newBest ? '📤 Share my win' : '📤 Share my score', async () => {
         const pic = resultImage({ picture: canvas, game, headline: won ? 'I won!' : r.endless ? `I scored ${myScore}!` : 'Rematch?', sub: r.endless ? 'Can you beat me?' : names.join(' vs ') });
         await shareResult({ canvas: pic, text: r.endless ? `I scored ${myScore} in ${game.name} on ChitPlay. Can you beat it?` : `${won ? 'I won' : 'I played'} ${game.name} on ChitPlay!`, slug: game.slug });
-      }, 'sharebtn'),
+      }),
       suggestionRow(game.slug, '../', lost || r.endless ? 'Or try another game' : 'Try these next'),
       offer ? btn('🔔 Remind me to play every day', async (e) => {
         const b = e.currentTarget;
@@ -581,7 +871,7 @@ export async function runTv(ctx) {
       ]));
     };
     room = makeRoom(paint2);
-    room.open(null).then(paint2).catch((e) => {
+    room.open(null).then((c) => { if (c) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code: c, slug: game.slug } })); return paint2(c); }).catch((e) => {
       const key = nearbyError(e);
       show(topBar(game), h('section', { class: 'panel' }, [h('h1', {}, ['Couldn’t open a room']), h('p', { class: 'lead' }, [key === 'errNetwork' ? 'Check your internet connection and try again.' : 'Something went wrong. Try again.']), btn(say.playAgain, () => nearbyLobby(size), 'primary')]));
     });
@@ -594,7 +884,22 @@ export async function runTv(ctx) {
         const seat = players.findIndex(p => p.token === token);
         if (msg.t === 'i' && msg.i && typeof msg.i === 'object') {
           const num = (v) => (Number.isFinite(v) ? Math.max(-1, Math.min(1, v)) : undefined);
-          guestInputs.set(token, { a: !!msg.i.a, u: !!msg.i.u, d: !!msg.i.d, l: !!msg.i.l, r: !!msg.i.r, x: num(msg.i.x), y: num(msg.i.y) });
+          const swipe = msg.i.swipe && typeof msg.i.swipe === 'object' ? {
+            x: num(msg.i.swipe.x), y: num(msg.i.swipe.y),
+            power: Number.isFinite(msg.i.swipe.power) ? clamp(msg.i.swipe.power, 0, 1) : undefined,
+          } : null;
+          const input = { a: !!msg.i.a, u: !!msg.i.u, d: !!msg.i.d, l: !!msg.i.l, r: !!msg.i.r, x: num(msg.i.x), y: num(msg.i.y) };
+          // a reaction game's own timing from the friend's phone (see reflexStamp)
+          if (Number.isInteger(msg.i.rr) && Number.isFinite(msg.i.rt)) { input.rr = msg.i.rr; input.rt = clamp(Math.round(msg.i.rt), 0, 600000); }
+          if (Number.isInteger(msg.i.early)) input.early = msg.i.early;
+          if (typeof msg.i.pick === 'string' && CHOICE_KEYS.includes(msg.i.pick)) input.pick = msg.i.pick;
+          if (typeof msg.i.ans === 'string') input.ans = msg.i.ans.slice(0, 24).replace(logic.keypad === 'digits' ? /[^0-9]/g : /[^A-Za-z]/g, '');
+          if (swipe && Number.isFinite(swipe.x) && Number.isFinite(swipe.y) && Number.isFinite(swipe.power)) input.swipe = swipe;
+          const d = msg.i.drag;
+          if (logic.drag && d && typeof d === 'object' && ['x0', 'y0', 'x1', 'y1'].every(k => Number.isFinite(d[k]))) input.drag = { x0: clamp(d.x0, 0, W), y0: clamp(d.y0, 0, H), x1: clamp(d.x1, 0, W), y1: clamp(d.y1, 0, H), n: 1 };
+          // a drag not yet used survives the next message (a key let go just after it)
+          else if (guestInputs.get(token)?.drag) input.drag = guestInputs.get(token).drag;
+          guestInputs.set(token, input);
           if (waitingFirst && msg.i.a) firstPress();
         } else if (msg.t === 'emoji' && seat >= 0 && emojis().includes(msg.e)) {
           const to = Number.isInteger(msg.to) && players[msg.to] ? msg.to : null;
@@ -690,6 +995,9 @@ export async function runTv(ctx) {
     removeEventListener('keyup', upKey);
     removeEventListener('pointerdown', tapDown);
     removeEventListener('pointerup', tapUp);
+    swipeCanvasCleanup();
+    dragCleanup();
+    removeEventListener('chitplay:view', onView);
     bigBox.remove();
     holdPopups(false);
     room?.close();
@@ -707,7 +1015,14 @@ export async function runTv(ctx) {
 
   /* a friend's phone: shows the host's game and sends its buttons */
   let guestSeat = -1;
-  function guestSendInput() { guestLink?.send({ t: 'i', i: Object.fromEntries(guestHeld) }); }
+  function guestPanel() {
+    show(topBar(game), h('section', { class: 'panel panel--tight tvpanel' }, [h('div', { class: 'pads' }, [padFor(guestSeat, '')]), bigToggle(), trollRow()]));
+  }
+  function guestSendInput() {
+    const i = turn(Object.fromEntries(guestHeld));
+    if (reflex && guestSeat >= 0) Object.assign(i, keypad ? keypadFields(guestSeat) : reflexStamp(guestSeat, i));
+    guestLink?.send({ t: 'i', i });
+  }
   function guestKeys(e, down) {
     for (const map of KEYS) { const key = map[e.code]; if (key) { e.preventDefault(); guestHeld.set(key, down); guestSendInput(); } }
   }
@@ -719,8 +1034,8 @@ export async function runTv(ctx) {
     removeEventListener('pointerup', tapUp);
     addEventListener('keydown', (e) => guestKeys(e, true));
     addEventListener('keyup', (e) => guestKeys(e, false));
-    addEventListener('pointerdown', (e) => { if (oneButton && !e.target.closest?.('.panel, .bar, .sheet, a, button')) { guestHeld.set('a', true); guestSendInput(); } });
-    addEventListener('pointerup', () => { if (oneButton) { guestHeld.set('a', false); guestSendInput(); } });
+    addEventListener('pointerdown', (e) => { if (oneButton && !logic.swipe && !e.target.closest?.('.panel, .bar, .sheet, a, button')) { guestHeld.set('a', true); guestSendInput(); } });
+    addEventListener('pointerup', () => { if (oneButton && !logic.swipe) { guestHeld.set('a', false); guestSendInput(); } });
     show(topBar(game), h('section', { class: 'panel' }, [h('h1', {}, ['You’re in!']), h('p', { class: 'lead' }, ['Waiting for the host to start.'])]));
     return (m) => {
       if (m.t === 'tv' && Array.isArray(m.players)) {
@@ -732,7 +1047,7 @@ export async function runTv(ctx) {
         loop = requestAnimationFrame(frameIdle);
       } else if (m.t === 'seat' && Number.isInteger(m.seat)) {
         guestSeat = m.seat;
-        show(topBar(game), h('section', { class: 'panel panel--tight tvpanel' }, [h('div', { class: 'pads' }, [padFor(guestSeat, '')]), bigToggle(), trollRow()]));
+        guestPanel();
         story?.tvPanel(panelNow());
       } else if (m.t === 's' && m.s) { state = m.s; countdown = Number(m.c) || 0; }
       else if (m.t === 'ev' && Array.isArray(m.ev)) react(m.ev);
@@ -740,7 +1055,7 @@ export async function runTv(ctx) {
       else if (m.t === 'emoji' && Number.isInteger(m.seat) && emojis().includes(m.e)) showEmoji(m.seat, m.e, Number.isInteger(m.to) ? m.to : null);
       else if (m.t === 'over' && m.result && Array.isArray(m.result.scores)) {
         result = m.result;
-        audio('victory');
+        endSound(result, Number.isInteger(guestSeat) ? [guestSeat] : []);
         resultPanel(guestSeat, true, result);
       }
     };

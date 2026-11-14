@@ -70,3 +70,12 @@ export function turnLine(ctx, verb = '') {
   return a.length === 1 ? `${ctx.names[a[0]]}’s turn` : 'Waiting for the others…';
 }
 export const scoreList = (scores, ctx) => scores.map((v, i) => [ctx.names[i], v]);
+/**
+ * The players' strip under the board: each name in that player's colour on the board, what they
+ * have, and a glow on whoever's turn it is. `text(seat)` says what each one has.
+ */
+export function strip(ctx, colors, text) {
+  return ctx.names.map((n, p) => ({ name: p === ctx.me && !ctx.pass ? 'You' : n, color: colors[p % colors.length], text: String(text(p)), on: ctx.active.includes(p) }));
+}
+/** "You" or the player's name, for the lines under the board. */
+export const who = (ctx, p) => (p === ctx.me && !ctx.pass ? 'You' : ctx.names[p]);

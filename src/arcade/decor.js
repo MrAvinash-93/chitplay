@@ -1,9 +1,10 @@
 /**
- * Your gaming room: things to put in it, whole-room themes, and how grand the room has become.
- * Everything is bought with coins earned by playing (they have no value outside the game), and
- * the best things also need wins, achievements or a rank: a room shows how far you have come.
+ * Your gaming room: things to put in it, whole-room themes, its size, and how grand it has become.
+ * You start as a new gamer in a small, ordinary room. Everything is bought with coins earned by
+ * playing (they have no value outside the game), and the best things also need wins, achievements
+ * or a rank: a room shows how far you have come as a gamer.
  */
-import { RANKS } from '../persistence/profile-store.js?v=20261110-1548';
+import { RANKS } from '../persistence/profile-store.js?v=20261114-1146';
 
 export const RARITY = {
   common: { name: 'Common', color: '#b9c3cf', points: 1 },
@@ -72,7 +73,19 @@ export const SPOTS = [
   { id: 'cm', name: 'Ceiling, back right', x: 1.0, z: -1.6, y: 3.0, place: 'ceiling' },
   { id: 'cb', name: 'Ceiling, back left', x: -1.4, z: -1.9, y: 3.0, place: 'ceiling' },
 ];
-export const spotsFor = (d) => SPOTS.filter(s => s.place === placeOf(d));
+
+/**
+ * How big the gaming room is. Everyone starts in a small, ordinary room; coins and a grander room
+ * knock the side walls out. half: how far each side wall stands from the middle of the mat.
+ */
+export const ROOM_SIZES = [
+  { icon: '🚪', name: 'Small room', note: 'Where every gamer starts', half: 3.0, price: 0 },
+  { icon: '🏠', name: 'Bigger room', note: 'Room for more things', half: 3.6, price: 800, need: { roomLevel: 3 } },
+  { icon: '🏟️', name: 'Gaming hall', note: 'Every spot opens up', half: 4.1, price: 2500, need: { roomLevel: 5, wins: 10 } },
+];
+/** A spot fits a room when it stands inside its side walls. */
+export const spotFits = (spot, size = 0) => Math.abs(spot.x) <= (ROOM_SIZES[size] || ROOM_SIZES[0]).half - 0.35;
+export const spotsFor = (d, size = decorState().size) => SPOTS.filter(s => s.place === placeOf(d) && spotFits(s, size));
 
 /** Whole-room looks: floor, mat, walls and light together. */
 export const THEMES = [
@@ -91,20 +104,33 @@ const KEY = 'chitplay.decor';
 export function decorState() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    return { owned: Array.isArray(s?.owned) ? s.owned : [], placed: s?.placed && typeof s.placed === 'object' ? s.placed : {}, themes: Array.isArray(s?.themes) ? s.themes : [] };
-  } catch { return { owned: [], placed: {}, themes: [] }; }
+    const placed = s?.placed && typeof s.placed === 'object' ? s.placed : {};
+    return { owned: Array.isArray(s?.owned) ? s.owned : [], placed, themes: Array.isArray(s?.themes) ? s.themes : [], size: sizeOf(s?.size, placed) };
+  } catch { return { owned: [], placed: {}, themes: [], size: 0 }; }
+}
+/**
+ * The room's size. Rooms from before sizes existed get one big enough for everything already in
+ * them, so nothing a player put up disappears behind a wall.
+ */
+function sizeOf(size, placed) {
+  if (Number.isInteger(size) && size >= 0 && size < ROOM_SIZES.length) return size;
+  const spots = Object.values(placed).map(id => SPOTS.find(s => s.id === id)).filter(Boolean);
+  let n = 0;
+  while (n + 1 < ROOM_SIZES.length && !spots.every(s => spotFits(s, n))) n += 1;
+  return n;
 }
 export function saveDecor(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} }
 export const decorOf = (id) => DECOR.find(d => d.id === id) || null;
 
-/** How grand the room is: every thing and theme you own adds to it. */
+/** How grand the room is: every thing and theme you own, and a bigger room, adds to it. */
 export const ROOM_LEVELS = [
-  [0, 'Empty room'], [3, 'Cozy corner'], [8, 'Hangout spot'], [15, 'Game den'], [25, 'Party room'],
+  [0, 'Normal room'], [3, 'Cozy corner'], [8, 'Hangout spot'], [15, 'Game den'], [25, 'Party room'],
   [40, 'Arcade lounge'], [60, 'Pro setup'], [85, 'Elite house'], [115, 'Gaming mansion'], [150, 'Legendary Gaming House'],
 ];
 export function roomLevel(state = decorState()) {
   const pts = state.owned.reduce((n, id) => n + (RARITY[decorOf(id)?.rarity]?.points || 0), 0)
-    + state.themes.reduce((n, id) => n + (RARITY[themeOf(id)?.rarity]?.points || 0) + 2, 0);
+    + state.themes.reduce((n, id) => n + (RARITY[themeOf(id)?.rarity]?.points || 0) + 2, 0)
+    + (state.size || 0) * 6;
   let i = 0;
   while (i + 1 < ROOM_LEVELS.length && pts >= ROOM_LEVELS[i + 1][0]) i += 1;
   const next = ROOM_LEVELS[i + 1];
@@ -114,6 +140,7 @@ export function roomLevel(state = decorState()) {
 /** What still has to happen before something can be bought or used, or '' when it is open. */
 export function lockedBy(need, { wins = 0, achievements = 0, rank = 0 } = {}) {
   if (!need) return '';
+  if (need.roomLevel && roomLevel().level < need.roomLevel) return `🔒 Reach room level ${need.roomLevel}`;
   if (need.wins && wins < need.wins) return `🔒 Win ${need.wins - wins} more game${need.wins - wins === 1 ? '' : 's'}`;
   if (need.achievements && achievements < need.achievements) return `🔒 ${need.achievements - achievements} more achievement${need.achievements - achievements === 1 ? '' : 's'}`;
   if (need.rank && rank < need.rank) return `🔒 Reach rank ${RANKS[need.rank]?.icon || ''} ${RANKS[need.rank]?.title || need.rank}`;
@@ -131,9 +158,9 @@ export function nextForRoom({ wins = 0, achievements = 0, coins = 0, rank = 0 } 
   const p = { wins, achievements, rank };
   const open = left.filter(d => !lockedBy(d.need, p)).sort((a, b) => a.price - b.price);
   const ready = open.find(d => d.price <= coins);
-  if (ready) return { icon: ready.icon, text: `You can get a ${ready.name} for your room now!`, ready: true };
+  if (ready) return { icon: ready.icon, text: `You can get a ${ready.name} for your gaming room now!`, ready: true };
   const gap = (d) => { const w = Math.max(0, (d.need?.wins || 0) - wins), a = Math.max(0, (d.need?.achievements || 0) - achievements), r = Math.max(0, (d.need?.rank || 0) - rank); return Math.max(0, d.price - coins) / 40 + w * 2 + a * 3 + r * 10; };
   const d = left.sort((x, y) => gap(x) - gap(y))[0];
   const why = lockedBy(d.need, p);
-  return { icon: d.icon, text: why ? `Next for your room: ${d.name} · ${why.replace('🔒 ', '')}` : `Next for your room: ${d.name} · ${d.price - coins} more coins`, ready: false };
+  return { icon: d.icon, text: why ? `Next for your gaming room: ${d.name} · ${why.replace('🔒 ', '')}` : `Next for your gaming room: ${d.name} · ${d.price - coins} more coins`, ready: false };
 }

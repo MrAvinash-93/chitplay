@@ -3,7 +3,7 @@
  * fifty-move rule, threefold repetition and insufficient material. Seat 0 is White.
  * Squares are 0–63, a8 = 0, h1 = 63. A piece is 'P','N','B','R','Q','K' (White) or lower case (Black).
  */
-import { best, turnLine } from '../lib.js?v=20261110-1548';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 const START = 'rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR';
 const isWhite = (c) => c >= 'A' && c <= 'Z';
@@ -148,8 +148,113 @@ function negamaxChess(s, depth, alpha, beta) {
   return top;
 }
 
+/*
+ * The computer at eight strengths, picked by the player's own rating. The lower levels look less far
+ * ahead, misjudge positions a little (noise) and now and then miss the best move (slip); the upper ones
+ * search deeper against the clock and play out captures before judging a position (quiescence), so they
+ * don't leave pieces hanging. The ratings are a rough guide to who will enjoy each level.
+ */
+export const LEVELS = [
+  { id: 'beginner', name: 'Beginner', range: '0–400', depth: 1, noise: 240, slip: 0.3, wild: 0.35, quiet: false, ms: 0 },
+  { id: 'novice', name: 'Novice', range: '400–800', depth: 1, noise: 90, slip: 0.22, quiet: false, ms: 0 },
+  { id: 'intermediate', name: 'Intermediate', range: '800–1200', depth: 1, noise: 25, slip: 0.06, quiet: true, ms: 300 },
+  { id: 'good', name: 'Good', range: '1200–1600', depth: 2, noise: 14, slip: 0.03, quiet: true, ms: 600 },
+  { id: 'advanced', name: 'Advanced', range: '1600–1900', depth: 3, noise: 6, slip: 0, quiet: true, ms: 700 },
+  { id: 'expert', name: 'Expert', range: '1900–2200', depth: 3, noise: 0, slip: 0, quiet: true, ms: 900 },
+  { id: 'master', name: 'Master', range: '2200–2500', depth: 4, noise: 0, slip: 0, quiet: true, ms: 1100 },
+  { id: 'grandmaster', name: 'Grandmaster', range: '2500+', depth: 5, noise: 0, slip: 0, quiet: true, ms: 2800 },
+];
+export const levelOf = (id) => LEVELS.find(l => l.id === id) || null;
+
+// the attacker that takes and the piece it takes: big captures by small pieces are looked at first
+const order = (b, list) => list.sort((m, n) => ((VALUE[b[n.t].toUpperCase()] || 0) * 10 - (VALUE[b[n.f].toUpperCase()] || 0) / 10) - ((VALUE[b[m.t].toUpperCase()] || 0) * 10 - (VALUE[b[m.f].toUpperCase()] || 0) / 10));
+let deadline = Infinity, stopped = false, nodes = 0;
+const outOfTime = () => { if ((++nodes & 1023) === 0 && Date.now() > deadline) stopped = true; return stopped; };
+/** Captures only, until the position is quiet: no judging a position halfway through an exchange. */
+function quiesce(s, alpha, beta, depth = 0) {
+  const stand = evaluate(s.b, s.p);
+  if (stand >= beta) return stand;
+  if (stand > alpha) alpha = stand;
+  if (depth > 6 || outOfTime()) return stand;
+  const caps = order(s.b, legal(s, s.p).filter(m => s.b[m.t] !== '.' || m.ep || m.q));
+  for (const m of caps) {
+    const v = -quiesce(step(s, m), -beta, -alpha, depth + 1);
+    if (v >= beta) return v;
+    if (v > alpha) alpha = v;
+  }
+  return alpha;
+}
+function search(s, depth, alpha, beta, quiet, ply) {
+  if (depth === 0) return quiet ? quiesce(s, alpha, beta) : evaluate(s.b, s.p);
+  const list = legal(s, s.p);
+  if (!list.length) return inCheck(s.b, s.p) ? -30000 + ply : 0;
+  order(s.b, list);
+  let top = -Infinity;
+  for (const m of list) {
+    const v = -search(step(s, m), depth - 1, -beta, -alpha, quiet, ply + 1);
+    if (stopped) return top === -Infinity ? v : top;
+    if (v > top) top = v;
+    if (top > alpha) alpha = top;
+    if (alpha >= beta) break;
+  }
+  return top;
+}
+/** The move a level plays: deeper and deeper while time allows, keeping the last finished search. */
+function levelMove(s, moves, rng, L) {
+  // a real beginner sometimes plays a move with no idea behind it at all
+  if (L.wild && rng() < L.wild) return moves[Math.floor(rng() * moves.length)];
+  if (L.slip && moves.length > 1 && rng() < L.slip) {
+    // a slip is a natural-looking mistake: a reasonable move, just not the best one
+    const quick = moves.map(m => ({ m, v: -evaluate(step(s, m).b, 1 - s.p) })).sort((a, b) => b.v - a.v);
+    return quick[Math.min(quick.length - 1, 1 + Math.floor(rng() * Math.min(4, quick.length - 1)))].m;
+  }
+  deadline = L.ms ? Date.now() + L.ms : Infinity;
+  stopped = false; nodes = 0;
+  let ranked = order(s.b, moves.slice()), choice = ranked[0];
+  for (let d = 1; d <= L.depth; d++) {
+    const scored = [];
+    for (const m of ranked) {
+      const v = -search(step(s, m), d - 1, -Infinity, Infinity, L.quiet, 1);
+      if (stopped) break;
+      scored.push({ m, v: v + (L.noise ? (rng() - 0.5) * 2 * L.noise : 0) });
+    }
+    if (scored.length === ranked.length) {
+      scored.sort((a, b) => b.v - a.v);
+      ranked = scored.map(x => x.m);
+      choice = ranked[0];
+    } else if (scored.length) {
+      // the deeper search ran out of time part-way: trust it only if it found something better than before
+      const bestNew = scored.reduce((a, b) => (b.v > a.v ? b : a));
+      if (bestNew.m === ranked[0] || bestNew.v > scored[0].v) choice = bestNew.m;
+    }
+    if (stopped) break;
+  }
+  deadline = Infinity;
+  return choice;
+}
+
+/** A chess clock: "300" is five minutes each, "180+2" three minutes and two seconds back after every move. */
+export const CLOCKS = [['', 'No clock'], ['60', '1 min'], ['180+2', '3 + 2'], ['300', '5 min'], ['600', '10 min'], ['900+10', '15 + 10']];
+function clockOf(text) {
+  const m = /^(\d+)(?:\+(\d+))?$/.exec(String(text || ''));
+  if (!m || !Number(m[1])) return null;
+  const ms = Math.min(3600, Number(m[1])) * 1000;
+  return { left: [ms, ms], inc: Math.min(60, Number(m[2] || 0)) * 1000, base: m[0] };
+}
+
 export default {
-  init: () => ({ b: START.split(''), p: 0, c: [{ k: true, q: true }, { k: true, q: true }], ep: -1, half: 0, seen: {}, last: null, end: null }),
+  init: ({ opts } = {}) => ({
+    b: START.split(''), p: 0, c: [{ k: true, q: true }, { k: true, q: true }], ep: -1, half: 0, seen: {}, last: null, end: null,
+    level: levelOf(opts?.rating)?.id || null, clock: clockOf(opts?.clock),
+  }),
+  /** The player to move ran out of time: they lose, unless the other side has nothing left to mate with. */
+  timeout(s, seat) {
+    if (s.end || s.p !== seat) return;
+    if (s.clock) s.clock.left[seat] = 0;
+    const winner = 1 - seat;
+    const mine = s.b.filter(c => c !== '.' && (winner === 0 ? isWhite(c) : !isWhite(c)) && c.toUpperCase() !== 'K');
+    s.end = mine.length ? { winner, why: 'Out of time!', time: true } : { winner: -1, why: 'Out of time, but the other side cannot checkmate: a draw.', time: true };
+  },
   active: (s) => (s.end ? [] : [s.p]),
   moves: (s, seat) => legal(s, seat),
   apply(s, seat, m) {
@@ -173,10 +278,34 @@ export default {
     return { scores: w < 0 ? [0, 0] : w === 0 ? [1, 0] : [0, 1], winners: w < 0 ? [] : [w], note: s.end.why };
   },
   // sends only what the board and the panel need: the repetition table can grow long
-  view: (s) => ({ b: s.b, p: s.p, last: s.last, end: s.end, check: inCheck(s.b, s.p) }),
+  view: (s) => ({ b: s.b, p: s.p, last: s.last, end: s.end, check: inCheck(s.b, s.p), clock: s.clock ? { left: s.clock.left.slice(), inc: s.clock.inc } : null, level: s.level }),
   bot(s, seat, rng, moves) {
+    const L = levelOf(s.level);
+    if (L) return levelMove(s, moves, rng, L);
     const depth = s.b.filter(c => c !== '.').length <= 10 ? 3 : 2;
     return best(moves, m => -negamaxChess(step(s, m), depth - 1, -Infinity, Infinity) + rng() * 14, rng);
   },
-  ui: (v, ctx) => ({ title: turnLine(ctx, v.check ? 'you are in check' : 'tap a piece, then a square'), lead: `${ctx.names[0]} White · ${ctx.names[1]} Black${v.check && !ctx.active.includes(ctx.me) ? ' · check!' : ''}` }),
+  ui(v, ctx) {
+    // what each side has taken (everything of the other colour gone from the board), and who is ahead
+    const SYM = [{ Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' }, { Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙' }];
+    const startCount = (c) => START.split('').filter(x => x === c).length;
+    const taken = [0, 1].map(p => 'QRBNP'.split('').map((k) => {
+      const c = p === 0 ? k.toLowerCase() : k;
+      const n = Math.max(0, startCount(c) - v.b.filter(x => x === c).length);
+      return n ? `${SYM[p][k]}${n > 1 ? n : ''}` : '';
+    }).join(''));
+    const material = [0, 1].map(p => v.b.reduce((t, c) => t + (c !== '.' && colorOf(c) === p ? VALUE[c.toUpperCase()] : 0), 0));
+    const edge = Math.round((material[0] - material[1]) / 100);
+    const sq = (i) => `${'abcdefgh'[X(i)]}${8 - Y(i)}`;
+    const moved = v.last ? String(v.b[v.last.t]) : '';
+    const piece = moved ? (colorOf(moved) === 0 ? { P: '♙', N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' } : { P: '♟', N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚' })[moved.toUpperCase()] || '' : '';
+    const mine = ctx.active.includes(ctx.me);
+    const lead = v.check ? `♚ Check on ${who(ctx, v.p)}!${mine ? ' Move the king, block, or take the attacker.' : ''}`
+      : v.last ? `Last move: ${who(ctx, 1 - v.p)} ${piece} ${sq(v.last.f)} → ${sq(v.last.t)}` : 'White moves first. Control the centre!';
+    return {
+      title: turnLine(ctx, v.check ? 'you are in check' : 'tap a piece, then a square'),
+      lead,
+      players: strip(ctx, ['#efe8d8', '#5a5a5a'], p => `${p ? 'Black' : 'White'}${taken[p] ? ` · ${taken[p]}` : ''}${(p ? -edge : edge) > 0 ? ` · +${p ? -edge : edge}` : ''}`),
+    };
+  },
 };

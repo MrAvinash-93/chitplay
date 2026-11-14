@@ -701,6 +701,31 @@ body.room-edit .myroom { max-height: 46vh; max-height: 46dvh; }
 body.room-only #app, body.room-only .myroom, body.room-only .player-tags, body.room-only .player-bubbles, body.room-only .world-caption, body.room-only .player-chit { opacity: 0 !important; pointer-events: none !important; transition: opacity .25s ease; }
 .roomonly-exit { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translateX(-50%); padding: 10px 18px; border: 1.5px solid #ffd27a; border-radius: 999px; background: rgba(26, 14, 7, .78); color: #fff3d6; font: 700 14px system-ui, sans-serif; animation: roomonly-in .4s ease both; }
 @keyframes roomonly-in { from { opacity: 0; transform: translate(-50%, 12px); } }
+/* Room Tour: a joystick bottom left, emotes bottom right, the way out on top */
+.tour { position: fixed; inset: 0; z-index: 90; pointer-events: none; font-family: system-ui, sans-serif; color: #fff3d6; }
+.tour > * { pointer-events: auto; }
+.tour__top { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 16px; right: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.tour__exit { pointer-events: auto; padding: 10px 18px; border: 1.5px solid #ffd27a; border-radius: 999px; background: rgba(26, 14, 7, .8); color: #fff3d6; font: 700 14px system-ui, sans-serif; cursor: pointer; animation: tour-in .4s ease both; }
+.tour__hint { margin: 0; padding: 6px 12px; border-radius: 999px; background: rgba(26, 14, 7, .6); font-size: 13px; text-align: center; animation: tour-hint 6s ease both; }
+.tour__stick { position: absolute; left: max(20px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom)); width: 128px; height: 128px; border-radius: 50%; border: 2px solid rgba(255, 210, 122, .7); background: radial-gradient(circle, rgba(26, 14, 7, .35), rgba(26, 14, 7, .7)); touch-action: none; display: grid; place-items: center; cursor: grab; animation: tour-in .4s ease both; }
+.tour__knob { width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffe7b0, #ffd27a 55%, #c9962e); box-shadow: 0 4px 12px rgba(0, 0, 0, .45); transition: transform .12s ease; }
+.tour__stick:active .tour__knob { transition: none; }
+.tour__emotes { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 58px); gap: 8px; animation: tour-in .4s ease both; }
+.tour__emote { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 0 5px; border: 1.5px solid rgba(255, 210, 122, .55); border-radius: 14px; background: rgba(26, 14, 7, .74); color: #fff3d6; cursor: pointer; }
+.tour__emote span { font-size: 24px; line-height: 1.1; }
+.tour__emote small { font-size: 10px; opacity: .85; }
+.tour__emote:active { transform: scale(.94); background: rgba(80, 50, 20, .85); }
+.tour__exit:focus-visible, .tour__emote:focus-visible { outline: 3px solid #ffd27a; outline-offset: 2px; }
+@media (max-width: 520px) {
+  .tour__stick { width: 108px; height: 108px; }
+  .tour__emotes { grid-template-columns: repeat(4, 44px); gap: 6px; }
+  .tour__emote { padding: 6px 0; border-radius: 12px; }
+  .tour__emote span { font-size: 21px; }
+  .tour__emote small { display: none; }
+}
+@keyframes tour-in { from { opacity: 0; transform: translateY(10px); } }
+@keyframes tour-hint { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tour__exit, .tour__stick, .tour__emotes { animation: none; } .tour__hint { animation: none; } }
 .myroom__opt.locked { opacity: .55; }
 .myroom__lock { color: #ffb38a; font-size: 12px; }
 .myroom__head { display: flex; align-items: center; justify-content: space-between; font-size: 17px; color: #ffd27a; }
@@ -858,5 +883,78 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 .hotask__btn--on { background: transparent; border: 1.5px solid rgba(255, 210, 122, .6); color: #ffd27a; box-shadow: none; font-weight: 700; }
 .hotask__btn:active { transform: scale(.96); }
 
-/* on a game portal (CrazyGames, Poki): no links out to the website, no sharing links */
-html.portal :is(.game__legal, .game__choice--howto, a.rules, .seo-intro, .sharebtn, .game__invite) { display: none !important; }
+/* ─── the game list, tidied: logo and name only, three across on a phone, and every tap answered ─── */
+.game__list .allgames__grid { grid-template-columns: repeat(auto-fill, minmax(min(30%, 112px), 1fr)); gap: 8px; }
+.game__list .allgames__box { border-top-width: 4px; border-radius: 16px; transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease; }
+.game__list .allgames__open { min-height: 0; gap: 6px; padding: 12px 4px 10px; }
+.game__list .allgames__open strong { font-size: 13px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.game__list .allgames__best { font-size: 11.5px; }
+.game__list .game__pin { top: 4px; left: 4px; right: auto; width: 28px; height: 28px; padding: 5px; border-width: 1px; opacity: .8; }
+.game__list .game__pin--on { opacity: 1; }
+.game__list-row .allgames__search { flex: 1; width: auto; }
+.game__list-row .game__roombtn { min-height: 46px; padding: 4px 14px; font-size: 14px; }
+.hotcard { transition: transform .14s ease, box-shadow .14s ease; }
+.hotcard:not(:has(small)) { padding-bottom: 12px; }
+/* a press you can feel: in a little, and back */
+.allgames__open, .hotcard, .recent__game, .game__roombtn, .allgames__chip, .game__pin { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.game__list .allgames__box:active { transform: scale(.95); }
+.hotcard:active, .recent__game:active, .game__roombtn:active, .allgames__chip:active { transform: scale(.95); }
+@media (hover: hover) {
+  .game__list .allgames__box:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0, 0, 0, .35); }
+  .hotcard:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0, 0, 0, .35); }
+}
+.allgames__chip { transition: background-color .15s ease, color .15s ease, transform .1s ease; }
+/* the first time the list shows, the games arrive one after another */
+.allgames__grid--enter .allgames__box { animation: cardin .34s cubic-bezier(.2, .9, .3, 1.2) both; animation-delay: calc(var(--i, 0) * 22ms); }
+.hotrow__list .hotcard { animation: cardin .34s cubic-bezier(.2, .9, .3, 1.2) both; }
+.hotrow__list .hotcard:nth-child(2) { animation-delay: 40ms; } .hotrow__list .hotcard:nth-child(3) { animation-delay: 80ms; } .hotrow__list .hotcard:nth-child(4) { animation-delay: 120ms; } .hotrow__list .hotcard:nth-child(n+5) { animation-delay: 160ms; }
+@keyframes cardin { from { opacity: 0; transform: translateY(10px) scale(.96); } }
+.game__list-scroll { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+@media (prefers-reduced-motion: reduce) {
+  .allgames__grid--enter .allgames__box, .hotrow__list .hotcard { animation: none; }
+  .game__list .allgames__box, .hotcard, .allgames__chip { transition: none; }
+  .game__list .allgames__box:active, .hotcard:active, .recent__game:active, .game__roombtn:active, .allgames__chip:active { transform: none; }
+  .game__list-scroll { scroll-behavior: auto; }
+}
+
+/* ─── moments as a small banner under the top bar, never over the middle of the game ─── */
+.emoji-pop { top: calc(var(--hud-h, 58px) + 34px + var(--row, 0) * 46px); left: 50%; flex-direction: row; gap: 8px; max-width: min(88vw, 420px); padding: 4px 14px 4px 6px; border-radius: 999px; background: rgba(20, 10, 5, .86); border: 1px solid rgba(255, 210, 122, .45); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); animation: emojibanner 2.3s cubic-bezier(.2, .9, .3, 1.2) both; }
+.emoji-pop span { font-size: 28px; filter: none; }
+.emoji-pop small { max-width: none; padding: 0; background: none; font-size: 13.5px; }
+@keyframes emojibanner { 0% { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(.9); } 12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.04); } 20%, 84% { opacity: 1; transform: translateX(-50%) scale(1); } 100% { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) { .emoji-pop { animation: none; } }
+.game__choice--danger { border-color: rgba(229, 83, 61, .55) !important; color: #ffb4a6 !important; margin-top: 6px; }
+
+/* the first visit: your name, male or female, and a character */
+.game__panel--welcome { gap: 10px; }
+.game__panel--welcome .game__row-field { display: flex; flex-direction: column; align-items: stretch; gap: 4px; text-align: left; }
+.game__welcome-name { width: 100%; min-height: 48px; font-size: 18px; }
+.game__welcome-label { text-align: left; font-size: 14px; color: #ffe6b0; }
+.game__presets--welcome { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.game__panel--welcome .game__seg { width: 100%; }
+
+/* a phone held upright, during a match: everything up top fits in one slim row (pause · round · scores · language) */
+@media (orientation: portrait) and (max-width: 700px) {
+  .game--playing .game__top { flex-wrap: nowrap; gap: 5px; }
+  .game--playing .game__scores { order: 0; flex: 1 1 0; min-width: 0; gap: 3px; }
+  .game--playing .game__logo { display: none; }
+  .game--playing .game__round { flex: none; padding: 4px 8px; }
+  .game--playing .game__round-text[data-short] { font-size: 0; }
+  .game--playing .game__round-text[data-short]::after { content: attr(data-short); font-size: 12px; }
+  .game--playing .game__score { padding: 2px 4px; border-bottom-width: 2px; }
+  .game--playing .game__score-name { font-size: 10px; }
+  .game--playing .game__score-pts { font-size: 12.5px; }
+}
+
+/* chess: your rating (eight levels) and the clock, wrapping onto as many rows as they need */
+.game__rounds--wrap { flex-wrap: wrap; justify-content: flex-start; row-gap: 6px; }
+.game__rounds--wrap .game__rounds-label { flex: 1 0 100%; text-align: left; font-weight: 700; }
+.game__rounds--wrap .game__pill { flex: 1 1 auto; max-width: none; min-width: 64px; padding: 0 10px; font-family: var(--font-body); font-size: 12.5px; }
+.game__pill--rating { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 42px; line-height: 1.1; }
+.game__pill--rating b { font-size: 12.5px; }
+.game__pill--rating small { font-size: 10.5px; opacity: .75; font-family: var(--font-mono); }
+.game__mylevel { flex: 1 0 100%; display: flex; align-items: baseline; gap: 8px; padding: 8px 12px; border-radius: 12px; background: rgba(255, 210, 63, .12); border: 1.5px solid rgba(255, 210, 63, .45); }
+.game__mylevel span { font-weight: 700; }
+.game__mylevel b { color: var(--gold); font-size: 16px; }
+.game__mylevel small { margin-left: auto; opacity: .75; font-family: var(--font-mono); }
+.game__mylevel-help { flex: 1 0 100%; margin: 0 0 4px; font-size: 11.5px; opacity: .8; text-align: left; }

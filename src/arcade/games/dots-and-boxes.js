@@ -2,7 +2,7 @@
  * Dots and Boxes on a 5×5 grid of boxes. Draw a line on your turn. The player who closes a box owns
  * it and draws again. All lines drawn: most boxes wins.
  */
-import { best, seatsOf, turnLine } from '../lib.js?v=20261110-1548';
+import { best, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 export const N = 5;
 // lines: horizontal h(x,y) for x<N, y<=N, then vertical v(x,y) for x<=N, y<N
@@ -49,7 +49,20 @@ export default {
     }, rng);
   },
   ui(v, ctx) {
-    const scores = seatsOf(v.n).map(p => `${ctx.names[p]} ${v.boxes.filter(b => b === p).length}`);
-    return { title: turnLine(ctx, 'tap a line between two dots'), lead: scores.join(' · ') };
+    const left = v.boxes.filter(b => b < 0).length;
+    const mine = ctx.active.includes(ctx.me);
+    let lead = `${left} box${left === 1 ? '' : 'es'} left · close a box and draw again`;
+    if (mine) {
+      const ready = BOX_SIDES.some((_, bx) => v.boxes[bx] < 0 && count(v.lines, bx) === 3);
+      // a safe line puts no box on three sides
+      const safe = v.lines.some((x, e) => x < 0 && !BOX_SIDES.some((sides, bx) => sides.includes(e) && count(v.lines, bx) === 2));
+      if (ready) lead = `💡 A box is ready to close: take it, then draw again! · ${left} left`;
+      else if (!safe) lead = `Careful: every line now gives a box away. Give the fewest. · ${left} left`;
+    }
+    return {
+      title: turnLine(ctx, 'tap a line between two dots'),
+      lead,
+      players: strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.boxes.filter(b => b === p).length} ▢`),
+    };
   },
 };

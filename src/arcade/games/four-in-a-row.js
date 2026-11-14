@@ -1,5 +1,5 @@
 /** Four in a Row: drop discs into a 7×6 upright grid; four in a line wins. */
-import { searchMove, turnLine } from '../lib.js?v=20261110-1548';
+import { searchMove, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 export const COLS = 7, ROWS = 6;
 const DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
@@ -54,5 +54,19 @@ export default {
     return { scores: w === 0 ? [1, 0] : [0, 1], winners: [w] };
   },
   bot(s, seat, rng) { return { c: searchMove({ b: s.b, p: seat }, 5, search, rng) }; },
-  ui: (v, ctx) => ({ title: turnLine(ctx, 'tap a column'), lead: `${ctx.names[0]} red · ${ctx.names[1]} yellow` }),
+  ui(v, ctx) {
+    const placed = v.b.filter(x => x >= 0).length;
+    const mine = ctx.active.includes(ctx.me) && !v.done;
+    let lead = `Move ${Math.min(placed + 1, COLS * ROWS)} of ${COLS * ROWS}`;
+    // the one thing never to miss: the other player is about to make four
+    if (mine && ctx.level !== 'hard') {
+      const threats = open(v.b).filter(c => findLine(drop(v.b, c, 1 - ctx.me)));
+      if (threats.length) lead = `⚠️ Block column ${threats.map(c => c + 1).join(' or ')}: they can make four there!`;
+    }
+    return {
+      title: turnLine(ctx, 'tap a column'),
+      lead,
+      players: strip(ctx, ['#d32f2f', '#f2b705'], p => `${p ? '🟡' : '🔴'} ${21 - v.b.filter(x => x === p).length} left`),
+    };
+  },
 };

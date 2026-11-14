@@ -3,8 +3,8 @@
  * lines. On a table with strangers (and for computer players) lines come from our own list instead,
  * so nobody ever reads something unmoderated from a stranger.
  */
-import { pick, seatsOf, shuffle } from '../lib.js?v=20261110-1548';
-import { STORY_LINES } from '../content.js?v=20261110-1548';
+import { pick, seatsOf, shuffle, strip } from '../lib.js?v=20261114-1146';
+import { STORY_LINES } from '../content.js?v=20261114-1146';
 
 const clean = (t) => String(t || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90);
 
@@ -49,9 +49,10 @@ export default {
     const mine = ctx.active.includes(ctx.me);
     const title = mine ? v.ask : `${ctx.names[ctx.active[0]]} is writing…`;
     const lead = `Line ${v.at + 1} of ${v.total} · the lines above are folded away`;
-    if (!mine) return { title, lead };
-    if (v.typed) return { title, lead, input: { placeholder: v.example, button: 'Fold it and pass on' } };
-    return { title, lead, buttons: ctx.legal.map((m, i) => ({ label: m.line, i })) };
+    const players = (v.n <= 6 ? strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f', '#8e44ad', '#e67e22'], p => (ctx.active.includes(p) ? '✍️ writing' : '📜 waiting')) : undefined);
+    if (!mine) return { title, lead, players };
+    if (v.typed) return { title, lead, players, input: { placeholder: v.example, button: 'Fold it and pass on' } };
+    return { title, lead, players, buttons: ctx.legal.map((m, i) => ({ label: m.line, i })) };
   },
   chit: (v) => (v.done ? null : { text: v.ask, label: `Line ${v.at + 1} of ${v.total}` }),
 };

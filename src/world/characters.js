@@ -7,7 +7,7 @@
  * to show, and only after the result is public.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { lookKey, OUTFITS, isFancyHat } from './character-looks.js?v=20261110-1548';
+import { lookKey, OUTFITS, isFancyHat } from './character-looks.js?v=20261114-1146';
 
 const TAU = Math.PI * 2;
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
@@ -40,6 +40,9 @@ const POSES = {
   deny:     { sh: [[-0.95, 0.32], [-0.95, -0.32]], el: [-1.65, -1.65], lean: -0.05, head: 0.0 },
   surprised:{ sh: [[-1.5, 0.55],  [-1.5, -0.55]],  el: [-0.7, -0.7],   lean: -0.2, head: -0.2 },
   wave:     { sh: [[-0.35, 0.12], [-2.6, -0.35]],  el: [-1.15, -0.7],  lean: 0,    head: -0.05 },
+  // standing up, for the Room Tour: arms hang loose (and swing while walking)
+  stand:    { sh: [[-0.08, 0.1],  [-0.08, -0.1]],  el: [-0.25, -0.25], lean: 0,    head: 0.04 },
+  dance:    { sh: [[-2.3, 0.45],  [-1.1, -0.6]],   el: [-0.8, -1.5],   lean: -0.05, head: -0.1 },
 };
 
 const emojiCache = {};
@@ -723,7 +726,7 @@ function buildAccessories() {
 const AGE_BODY = { child: 1, teen: 1.1, adult: 1.22, elder: 1.18 };
 const AGE_HEAD = { child: 1, teen: 0.91, adult: 0.84, elder: 0.85 };
 
-export function createCharacter(scene, look, { seat, paperMaterial }) {
+export function createCharacter(scene, look, { seat, paperMaterial, standing = false }) {
   const root = new THREE.Group();
   root.position.set(seat.x, 0, seat.z);
   root.rotation.y = Math.atan2(-seat.x, -seat.z);   // face the centre of the mat
@@ -754,6 +757,12 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
     return { side, shoulder, elbow, hand };
   };
   const L = makeArm(1), R = makeArm(-1);
+
+  // A standing character (the player on a Room Tour) has legs that swing from the hips.
+  const LEG = 0.34;
+  const hips = standing ? [1, -1].map((s) => { const g = new THREE.Group(); g.position.set(s * 0.07, 0.1 + LEG, 0); root.add(g); return g; }) : [];
+  if (standing) spine.position.y = 0.11 + LEG;
+  let walk = 0, walkTarget = 0, stride = 0;
 
   // Face parts that move with the mood
   const eyes = [], irises = [], brows = [];
@@ -804,11 +813,42 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
     const darkMat = new THREE.MeshBasicMaterial({ color: '#190d0a' });
     ownMaterials.push(darkMat);
 
-    /* legs, sitting cross-legged */
-    if (!info.skirt) {
+    // bare feet with ethnic wear, shoes otherwise
+    const barefoot = ['kurta', 'saree', 'salwar', 'dress', 'frock'].includes(l.outfit);
+    const shoeMat = barefoot ? skinFlat : mat({ color: ['jersey', 'hoodie'].includes(l.outfit) ? '#f2f0ea' : '#2a2320', roughness: 0.5 });
+
+    /* legs: standing straight, or sitting cross-legged */
+    if (standing) {
+      const longSkirt = info.skirt && l.outfit !== 'frock';
+      hips.forEach((hip) => {
+        if (!longSkirt) add(hip, shadowy(limb([0, 0, 0], [0, -LEG + 0.05, 0], adult ? 0.05 : 0.046, info.skirt ? skinFlat : pantsMat)));
+        const foot = add(hip, shadowy(new THREE.Mesh(shared(cachedGeo('foot', () => ball(1, 16, 12))), shoeMat)));
+        foot.scale.set(0.04, 0.03, 0.07);
+        foot.position.set(0, -LEG + 0.02, 0.03);
+      });
+      if (info.skirt) {
+        const len = longSkirt ? LEG + 0.08 : LEG * 0.55;
+        const skirt = add(root, shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.115, longSkirt ? 0.2 : 0.19, len, 32, 1, true), cloth)));
+        skirt.material.side = THREE.DoubleSide;
+        skirt.position.y = 0.13 + LEG - len / 2;
+      } else {
+        const hip = add(root, shadowy(new THREE.Mesh(shared(cachedGeo('hip', () => ball(1, 28, 18))), pantsMat)));
+        hip.scale.set(0.135 * widen, 0.085, 0.1);
+        hip.position.set(0, 0.095 + LEG, 0);
+      }
+    } else if (!info.skirt) {
+      const hemMat = mat({ color: new THREE.Color(l.pants).multiplyScalar(0.78), roughness: 0.9 });
       for (const s of [-1, 1]) {
         add(root, shadowy(limb([s * 0.075, 0.095, 0.015], [s * 0.245, 0.085, 0.19], adult ? 0.058 : 0.052, pantsMat)));
-        add(root, shadowy(limb([s * 0.245, 0.075, 0.19], [-s * 0.045, 0.058 + (s > 0 ? 0.03 : 0), 0.275], adult ? 0.043 : 0.04, pantsMat)));
+        const knee = [s * 0.245, 0.075, 0.19], ankle = [-s * 0.045, 0.058 + (s > 0 ? 0.03 : 0), 0.275];
+        add(root, shadowy(limb(knee, ankle, adult ? 0.043 : 0.04, pantsMat)));
+        // the hem of the trouser leg, a little wider and darker, where the shoe starts
+        const dir = new THREE.Vector3(...ankle).sub(new THREE.Vector3(...knee)).normalize();
+        const hem = add(root, shadowy(new THREE.Mesh(shared(cachedGeo('hem', () => new THREE.CylinderGeometry(1, 1, 1, 20, 1, true))), hemMat)));
+        hem.material.side = THREE.DoubleSide;
+        hem.scale.set((adult ? 0.043 : 0.04) + 0.006, 0.022, (adult ? 0.043 : 0.04) + 0.006);
+        hem.position.set(...ankle).addScaledVector(dir, 0.006);
+        hem.quaternion.setFromUnitVectors(UP, dir);
       }
       add(root, shadowy(new THREE.Mesh(shared(cachedGeo('hip', () => ball(1, 28, 18))), pantsMat))).scale.set(0.135 * widen, 0.085, 0.1);
       parts[parts.length - 1][1].position.set(0, 0.095, 0);
@@ -837,14 +877,41 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
       tunic.material.side = THREE.DoubleSide;
       tunic.scale.z = 0.86;
     }
-    // bare feet with ethnic wear, shoes otherwise
-    const barefoot = ['kurta', 'saree', 'salwar', 'dress', 'frock'].includes(l.outfit);
-    const shoeMat = barefoot ? skinFlat : mat({ color: ['jersey', 'hoodie'].includes(l.outfit) ? '#f2f0ea' : '#2a2320', roughness: 0.5 });
-    for (const s of [-1, 1]) {
-      const foot = add(root, shadowy(new THREE.Mesh(shared(cachedGeo('foot', () => ball(1, 16, 12))), shoeMat)));
-      foot.scale.set(0.038, 0.03, 0.068);
-      foot.position.set(s * 0.15 * (info.skirt ? 1.45 : 1), 0.04, info.skirt ? 0.285 : 0.31);
-      foot.rotation.y = s * 0.7;
+    if (!standing) {
+      const sneakers = ['jersey', 'hoodie'].includes(l.outfit);
+      const soleMat = barefoot ? null : mat({ color: sneakers ? '#f4f1ea' : '#140e0b', roughness: 0.75 });
+      const laceMat = barefoot ? null : mat({ color: sneakers ? '#d6d0c4' : '#4a3b30', roughness: 0.8 });
+      // the foot's own frame, and a piece inside it (plain objects, never added to the scene: just the maths)
+      const frame = new THREE.Object3D(), local = new THREE.Object3D();
+      frame.add(local);
+      const unitBall = () => ball(1, 16, 12), unitBox = () => new THREE.BoxGeometry(1, 1, 1);
+      // one piece of a shoe, placed in the foot's own frame (every piece is its own mesh, so a change of clothes clears it)
+      const piece = (key, make, material, [x, y, z], [sx, sy, sz], rot = [0, 0, 0]) => {
+        const m = add(root, shadowy(new THREE.Mesh(shared(cachedGeo(key, make)), material)));
+        local.position.set(x, y, z);
+        local.rotation.set(rot[0], rot[1], rot[2]);
+        local.scale.set(sx, sy, sz);
+        frame.updateMatrixWorld(true);
+        local.matrixWorld.decompose(m.position, m.quaternion, m.scale);
+        return m;
+      };
+      for (const s of [-1, 1]) {
+        // cross-legged, each foot lies in front of the other knee on its outer edge, the sole half turned up
+        const at = info.skirt ? [s * 0.2175, 0.036, 0.285] : [-s * 0.1, 0.046 + (s > 0 ? 0.03 : 0), 0.272];
+        const turn = info.skirt ? s * 0.7 : -s * 1.2, roll = info.skirt ? s * 0.25 : s * 0.5;
+        frame.position.set(...at);
+        frame.rotation.set(0, turn, roll, 'YXZ');
+        if (barefoot) {
+          piece('foot', unitBall, skinFlat, [0, 0, 0], [0.034, 0.024, 0.064]);
+          [-0.021, -0.01, 0, 0.0095, 0.018].forEach((x, k) => piece('foot', unitBall, skinFlat, [x * s, 0.004, 0.058 - Math.abs(x) * 0.45], [k === 0 ? 0.0095 : 0.0072 - k * 0.0004, 0.0072, 0.009]));
+        } else {
+          piece('foot', unitBall, soleMat, [0, -0.013, 0], [0.04, 0.011, 0.073]);                 // the sole
+          piece('foot', unitBall, shoeMat, [0, 0.002, -0.004], [0.036, 0.026, 0.064]);            // the upper
+          piece('foot', unitBall, shoeMat, [0, -0.002, 0.04], [0.031, 0.02, 0.033]);              // the toe cap
+          piece('unitbox', unitBox, laceMat, [0, 0.024, 0.014], [0.016, 0.0045, 0.036], [0.3, 0, 0]); // the laces
+          piece('foot', unitBall, darkMat, [0, 0.021, -0.032], [0.021, 0.006, 0.019]);            // the opening at the ankle
+        }
+      }
     }
 
     /* torso */
@@ -1111,7 +1178,7 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
     sly:       { brow: [0.002, 0.2],  mouth: 'smile', eye: 0.8, sly: true },
   };
   const POSE_MOOD = {
-    cheer: 'happy', jump: 'happy', clap: 'happy', laugh: 'happy', show: 'happy', wave: 'happy', throw: 'happy', fling: 'happy',
+    cheer: 'happy', jump: 'happy', clap: 'happy', dance: 'happy', laugh: 'happy', show: 'happy', wave: 'happy', throw: 'happy', fling: 'happy',
     sad: 'sad', cry: 'sad', facepalm: 'sad', nervous: 'worried', deny: 'worried', surprised: 'surprised',
     point: 'angry', think: 'sly', peek: 'sly', sneaky: 'sly',
   };
@@ -1193,6 +1260,7 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
     if (pose === 'clap') clapZ = Math.sin(time * 16 + seed) * 0.18 * m;
     if (pose === 'nervous') { rub = Math.sin(time * 9 + seed) * 0.12 * m; jitter = Math.sin(time * 13 + seed) * 0.05 * m; }
     if (pose === 'cheer' || pose === 'jump') wave = Math.sin(time * 9 + seed) * 0.25 * m;
+    if (pose === 'dance') wave = Math.sin(time * 7 + seed) * 0.5 * m;
     let waveR = 0, roll = 0, shake = 0;
     if (pose === 'wave') waveR = Math.sin(time * 10 + seed) * 0.4 * m;
     if (pose === 'laugh') roll = Math.sin(time * 20 + seed) * 0.06 * m;
@@ -1200,8 +1268,9 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
     if (pose === 'sneaky') roll = 0.22;
     if (pose === 'shrug') roll = Math.sin(time * 1.5) * 0.04 * m;
     if (pose === 'deny') shake = Math.sin(time * 12 + seed) * 0.4 * m;
-    const hop = pose === 'jump' ? 0.12 : pose === 'cheer' ? 0.05 : pose === 'laugh' ? 0.015 : 0;
-    const hopSpeed = pose === 'laugh' ? 20 : pose === 'jump' ? 7 : 8;
+    if (pose === 'dance') roll = Math.sin(time * 7 + seed) * 0.16 * m;
+    const hop = pose === 'jump' ? 0.12 : pose === 'cheer' ? 0.05 : pose === 'dance' ? 0.05 : pose === 'laugh' ? 0.015 : 0;
+    const hopSpeed = pose === 'laugh' ? 20 : pose === 'jump' ? 7 : pose === 'dance' ? 7 : 8;
     bounce = damp(bounce, hop ? Math.abs(Math.sin(time * hopSpeed + seed)) * hop * m : 0, 12, dt);
 
     L.shoulder.rotation.set(cur.sh[0][0] + rub, 0, cur.sh[0][1] - clapZ + wave);
@@ -1213,6 +1282,19 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
     spine.rotation.x = cur.lean + breathe;
     spine.rotation.z = damp(spine.rotation.z, roll, 10, dt);
     root.position.y = bounce;
+    if (standing) {
+      // walking: legs swing from the hips, each arm with the opposite leg, a little bob in every step
+      walk = damp(walk, walkTarget, 8, dt);
+      if (walk > 0.02) stride += dt * (5 + 5 * walk);
+      const sw = Math.sin(stride) * 0.55 * walk * (reduced ? 0.4 : 1);
+      hips[0].rotation.x = sw;
+      hips[1].rotation.x = -sw;
+      L.shoulder.rotation.x -= sw * 0.8;
+      R.shoulder.rotation.x += sw * 0.8;
+      const sway = pose === 'dance' ? Math.sin(time * 7 + seed) * 0.12 * m : 0;
+      hips[0].rotation.z = sway; hips[1].rotation.z = sway;
+      root.position.y = bounce + Math.abs(Math.sin(stride)) * 0.022 * walk;
+    }
     if (torso) torso.scale.set(1 + breathe * 0.6, 1, baseZ + breathe * 0.6);
 
     // Head look-at (yaw/pitch relative to the body)
@@ -1269,6 +1351,8 @@ export function createCharacter(scene, look, { seat, paperMaterial }) {
     update,
     get pose() { return pose; },
     setLook(l) { dress(l); },
+    /** A standing character's walking speed, 0 (still) to 1 (full stride). */
+    setWalk(v) { walkTarget = clamp(v || 0, 0, 1); },
     talk(sec = 1.4) { talkUntil = now + sec; },
     mood(name, sec = 2.5) { moodOverride = name; moodUntil = now + sec; },
     emote(symbol, sec = 2) {

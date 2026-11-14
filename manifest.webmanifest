@@ -1,7 +1,7 @@
 {
   "name": "CHITPLAY",
   "short_name": "CHITPLAY",
-  "description": "Raja Rani Chor Police, Ludo, Carrom, Chess and 30+ free indoor games in 3D. Play the computer, online or with friends.",
+  "description": "Raja Rani Chor Police, Ludo, Carrom, Chess and 45+ free indoor games in 3D. Play the computer, online or with friends.",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "fullscreen",

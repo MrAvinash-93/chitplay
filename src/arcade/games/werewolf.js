@@ -5,7 +5,7 @@
  * The village wins when every werewolf is gone; the werewolves win when they are as many as the rest.
  * Nobody is hurt: someone "caught" by the werewolves just sits out, like any party game.
  */
-import { best, seatsOf, shuffle } from '../lib.js?v=20261110-1548';
+import { best, seatsOf, shuffle, strip } from '../lib.js?v=20261114-1146';
 
 export const ROLE = { wolf: { name: 'Werewolf', icon: '🐺' }, seer: { name: 'Seer', icon: '🔮' }, doctor: { name: 'Doctor', icon: '🩺' }, villager: { name: 'Villager', icon: '🏡' } };
 const alive = (s) => seatsOf(s.n).filter(p => s.alive[p]);
@@ -142,22 +142,25 @@ export default {
     const list = N.map((n, p) => `${v.alive[p] ? '' : '💀 '}${n}${v.roles[p] ? ` · ${ROLE[v.roles[p]].icon} ${ROLE[v.roles[p]].name}` : ''}`);
     const youAre = v.me ? `${ROLE[v.me].icon} You are the ${ROLE[v.me].name}` : '👀 You are watching';
     const pick = (key) => ctx.legal.map((m, i) => ({ label: m[key] >= 0 ? N[m[key]] : 'Nobody', i }));
+    // the village at a glance: who's still in, and any role that has come out
+    const players = (v.n <= 6 ? strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f', '#8e44ad', '#e67e22'], p => (v.alive[p] ? (v.roles[p] ? `${ROLE[v.roles[p]].icon} ${ROLE[v.roles[p]].name}` : '🙂 in') : `💀 out${v.roles[p] ? ` · ${ROLE[v.roles[p]].icon}` : ''}`)) : undefined);
+    const alive = v.alive.filter(Boolean).length;
     if (v.phase === 'read') return { title: mine ? 'Your secret role' : 'Reading the roles…', big: mine ? `${ROLE[v.me].icon} ${ROLE[v.me].name}` : '', lead: mine ? ({ wolf: 'At night, pick someone to catch. Don’t get found out by day!', seer: 'Each night, learn one player’s true role.', doctor: 'Each night, protect one player from the werewolves.', villager: 'Find the werewolves and vote them out.' })[v.me] : '', buttons: mine ? [{ label: 'Got it', i: 0, primary: true }] : [] };
     if (v.phase === 'night') {
-      if (!mine) return { title: `🌙 Night ${v.day}`, lead: meDead ? 'You are out: watch quietly.' : 'Close your eyes… the night roles are busy.', list };
+      if (!mine) return { title: `🌙 Night ${v.day}`, lead: meDead ? 'You are out: watch quietly.' : `Close your eyes… the night roles are busy. ${alive} still in the village.`, players, list: players ? undefined : list };
       const ask = { wolf: 'Pick someone to catch tonight', seer: 'Whose role do you want to see?', doctor: 'Who will you protect tonight?' }[v.me];
       const key = { wolf: 'kill', seer: 'check', doctor: 'save' }[v.me];
-      return { title: `🌙 ${ask}`, lead: youAre, list, buttons: pick(key) };
+      return { title: `🌙 ${ask}`, lead: youAre, players, list: players ? undefined : list, buttons: pick(key) };
     }
     if (v.phase === 'dawn') {
       const s2 = v.story;
       const line = s2.victim < 0 ? 'A quiet night: nobody was caught.' : s2.saved ? `The Doctor saved ${N[s2.victim]}! 🩺` : `${N[s2.victim]} was caught in the night.`;
-      return { title: `☀️ Day ${v.day}`, lead: line, list, buttons: mine ? [{ label: 'Start the vote', i: 0, primary: true }] : [] };
+      return { title: `☀️ Day ${v.day}`, lead: `${line} ${alive} still in the village.`, players, list: players ? undefined : list, buttons: mine ? [{ label: 'Start the vote', i: 0, primary: true }] : [] };
     }
-    if (v.phase === 'vote') return { title: mine ? '🗳️ Who is a werewolf?' : 'The village is voting…', lead: meDead ? 'You are out: you can’t vote.' : youAre, list, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.vote >= 0 ? N[m.vote] : 'Skip the vote', i })) : [] };
+    if (v.phase === 'vote') return { title: mine ? '🗳️ Who is a werewolf?' : 'The village is voting…', lead: meDead ? 'You are out: you can’t vote.' : youAre, players, list: players ? undefined : list, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.vote >= 0 ? N[m.vote] : 'Skip the vote', i })) : [] };
     const o = v.out;
     const line = o.who < 0 ? 'The vote was split: nobody leaves.' : `${N[o.who]} was voted out. They were ${ROLE[o.role].icon} ${ROLE[o.role].name}.`;
-    return { title: `⚖️ The verdict`, lead: line, list, buttons: mine ? [{ label: 'Night falls…', i: 0, primary: true }] : [] };
+    return { title: `⚖️ The verdict`, lead: line, players, list: players ? undefined : list, buttons: mine ? [{ label: 'Night falls…', i: 0, primary: true }] : [] };
   },
   chit: (v) => ({ text: v.phase === 'night' ? 'Night falls…' : v.phase === 'vote' ? 'Who is the werewolf?' : v.phase === 'read' ? 'Werewolf Night' : `Day ${v.day}`, label: v.phase === 'night' ? '🌙' : '☀️' }),
 };

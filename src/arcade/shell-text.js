@@ -3,11 +3,13 @@
  * before and after a game. Anything missing falls back to English. The home screen loads this, so
  * it stays short; each game's own panel text is in the game's file.
  */
-const en = { guestPlay: 'Guest Play', guides: 'Rules', allGames: 'All games', search: 'Search games…', none: 'No game with that name.', start: 'Start', players: 'Players', mode: 'Mode', level: 'Bots', easy: 'Easy', normal: 'Normal', hard: 'Hard', howTo: 'How to play', gotIt: 'Got it!', playAgain: 'Play again', youWin: 'You win!', wins: '{name} wins!', draw: 'It’s a draw!', yourTurn: 'Your turn!', chat: 'Chat', close: 'Close', games: 'Games', record: 'You: {won} wins in {played} games', streak: '{n} wins in a row! 🔥', coins: '+{n} coins' };
+const en = { styles: 'Game styles', everyone: 'All', guestPlay: 'Guest Play', guides: 'Rules', allGames: 'All games', search: 'Search games…', none: 'No game with that name.', start: 'Start', players: 'Players', mode: 'Mode', level: 'Bots', easy: 'Easy', normal: 'Normal', hard: 'Hard', howTo: 'How to play', gotIt: 'Got it!', playAgain: 'Play again', youWin: 'You win!', wins: '{name} wins!', draw: 'It’s a draw!', yourTurn: 'Your turn!', chat: 'Chat', close: 'Close', games: 'Games', record: 'You: {won} wins in {played} games', streak: '{n} wins in a row! 🔥', coins: '+{n} coins',
+  // the game menu, hints and undo, records, series and the friends' room
+  resume: "Resume", backToGame: "Back to the game", restart: "Restart match", soundOn: "Sound: on", soundOff: "Sound: off", voicesOn: "Voices: on", voicesOff: "Voices: off", profile: "Your profile", quit: "Quit game", menu: "Game menu", pausedNote: "⏸ Paused: nothing moves until you resume.", withPeople: "You are playing with other people: the game goes on for them while this menu is open.", hint: "💡 Hint", undo: "↶ Undo", allMoves: "✕ All moves", hintLine: "💡 The glowing move is a good one. Make it, or tap All moves.", movedBack: "Move taken back", series: "🏁 Series after {n} games: {list}", draws: "{n} drawn", you: "You", best: "🏆 Best {n}", won: "🏆 {n} won", inRow: "🔥 {n} in a row", bestOf: "(best {n})", firstGame: "🎯 First game: set a record", firstBest: "🎯 Set your first best", newBest: "🔥 New best {n}!", anotherGame: "🎮 Another game", backToRoom: "👥 Back to the room", takenBack: "↶ {n} taken back", hintsUsed: "💡 {n} hints used", newBestScore: "🏆 New best score: {n}!", bestStreakLine: "🔥 Your best streak yet: {n} wins in a row!", nowPlaying: "Now playing", change: "🎮 Change", friendsJoin: "Friends join with this code", shareInvite: "Share the invite link", seats: "Seats", startGame: "▶ Start {game}", closeRoom: "Close the room", youreIn: "You’re in!", nextGame: "Next game", waitHost: "Waiting for the host to start. The host picks the game.", waitHostAgain: "Waiting for the host: they can play again or pick another game…", pickNext: "🎮 Pick the next game", everyoneMoves: "Everyone in the room ({n}) moves to the game you pick.", leave: "Leave" };
 const PACKS = {
   en,
-  hinglish: { guestPlay: 'Guest Play', guides: 'Rules', allGames: 'Saare games', search: 'Game dhoondho…', none: 'Is naam ka koi game nahi mila.', start: 'Shuru karo', players: 'Khiladi', mode: 'Mode', level: 'Bots', easy: 'Aasan', normal: 'Normal', hard: 'Mushkil', howTo: 'Kaise khelein', gotIt: 'Samajh gaya!', playAgain: 'Phir khelo', youWin: 'Aap jeet gaye!', wins: '{name} jeet gaya!', draw: 'Barabar raha!', yourTurn: 'Aapki baari!', chat: 'Baatcheet', close: 'Band karo', games: 'Games', record: 'Aap: {played} mein se {won} jeet', streak: 'Lagatar {n} jeet! 🔥', coins: '+{n} coins' },
-  hindi: { guestPlay: 'गेस्ट के रूप में खेलें', guides: 'नियम', allGames: 'सभी गेम', search: 'गेम खोजें…', none: 'इस नाम का कोई गेम नहीं मिला।', start: 'शुरू करें', players: 'खिलाड़ी', mode: 'मोड', level: 'बॉट', easy: 'आसान', normal: 'सामान्य', hard: 'कठिन', howTo: 'कैसे खेलें', gotIt: 'समझ गया!', playAgain: 'फिर खेलें', youWin: 'आप जीत गए!', wins: '{name} जीत गया!', draw: 'बराबरी रही!', yourTurn: 'आपकी बारी!', chat: 'बातचीत', close: 'बंद करें', games: 'गेम', record: 'आप: {played} में से {won} जीत', streak: 'लगातार {n} जीत! 🔥', coins: '+{n} सिक्के' },
+  hinglish: { styles: 'Game ke style', everyone: 'Sab', guestPlay: 'Guest Play', guides: 'Rules', allGames: 'Saare games', search: 'Game dhoondho…', none: 'Is naam ka koi game nahi mila.', start: 'Shuru karo', players: 'Khiladi', mode: 'Mode', level: 'Bots', easy: 'Aasan', normal: 'Normal', hard: 'Mushkil', howTo: 'Kaise khelein', gotIt: 'Samajh gaya!', playAgain: 'Phir khelo', youWin: 'Aap jeet gaye!', wins: '{name} jeet gaya!', draw: 'Barabar raha!', yourTurn: 'Aapki baari!', chat: 'Baatcheet', close: 'Band karo', games: 'Games', record: 'Aap: {played} mein se {won} jeet', streak: 'Lagatar {n} jeet! 🔥', coins: '+{n} coins', resume: "Phir shuru karo", backToGame: "Game par wapas", restart: "Match dobara shuru", soundOn: "Aawaz: on", soundOff: "Aawaz: off", voicesOn: "Voices: on", voicesOff: "Voices: off", profile: "Aapki profile", quit: "Game chhodo", menu: "Game menu", pausedNote: "⏸ Ruka hua: jab tak aap wapas nahi aate, kuch nahi chalega.", withPeople: "Aap doosron ke saath khel rahe ho: menu khula rahe tab bhi unke liye game chalta rahega.", hint: "💡 Hint", undo: "↶ Undo", allMoves: "✕ Saari chaalein", hintLine: "💡 Chamakti chaal acchi hai. Wahi chalo, ya Saari chaalein dabao.", movedBack: "Chaal wapas li", series: "🏁 {n} games ke baad series: {list}", draws: "{n} draw", you: "Aap", best: "🏆 Best {n}", won: "🏆 {n} jeet", inRow: "🔥 Lagatar {n}", bestOf: "(best {n})", firstGame: "🎯 Pehla game: record banao", firstBest: "🎯 Apna pehla best banao", newBest: "🔥 Naya best {n}!", anotherGame: "🎮 Doosra game", backToRoom: "👥 Room mein wapas", takenBack: "↶ {n} chaal wapas li", hintsUsed: "💡 {n} hint liye", newBestScore: "🏆 Naya best score: {n}!", bestStreakLine: "🔥 Ab tak ki sabse lambi jeet: lagatar {n}!", nowPlaying: "Abhi chal raha", change: "🎮 Badlo", friendsJoin: "Dost is code se judein", shareInvite: "Invite link bhejo", seats: "Seats", startGame: "▶ {game} shuru karo", closeRoom: "Room band karo", youreIn: "Aap jud gaye!", nextGame: "Agla game", waitHost: "Host ke shuru karne ka intezaar. Game host chunta hai.", waitHostAgain: "Host ka intezaar: wo phir khel sakte hain ya doosra game chun sakte hain…", pickNext: "🎮 Agla game chuno", everyoneMoves: "Room ke saare ({n}) log aapke chune game par jaayenge.", leave: "Chhodo" },
+  hindi: { styles: 'गेम के स्टाइल', everyone: 'सब', guestPlay: 'गेस्ट के रूप में खेलें', guides: 'नियम', allGames: 'सभी गेम', search: 'गेम खोजें…', none: 'इस नाम का कोई गेम नहीं मिला।', start: 'शुरू करें', players: 'खिलाड़ी', mode: 'मोड', level: 'बॉट', easy: 'आसान', normal: 'सामान्य', hard: 'कठिन', howTo: 'कैसे खेलें', gotIt: 'समझ गया!', playAgain: 'फिर खेलें', youWin: 'आप जीत गए!', wins: '{name} जीत गया!', draw: 'बराबरी रही!', yourTurn: 'आपकी बारी!', chat: 'बातचीत', close: 'बंद करें', games: 'गेम', record: 'आप: {played} में से {won} जीत', streak: 'लगातार {n} जीत! 🔥', coins: '+{n} सिक्के', resume: "फिर से शुरू करें", backToGame: "गेम पर वापस", restart: "मैच दोबारा शुरू करें", soundOn: "आवाज़: चालू", soundOff: "आवाज़: बंद", voicesOn: "बोलियाँ: चालू", voicesOff: "बोलियाँ: बंद", profile: "आपकी प्रोफ़ाइल", quit: "गेम छोड़ें", menu: "गेम मेन्यू", pausedNote: "⏸ रुका हुआ: जब तक आप वापस नहीं आते, कुछ नहीं चलेगा।", withPeople: "आप दूसरों के साथ खेल रहे हैं: मेन्यू खुला रहने पर भी उनके लिए गेम चलता रहेगा।", hint: "💡 सुझाव", undo: "↶ वापस लें", allMoves: "✕ सभी चालें", hintLine: "💡 चमकती चाल अच्छी है। वही चलें, या सभी चालें दबाएँ।", movedBack: "चाल वापस ली", series: "🏁 {n} गेम के बाद सीरीज़: {list}", draws: "{n} ड्रॉ", you: "आप", best: "🏆 सबसे अच्छा {n}", won: "🏆 {n} जीत", inRow: "🔥 लगातार {n}", bestOf: "(सबसे अच्छा {n})", firstGame: "🎯 पहला गेम: रिकॉर्ड बनाइए", firstBest: "🎯 अपना पहला रिकॉर्ड बनाइए", newBest: "🔥 नया रिकॉर्ड {n}!", anotherGame: "🎮 दूसरा गेम", backToRoom: "👥 कमरे में वापस", takenBack: "↶ {n} चालें वापस लीं", hintsUsed: "💡 {n} सुझाव लिए", newBestScore: "🏆 नया सबसे अच्छा स्कोर: {n}!", bestStreakLine: "🔥 अब तक की सबसे लंबी जीत: लगातार {n}!", nowPlaying: "अभी खेल रहे हैं", change: "🎮 बदलें", friendsJoin: "दोस्त इस कोड से जुड़ें", shareInvite: "न्योता लिंक भेजें", seats: "सीटें", startGame: "▶ {game} शुरू करें", closeRoom: "कमरा बंद करें", youreIn: "आप जुड़ गए!", nextGame: "अगला गेम", waitHost: "होस्ट के शुरू करने का इंतज़ार है। गेम होस्ट चुनता है।", waitHostAgain: "होस्ट का इंतज़ार: वे फिर खेल सकते हैं या दूसरा गेम चुन सकते हैं…", pickNext: "🎮 अगला गेम चुनें", everyoneMoves: "कमरे के सभी ({n}) लोग आपके चुने गेम पर जाएँगे।", leave: "छोड़ें" },
   urdu: { guestPlay: 'Guest ban kar khelein', guides: 'Qawaid', allGames: 'Tamam games', search: 'Game talash karein…', none: 'Is naam ka koi game nahi mila.', start: 'Shuru karein', players: 'Khiladi', level: 'Bots', easy: 'Aasan', hard: 'Mushkil', howTo: 'Kaise khelein', gotIt: 'Samajh gaya!', playAgain: 'Dobara khelein', youWin: 'Aap jeet gaye!', wins: '{name} jeet gaya!', draw: 'Barabar raha!', yourTurn: 'Aap ki baari!', chat: 'Guftagu', close: 'Band karein' },
   nepali: { guestPlay: 'Guest bhayera khelnuhos', guides: 'Niyam', allGames: 'Sabai game', search: 'Game khojnuhos…', none: 'Yo naam ko game bhetiena.', start: 'Suru garnuhos', players: 'Kheladi', easy: 'Sajilo', hard: 'Gaaro', howTo: 'Kasari khelne', gotIt: 'Bujhe!', playAgain: 'Feri khelnuhos', youWin: 'Tapai jitnubhayo!', wins: '{name} jityo!', draw: 'Barabar bhayo!', yourTurn: 'Tapaiko palo!', chat: 'Kurakani', close: 'Banda garnuhos' },
   bangla: { guestPlay: 'Guest hoye khelun', guides: 'Niyom', allGames: 'Sob game', search: 'Game khujun…', none: 'Ei namer kono game nei.', start: 'Shuru korun', players: 'Khelowar', easy: 'Shohoj', hard: 'Kothin', howTo: 'Kivabe khelben', gotIt: 'Bujhechi!', playAgain: 'Abar khelun', youWin: 'Apni jitechen!', wins: '{name} jiteche!', draw: 'Drow holo!', yourTurn: 'Apnar pala!', chat: 'Kothabarta', close: 'Bondho korun' },
@@ -23,5 +25,49 @@ const PACKS = {
   turkish: { guestPlay: 'Misafir olarak oyna', guides: 'Kurallar', allGames: 'Tüm oyunlar', search: 'Oyun ara…', none: 'Bu adla oyun yok.', start: 'Başla', players: 'Oyuncular', mode: 'Mod', easy: 'Kolay', normal: 'Normal', hard: 'Zor', howTo: 'Nasıl oynanır', gotIt: 'Anladım!', playAgain: 'Tekrar oyna', youWin: 'Kazandın!', wins: '{name} kazandı!', draw: 'Berabere!', yourTurn: 'Sıra sende!', chat: 'Sohbet', close: 'Kapat' },
   italian: { guestPlay: 'Gioca come ospite', guides: 'Regole', allGames: 'Tutti i giochi', search: 'Cerca giochi…', none: 'Nessun gioco con questo nome.', start: 'Inizia', players: 'Giocatori', mode: 'Modalità', easy: 'Facile', normal: 'Normale', hard: 'Difficile', howTo: 'Come si gioca', gotIt: 'Capito!', playAgain: 'Gioca ancora', youWin: 'Hai vinto!', wins: '{name} vince!', draw: 'Pareggio!', yourTurn: 'Tocca a te!', chat: 'Chat', close: 'Chiudi' },
 };
-export const shellText = (lang) => ({ ...en, ...(PACKS[lang] || {}) });
+const OFFER_TEXT = {
+  en: {
+    offerRematch: 'Play again together?',
+    offerRematchButton: '🤝 Rematch',
+    offerGame: 'Play {game} next?',
+    offerAnotherButton: '🎮 Another game',
+    offerPickHelp: 'Choose a game.',
+    offerSent: 'Waiting for reply…',
+    offerDeclined: 'Not this time.',
+    offerExpired: 'No reply yet.',
+    findAnother: 'Find someone else',
+    more: 'More',
+    acceptOffer: 'Accept',
+    declineOffer: 'Not now',
+  },
+  hinglish: {
+    offerRematch: 'Phir saath khelenge?',
+    offerRematchButton: '🤝 Phir se',
+    offerGame: 'Agla {game} khelenge?',
+    offerAnotherButton: '🎮 Doosra game',
+    offerPickHelp: 'Game chuno.',
+    offerSent: 'Jawab ka intezaar…',
+    offerDeclined: 'Is baar nahi.',
+    offerExpired: 'Jawab nahi aaya.',
+    findAnother: 'Kisi aur ke saath',
+    more: 'Aur',
+    acceptOffer: 'Haan, khelo',
+    declineOffer: 'Abhi nahi',
+  },
+  hindi: {
+    offerRematch: 'फिर से साथ खेलें?',
+    offerRematchButton: '🤝 फिर खेलें',
+    offerGame: 'अगला {game} खेलें?',
+    offerAnotherButton: '🎮 दूसरा गेम',
+    offerPickHelp: 'गेम चुनें।',
+    offerSent: 'जवाब का इंतज़ार…',
+    offerDeclined: 'इस बार नहीं।',
+    offerExpired: 'जवाब नहीं आया।',
+    findAnother: 'दूसरे खिलाड़ी खोजें',
+    more: 'और',
+    acceptOffer: 'हाँ, खेलें',
+    declineOffer: 'अभी नहीं',
+  },
+};
+export const shellText = (lang) => ({ ...en, ...OFFER_TEXT.en, ...(PACKS[lang] || {}), ...(OFFER_TEXT[lang] || {}) });
 export const fill = (text, vars) => text.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');

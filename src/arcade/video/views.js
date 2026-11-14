@@ -4,18 +4,21 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, TICK } from './lib.js?v=20261110-1548';
-import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261110-1548';
-import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261110-1548';
-import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261110-1548';
-import { speedOf as roadSpeed } from './road-dash.js?v=20261110-1548';
-import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261110-1548';
-import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261110-1548';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261110-1548';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261110-1548';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261110-1548';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261110-1548';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261110-1548';
+import { SEAT_COLORS, TICK } from './lib.js?v=20261114-1146';
+import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261114-1146';
+import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261114-1146';
+import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261114-1146';
+import { speedOf as roadSpeed } from './road-dash.js?v=20261114-1146';
+import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261114-1146';
+import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261114-1146';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261114-1146';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261114-1146';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261114-1146';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261114-1146';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261114-1146';
+import { selectedGameCosmetic } from '../game-cosmetics.js?v=20261114-1146';
+import { TAG_COVER } from './tag-game-core.js?v=20261114-1146';
+import { turboView } from './turbo-view.js?v=20261114-1146';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });
@@ -47,6 +50,10 @@ function pool(scene, make) {
   };
 }
 const ease = (a, b, k) => a + (b - a) * k;
+/** The short way from angle b to angle a, always in -π..π, however many turns either has made. */
+const turnTo = (a, b) => { let x = (a - b) % TAU; if (x > Math.PI) x -= TAU; else if (x < -Math.PI) x += TAU; return x; };
+/** An angle kept in 0..2π, so a shown angle never runs away after many laps. */
+const wrapAngle = (a) => ((a % TAU) + TAU) % TAU;
 
 /* ─── a paper plane, and a winged chit ─── */
 function paperPlane(color) {
@@ -62,7 +69,15 @@ function paperPlane(color) {
   grp.add(m, stripe);
   return grp;
 }
-function wingedChit(color) {
+const FLYING_CHIT_PALETTES = {
+  classic: { paper: '#fbf3d9', wing: '#ffffff', emissive: '#000000', glow: 0, metalness: 0, roughness: 0.85 },
+  blueprint: { paper: '#2468a5', wing: '#9fe8ff', emissive: '#07213b', glow: 0.08, metalness: 0.12, roughness: 0.52 },
+  golden: { paper: '#ffd85a', wing: '#fff0a8', emissive: '#9c6a00', glow: 0.18, metalness: 0.68, roughness: 0.24, halo: '#ffdc54' },
+  neon: { paper: '#20204b', wing: '#a7fcff', emissive: '#06c8df', glow: 0.72, metalness: 0.24, roughness: 0.3, halo: '#24efff' },
+  rose: { paper: '#ffd5e5', wing: '#fff0f6', emissive: '#8b214c', glow: 0.16, metalness: 0.08, roughness: 0.48, halo: '#ff72a8' },
+};
+
+function wingedChit(color, style = 'classic') {
   const grp = new THREE.Group();
   const paper = std('#fbf3d9', { roughness: 0.85 });
   const body = box(0.42, 0.08, 0.3, paper);
@@ -79,9 +94,25 @@ function wingedChit(color) {
   const eye = basic('#2b2118');
   const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), eye), e2 = e1.clone();
   e1.position.set(0.07, 0.05, -0.15); e2.position.set(-0.07, 0.05, -0.15);
-  grp.add(edge, body, band, lw, rw, e1, e2);
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.014, 5, 28), basic('#ffffff', { transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.rotation.x = Math.PI / 2; halo.position.y = -0.07; halo.visible = false;
+  grp.add(halo, edge, body, band, lw, rw, e1, e2);
   grp.scale.setScalar(1.3);
-  grp.userData.wings = [lw, rw];
+  const applyStyle = (key) => {
+    const palette = FLYING_CHIT_PALETTES[key] || FLYING_CHIT_PALETTES.classic;
+    paper.color.set(palette.paper);
+    paper.emissive.set(palette.emissive);
+    paper.emissiveIntensity = palette.glow;
+    paper.metalness = palette.metalness;
+    paper.roughness = palette.roughness;
+    wingMat.color.set(palette.wing);
+    wingMat.emissive.set(palette.emissive);
+    wingMat.emissiveIntensity = palette.glow * 0.55;
+    halo.visible = !!palette.halo;
+    halo.material.color.set(palette.halo || color);
+  };
+  grp.userData = { wings: [lw, rw], applyStyle };
+  applyStyle(style);
   return grp;
 }
 
@@ -93,29 +124,64 @@ const TUNNEL_MOODS = [
   { bg: '#04201f', tube: '#2f8f87', ring: '#a6fff3', wall: '#ff5d5d', gap: '#ffd23f' },   // teal
   { bg: '#26100a', tube: '#b8662f', ring: '#ffd7a8', wall: '#ff3b3b', gap: '#ffe066' },   // spin cycle: hot
 ];
+const TUNNEL_THEMES = {
+  cosmic: [
+    { bg: '#100a2e', tube: '#473276', ring: '#c9a7ff', wall: '#ff4f9a', gap: '#62f1ff' },
+    { bg: '#17072d', tube: '#633175', ring: '#f2a4ff', wall: '#ff5b83', gap: '#70f5e5' },
+    { bg: '#081d36', tube: '#235e8b', ring: '#8de8ff', wall: '#ff647d', gap: '#b6ff78' },
+    { bg: '#240b32', tube: '#793c86', ring: '#ffb1e6', wall: '#ff5961', gap: '#f7ec78' },
+  ],
+  sunset: [
+    { bg: '#32131e', tube: '#9b4c42', ring: '#ffd1a1', wall: '#f0445c', gap: '#ffe16a' },
+    { bg: '#3a1820', tube: '#b65b4a', ring: '#ffbd91', wall: '#f04f64', gap: '#ffdf73' },
+    { bg: '#27202b', tube: '#855f69', ring: '#ffd2bc', wall: '#fa5360', gap: '#ffc36a' },
+    { bg: '#31171c', tube: '#a45b44', ring: '#ffe0a6', wall: '#ff4554', gap: '#fff078' },
+  ],
+};
 function tunnelView() {
+  const tunnelPalette = (style) => TUNNEL_THEMES[style] || TUNNEL_MOODS;
+  let themeStyle = selectedGameCosmetic('tunnel-race', 'tunnel')?.style || 'paper';
+  let craftStyle = selectedGameCosmetic('tunnel-race', 'craft')?.style || 'paper';
+  let moods = tunnelPalette(themeStyle);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(TUNNEL_MOODS[0].bg);
-  scene.fog = new THREE.Fog(TUNNEL_MOODS[0].bg, 14, 56);
+  scene.background = new THREE.Color(moods[0].bg);
+  scene.fog = new THREE.Fog(moods[0].bg, 14, 56);
   const camera = new THREE.PerspectiveCamera(72, 1.6, 0.1, 120);
   camera.position.set(0, 0, 4.2);
   const R = 3, PZ = -1.2, PR = R * 0.74;
   // the tunnel: light paper with folds and grid lines, tinted by the level's colour
-  const tex = canvasTex(512, 256, (g, w, h) => {
-    g.fillStyle = '#b9c2d0'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#d9e0ea'; g.fillRect(0, 0, w, h / 2);
-    g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 2); g.lineTo(w, 2); g.stroke();
-    g.strokeStyle = 'rgba(40,50,70,.35)'; g.lineWidth = 2;
-    for (let x = 0; x < w; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
-    g.fillStyle = 'rgba(255,255,255,.18)'; for (let k = 0; k < 6; k++) g.fillRect((k * 89) % w, 40 + (k * 37) % 160, 40, 6);
+  const tex = canvasTex(1024, 256, (g, w, h) => {
+    // panels with a soft light-to-shade fall across each, so the wall reads as a curved surface
+    const panel = w / 16;
+    for (let k = 0; k < 16; k++) {
+      const shade = g.createLinearGradient(k * panel, 0, (k + 1) * panel, 0);
+      shade.addColorStop(0, '#e6ebf3'); shade.addColorStop(0.5, '#c9d1de'); shade.addColorStop(1, '#a9b3c4');
+      g.fillStyle = shade; g.fillRect(k * panel, 0, panel, h);
+    }
+    // a band where the panels meet, ridged
+    g.fillStyle = '#8e98aa'; g.fillRect(0, h / 2 - 6, w, 12);
+    g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(0, h / 2 - 6, w, 2);
+    g.strokeStyle = 'rgba(30,40,60,.45)'; g.lineWidth = 2;
+    for (let x = 0; x < w; x += panel) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+    // four light strips running the length of the tunnel: they rush past and give the speed
+    [0, 4, 8, 12].forEach((k) => {
+      const x = k * panel + panel / 2;
+      const glow = g.createLinearGradient(x - 14, 0, x + 14, 0);
+      glow.addColorStop(0, 'rgba(255,255,255,0)'); glow.addColorStop(0.5, 'rgba(255,255,255,.95)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = glow; g.fillRect(x - 14, 0, 28, h);
+      g.fillStyle = '#ffffff'; for (let y = 10; y < h; y += 42) g.fillRect(x - 3, y, 6, 18);
+    });
+    // rivets
+    g.fillStyle = 'rgba(40,50,70,.4)';
+    for (let x = panel / 4; x < w; x += panel / 2) { g.beginPath(); g.arc(x, 14, 2.5, 0, Math.PI * 2); g.arc(x, h - 14, 2.5, 0, Math.PI * 2); g.fill(); }
   }, [1, 14]);
-  const tubeMat = basic(TUNNEL_MOODS[0].tube, { map: tex, side: THREE.BackSide });
+  const tubeMat = basic(moods[0].tube, { map: tex, side: THREE.BackSide });
   const tube = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 120, 48, 1, true), tubeMat);
   tube.rotation.x = Math.PI / 2;
   tube.position.z = -55;
   scene.add(tube);
   // rings of light along the tunnel, rushing past
-  const ringMat = basic(TUNNEL_MOODS[0].ring, { transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+  const ringMat = basic(moods[0].ring, { transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
   const rings = Array.from({ length: 12 }, () => { const m = new THREE.Mesh(new THREE.TorusGeometry(R * 0.985, 0.03, 6, 64), ringMat); scene.add(m); return m; });
   // speed lines along the walls
   const streakMat = basic('#ffffff', { transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -134,11 +200,32 @@ function tunnelView() {
   const trails = SEAT_COLORS.map((_, i) => pool(scene, () => new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 4), trailMats[i])));
   scene.add(new THREE.HemisphereLight('#ffffff', '#442266', 1.4));
   const planes = [], shown = [];
+  const clearPlanes = () => {
+    planes.forEach((plane) => {
+      if (!plane) return;
+      scene.remove(plane);
+      plane.traverse((part) => {
+        part.geometry?.dispose();
+        (Array.isArray(part.material) ? part.material : [part.material]).forEach(material => material?.dispose());
+      });
+    });
+    planes.length = 0;
+    shown.length = 0;
+  };
+  const refreshCosmetics = (s) => {
+    if (s.t !== 0) return;
+    const nextTheme = selectedGameCosmetic('tunnel-race', 'tunnel')?.style || 'paper';
+    const nextCraft = selectedGameCosmetic('tunnel-race', 'craft')?.style || 'paper';
+    if (nextTheme !== themeStyle) { themeStyle = nextTheme; moods = tunnelPalette(themeStyle); }
+    if (nextCraft !== craftStyle) { craftStyle = nextCraft; clearPlanes(); }
+  };
   let dShown = null, aCam = null, shake = 0;
   const want = new THREE.Color();
   return {
     scene, camera,
-    update(s, dt, alpha = 0) {
+    update(s, dt, alpha = 0, focus = 0) {
+      refreshCosmetics(s);
+      if (!s.planes[focus]) focus = 0;
       // smooth: the tunnel moves on every frame, carried on between the game's ticks
       const sp = tunnelSpeed(s.d);
       if (dShown == null || Math.abs(s.d - dShown) > 4) dShown = s.d;
@@ -146,7 +233,7 @@ function tunnelView() {
       dShown += (s.d + sp * TICK * alpha - dShown) * (1 - Math.exp(-dt * 10));
       const d = dShown, tNow = s.t + alpha;
       // the level's colours, blended in
-      const mood = TUNNEL_MOODS[Math.min(TUNNEL_MOODS.length, s.level || 1) - 1];
+      const mood = moods[Math.min(moods.length, s.level || 1) - 1];
       const k = 1 - Math.exp(-dt * 1.5);
       scene.background.lerp(want.set(mood.bg), k);
       scene.fog.color.copy(scene.background);
@@ -155,7 +242,7 @@ function tunnelView() {
       tex.offset.y = (d * 0.04) % 1;
       rings.forEach((m, i) => { const z = i * 5 - (d % 5); m.position.z = -z + PZ + 2; });
       // the plane on this screen, and where it is about to be
-      const me = s.planes[0];
+      const me = s.planes[focus];
       const meA = me ? me.a + (me.alive ? me.w * TICK * alpha : 0) : -Math.PI / 2;
       // walls coming at you
       const next = s.obs.find(o => o.z > s.d);
@@ -183,6 +270,7 @@ function tunnelView() {
         const u = m.userData, danger = o === next && me?.alive && tunnelBlocks(o, meA) && o.z - s.d < 22;
         u.mat.color.set(danger ? (Math.floor(tNow / 6) % 2 ? '#ff2a2a' : '#ff8080') : mood.wall);
         u.mat.emissive.set(danger ? '#c00000' : '#8a1a24');   // the walls glow, so they stand out from the tunnel
+        u.safe.color.set(mood.gap);
         u.safe.opacity = o === next ? 0.65 + Math.sin(tNow * 0.3) * 0.3 : 0.35;
       });
       walls.forEach((m, key) => { if (!seen.has(key)) { scene.remove(m); m.traverse((x) => { x.geometry?.dispose(); }); walls.delete(key); } });
@@ -195,11 +283,13 @@ function tunnelView() {
       gems.end(); gemGlow.end();
       // the planes: smoothed, banking into the turn, a trail of light behind
       s.planes.forEach((p, i) => {
-        if (!planes[i]) { planes[i] = paperPlane(SEAT_COLORS[i]); scene.add(planes[i]); shown[i] = { a: p.a, gems: p.gems, trail: [] }; }
+        if (!planes[i]) { planes[i] = craftStyle === 'winged-chit' ? wingedChit(SEAT_COLORS[i]) : paperPlane(SEAT_COLORS[i]); scene.add(planes[i]); shown[i] = { a: p.a, gems: p.gems, trail: [] }; }
         const v = shown[i], m = planes[i];
         const ta = p.a + (p.alive ? p.w * TICK * alpha : 0);
-        let da = ((ta - v.a + Math.PI * 3) % TAU) - Math.PI;
-        v.a += da * (1 - Math.exp(-dt * 26));
+        // the plane on this phone is drawn exactly where the game checks it (already smoothed between
+        // ticks), so what you see is what hits; other planes, which arrive over the network, are eased
+        if (i === focus && p.alive) v.a = wrapAngle(ta);
+        else v.a = wrapAngle(v.a + turnTo(ta, v.a) * (1 - Math.exp(-dt * 26)));
         m.position.set(Math.cos(v.a) * PR, Math.sin(v.a) * PR, PZ);
         m.scale.setScalar(1.5);
         m.rotation.set(0, 0, v.a + Math.PI / 2 - p.w * 0.3);
@@ -207,7 +297,7 @@ function tunnelView() {
         if (p.gems > v.gems) {
           for (let q = 0; q < 16; q++) { const a = (q / 16) * TAU; sparks.push({ x: m.position.x, y: m.position.y, z: PZ - 0.3, vx: Math.cos(a) * 1.8, vy: Math.sin(a) * 1.8, vz: 3, life: 0.6 }); }
         }
-        if (!p.alive && v.alive !== false && i === 0) shake = 0.4;
+        if (!p.alive && v.alive !== false && i === focus) shake = 0.4;
         v.alive = p.alive; v.gems = p.gems;
         v.trail.unshift([m.position.x, m.position.y]);
         if (v.trail.length > 18) v.trail.length = 18;
@@ -230,10 +320,9 @@ function tunnelView() {
       streakMat.opacity = fast * 0.5;
       streaks.forEach((m) => { const u = m.userData; u.z += sp * dt * 1.5; if (u.z > 5) u.z -= 55; m.visible = fast > 0.02; m.position.set(Math.cos(u.a) * R * 0.9, Math.sin(u.a) * R * 0.9, u.z); });
       // the camera turns with the plane, so it always flies along the bottom of the screen
-      const myA = shown[0]?.a ?? -Math.PI / 2;
+      const myA = shown[focus]?.a ?? -Math.PI / 2;
       if (aCam == null) aCam = myA;
-      let dc = ((myA - aCam + Math.PI * 3) % TAU) - Math.PI;
-      aCam += dc * (1 - Math.exp(-dt * 6));
+      aCam = wrapAngle(aCam + turnTo(myA, aCam) * (1 - Math.exp(-dt * 6)));
       shake = Math.max(0, shake - dt);
       const lean = R * 0.3, sx = shake ? Math.sin(tNow * 2.3) * shake * 0.3 : 0;
       camera.position.set(Math.cos(aCam) * lean + sx, Math.sin(aCam) * lean, 4.2);
@@ -387,11 +476,18 @@ function flyingView() {
   const trailMats = SEAT_COLORS.map(c => basic(c, { transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
   const trails = SEAT_COLORS.map((_, i) => pool(scene, () => new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), trailMats[i])));
   const chits = [], shown = [];
+  let chitStyle = selectedGameCosmetic('flying-chit', 'chit')?.style || 'classic';
   let dShown = null, camX = 0, camY = 0, roll = 0, shake = 0, fov = 62;
   const want = new THREE.Color();
   return {
     scene, camera,
-    update(s, dt, alpha = 0) {
+    update(s, dt, alpha = 0, focus = 0) {
+      if (!s.chits[focus]) focus = 0;
+      const nextChitStyle = selectedGameCosmetic('flying-chit', 'chit')?.style || 'classic';
+      if (nextChitStyle !== chitStyle) {
+        chitStyle = nextChitStyle;
+        chits.forEach((chit) => chit?.userData.applyStyle(chitStyle));
+      }
       // smooth motion: the room moves on every frame, not only on every tick of the game
       const sp = speedAt(s.d);
       if (dShown == null || Math.abs(s.d - dShown) > 4) dShown = s.d;
@@ -448,7 +544,7 @@ function flyingView() {
       hoops.end(); golds.end(); fans.end(); books.end();
       // the aim ring for the chit on this screen: it sits at the next bangle's distance
       const target = s.objs.find(o => o.k === 'hoop' && o.z > s.d + 0.5);
-      const a0 = s.chits[0], v0 = shown[0];
+      const a0 = s.chits[focus], v0 = shown[focus];
       aim.visible = aimDot.visible = !!(target && a0?.alive && v0);
       if (aim.visible) {
         const z = Z(target.z - d);
@@ -462,7 +558,7 @@ function flyingView() {
       }
       // the chits: smoothed between ticks, tilting into turns, flapping, a trail of light behind
       s.chits.forEach((c, i) => {
-        if (!chits[i]) { chits[i] = wingedChit(SEAT_COLORS[i]); scene.add(chits[i]); shown[i] = { x: c.x, y: c.y, score: c.score, hit: c.hit, trail: [] }; }
+        if (!chits[i]) { chits[i] = wingedChit(SEAT_COLORS[i], chitStyle); scene.add(chits[i]); shown[i] = { x: c.x, y: c.y, score: c.score, hit: c.hit, trail: [] }; }
         const v = shown[i], m = chits[i];
         const tx = c.alive ? c.x + c.vx * TICK * alpha : c.x, ty = c.alive ? c.y + c.vy * TICK * alpha : c.y;
         const kk = 1 - Math.exp(-dt * 28);
@@ -478,7 +574,7 @@ function flyingView() {
           const n = c.score - v.score >= 10 ? 26 : 12 + Math.min(5, c.combo) * 2;
           for (let q = 0; q < n; q++) { const a = (q / n) * TAU; sparks.push({ x: m.position.x, y: m.position.y, z: -0.6, vx: Math.cos(a) * (1.4 + (q % 3) * 0.5), vy: Math.sin(a) * (1.4 + (q % 3) * 0.5), vz: 2 + (q % 4), life: 0.7 }); }
         }
-        if (c.hit > v.hit && i === 0) shake = 0.35;
+        if (c.hit > v.hit && i === focus) shake = 0.35;
         v.score = c.score; v.hit = c.hit;
         v.trail.unshift([m.position.x, m.position.y - 0.02, 0.3]);
         if (v.trail.length > 22) v.trail.length = 22;
@@ -519,7 +615,7 @@ function flyingView() {
         m.rotation.set(tNow * 0.02 * u.spin, tNow * 0.03 * u.spin, 0);
       });
       // the camera: just behind the first chit, leaning into turns, wider when it's fast, a jolt when hit
-      const me = shown[0] || { x: 0, y: 0 }, c0 = s.chits[0] || {};
+      const me = shown[focus] || { x: 0, y: 0 }, c0 = s.chits[focus] || {};
       camX = ease(camX, me.x * X * 0.6, 1 - Math.exp(-dt * 5));
       camY = ease(camY, me.y * Y * 0.6 + 0.5, 1 - Math.exp(-dt * 5));
       roll = ease(roll, -(c0.vx || 0) * 0.05, 1 - Math.exp(-dt * 4));
@@ -1007,7 +1103,7 @@ function snakeView() {
   const want = new THREE.Color();
   return {
     scene, camera,
-    update(s, dt, alpha = 0) {
+    update(s, dt, alpha = 0, focus = 0) {
       const tNow = s.t + alpha;
       const mood = SNAKE_MOODS[Math.min(SNAKE_MOODS.length, s.level || 1) - 1];
       const k = 1 - Math.exp(-dt * 1.4);
@@ -1057,7 +1153,7 @@ function snakeView() {
       golden.visible = goldGlow.visible = gv;
       if (s.gold) { golden.position.set(cx(s.gold.x), 0.16 + Math.sin(tNow * 0.2) * 0.06, cz(s.gold.y)); golden.rotation.y = -tNow * 0.12; goldGlow.position.copy(golden.position); goldGlow.scale.setScalar(1 + Math.sin(tNow * 0.3) * 0.2); }
       // the danger cell in front of my snake, and the arrow to the food
-      const me = s.snakes[0];
+      const me = s.snakes[focus] || s.snakes[0];
       danger.visible = false; arrow.visible = false;
       if (me?.alive) {
         const [dx, dy] = DIRV[me.next] || DIRV[me.d];
@@ -1151,16 +1247,40 @@ function roadView() {
   const bulbMat = basic('#fff1b0');
   const glowMat = basic('#ffd27a', { transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
   const poles = pool(scene, () => { const g = new THREE.Group(); const p = box(0.06, 1.8, 0.06, std('#5b616b')); p.position.y = 0.9; const arm = box(0.6, 0.04, 0.04, std('#5b616b')); arm.position.set(0.3, 1.8, 0); const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), bulbMat); bulb.position.set(0.58, 1.76, 0); const glow = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), glowMat); glow.position.copy(bulb.position); g.add(p, arm, bulb, glow); return g; });
+  // an Indian auto-rickshaw: a rounded tub in the player's colour, the black canvas hood with its yellow
+  // top, a windscreen, handlebar and mirrors, one wheel in front and two behind
+  const autoYellow = std('#f5c518', { roughness: 0.45 }), canvasMat = std('#1b1b1b', { roughness: 0.9 }), chrome = std('#d9dde3', { metalness: 0.8, roughness: 0.25 });
+  const rubber = std('#111111', { roughness: 0.9 }), glassMat = std('#bfe3ff', { metalness: 0.2, roughness: 0.05, transparent: true, opacity: 0.55 });
   const rickshaw = (color) => {
     const g = new THREE.Group();
-    const body = box(0.55, 0.35, 0.8, std(color)); body.position.y = 0.32;
-    const roof = box(0.6, 0.06, 0.75, std('#222222')); roof.position.y = 0.72;
-    const p1 = box(0.04, 0.32, 0.04, std('#222222')); p1.position.set(0.26, 0.55, -0.3); const p2 = p1.clone(); p2.position.x = -0.26;
-    const glass = box(0.45, 0.22, 0.02, std('#9fd3ff', { metalness: 0.3, roughness: 0.1 })); glass.position.set(0, 0.6, -0.36);
-    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), basic('#fff6c0')); lamp.position.set(0, 0.36, -0.42);
-    const wheel = () => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.08, 12), std('#111111')); w.rotation.z = Math.PI / 2; return w; };
-    const w1 = wheel(); w1.position.set(0, 0.12, -0.38); const w2 = wheel(); w2.position.set(0.3, 0.12, 0.28); const w3 = wheel(); w3.position.set(-0.3, 0.12, 0.28);
-    g.add(body, roof, p1, p2, glass, lamp, w1, w2, w3);
+    const paint = std(color, { roughness: 0.35, metalness: 0.15 });
+    const tub = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.42, 6, 14), paint);
+    tub.rotation.x = Math.PI / 2; tub.scale.set(1, 1, 0.75); tub.position.set(0, 0.36, 0.05);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), paint);
+    nose.scale.set(1, 0.9, 1.2); nose.position.set(0, 0.36, -0.4);
+    const floor = box(0.56, 0.05, 0.7, std('#2a2a2a')); floor.position.set(0, 0.2, 0.08);
+    // the hood: half a cylinder lying along the length, black canvas with a yellow top
+    const hood = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.72, 16, 1, true, -Math.PI / 2, Math.PI), canvasMat);
+    hood.rotation.x = Math.PI / 2; hood.rotation.z = Math.PI / 2; hood.scale.set(1, 1, 0.85); hood.position.set(0, 0.56, 0.08);
+    hood.material.side = THREE.DoubleSide;
+    const top = box(0.5, 0.04, 0.74, autoYellow); top.position.set(0, 0.82, 0.08);
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.26), glassMat); glass.position.set(0, 0.62, -0.3); glass.rotation.x = -0.25;
+    const frame = box(0.5, 0.03, 0.03, chrome); frame.position.set(0, 0.76, -0.3);
+    const bar = box(0.42, 0.025, 0.025, chrome); bar.position.set(0, 0.5, -0.36);
+    const mirrors = [-1, 1].map((k) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), chrome); m.position.set(k * 0.27, 0.68, -0.32); return m; });
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), basic('#fff6c0')); lamp.position.set(0, 0.42, -0.6);
+    const tail = [-1, 1].map((k) => { const t = box(0.06, 0.04, 0.02, basic('#ff3b2f')); t.position.set(k * 0.2, 0.38, 0.44); return t; });
+    const wheel = () => {
+      const w = new THREE.Group();
+      const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.035, 8, 16), rubber);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 10), chrome); hub.rotation.x = Math.PI / 2;
+      w.add(tyre, hub);
+      w.rotation.y = Math.PI / 2;
+      return w;
+    };
+    const w1 = wheel(); w1.position.set(0, 0.13, -0.42); const w2 = wheel(); w2.position.set(0.31, 0.13, 0.3); const w3 = wheel(); w3.position.set(-0.31, 0.13, 0.3);
+    g.add(tub, nose, floor, hood, top, glass, frame, bar, ...mirrors, lamp, ...tail, w1, w2, w3);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     g.userData = { wheels: [w1, w2, w3], lamp };
     return g;
   };
@@ -1186,7 +1306,8 @@ function roadView() {
   const want = new THREE.Color();
   return {
     scene, camera,
-    update(s, dt, alpha = 0) {
+    update(s, dt, alpha = 0, focus = 0) {
+      if (!s.carts[focus]) focus = 0;
       const tNow = s.t + alpha;
       const v = roadSpeed(s.dist);
       // smooth: the road moves on every frame, carried on between the game's ticks
@@ -1219,7 +1340,7 @@ function roadView() {
       }
       trees.end(); hay.end(); shops.end(); boards.end(); poles.end();
       // what's on the road
-      const me = s.carts[0];
+      const me = s.carts[focus];
       things.forEach(p => p.begin()); warns.begin();
       s.things.forEach((t) => {
         const x = t.x - (v + (t.v || 0)) * TICK * alpha;
@@ -1247,7 +1368,7 @@ function roadView() {
         m.userData.lamp.material.color.set(mood.lights > 0.5 ? '#fffbe0' : '#fff6c0');
         if (c.alive && Math.random() < 0.3) add(m.position.x + 0.15, 0.15, m.position.z + 0.45, (Math.random() - 0.5) * 0.2, 0.3, 0.6, 0.6, 0.8, '#cfcfcf');
         if (c.coins > (lastCoins[i] ?? c.coins)) for (let q = 0; q < 10; q++) { const a = (q / 10) * TAU; add(m.position.x, 0.6, m.position.z - 0.3, Math.cos(a) * 1.2, Math.sin(a) * 1.2 + 0.5, 0, 0.45, 0.6, '#ffe066'); }
-        if (lastAlive[i] && !c.alive) { for (let q = 0; q < 10; q++) add(m.position.x, 0.4, m.position.z - 0.3, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 0.6, 1.1, 1.8, q % 3 ? '#666666' : '#ff8a3d'); if (i === 0) shake = 0.4; }
+        if (lastAlive[i] && !c.alive) { for (let q = 0; q < 10; q++) add(m.position.x, 0.4, m.position.z - 0.3, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 0.6, 1.1, 1.8, q % 3 ? '#666666' : '#ff8a3d'); if (i === focus) shake = 0.4; }
         lastCoins[i] = c.coins; lastAlive[i] = c.alive;
       });
       // my lane
@@ -1267,7 +1388,7 @@ function roadView() {
       streakMat.opacity = fast * 0.5;
       streaks.forEach((m) => { const u = m.userData; u.z += (v / 52) * dt * 1.4; if (u.z > 5) u.z -= 32; m.visible = fast > 0.02; m.position.set(u.x, u.y, u.z); });
       // the camera follows my rickshaw's lane a little, and jolts on a crash
-      camX = ease(camX, me ? laneX((shownY[0] - 76) / 78) * 0.45 : 0, 1 - Math.exp(-dt * 4));
+      camX = ease(camX, me ? laneX((shownY[focus] - 76) / 78) * 0.45 : 0, 1 - Math.exp(-dt * 4));
       shake = Math.max(0, shake - dt);
       camera.position.set(camX + (shake ? Math.sin(tNow * 2.9) * shake * 0.25 : 0), 2.5, 4.6);
       camera.lookAt(camX * 0.6, 0, -4);
@@ -1446,8 +1567,7 @@ function bullView() {
         if (!v || Math.hypot(tx - v.x, ty - v.y) > 60) v = shown[i] = { x: tx, y: ty, dir: b.dir };
         const k = 1 - Math.exp(-dt * 26);
         v.x += (tx - v.x) * k; v.y += (ty - v.y) * k;
-        let dd = ((b.dir - v.dir + Math.PI * 3) % TAU) - Math.PI;
-        v.dir += dd * (1 - Math.exp(-dt * 14));
+        v.dir = wrapAngle(v.dir + turnTo(b.dir, v.dir) * (1 - Math.exp(-dt * 14)));
         const m = bulls[i], u = m.userData;
         const speed = Math.hypot(b.vx, b.vy);
         const charging = b.charge > 0;
@@ -2225,6 +2345,280 @@ function ghostView() {
   };
 }
 
-const VIEWS = { 'ghost-hostel': ghostView, 'hoop-flick': hoopView, 'pin-spin': pinView, 'bull-fight': bullView, 'tunnel-race': tunnelView, 'flying-chit': flyingView, 'ship-fight': shipView, 'backyard-rally': rallyView, 'hungry-snake': snakeView, 'road-dash': roadView };
+/* ─── Spin Duel: two custom tops battling in a small schoolyard arena ─── */
+function spinDuelView() {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#17253c');
+  const camera = new THREE.PerspectiveCamera(42, 1.6, 0.1, 50);
+  camera.position.set(0, 5.2, 6.4); camera.lookAt(0, 0, -0.15);
+  lights(scene, { sky: '#f5f4ff', ground: '#303044', sun: 1.8 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 7), std('#61462e', { roughness: 0.95 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.3; scene.add(floor);
+  const floorLines = [];
+  for (let i = 0; i < 9; i++) {
+    const plank = box(10, 0.015, 0.012, basic(i % 2 ? '#7a5a3c' : '#503923'));
+    plank.position.set(0, -0.285, -2.8 + i * 0.7); scene.add(plank); floorLines.push(plank);
+  }
+  const stage = new THREE.Group(); stage.position.z = -0.2; scene.add(stage);
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.22, 0.22, 64), std('#34465e', { roughness: 0.35, metalness: 0.28 }));
+  bowl.position.y = -0.12;
+  const arena = new THREE.Mesh(new THREE.CircleGeometry(1.44, 64), std('#9aa8b8', { roughness: 0.68, metalness: 0.08 }));
+  arena.rotation.x = -Math.PI / 2; arena.position.y = 0.005;
+  const arenaRing = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.065, 10, 64), std('#d5deeb', { roughness: 0.32, metalness: 0.4 }));
+  arenaRing.rotation.x = Math.PI / 2; arenaRing.position.y = 0.045;
+  const innerRing = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.012, 6, 64), basic('#ffffff', { transparent: true, opacity: 0.24 }));
+  innerRing.rotation.x = Math.PI / 2; innerRing.position.y = 0.016;
+  stage.add(bowl, arena, arenaRing, innerRing);
+  const makeTop = (seat) => {
+    const g = new THREE.Group();
+    const shell = std(SEAT_COLORS[seat], { roughness: 0.3, metalness: 0.48, emissive: SEAT_COLORS[seat], emissiveIntensity: 0.12 });
+    const edge = std('#e4edf7', { roughness: 0.24, metalness: 0.72 });
+    const lower = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.28, 12), shell); lower.position.y = 0.11;
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 8, 24), edge); rim.rotation.x = Math.PI / 2; rim.position.y = 0.19;
+    const upper = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.22, 10), shell); upper.position.y = 0.31; upper.rotation.x = Math.PI;
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.09, 0.18, 10), edge); hub.position.y = 0.38;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.14, 10), std('#f6cf73', { roughness: 0.28, metalness: 0.62 })); tip.position.y = 0.49;
+    const fins = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const fin = box(0.06, 0.14, 0.2, shell);
+      fin.position.set(0.13, 0.2, 0); fin.rotation.y = i * TAU / 3; fins.add(fin);
+    }
+    const facets = new THREE.Group();
+    for (let i = 0; i < 6; i++) {
+      const facet = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.27, 3), shell);
+      facet.position.y = 0.22; facet.rotation.y = i * TAU / 6; facets.add(facet);
+    }
+    const glow = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.035, 6, 32), basic(SEAT_COLORS[seat], { transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    glow.rotation.x = Math.PI / 2; glow.position.y = 0.06;
+    g.add(lower, rim, upper, hub, tip, fins, facets, glow);
+    g.userData = { shell, edge, fins, facets, glow, seat };
+    scene.add(g);
+    return g;
+  };
+  const tops = [makeTop(0), makeTop(1)];
+  let style = '', arenaStyle = '';
+  const topStyle = () => selectedGameCosmetic('spin-duel', 'top')?.style || 'classic';
+  const selectedArena = () => selectedGameCosmetic('spin-duel', 'arena')?.style || 'classic';
+  return {
+    scene, camera,
+    update(s, dt, alpha = 0) {
+      const nextTopStyle = topStyle(), nextArenaStyle = selectedArena();
+      if (nextTopStyle !== style) {
+        style = nextTopStyle;
+        tops.forEach((top) => {
+          const u = top.userData;
+          u.fins.visible = style === 'comet';
+          u.facets.visible = style === 'prism';
+          u.shell.roughness = style === 'prism' ? 0.18 : 0.3;
+          u.shell.metalness = style === 'prism' ? 0.82 : 0.48;
+          u.glow.material.opacity = style === 'comet' ? 0.65 : style === 'prism' ? 0.48 : 0.28;
+        });
+      }
+      if (nextArenaStyle !== arenaStyle) {
+        arenaStyle = nextArenaStyle;
+        const colors = arenaStyle === 'cosmic'
+          ? ['#181b43', '#5b58c9', '#a69cff', '#42eaff']
+          : arenaStyle === 'sunset'
+            ? ['#713c35', '#c86c40', '#ffd09a', '#ffe16a']
+            : ['#34465e', '#9aa8b8', '#d5deeb', '#ffffff'];
+        bowl.material.color.set(colors[0]); arena.material.color.set(colors[1]);
+        arenaRing.material.color.set(colors[2]); innerRing.material.color.set(colors[3]);
+        scene.background.set(arenaStyle === 'cosmic' ? '#171633' : arenaStyle === 'sunset' ? '#3d201a' : '#17253c');
+      }
+      s.tops.forEach((p, i) => {
+        const m = tops[i];
+        const tx = (p.x - HOOP_W / 2) / 100, tz = (p.y - HOOP_H / 2) / 100;
+        m.position.set(tx, 0.035 + (p.alive ? Math.abs(Math.sin(s.t * 0.3 + i)) * 0.025 : 0), tz);
+        m.rotation.y = p.angle + (p.alive ? p.spinDir * p.spin * alpha * TICK * 12 : 0);
+        m.rotation.z = p.alive ? Math.sin(s.t * 0.12 + i) * Math.min(0.16, Math.hypot(p.vx, p.vy) / 2800) : 0;
+        m.visible = p.alive;
+        m.userData.glow.material.opacity = (style === 'comet' ? 0.5 : 0.25) + Math.sin(s.t * 0.2 + i) * 0.08;
+      });
+      arenaRing.rotation.z = Math.sin(s.t * 0.008) * 0.012;
+    },
+  };
+}
+
+/* ─── Pen Fight: animated pens sliding across a polished classroom desk ─── */
+function penFightView() {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#273444');
+  const camera = new THREE.PerspectiveCamera(40, 1.6, 0.1, 50);
+  camera.position.set(0, 5.3, 6.4); camera.lookAt(0, 0, 0.15);
+  lights(scene, { sky: '#fff7ea', ground: '#45301e', sun: 1.7 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(9, 7), std('#3b3028', { roughness: 0.94 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.35; scene.add(floor);
+  const texture = canvasTex(512, 256, (g, w, h) => {
+    g.fillStyle = '#9b7049'; g.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 42) {
+      g.fillStyle = y % 84 ? 'rgba(255,225,182,.12)' : 'rgba(58,34,17,.12)';
+      g.fillRect(0, y, w, 2);
+      g.strokeStyle = 'rgba(68,39,19,.14)'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(0, y + 9); g.bezierCurveTo(w * 0.3, y - 5, w * 0.7, y + 19, w, y + 4); g.stroke();
+    }
+    g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 3; g.strokeRect(12, 12, w - 24, h - 24);
+  });
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(6.1, 0.18, 3.55), std('#ffffff', { map: texture, roughness: 0.58 }));
+  desk.position.set(0, -0.09, 0.15); scene.add(desk);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.08, 3.65), std('#674324', { roughness: 0.7 }));
+  edge.position.set(0, -0.2, 0.15); scene.add(edge);
+  const bounds = new THREE.Group(), boundMat = basic('#f2dcba'), halfX = 2.62, halfZ = 1.48;
+  bounds.add(
+    box(halfX * 2, 0.012, 0.025, boundMat),
+    box(halfX * 2, 0.012, 0.025, boundMat),
+    box(0.025, 0.012, halfZ * 2, boundMat),
+    box(0.025, 0.012, halfZ * 2, boundMat),
+  );
+  bounds.children[0].position.z = -halfZ; bounds.children[1].position.z = halfZ;
+  bounds.children[2].position.x = -halfX; bounds.children[3].position.x = halfX;
+  bounds.position.set(0, 0.008, 0.16); scene.add(bounds);
+  const centerLine = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.006, 2.92), basic('#f5ead6', { transparent: true, opacity: 0.32 }));
+  centerLine.position.set(0, 0.008, 0.16); scene.add(centerLine);
+  const makePen = (seat) => {
+    const group = new THREE.Group();
+    const shaftMat = std(SEAT_COLORS[seat], { roughness: 0.3, metalness: 0.3 });
+    const dark = std('#17212b', { roughness: 0.3, metalness: 0.45 });
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.052, 0.66, 12), shaftMat);
+    shaft.rotation.z = Math.PI / 2;
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.14, 12), dark);
+    grip.rotation.z = Math.PI / 2; grip.position.x = -0.15;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.15, 10), std('#d9dce1', { roughness: 0.22, metalness: 0.62 }));
+    tip.rotation.z = -Math.PI / 2; tip.position.x = 0.4;
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.04, 0.09, 12), dark);
+    cap.rotation.z = Math.PI / 2; cap.position.x = -0.37;
+    const clip = box(0.23, 0.018, 0.03, std('#e6c46e', { metalness: 0.72, roughness: 0.28 }));
+    clip.position.set(-0.2, 0.055, 0);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.078, 0.012, 6, 20), basic(SEAT_COLORS[seat]));
+    ring.position.y = 0.055;
+    group.add(shaft, grip, tip, cap, clip, ring); scene.add(group);
+    group.userData = { shaftMat, dark, seat };
+    return group;
+  };
+  const pens = [makePen(0), makePen(1)];
+  const selectedPen = () => selectedGameCosmetic('pen-fight', 'pen')?.style || 'classic';
+  const selectedDesk = () => selectedGameCosmetic('pen-fight', 'desk')?.style || 'classic';
+  let penStyle = '', deskStyle = '';
+  return {
+    scene, camera,
+    update(s) {
+      const nextPen = selectedPen(), nextDesk = selectedDesk();
+      if (nextPen !== penStyle) {
+        penStyle = nextPen;
+        pens.forEach((pen) => {
+          pen.userData.shaftMat.metalness = penStyle === 'metal' ? 0.86 : penStyle === 'gel' ? 0.12 : 0.3;
+          pen.userData.shaftMat.roughness = penStyle === 'metal' ? 0.18 : 0.3;
+          pen.userData.dark.color.set(penStyle === 'gel' ? '#263c9b' : '#17212b');
+        });
+      }
+      if (nextDesk !== deskStyle) {
+        deskStyle = nextDesk;
+        const color = deskStyle === 'green' ? '#416f54' : deskStyle === 'walnut' ? '#68452c' : '#9b7049';
+        desk.material.color.set(color); edge.material.color.set(deskStyle === 'green' ? '#254634' : deskStyle === 'walnut' ? '#3d281b' : '#674324');
+      }
+      s.pens.forEach((p, i) => {
+        const m = pens[i];
+        m.position.set((p.x - HOOP_W / 2) / 100, p.alive ? 0.055 + (p.balance < 0.55 ? Math.sin(s.t * 0.7 + i) * 0.018 : 0) : -0.08, (p.y - HOOP_H / 2) / 100);
+        m.rotation.y = -p.angle;
+        m.rotation.z = p.alive && p.balance < 0.55 ? Math.sin(s.t * 0.5 + i) * (0.25 - p.balance * 0.3) : 0;
+        m.visible = p.alive || s.phase === 'result';
+      });
+    },
+  };
+}
+
+/* ─── Playground tag games: a clear, compact 3D yard shared by three rule sets ─── */
+function tagGameView(mode) {
+  const scene = new THREE.Scene();
+  const icy = mode === 'baraf-pani';
+  const wood = mode === 'pakda-padi';
+  scene.background = new THREE.Color(icy ? '#bce6f2' : wood ? '#b8d28a' : '#c5d6a2');
+  const camera = new THREE.PerspectiveCamera(42, 1.6, 0.1, 50);
+  camera.position.set(0, 7.1, 5.3); camera.lookAt(0, 0, 0.1);
+  lights(scene, { sky: icy ? '#edffff' : '#fff9e6', ground: '#405030', sun: 1.8 });
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 4), std(icy ? '#b7e5ed' : wood ? '#76a94e' : '#6fa856', { roughness: 0.92 }));
+  grass.rotation.x = -Math.PI / 2; grass.position.y = -0.1; scene.add(grass);
+  const yard = new THREE.Mesh(new THREE.PlaneGeometry(5.72, 3.28), std(icy ? '#d9f3f5' : wood ? '#91bd61' : '#85b969', { roughness: 0.88 }));
+  yard.rotation.x = -Math.PI / 2; yard.position.y = -0.07; scene.add(yard);
+  const edgeMat = basic(icy ? '#efffff' : '#f7f0d7');
+  const bounds = new THREE.Group(), halfX = 2.86, halfZ = 1.64;
+  bounds.add(
+    box(halfX * 2, 0.012, 0.025, edgeMat),
+    box(halfX * 2, 0.012, 0.025, edgeMat),
+    box(0.025, 0.012, halfZ * 2, edgeMat),
+    box(0.025, 0.012, halfZ * 2, edgeMat),
+  );
+  bounds.children[0].position.z = -halfZ; bounds.children[1].position.z = halfZ;
+  bounds.children[2].position.x = -halfX; bounds.children[3].position.x = halfX;
+  bounds.position.y = -0.055; scene.add(bounds);
+  for (let i = 0; i < 7; i++) {
+    const line = box(5.62, 0.006, 0.012, basic(icy ? '#a3dce8' : '#b2cf86', { transparent: true, opacity: 0.42 }));
+    line.position.set(0, -0.052, -1.42 + i * 0.48); scene.add(line);
+  }
+  const covers = TAG_COVER.map(([px, py], i) => {
+    const x = (px - HOOP_W / 2) / 100, z = (py - HOOP_H / 2) / 100;
+    const g = new THREE.Group();
+    if (mode === 'lapa-chupi') {
+      const leaf = std(['#326a3c', '#487d3c', '#3c733b'][i % 3], { roughness: 0.92 });
+      for (let k = 0; k < 5; k++) {
+        const bush = new THREE.Mesh(new THREE.SphereGeometry(0.23 + (k % 2) * 0.04, 10, 8), leaf);
+        bush.position.set((k - 2) * 0.15, 0.18 + (k % 2) * 0.08, (k % 2 ? 0.08 : -0.08)); g.add(bush);
+      }
+      const shadow = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.08, 16), std('#554332'));
+      shadow.position.y = 0.03; g.add(shadow);
+    } else if (icy) {
+      const block = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.52), std('#8bd6e5', { roughness: 0.22, metalness: 0.15, transparent: true, opacity: 0.92 }));
+      block.position.y = 0.2; g.add(block);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.05, 0.54), basic('#f2ffff')); cap.position.y = 0.42; g.add(cap);
+    } else {
+      const seat = box(0.72, 0.08, 0.2, std('#70492e', { roughness: 0.72 })); seat.position.y = 0.31;
+      const legs = [-0.28, 0.28].map((lx) => { const l = box(0.06, 0.32, 0.06, std('#4d3928')); l.position.set(lx, 0.14, 0); return l; });
+      g.add(seat, ...legs);
+    }
+    g.position.set(x, 0, z); scene.add(g); return g;
+  });
+  const makePlayer = (seat) => {
+    const g = new THREE.Group();
+    const shirt = std(SEAT_COLORS[seat], { roughness: 0.72 });
+    const skin = std(['#e0ac69', '#c68642', '#8d5524', '#f1c27d'][seat % 4], { roughness: 0.8 });
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.2, 4, 8), shirt); body.position.y = 0.28;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), skin); head.position.y = 0.51;
+    const legMat = std('#28313a', { roughness: 0.84 });
+    const legs = [-0.055, 0.055].map((lx) => { const l = box(0.055, 0.18, 0.07, legMat); l.position.set(lx, 0.09, 0.015); return l; });
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.16, 8), basic('#ffd23f')); hat.position.y = 0.68;
+    const badge = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.018, 6, 24), basic(SEAT_COLORS[seat]));
+    badge.rotation.x = Math.PI / 2; badge.position.y = 0.02;
+    const ice = new THREE.Mesh(new THREE.SphereGeometry(0.29, 10, 8), std('#a7f2ff', { transparent: true, opacity: 0.48, roughness: 0.16, metalness: 0.12 }));
+    ice.position.y = 0.3;
+    g.add(body, head, ...legs, hat, badge, ice); scene.add(g);
+    g.userData = { body, shirt, hat, badge, ice, seat };
+    return g;
+  };
+  const people = Array.from({ length: 4 }, (_, i) => makePlayer(i));
+  return {
+    scene, camera,
+    update(s, dt) {
+      covers.forEach((g, i) => { if (mode === 'lapa-chupi') g.rotation.y = Math.sin(s.t * 0.004 + i) * 0.025; });
+      s.players.forEach((p, i) => {
+        const m = people[i], u = m.userData;
+        const concealed = (mode === 'lapa-chupi' && p.hidden) || !p.alive
+          || !Number.isFinite(p.x) || !Number.isFinite(p.y);
+        m.visible = !concealed;
+        if (concealed) return;
+        const x = (p.x - HOOP_W / 2) / 100, z = (p.y - HOOP_H / 2) / 100;
+        m.position.set(x, 0, z);
+        const speed = Math.hypot(p.vx || 0, p.vy || 0);
+        if (speed > 1) m.rotation.y = Math.atan2(p.vx, p.vy);
+        m.position.y = speed > 1 ? Math.abs(Math.sin(s.t * 0.45 + i)) * 0.035 : 0;
+        u.hat.visible = i === s.it;
+        u.badge.material.color.set(i === s.it ? '#ffd23f' : SEAT_COLORS[i]);
+        u.ice.visible = !!p.frozen;
+        u.shirt.color.set(p.frozen ? '#75d9f0' : SEAT_COLORS[i]);
+      });
+      for (let i = s.players.length; i < people.length; i++) people[i].visible = false;
+    },
+  };
+}
+
+const VIEWS = { 'turbo-tunnel': turboView, 'ghost-hostel': ghostView, 'hoop-flick': hoopView, 'pin-spin': pinView, 'bull-fight': bullView, 'tunnel-race': tunnelView, 'flying-chit': flyingView, 'ship-fight': shipView, 'backyard-rally': rallyView, 'hungry-snake': snakeView, 'road-dash': roadView, 'spin-duel': spinDuelView, 'pen-fight': penFightView, 'lapa-chupi': () => tagGameView('lapa-chupi'), 'baraf-pani': () => tagGameView('baraf-pani'), 'pakda-padi': () => tagGameView('pakda-padi') };
 export const hasView = (slug) => !!VIEWS[slug];
 export function createView(slug) { return VIEWS[slug] ? VIEWS[slug]() : null; }

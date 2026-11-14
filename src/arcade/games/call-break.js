@@ -4,8 +4,8 @@
  * with none of the suit you must trump (and over-trump if you can). Make your call: score the call,
  * plus 0.1 per extra trick. Miss it: lose the call. Five rounds. Points have no value.
  */
-import { best, turnLine, seatsOf } from '../lib.js?v=20261110-1548';
-import { newPack, power, rankOf, sortHand, showCard, suitOf } from '../cards.js?v=20261110-1548';
+import { best, turnLine, seatsOf, strip, who } from '../lib.js?v=20261114-1146';
+import { newPack, power, rankOf, sortHand, showCard, SUIT_ICON, suitOf } from '../cards.js?v=20261114-1146';
 
 const ROUNDS = 5;
 const TRUMP = 'S';
@@ -124,12 +124,22 @@ export default {
     return best(moves, m => -power(m.c) - (suitOf(m.c) === TRUMP ? 20 : 0), rng);
   },
   ui(v, ctx) {
-    const line = seatsOf(4).map(p => `${ctx.names[p]} ${v.won[p]}/${v.bids[p] ?? '?'}`).join(' · ');
+    const players = strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.won[p]}/${v.bids[p] ?? '?'} · ${v.scores[p]}`);
     if (v.between) {
-      return { title: `Round ${v.round} done`, lead: `Scores: ${seatsOf(4).map(p => `${ctx.names[p]} ${v.scores[p]}`).join(' · ')}`, buttons: ctx.active.includes(ctx.me) ? [{ label: 'Next round', i: 0, primary: true }] : [] };
+      return { title: `Round ${v.round} done`, lead: `Scores: ${seatsOf(4).map(p => `${who(ctx, p)} ${v.scores[p]}`).join(' · ')}`, players, buttons: ctx.active.includes(ctx.me) ? [{ label: 'Next round', i: 0, primary: true }] : [] };
     }
     const bidding = v.phase === 'bid';
     const buttons = ctx.legal.map((m, i) => (m.bid ? { label: String(m.bid), i } : { label: showCard(m.c), i, card: m.c }));
-    return { title: turnLine(ctx, bidding ? 'call your tricks' : 'play a card'), lead: `Round ${v.round} of ${ROUNDS} · ${line}`, hand: v.hand, buttons, compact: true };
+    let lead;
+    if (bidding) {
+      // the same sense of a hand the computer players use: a fair call to start from
+      lead = `Round ${v.round} of ${ROUNDS} · ♠ spades are trumps${ctx.me >= 0 && v.hand?.length ? ` · 💡 this hand looks good for about ${handStrength(v.hand)}` : ''}`;
+    } else {
+      const trick = 13 - Math.max(...v.counts) + 1;
+      const need = ctx.me >= 0 && v.bids[ctx.me] != null ? v.bids[ctx.me] - v.won[ctx.me] : null;
+      const follow = v.trick.length ? ` · follow ${SUIT_ICON[suitOf(v.trick[0].c)]}` : '';
+      lead = `Trick ${Math.min(trick, 13)} of 13 · ♠ trumps${follow}${need == null ? '' : need > 0 ? ` · you need ${need} more` : ' · ✅ call made'}`;
+    }
+    return { title: turnLine(ctx, bidding ? 'call your tricks' : 'play a card'), lead, players, hand: v.hand, buttons, compact: true };
   },
 };

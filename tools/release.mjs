@@ -80,6 +80,9 @@ for (const name of ['.nojekyll', 'CNAME', 'index.html', '404.html', 'sw.js', 'ma
   if (!fs.existsSync(path.join(ROOT, name))) problems.push(`missing ${name}`);
 }
 
+// the home and play pages name every module up front, with the stamps just written (tools/make-preload.mjs)
+await import('./make-preload.mjs');
+
 /* ─── 3. Sizes ───────────────────────────────────────────── */
 const everything = walk(ROOT).filter(f => !f.includes(`${path.sep}.git${path.sep}`));
 const bytes = everything.map(f => [f, fs.statSync(f).size]);

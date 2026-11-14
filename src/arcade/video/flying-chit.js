@@ -15,7 +15,7 @@
  *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1548';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1146';
 
 export const AHEAD = 70;
 export const LEVEL_D = 320;
@@ -149,7 +149,9 @@ export default {
     s.objs = s.objs.filter(o => o.k === 'hoop' || o.z > s.d + 14);
   },
   over(s) {
-    if (s.chits.some(c => c.alive)) return null;
+    const alive = s.chits.map((c, i) => c.alive ? i : -1).filter(i => i >= 0);
+    if (s.n > 1 && alive.length === 1) return { scores: s.chits.map(c => c.score), winners: alive, endless: true };
+    if (alive.length) return null;
     const scores = s.chits.map(c => c.score), top = Math.max(...scores);
     return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true };
   },
@@ -171,14 +173,14 @@ export default {
     return { x: clamp((tx - c.x) * 3, -1, 1), y: clamp(-(ty - c.y) * 3, -1, 1) };
   },
   hud(g, s, names) {
-    scoreBar(g, s.chits.map((c, i) => [names[i] || `P${i + 1}`, c.alive ? c.score : `${c.score} ✕`, SEAT_COLORS[i]]));
-    const w = (W - 24) / s.n;
+    const layout = scoreBar(g, s.chits.map((c, i) => [names[i] || `P${i + 1}`, c.alive ? c.score : `${c.score} ✕`, SEAT_COLORS[i]]));
+    const { left, cellWidth, gap } = layout;
     s.chits.forEach((c, i) => {
-      const x0 = 12 + i * w, cx = x0 + (w - 12) / 2;
+      const x0 = left + i * (cellWidth + gap), cx = x0 + cellWidth / 2;
       // lift: the chit's wings. It glows red when it is nearly gone
-      g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(x0, 38, w - 12, 8);
+      g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(x0, 38, cellWidth, 8);
       g.fillStyle = c.lift > 0.3 ? '#7dff9a' : (Math.floor(s.t / 8) % 2 ? '#ff6b5b' : '#ffb3a8');
-      g.fillRect(x0, 38, (w - 12) * Math.max(0, c.lift), 8);
+      g.fillRect(x0, 38, cellWidth * Math.max(0, c.lift), 8);
       g.fillStyle = '#fff'; g.font = '800 10px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
       g.fillText('LIFT', x0 + 4, 42.5);
       if (!c.alive) return;

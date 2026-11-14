@@ -5,16 +5,32 @@
  * A piece the player may tap carries its move's number in userData.pick.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261110-1548';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261110-1548';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261110-1548';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261110-1548';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261110-1548';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261110-1548';
+import { audioManager } from '../audio/audio-manager.js';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261114-1146';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261114-1146';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261114-1146';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261114-1146';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261114-1146';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261114-1146';
+import { selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1146';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TAU = Math.PI * 2;
+const CHESS_BOARD_STYLES = {
+  jade: { dark: '#28614f', light: '#d8e8ce', frame: '#174538' },
+  ocean: { dark: '#245b78', light: '#d8eaf0', frame: '#153c55' },
+};
+const CHESS_PIECE_STYLES = {
+  classic: { white: '#fffaf0', black: '#17110d', whiteDetail: '#b9a98a', blackDetail: '#4a3a2c', felt: '#1f5a32' },
+  royal: { white: '#f2d18a', black: '#35204b', whiteDetail: '#fff0c2', blackDetail: '#df9fff', felt: '#5a321d' },
+  neon: { white: '#b9fff4', black: '#351f5e', whiteDetail: '#2ed9cd', blackDetail: '#ff79de', felt: '#103d43' },
+};
+const LUDO_BOARD_STYLES = {
+  classic: { colors: LUDO_COLORS, tokens: ['#9c1212', '#0e5c2c', '#b57a00', '#124b94'], base: '#fbf6e9', border: '#6d5a40', safe: '#b08d3c', frame: '#6b4a2b' },
+  candy: { colors: ['#e83973', '#1da878', '#f2a900', '#287ed5'], tokens: ['#a91d4d', '#08764f', '#a76500', '#14519b'], base: '#fff9f3', border: '#57334f', safe: '#7d3b84', frame: '#513252' },
+  sunset: { colors: ['#d13a4a', '#16817b', '#ef8b2c', '#6256b5'], tokens: ['#912331', '#0c5d58', '#a95b12', '#403688'], base: '#fff4e8', border: '#62402d', safe: '#a05f32', frame: '#54351f' },
+};
 
 /* ─── materials and shapes, shared to stay light ─── */
 const mats = new Map();
@@ -45,9 +61,9 @@ function canvasTexture(w, h, draw) {
   return t;
 }
 /** A flat square board: a block of wood with a picture on top. */
-function plate(size, depth, picture, { color = '#5a3a20', thick = 0.05 } = {}) {
-  const w = 1024, h = Math.round(1024 * (depth / size));
-  const top = new THREE.MeshStandardMaterial({ map: canvasTexture(w, h, picture), roughness: 0.75, envMapIntensity: 0.3 });
+function plate(size, depth, picture, { color = '#5a3a20', thick = 0.05, roughness = 0.75, res = 1024 } = {}) {
+  const w = res, h = Math.round(res * (depth / size));
+  const top = new THREE.MeshStandardMaterial({ map: canvasTexture(w, h, picture), roughness, envMapIntensity: roughness < 0.5 ? 0.6 : 0.3 });
   const side = mat(color, 0.6);
   const m = new THREE.Mesh(new THREE.BoxGeometry(size, thick, depth), [side, side, top, side, side, side]);
   m.position.y = thick / 2;
@@ -65,9 +81,12 @@ function pawnShape(color, s = 1) {
   return group(mesh(cyl(0.042 * s, 0.056 * s, 0.03 * s), m, 0, 0.015 * s, 0), mesh(cyl(0.02 * s, 0.038 * s, 0.075 * s), m, 0, 0.066 * s, 0), mesh(ball(0.032 * s), m, 0, 0.122 * s, 0));
 }
 /** A Ludo token with a glossy finish and a white ring round its base. */
-function glossyPawn(color, s = 1) {
-  const m = new THREE.MeshStandardMaterial({ color, roughness: 0.18, metalness: 0.15 });
-  const ringMat = mat('#fbf6e9', 0.4);
+function glossyPawn(color, s = 1, finish = 'classic') {
+  const surface = finish === 'metallic' ? { roughness: 0.2, metalness: 0.62, ring: '#ffe28a' }
+    : finish === 'matte' ? { roughness: 0.7, metalness: 0.02, ring: '#fffaf0' }
+      : { roughness: 0.18, metalness: 0.15, ring: '#fbf6e9' };
+  const m = new THREE.MeshStandardMaterial({ color, roughness: surface.roughness, metalness: surface.metalness });
+  const ringMat = mat(surface.ring, 0.4);
   return group(
     mesh(cyl(0.042 * s, 0.058 * s, 0.03 * s), m, 0, 0.015 * s, 0),
     mesh(cyl(0.059 * s, 0.059 * s, 0.006 * s), ringMat, 0, 0.004 * s, 0),
@@ -75,20 +94,165 @@ function glossyPawn(color, s = 1) {
     mesh(ball(0.034 * s), m, 0, 0.124 * s, 0),
   );
 }
-const CHESS_HEIGHT = { P: 0.1, N: 0.13, B: 0.145, R: 0.125, Q: 0.165, K: 0.18 };
-function chessPiece(kind, color) {
-  const m = mat(color, 0.32), h = CHESS_HEIGHT[kind];
-  const parts = [mesh(cyl(0.05, 0.058, 0.022), m, 0, 0.011, 0), mesh(cyl(0.024, 0.042, h - 0.03), m, 0, 0.022 + (h - 0.03) / 2, 0)];
-  if (kind === 'P') parts.push(mesh(ball(0.027), m, 0, h + 0.008, 0));
-  if (kind === 'R') { parts.push(mesh(cyl(0.04, 0.034, 0.034, 8), m, 0, h, 0)); }
-  if (kind === 'B') { parts.push(mesh(ball(0.028), m, 0, h - 0.002, 0), mesh(ball(0.009), m, 0, h + 0.034, 0)); }
-  if (kind === 'N') {
-    const head = mesh(box(0.034, 0.07, 0.066), m, 0, h - 0.002, 0.012);
-    head.rotation.x = 0.45;
-    parts.push(head, mesh(box(0.024, 0.024, 0.04), m, 0, h + 0.022, 0.04));
+/**
+ * Chess pieces in the classic tournament shapes, so each one is known at a glance, from the side or
+ * from above: the king is tallest with a cross on top, the queen wears a crown of beads, the bishop
+ * a mitre with its slit, the knight is a horse's head, the rook a castle tower and the pawn a small
+ * ball. Turned on a lathe like real wooden pieces, with green felt underneath.
+ */
+const lathe = (key, pts) => geo(`lathe:${key}`, () => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), 32));
+/** The turned foot every piece stands on: a wide base, a bead, and the start of the stem. */
+const FOOT = [[0, 0], [0.058, 0], [0.058, 0.007], [0.054, 0.012], [0.056, 0.017], [0.05, 0.022], [0.04, 0.026], [0.042, 0.03], [0.034, 0.033]];
+const PROFILES = {
+  P: [...FOOT, [0.026, 0.045], [0.019, 0.066], [0.03, 0.07], [0.031, 0.074], [0.02, 0.077], [0.016, 0.08]],
+  R: [...FOOT, [0.031, 0.05], [0.029, 0.09], [0.04, 0.096], [0.042, 0.106], [0.04, 0.124], [0, 0.124]],
+  N: [...FOOT, [0.03, 0.046], [0.032, 0.054], [0.04, 0.058], [0, 0.058]],
+  B: [...FOOT, [0.025, 0.06], [0.018, 0.098], [0.031, 0.102], [0.032, 0.107], [0.02, 0.11], [0.018, 0.112]],
+  Q: [...FOOT, [0.026, 0.06], [0.017, 0.112], [0.032, 0.118], [0.033, 0.124], [0.022, 0.128], [0.026, 0.134], [0.038, 0.152], [0.034, 0.156], [0, 0.158]],
+  K: [...FOOT, [0.027, 0.062], [0.018, 0.122], [0.034, 0.128], [0.035, 0.134], [0.023, 0.138], [0.027, 0.144], [0.036, 0.162], [0.024, 0.168], [0, 0.17]],
+};
+/** 2D view: the camera looks straight down, so every board piece must read from above. */
+export const flat2d = () => document.documentElement.dataset.view === '2d';
+/** A carrom coin: turned wood with the grooved rings on top (the striker is plain and glossier). */
+const coinFaces = new Map();
+function carromCoin(color, r, striker = false) {
+  const key = `${color}|${striker}`;
+  if (!coinFaces.has(key)) {
+    const dark = color === '#2a211c';
+    coinFaces.set(key, new THREE.MeshStandardMaterial({
+      roughness: striker ? 0.22 : 0.35, envMapIntensity: 0.6,
+      map: canvasTexture(128, 128, (g, w) => {
+        const c = w / 2;
+        const body = g.createRadialGradient(c - 18, c - 22, 6, c, c, c);
+        body.addColorStop(0, dark ? '#4a3b33' : '#ffffff'); body.addColorStop(1, color);
+        g.fillStyle = body; g.fillRect(0, 0, w, w);
+        // a dark edge, so pale coins still stand out on the pale board when seen from above
+        g.strokeStyle = dark ? 'rgba(0,0,0,.6)' : 'rgba(95,60,25,.75)'; g.lineWidth = 7; g.beginPath(); g.arc(c, c, c - 4, 0, TAU); g.stroke();
+        if (!striker) {
+          g.strokeStyle = dark ? 'rgba(0,0,0,.55)' : 'rgba(110,70,30,.5)'; g.lineWidth = 3;
+          [0.82, 0.55, 0.28].forEach((k) => { g.beginPath(); g.arc(c, c, c * k, 0, TAU); g.stroke(); });
+        } else {
+          g.strokeStyle = 'rgba(160,120,60,.35)'; g.lineWidth = 4; g.beginPath(); g.arc(c, c, c * 0.8, 0, TAU); g.stroke();
+        }
+      }),
+    }));
   }
-  if (kind === 'Q') { parts.push(mesh(ball(0.03), m, 0, h - 0.004, 0), mesh(cyl(0.036, 0.018, 0.022, 10), m, 0, h + 0.03, 0), mesh(ball(0.01), m, 0, h + 0.05, 0)); }
-  if (kind === 'K') { parts.push(mesh(cyl(0.034, 0.024, 0.026, 10), m, 0, h - 0.004, 0), mesh(box(0.012, 0.05, 0.012), m, 0, h + 0.036, 0), mesh(box(0.036, 0.012, 0.012), m, 0, h + 0.04, 0)); }
+  const h = striker ? 0.024 : 0.022;
+  const side = mat(color, 0.4);
+  const coin = new THREE.Mesh(cyl(r, r, h), [side, coinFaces.get(key), side]);
+  coin.position.y = h / 2;
+  coin.castShadow = true;
+  return group(coin);
+}
+/** A chess piece seen from above in 2D: a flat token with the piece's symbol on it. */
+function flatChessToken(kind, white, style = 'classic') {
+  const palette = CHESS_PIECE_STYLES[style] || CHESS_PIECE_STYLES.classic;
+  const fill = white ? palette.white : palette.black, ink = white ? palette.black : palette.white;
+  const glyph = `${{ K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' }[kind] || '♟'}︎`;
+  const r = (SIZE / 8) * 0.43;
+  const face = canvasTexture(256, 256, (g, w, h) => {
+    const c = w / 2, R = w / 2 - 6;
+    // a turned wooden token: light from the top left, a raised rim, a dished middle
+    const body = g.createRadialGradient(c - R * 0.35, c - R * 0.4, R * 0.1, c, c, R);
+    body.addColorStop(0, white ? '#ffffff' : '#5a4a40');
+    body.addColorStop(0.55, fill);
+    body.addColorStop(1, white ? '#c9bba0' : '#0a0705');
+    g.fillStyle = body; g.beginPath(); g.arc(c, c, R, 0, TAU); g.fill();
+    g.lineWidth = 10; g.strokeStyle = white ? palette.whiteDetail : palette.blackDetail; g.beginPath(); g.arc(c, c, R - 5, 0, TAU); g.stroke();
+    g.lineWidth = 3; g.strokeStyle = white ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.18)'; g.beginPath(); g.arc(c, c, R - 13, Math.PI * 0.95, Math.PI * 1.6); g.stroke();
+    g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = white ? 'rgba(0,0,0,.25)' : 'rgba(0,0,0,.6)'; g.shadowOffsetY = 3; g.shadowBlur = 4;
+    g.scale(2, 2); w /= 2; h /= 2;
+    g.font = `${kind === 'P' ? 84 : 100}px "Segoe UI Symbol", "Noto Sans Symbols2", "DejaVu Sans", serif`;
+    g.lineWidth = 3; g.strokeStyle = ink; g.lineJoin = 'round';
+    // every font puts these symbols a little differently in its line, so measure the drawn shape and
+    // put its middle on the middle of the token: the piece sits dead centre in its square
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    const box = g.measureText(glyph);
+    const left = box.actualBoundingBoxLeft || 0, right = box.actualBoundingBoxRight || box.width;
+    const up = box.actualBoundingBoxAscent || 70, down = box.actualBoundingBoxDescent || 0;
+    const gx = w / 2 - (right - left) / 2, gy = h / 2 + (up - down) / 2;
+    g.strokeText(glyph, gx, gy);
+    g.fillText(glyph, gx, gy);
+  });
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: face, transparent: true }));
+  top.rotation.x = -Math.PI / 2;
+  top.position.y = 0.022;
+  return group(mesh(cyl(r, r, 0.02, 32), mat(fill, 0.5), 0, 0.01, 0), top);
+}
+// the mitre of the bishop: an egg shape on top of the collar
+const MITRE =[[0, 0], [0.022, 0.004], [0.029, 0.018], [0.027, 0.032], [0.018, 0.045], [0.006, 0.052], [0, 0.053]];
+function chessPiece(kind, color, style = 'classic') {
+  const white = color !== '#17110d';
+  const palette = CHESS_PIECE_STYLES[style] || CHESS_PIECE_STYLES.classic;
+  const m = mat(white ? palette.white : palette.black, white ? 0.28 : 0.24, 0.04);
+  const detail = mat(white ? palette.whiteDetail : palette.blackDetail, 0.4);
+  const felt = mat(palette.felt, 0.95);
+  const body = mesh(lathe(kind, PROFILES[kind]), m);
+  const parts = [body, mesh(cyl(0.057, 0.057, 0.003, 28), felt, 0, -0.0015, 0)];
+  if (kind === 'P') parts.push(mesh(ball(0.026), m, 0, 0.1, 0));
+  if (kind === 'R') {
+    // the castle top: a ring of battlements with gaps between, round a hollow
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3;
+      const b = mesh(box(0.019, 0.018, 0.011), m, Math.cos(a) * 0.034, 0.132, Math.sin(a) * 0.034);
+      b.rotation.y = Math.PI / 2 - a;      // along the rim, like a wall
+      parts.push(b);
+    }
+    parts.push(mesh(cyl(0.026, 0.026, 0.002, 20), detail, 0, 0.1245, 0));
+  }
+  if (kind === 'B') {
+    const mitre = mesh(lathe('mitre', MITRE), m, 0, 0.11, 0);
+    // the slit cut across the mitre, and the bead on top
+    const slit = mesh(box(0.004, 0.034, 0.05), detail, 0, 0.14, 0);
+    slit.rotation.z = 0.55;
+    parts.push(mitre, slit, mesh(ball(0.009), m, 0, 0.168, 0));
+  }
+  if (kind === 'Q') {
+    // the queen must never pass for the rook, from the side or from above: a slim waist, a gold
+    // collar, a crown of sharp points leaning outwards (the rook's top is square and flat), and a
+    // royal orb standing above the points
+    const gold = mat('#d8aa3a', 0.3, 0.55);
+    const collar = mesh(geo('qcollar', () => new THREE.TorusGeometry(0.0215, 0.0042, 8, 28)), gold, 0, 0.118, 0);
+    collar.rotation.x = Math.PI / 2;
+    const rim = mesh(geo('qrim', () => new THREE.TorusGeometry(0.036, 0.0036, 8, 32)), gold, 0, 0.152, 0);
+    rim.rotation.x = Math.PI / 2;
+    parts.push(collar, rim);
+    const point = geo('qpoint', () => new THREE.ConeGeometry(0.0072, 0.03, 10));
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4;
+      const p = mesh(point, m, Math.cos(a) * 0.035, 0.168, Math.sin(a) * 0.035);
+      // each point leans out from the middle, like the tines of a crown
+      p.rotation.set(Math.sin(a) * 0.32, 0, -Math.cos(a) * 0.32);
+      parts.push(p, mesh(ball(0.0048), gold, Math.cos(a) * 0.04, 0.184, Math.sin(a) * 0.04));
+    }
+    parts.push(mesh(ball(0.017), m, 0, 0.174, 0), mesh(ball(0.0085), gold, 0, 0.196, 0));
+  }
+  if (kind === 'K') {
+    // a small dome, then the cross: the tallest piece on the board
+    parts.push(mesh(ball(0.018), m, 0, 0.172, 0), mesh(box(0.01, 0.042, 0.01), m, 0, 0.205, 0), mesh(box(0.032, 0.01, 0.01), m, 0, 0.212, 0));
+  }
+  if (kind === 'N') {
+    // the horse's head, looking towards the other side of the board (-z)
+    const head = new THREE.Group();
+    // an arched neck, the head bowed forward, a long nose: the outline everyone knows
+    const neck = mesh(box(0.032, 0.066, 0.046), m, 0, 0.03, 0.004);
+    neck.rotation.x = -0.32;
+    const chest = mesh(box(0.034, 0.03, 0.03), m, 0, 0.012, -0.016);
+    const skull = mesh(box(0.03, 0.034, 0.046), m, 0, 0.07, -0.016);
+    skull.rotation.x = 0.25;
+    const muzzle = mesh(box(0.024, 0.026, 0.05), m, 0, 0.05, -0.05);
+    muzzle.rotation.x = 0.75;
+    const mane = mesh(box(0.012, 0.08, 0.018), detail, 0, 0.046, 0.028);
+    mane.rotation.x = -0.3;
+    const ear = (x) => { const e = mesh(geo('ear', () => new THREE.ConeGeometry(0.008, 0.024, 8)), m, x, 0.097, 0.002); e.rotation.x = -0.25; return e; };
+    const eye = (x) => mesh(ball(0.0048), detail, x, 0.074, -0.026);
+    const nostril = (x) => mesh(ball(0.0035), detail, x, 0.03, -0.072);
+    head.add(neck, chest, skull, muzzle, mane, ear(-0.009), ear(0.009), eye(-0.0158), eye(0.0158), nostril(-0.007), nostril(0.007));
+    head.position.y = 0.056;
+    head.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    parts.push(head);
+  }
   return group(...parts);
 }
 /** A die: 1 on top, 6 below, 2 and 5 front and back, 3 and 4 right and left. */
@@ -160,6 +324,37 @@ function disposeOwn(obj) {
 
 const DIE_SIZE = 0.115;
 export const STEP_SECONDS = 0.13;   // a Ludo token, one square
+
+/*
+ * A soft dark patch right under each piece, where the light can't reach. With it a piece sits on the
+ * board instead of floating over it, and when it hops the patch shrinks and fades, so you see it in the air.
+ */
+let blobTexture = null;
+/** How far a piece reaches sideways from its middle (our slim three.js has no Box3 to ask). */
+function reachOf(obj) {
+  let r = 0;
+  obj.traverse((o) => {
+    if (!o.isMesh || !o.geometry) return;
+    o.geometry.boundingBox || o.geometry.computeBoundingBox();
+    const b = o.geometry.boundingBox, sx = Math.abs(o.scale.x), sz = Math.abs(o.scale.z);
+    const dx = o === obj ? 0 : Math.abs(o.position.x), dz = o === obj ? 0 : Math.abs(o.position.z);
+    r = Math.max(r, dx + Math.max(-b.min.x, b.max.x) * sx, dz + Math.max(-b.min.z, b.max.z) * sz);
+  });
+  return r;
+}
+function contactShadow(obj) {
+  const r = reachOf(obj);
+  if (!(r > 0.02 && r < 0.3)) return null;   // big flat things (a chit, a tray) need none
+  blobTexture = blobTexture || canvasTexture(64, 64, (g, w) => {
+    const grad = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(0.5, 'rgba(0,0,0,.6)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad; g.fillRect(0, 0, w, w);
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2.7, r * 2.7), new THREE.MeshBasicMaterial({ map: blobTexture, transparent: true, depthWrite: false, opacity: 0.5 }));
+  m.rotation.x = -Math.PI / 2;
+  m.renderOrder = 1;
+  return m;
+}
 
 /* ─── the stage: reconciles what should be with what is, and animates the difference ─── */
 class Stage {
@@ -279,12 +474,14 @@ class Stage {
   }
   #create(spec) {
     const obj = spec.make();
+    const shadow = contactShadow(obj);
+    if (shadow) this.world.add(shadow);
     obj.position.set(spec.x, spec.y + (reduced || spec.noDrop ? 0 : 0.5), spec.z);
     if (spec.from && !reduced) obj.position.set(spec.from[0], spec.y + 0.12, spec.from[1]);
     if (spec.rot) obj.rotation.set(...spec.rot);
     this.world.add(obj);
     spec.update?.(obj);
-    return { kind: spec.kind, obj, spec, to: [spec.x, spec.y, spec.z], from: obj.position.toArray(), t: reduced ? 1 : 0, dur: spec.from ? 0.42 : 0.32, hop: 0, spin: spec.spin, rotFrom: (spec.rot || [0, 0, 0]).slice(), rotTo: (spec.rot || [0, 0, 0]).slice() };
+    return { shadow, kind: spec.kind, obj, spec, to: [spec.x, spec.y, spec.z], from: obj.position.toArray(), t: reduced ? 1 : 0, dur: spec.from ? 0.42 : 0.32, hop: 0, spin: spec.spin, rotFrom: (spec.rot || [0, 0, 0]).slice(), rotTo: (spec.rot || [0, 0, 0]).slice() };
   }
   #update(p, spec) {
     const moved = Math.hypot(p.to[0] - spec.x, p.to[2] - spec.z, p.to[1] - spec.y) > 1e-3;
@@ -303,7 +500,7 @@ class Stage {
       p.landing = moved && !spun;
       p.rotFrom = [p.obj.rotation.x, p.obj.rotation.y, p.obj.rotation.z];
       p.rotTo = rot.slice();
-      if (spec.route?.length > 1 && !reduced) { p.route = spec.route; p.routeFrom = [p.obj.position.x, p.obj.position.z]; p.routeT = 0; p.routeY = spec.y; p.t = 1; }
+      if (spec.route?.length > 1 && !reduced) { p.stepAt = null; p.route = spec.route; p.routeFrom = [p.obj.position.x, p.obj.position.z]; p.routeT = 0; p.routeY = spec.y; p.t = 1; }
       if (spun) {
         p.rotFrom = p.rotFrom.map(v => v - (Math.floor(Math.random() * 2) + 2) * TAU);
         p.spin = spec.spin;
@@ -321,7 +518,8 @@ class Stage {
       if (p.route && p.dying == null) {
         p.routeT += dt / STEP_SECONDS;
         const at = Math.floor(p.routeT);
-        if (at >= p.route.length) { const [x, z] = p.route[p.route.length - 1]; p.obj.position.set(x, p.routeY, z); p.route = null; if (p.landing) { p.landing = false; this.ripple(x, z); } continue; }
+        if (at >= p.route.length) { const [x, z] = p.route[p.route.length - 1]; p.obj.position.set(x, p.routeY, z); p.route = null; if (p.landing) { p.landing = false; this.ripple(x, z); audioManager.play('piece'); } continue; }
+        if (at !== p.stepAt) { if (p.stepAt != null) audioManager.play('step'); p.stepAt = at; }
         const [fx, fz] = at ? p.route[at - 1] : p.routeFrom;
         const [tx, tz] = p.route[at];
         const k = p.routeT - at;
@@ -333,7 +531,7 @@ class Stage {
         const k = Math.max(0, 1 - p.dying / 0.22);
         p.size = p.size || p.obj.scale.clone();
         p.obj.scale.set(p.size.x * k, p.size.y * k, p.size.z * k);
-        if (k <= 0) { this.world.remove(p.obj); disposeOwn(p.obj); p.gone = true; dead = true; }
+        if (k <= 0) { this.world.remove(p.obj); disposeOwn(p.obj); if (p.shadow) { this.world.remove(p.shadow); p.shadow.material.dispose(); } p.gone = true; dead = true; }
         continue;
       }
       if (p.t >= 1) continue;
@@ -345,6 +543,14 @@ class Stage {
       o.z = p.from[2] + (p.to[2] - p.from[2]) * e;
       o.y = p.from[1] + (p.to[1] - p.from[1]) * e + 4 * p.hop * p.t * (1 - p.t);
       p.obj.rotation.set(p.rotFrom[0] + (p.rotTo[0] - p.rotFrom[0]) * e, p.rotFrom[1] + (p.rotTo[1] - p.rotFrom[1]) * e, p.rotFrom[2] + (p.rotTo[2] - p.rotFrom[2]) * e);
+    }
+    // each piece's soft shadow stays on the board: smaller and fainter while the piece is in the air
+    for (const p of this.live) {
+      if (!p.shadow) continue;
+      const o = p.obj.position, lift = Math.max(0, o.y - TOP_Y), k = 1 / (1 + lift * 7), grow = p.obj.scale.x;
+      p.shadow.position.set(o.x, TOP_Y + 0.003, o.z);
+      p.shadow.scale.setScalar(grow * (0.65 + 0.35 * k));
+      p.shadow.material.opacity = 0.5 * k * grow;
     }
     if (dead) this.live = this.live.filter(p => !p.gone);
     // sparks and ripples
@@ -395,6 +601,8 @@ function chequered(n, dark, light, frame = '#3a2412') {
 /* ─── one drawing per game ─── */
 const twoStep = (ctx, st, onPiece) => { // tap a piece, then where it goes
   if (st.sel != null && !ctx.legal.some(m => m.f === st.sel)) st.sel = null;
+  // a hint: its piece is picked up already, so the piece and where it goes both glow
+  if (ctx.hinting && ctx.legal.length === 1 && ctx.legal[0].f != null) st.sel = ctx.legal[0].f;
   onPiece(st.sel);
 };
 
@@ -410,6 +618,7 @@ function thrower(st, kind, size, spread, value, hand, done, onRelease) {
       const o = p.obj, from = o.position.clone(), spin = [3 + Math.random() * 2, 2 + Math.random() * 2, 2 + Math.random() * 2];
       let t = 0, out = null;
       p.t = 1;
+      p.bounced = false;
       st.dieAt = land;
       const settle = () => {
         st.playing = null;
@@ -436,11 +645,13 @@ function thrower(st, kind, size, spread, value, hand, done, onRelease) {
         if (!out) { out = o.position.clone(); onRelease?.(); }
         const k = Math.min(1, (t - 0.64) / 0.62), e = 1 - (1 - k) ** 2;
         // flies in an arc, with one small bounce before it settles
+        if (k >= 0.72 && !p.bounced) { p.bounced = true; audioManager.play('dice-hit'); }
         const arc = k < 0.72 ? 4 * 0.2 * (k / 0.72) * (1 - k / 0.72) + (out.y - restY) * (1 - k / 0.72) : 4 * 0.035 * ((k - 0.72) / 0.28) * (1 - (k - 0.72) / 0.28);
         o.position.set(out.x + (land[0] - out.x) * e, restY + arc, out.z + (land[1] - out.z) * e);
         const left = (1 - k) ** 2;
         o.rotation.set(rot[0] + spin[0] * TAU * left, rot[1] + spin[1] * TAU * left, rot[2] + spin[2] * TAU * left);
         if (k < 1) return;
+        audioManager.play('dice-land');
         settle();
         done();
       };
@@ -536,14 +747,22 @@ const BOARDS = {
   chess: {
     span: 1.95,
     faces: true,
-    build(st) { st.add(plate(SIZE, SIZE, chequered(8, '#6e4426', '#c9a26f'))); },
+    build(st) {
+      const board = CHESS_BOARD_STYLES[selectedGameCosmetic('chess', 'board')?.style];
+      st.chessPieceStyle = selectedGameCosmetic('chess', 'pieces')?.style || 'classic';
+      st.add(plate(SIZE, SIZE, chequered(8, board?.dark || '#6e4426', board?.light || '#c9a26f'), { color: board?.frame || '#5a3a20' }));
+    },
     draw(st, v, ctx) {
       v.b.forEach((c, i) => {
         if (c === '.') return;
         const [x, z] = cell(i % 8, Math.floor(i / 8), 8);
         const white = c === c.toUpperCase();
         const kind = c.toUpperCase();
-        st.put(`p${c}`, () => { const g = chessPiece(kind, white ? '#fffaf0' : '#17110d'); if (!white) g.rotation.y = Math.PI; return g; }, x, TOP_Y, z, white ? {} : { rot: [0, Math.PI, 0] });
+        // knights look outwards, as on a real board, so their horse's head is seen side on
+        const turn = kind === 'N' ? (i % 8 < 4 ? Math.PI / 2 : -Math.PI / 2) : white ? 0 : Math.PI;
+        // from above, the symbols stand upright for whoever holds the phone
+        if (flat2d()) { const up = st.world.rotation.y; st.put(`f${c}`, () => flatChessToken(kind, white, st.chessPieceStyle), x, TOP_Y, z, up ? { rot: [0, up, 0] } : {}); return; }
+        st.put(`p${c}`, () => { const g = chessPiece(kind, white ? '#fffaf0' : '#17110d', st.chessPieceStyle); g.rotation.y = turn; return g; }, x, TOP_Y, z, turn ? { rot: [0, turn, 0] } : {});
       });
       if (v.last) {
         [v.last.f, v.last.t].forEach((sq) => { const [x, z] = cell(sq % 8, Math.floor(sq / 8), 8); st.area(x, z, 0.2, 0.2, null, { show: true, color: '#f7d774', y: TOP_Y + 0.001 }); });
@@ -614,6 +833,7 @@ const BOARDS = {
     },
   },
   mancala: {
+    half: [1.01, 0.4],
     span: 1.9,
     pit(i) {
       if (i === 6) return [0.82, 0];
@@ -689,24 +909,28 @@ const BOARDS = {
     yards: [[0, 0], [9, 0], [9, 9], [0, 9]],
     column(q, k) { return [[1 + k, 7], [7, 1 + k], [13 - k, 7], [7, 13 - k]][q]; },
     build(st) {
-      const path = this.path, colors = this.colors, yards = this.yards, column = this.column;
+      const boardStyle = selectedGameCosmetic('ludo', 'board')?.style || 'classic';
+      const palette = LUDO_BOARD_STYLES[boardStyle] || LUDO_BOARD_STYLES.classic;
+      const path = this.path, colors = palette.colors, yards = this.yards, column = this.column;
+      st.ludoTokenColors = palette.tokens || this.pawns;
+      st.ludoTokenStyle = selectedGameCosmetic('ludo', 'pieces')?.style || 'classic';
       st.add(plate(SIZE, SIZE, (g, w) => {
         const u = w / 15;
-        g.fillStyle = '#fbf6e9'; g.fillRect(0, 0, w, w);
+        g.fillStyle = palette.base; g.fillRect(0, 0, w, w);
         yards.forEach(([x, y], q) => {
           g.fillStyle = colors[q]; g.fillRect(x * u, y * u, 6 * u, 6 * u);
-          g.fillStyle = '#fbf6e9'; g.fillRect((x + 1) * u, (y + 1) * u, 4 * u, 4 * u);
+          g.fillStyle = palette.base; g.fillRect((x + 1) * u, (y + 1) * u, 4 * u, 4 * u);
           [[2, 2], [4, 2], [2, 4], [4, 4]].forEach(([a, b]) => { g.fillStyle = colors[q]; g.beginPath(); g.arc((x + a) * u, (y + b) * u, 0.62 * u, 0, TAU); g.fill(); });
           for (let k = 0; k < 5; k++) { const [c, r] = column(q, k); g.fillStyle = colors[q]; g.fillRect(c * u, r * u, u, u); }
           const [sc, sr] = path[LUDO_STARTS[q]];
           g.fillStyle = colors[q]; g.fillRect(sc * u, sr * u, u, u);
         });
-        g.strokeStyle = '#6d5a40'; g.lineWidth = 2;
+        g.strokeStyle = palette.border; g.lineWidth = 2;
         path.forEach(([c, r]) => g.strokeRect(c * u, r * u, u, u));
         LUDO_SAFE.forEach((sq) => {
           if (LUDO_STARTS.includes(sq)) return;
           const [c, r] = path[sq];
-          g.fillStyle = '#b08d3c'; g.font = `${u * 0.8}px system-ui, "Segoe UI Symbol", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillStyle = palette.safe; g.font = `${u * 0.8}px system-ui, "Segoe UI Symbol", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
           g.fillText('★', (c + 0.5) * u, (r + 0.55) * u);
         });
         const m = 7.5 * u;
@@ -730,7 +954,7 @@ const BOARDS = {
         // a star in the middle: home
         g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `${u * 1.1}px system-ui, "Segoe UI Symbol", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText('★', m, m + u * 0.05);
-      }, { color: '#6b4a2b' }));
+      }, { color: palette.frame }));
       // the yard of the player whose turn it is glows round its edge
       st.ludoGlow = [0, 1, 2, 3].map((q) => {
         const [x, y] = yards[q];
@@ -785,7 +1009,7 @@ const BOARDS = {
         }
         // captured: a high arc all the way back to the yard
         const sentHome = was >= 0 && pos < 0;
-        st.put(`t${seat}.${t}`, () => glossyPawn(this.pawns[q], 0.82), x, TOP_Y, z, mine ? { pick: move, hop: 0.12, route } : { hop: sentHome ? 0.7 : 0.12, route });
+        st.put(`t${seat}.${t}`, () => glossyPawn(st.ludoTokenColors[q], 0.82, st.ludoTokenStyle), x, TOP_Y, z, mine ? { pick: move, hop: 0.12, route } : { hop: sentHome ? 0.7 : 0.12, route });
         // where this move would land: a ring on the board
         if (mine) {
           const to = ludoDestination(v, seat, t);
@@ -798,7 +1022,9 @@ const BOARDS = {
         }
       }));
       const [dx, dz] = st.dieAt || [0, 0];
-      st.put('die', () => dieMesh(DIE_SIZE), dx, TOP_Y + DIE_SIZE / 2, dz, { rot: DIE_TURN[v.shown || 1], pick: ctx.mine && v.die == null ? 0 : undefined, noDrop: true });
+      const rolling = ctx.mine && v.die == null;
+      st.put('die', () => dieMesh(DIE_SIZE), dx, TOP_Y + DIE_SIZE / 2, dz, { rot: DIE_TURN[v.shown || 1], pick: rolling ? 0 : undefined, noDrop: true });
+      if (rolling) st.mark(dx, dz, 0, { r: 0.14, y: TOP_Y + 0.002, pulse: true });
     },
     throwDie(st, value, hand, done, onRelease) { thrower(st, 'die', DIE_SIZE, 0, value, hand, done, onRelease); },
   },
@@ -865,9 +1091,11 @@ const BOARDS = {
       });
       const [dx, dz] = st.dieAt || [0, 0];
       st.put('die', () => dieMesh(DIE_SIZE), dx, TOP_Y + DIE_SIZE / 2, dz, { rot: DIE_TURN[v.shown || 1], pick: ctx.mine ? 0 : undefined, noDrop: true });
+      if (ctx.mine) st.mark(dx, dz, 0, { r: 0.14, y: TOP_Y + 0.002, pulse: true });
     },
   },
   'memory-match': {
+    half: [0.87, 0.63],
     span: 1.8,
     build(st) { st.add(plate(SIZE, SIZE * 0.72, (g, w, h) => { g.fillStyle = '#2d1f4d'; g.fillRect(0, 0, w, h); }, { color: '#1e1436' })); },
     tileMat(face) {
@@ -904,7 +1132,7 @@ const BOARDS = {
       });
     },
   },
-  pig: { span: 1.4, tray: true, dice: (v) => [{ v: v.shown }], throwDie(st, value, hand, done, onRelease) { thrower(st, 'dice0', 0.2, 0, value, hand, done, onRelease); } },
+  pig: { span: 1.4, tray: true, dice: (v) => (v.style === 'two' ? [{ v: v.shown }, { v: v.shown2 || 1 }] : [{ v: v.shown }]), throwDie(st, value, hand, done, onRelease) { thrower(st, 'dice0', 0.2, 0, value, hand, done, onRelease); } },
   yacht: { span: 1.5, tray: true, dice: (v) => v.dice.map((n, i) => ({ v: n, spin: v.spins[i], keep: v.keep[i] })) },
   'crazy-eights': {
     span: 1.7,
@@ -963,23 +1191,87 @@ const BOARDS = {
     },
   },
   carrom: {
+    half: [0.95, 0.95],
     span: 1.95,
     faces: true,
     build(st) {
       const S = SIZE / 2;
+      // a real carrom board: polished light ply, double baselines with red end circles, arrows from
+      // the corners, the centre rings with a star, and deep pockets; framed by a raised dark wood rail
       st.add(plate(SIZE + 0.14, SIZE + 0.14, (g, w) => {
-        const f = w / (SIZE + 0.14) ;
-        g.fillStyle = '#3a2412'; g.fillRect(0, 0, w, w);
-        const m = 0.07 * f, inner = SIZE * f;
-        g.fillStyle = '#e9d0a0'; g.fillRect(m, m, inner, inner);
-        const P = (v) => m + (v + 1) * (inner / 2);
-        POCKETS.forEach(([x, y]) => { g.fillStyle = '#161009'; g.beginPath(); g.arc(P(x), P(y), POCKET_R * (inner / 2), 0, TAU); g.fill(); });
-        g.strokeStyle = '#7a2a18'; g.lineWidth = 5;
-        [CARROM_BASE, -CARROM_BASE].forEach((b) => { g.beginPath(); g.moveTo(P(-0.62), P(b)); g.lineTo(P(0.62), P(b)); g.stroke(); });
-        [CARROM_BASE, -CARROM_BASE].forEach((b) => { g.beginPath(); g.moveTo(P(b), P(-0.62)); g.lineTo(P(b), P(0.62)); g.stroke(); });
-        g.beginPath(); g.arc(P(0), P(0), 0.32 * (inner / 2), 0, TAU); g.stroke();
-        g.beginPath(); g.arc(P(0), P(0), 0.08 * (inner / 2), 0, TAU); g.stroke();
-      }, { color: '#2a1a0c' }));
+        const f = w / (SIZE + 0.14);
+        const m = 0.07 * f, inner = SIZE * f, U = inner / 2;
+        const P = (v) => m + (v + 1) * U;
+        // frame (seen under the rails at the corners) and the playing surface with its grain
+        g.fillStyle = '#2b1709'; g.fillRect(0, 0, w, w);
+        const ply = g.createLinearGradient(m, m, m + inner, m + inner);
+        ply.addColorStop(0, '#f3dfb4'); ply.addColorStop(0.5, '#ecd29f'); ply.addColorStop(1, '#e2c38c');
+        g.fillStyle = ply; g.fillRect(m, m, inner, inner);
+        let seed = 11;
+        const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+        for (let i = 0; i < 90; i++) {
+          const y = m + rnd() * inner;
+          g.strokeStyle = `rgba(150, 100, 40, ${0.03 + rnd() * 0.05})`; g.lineWidth = 1 + rnd() * 2.5;
+          g.beginPath(); g.moveTo(m, y);
+          for (let x = 0; x <= inner; x += 40) g.lineTo(m + x, y + Math.sin((x + i * 37) / 90) * 4);
+          g.stroke();
+        }
+        // a soft sheen across the middle, like a freshly powdered board
+        const sheen = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, U * 1.1);
+        sheen.addColorStop(0, 'rgba(255, 250, 235, .35)'); sheen.addColorStop(1, 'rgba(255, 250, 235, 0)');
+        g.fillStyle = sheen; g.fillRect(m, m, inner, inner);
+        const ink = '#2d1a10', red = '#b3261e';
+        // pockets: a dark rim, then the hole fading into the net
+        POCKETS.forEach(([x, y]) => {
+          const cx = P(x), cy = P(y), r = POCKET_R * U;
+          g.fillStyle = '#5a3a1f'; g.beginPath(); g.arc(cx, cy, r * 1.12, 0, TAU); g.fill();
+          const hole = g.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+          hole.addColorStop(0, '#000'); hole.addColorStop(0.75, '#120a05'); hole.addColorStop(1, '#2a1a0d');
+          g.fillStyle = hole; g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.fill();
+        });
+        // four baselines: two lines with a red circle at each end
+        const half = 0.62, gap = STRIKER_R * 0.95, endR = STRIKER_R * 1.05;
+        g.lineCap = 'round';
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([ax, ay]) => {
+          const along = (t, off) => (ax === 0 ? [P(t), P(ay * CARROM_BASE + off)] : [P(ax * CARROM_BASE + off), P(t)]);
+          g.strokeStyle = ink; g.lineWidth = 6;
+          [-gap, gap].forEach((off) => { const [x1, y1] = along(-half, off), [x2, y2] = along(half, off); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); });
+          [-half, half].forEach((t) => {
+            const [cx, cy] = along(t, 0);
+            g.fillStyle = red; g.beginPath(); g.arc(cx, cy, endR * U, 0, TAU); g.fill();
+            g.lineWidth = 5; g.strokeStyle = ink; g.stroke();
+            g.fillStyle = '#f3dfb4'; g.beginPath(); g.arc(cx, cy, endR * U * 0.45, 0, TAU); g.fill();
+          });
+        });
+        // arrows from each corner towards the middle, with the little arc where they stop
+        POCKETS.forEach(([x, y]) => {
+          const dx = -Math.sign(x), dy = -Math.sign(y);
+          const s0 = 0.16, s1 = 0.62;
+          const x1 = P(x + dx * s0), y1 = P(y + dy * s0), x2 = P(x + dx * s1), y2 = P(y + dy * s1);
+          g.strokeStyle = ink; g.lineWidth = 6;
+          g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+          const a = Math.atan2(y2 - y1, x2 - x1), hl = 0.06 * U;
+          g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - Math.cos(a - 0.5) * hl, y2 - Math.sin(a - 0.5) * hl); g.moveTo(x2, y2); g.lineTo(x2 - Math.cos(a + 0.5) * hl, y2 - Math.sin(a + 0.5) * hl); g.stroke();
+          g.beginPath(); g.arc(x2 + Math.cos(a) * 0.02 * U, y2 + Math.sin(a) * 0.02 * U, 0.09 * U, a + Math.PI * 0.55, a + Math.PI * 1.45, true); g.stroke();
+        });
+        // the centre: two rings, a red circle and an eight-pointed star
+        const C = P(0);
+        g.strokeStyle = ink; g.lineWidth = 6;
+        g.beginPath(); g.arc(C, C, 0.32 * U, 0, TAU); g.stroke();
+        g.beginPath(); g.arc(C, C, 0.29 * U, 0, TAU); g.stroke();
+        g.fillStyle = 'rgba(179, 38, 30, .9)';
+        g.beginPath();
+        for (let i = 0; i < 16; i++) { const r = (i % 2 ? 0.07 : 0.2) * U, t = (i / 16) * TAU - Math.PI / 2; g.lineTo(C + Math.cos(t) * r, C + Math.sin(t) * r); }
+        g.closePath(); g.fill(); g.stroke();
+        g.fillStyle = red; g.beginPath(); g.arc(C, C, 0.075 * U, 0, TAU); g.fill(); g.stroke();
+      }, { color: '#2a1a0c', roughness: 0.38, res: 2048 }));
+      // the raised wooden rail round the edge
+      const railW = 0.07, railH = 0.035, len = SIZE + 0.14, wood = mat('#3b2010', 0.32, 0.05);
+      [[0, -(S + railW / 2), len, railW], [0, S + railW / 2, len, railW], [-(S + railW / 2), 0, railW, SIZE], [S + railW / 2, 0, railW, SIZE]].forEach(([x, z, sx, sz]) => {
+        const rail = mesh(box(sx, railH, sz), wood, x, TOP_Y + railH / 2, z);
+        rail.castShadow = true; rail.receiveShadow = true;
+        st.add(rail);
+      });
       st.scale = S;
       st.aimLine = mesh(box(1, 0.003, 0.012), new THREE.MeshBasicMaterial({ color: '#ffe08a', transparent: true, opacity: 0.8 }));
       st.aimLine.visible = false;
@@ -991,7 +1283,7 @@ const BOARDS = {
     coin(id) {
       const color = id === 'q' ? '#c2185b' : id[0] === 'w' ? '#f5ecd8' : '#2a211c';
       const r = (id === 'S' ? STRIKER_R : COIN_R) * (SIZE / 2);
-      return () => disc(id === 'S' ? '#fdf5e0' : color, r, 0.022);
+      return () => carromCoin(id === 'S' ? '#fdf5e0' : color, r, id === 'S');
     },
     draw(st, v) {
       const S = SIZE / 2;
@@ -1146,6 +1438,11 @@ export function createBoard(slug, world, ctxHelpers) {
   raf = requestAnimationFrame(loop);
   return {
     span: def.span,
+    get pickIndices() {
+      return new Set(st.picks.map(o => o.userData?.pick).filter(Number.isInteger));
+    },
+    // how far the board reaches from the middle, across and deep: the players sit clear of it
+    half: def.half || (def.tray ? [0.75, 0.5] : def.felt ? [0.87, 0.79] : [0.88, 0.88]),
     stage: st,
     def,
     draw(view, ctx, game) {

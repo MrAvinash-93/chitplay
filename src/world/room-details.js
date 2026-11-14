@@ -1,6 +1,6 @@
 /**
  * The lived-in parts of the room: side walls, a window with evening light and
- * curtains, a wall clock, a slate, a shelf with school things. Everything is drawn
+ * curtains, a wall clock, a slate for the scores, a shelf with books and games. Everything is drawn
  * in code so the game stays a few hundred kilobytes.
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
@@ -88,13 +88,20 @@ function slateTexture(title = 'CHITPLAY', lines = ['King      1000', 'Queen     
   });
 }
 
+/** Where the side walls are built; setHalfWidth slides them in for a smaller room. */
+const BUILT_HALF = 4.1;
+
 export function buildRoomDetails(scene, wallMaterial, anisotropy) {
   const std = (p) => new THREE.MeshStandardMaterial({ envMapIntensity: 0.35, roughness: 0.75, ...p });
+  // each side wall and everything on it moves as one, so the room can grow
+  const leftSide = new THREE.Group(), rightSide = new THREE.Group();
+  scene.add(leftSide, rightSide);
+  let into = scene;
   const box = (w, h, d, material, x, y, z) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
     m.position.set(x, y, z);
     m.castShadow = true; m.receiveShadow = true;
-    scene.add(m);
+    into.add(m);
     return m;
   };
   const wood = std({ color: '#5e3c22', roughness: 0.55 });
@@ -102,21 +109,24 @@ export function buildRoomDetails(scene, wallMaterial, anisotropy) {
 
   /* side walls and skirting, so the room closes around the mat */
   for (const s of [-1, 1]) {
+    into = s < 0 ? leftSide : rightSide;
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(10, 4.5), wallMaterial);
     wall.rotation.y = -s * Math.PI / 2;
-    wall.position.set(s * 4.1, 2.25, 2.4);
+    wall.position.set(s * BUILT_HALF, 2.25, 2.4);
     wall.receiveShadow = true;
-    scene.add(wall);
+    into.add(wall);
     box(0.03, 0.14, 10, wood, s * 4.08, 0.07, 2.4);
   }
-  box(8.2, 0.14, 0.03, wood, 0, 0.07, -2.585);
+  into = scene;
+  const backSkirting = box(8.2, 0.14, 0.03, wood, 0, 0.07, -2.585);
+  into = leftSide;
 
   /* window on the left wall, where the evening sun comes from */
   const W = { y: 1.9, z: -0.6, w: 2.1, h: 1.7 };
   const glass = new THREE.Mesh(new THREE.PlaneGeometry(W.w, W.h), new THREE.MeshBasicMaterial({ map: skyTexture(), toneMapped: false }));
   glass.rotation.y = Math.PI / 2;
   glass.position.set(-4.08, W.y, W.z);
-  scene.add(glass);
+  leftSide.add(glass);
   const frameX = -4.06;
   box(0.06, 0.1, W.w + 0.2, wood, frameX, W.y + W.h / 2 + 0.05, W.z);
   box(0.1, 0.1, W.w + 0.3, wood, frameX + 0.03, W.y - W.h / 2 - 0.05, W.z);
@@ -135,12 +145,20 @@ export function buildRoomDetails(scene, wallMaterial, anisotropy) {
     c.rotation.y = Math.PI / 2;
     c.position.set(-4.0, W.y - 0.18, W.z + s * (W.w / 2 + 0.12));
     c.castShadow = true;
-    scene.add(c);
+    leftSide.add(c);
   }
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, W.w + 1.1, 12), std({ color: '#c49a4a', metalness: 0.8, roughness: 0.3 }));
   rod.rotation.x = Math.PI / 2;
   rod.position.set(-3.98, W.y + W.h / 2 + 0.2, W.z);
-  scene.add(rod);
+  leftSide.add(rod);
+  // a cricket bat leaning in the corner
+  const bat = box(0.1, 0.72, 0.03, std({ color: '#d9b77e', roughness: 0.5 }), -3.55, 0.42, -2.35);
+  bat.rotation.z = 0.14;
+  const batHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.3, 12), std({ color: '#2b2b2b' }));
+  batHandle.position.set(-3.6, 0.92, -2.35);
+  batHandle.rotation.z = 0.14;
+  leftSide.add(batHandle);
+  into = scene;
 
   /* wall clock */
   const clockBody = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.04, 40), std({ color: '#3a2a1a' }));
@@ -167,7 +185,8 @@ export function buildRoomDetails(scene, wallMaterial, anisotropy) {
     slate.material.needsUpdate = true;
   };
 
-  /* shelf with school things on the right wall */
+  /* a shelf on the right wall: a few books, a game controller and some board games */
+  into = rightSide;
   const shelfX = 4.0, shelfZ = -0.5;
   box(0.34, 0.035, 1.6, wood, shelfX - 0.17, 1.35, shelfZ);
   box(0.34, 0.035, 1.6, wood, shelfX - 0.17, 0.82, shelfZ);
@@ -178,32 +197,42 @@ export function buildRoomDetails(scene, wallMaterial, anisotropy) {
     box(0.2, h, t, std({ color: c, roughness: 0.65 }), shelfX - 0.17, 1.368 + h / 2, z).rotation.x = i === 8 ? 0.22 : 0;
     z += t + 0.006;
   });
-  // school bag
-  const bagMat = std({ color: '#274f8c', roughness: 0.82 });
-  const bag = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 18), bagMat);
-  bag.scale.set(0.15, 0.2, 0.2);
-  bag.position.set(shelfX - 0.19, 1.035, shelfZ + 0.34);
-  bag.castShadow = true;
-  scene.add(bag);
-  box(0.03, 0.1, 0.22, std({ color: '#c8a13a', roughness: 0.4, metalness: 0.5 }), shelfX - 0.34, 1.0, shelfZ + 0.34);
-  // steel tiffin box
-  const steel = std({ color: '#d7dce2', metalness: 1, roughness: 0.22, envMapIntensity: 1.2 });
-  for (let i = 0; i < 3; i++) {
-    const tier = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.07, 28), steel);
-    tier.position.set(shelfX - 0.17, 0.875 + i * 0.075, shelfZ - 0.34);
-    tier.castShadow = true;
-    scene.add(tier);
+  // a game controller lying on the lower shelf, waiting for the next match
+  const padMat = std({ color: '#25272d', roughness: 0.5 });
+  const pad = new THREE.Group();
+  const padBody = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.03, 0.17), padMat);
+  pad.add(padBody);
+  for (const s of [-1, 1]) {
+    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.042, 16, 12), padMat);
+    grip.scale.set(1.1, 0.55, 1);
+    grip.position.set(-0.025, -0.002, s * 0.085);
+    pad.add(grip);
   }
-  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.006, 8, 20, Math.PI), steel);
-  handle.position.set(shelfX - 0.17, 1.06, shelfZ - 0.34);
-  handle.rotation.y = Math.PI / 2;
-  scene.add(handle);
-  // cricket bat in the corner
-  const bat = box(0.1, 0.72, 0.03, std({ color: '#d9b77e', roughness: 0.5 }), -3.55, 0.42, -2.35);
-  bat.rotation.z = 0.14;
-  const batHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.3, 12), std({ color: '#2b2b2b' }));
-  batHandle.position.set(-3.6, 0.92, -2.35);
-  batHandle.rotation.z = 0.14;
-  scene.add(batHandle);
-  return { setSlate };
+  ['#ff4d6d', '#ffd23f', '#2bd67b', '#3ab0ff'].forEach((c, i) => {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.01, 10), new THREE.MeshBasicMaterial({ color: c }));
+    b.position.set(0.012 + (i % 2 ? 0.014 : -0.014) * (i < 2 ? 1 : 0), 0.017, 0.045 + (i >= 2 ? (i === 2 ? 0.014 : -0.014) : 0));
+    pad.add(b);
+  });
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.014, 12), std({ color: '#55585f', roughness: 0.6 }));
+  stick.position.set(0.0, 0.019, -0.045);
+  pad.add(stick);
+  pad.position.set(shelfX - 0.19, 0.855, shelfZ + 0.34);
+  pad.rotation.y = 0.25;
+  pad.traverse(o => { o.castShadow = true; });
+  rightSide.add(pad);
+  // a stack of board games
+  ['#c0392b', '#2c6fb5', '#e0a92e'].forEach((c, i) => {
+    const g = box(0.26, 0.05, 0.3, std({ color: c, roughness: 0.6 }), shelfX - 0.17, 0.862 + i * 0.052, shelfZ - 0.34);
+    g.rotation.y = (i - 1) * 0.08;
+  });
+  into = scene;
+
+  /** Slide the side walls (and all that hangs on them) to make the room smaller or bigger. */
+  const setHalfWidth = (half) => {
+    const h = Math.max(2.6, Math.min(BUILT_HALF, half || BUILT_HALF));
+    leftSide.position.x = BUILT_HALF - h;
+    rightSide.position.x = h - BUILT_HALF;
+    backSkirting.scale.x = h / BUILT_HALF;
+  };
+  return { setSlate, setHalfWidth };
 }

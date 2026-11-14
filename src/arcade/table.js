@@ -10,34 +10,42 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261110-1548';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261110-1548';
-import { loadWorld } from '../world/world-loader.js?v=20261110-1548';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261110-1548';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261110-1548';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261110-1548';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261110-1548';
-import { profile } from '../persistence/profile-store.js?v=20261110-1548';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1146';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1146';
+import { loadWorld } from '../world/world-loader.js?v=20261114-1146';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1146';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1146';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1146';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1146';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1146';
 import { audioManager } from '../audio/audio-manager.js';
-import { iconSvg } from '../ui/icons.js?v=20261110-1548';
-import { faceHtml } from './photo.js?v=20261110-1548';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261110-1548';
+/** Vibrate only for what happens to the person holding this phone. */
+const buzz = (kind) => audioManager.haptic(kind);
+import { iconSvg } from '../ui/icons.js?v=20261114-1146';
+import { faceHtml } from './photo.js?v=20261114-1146';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1146';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261110-1548';
+import { settingsStore } from '../persistence/settings-store.js?v=20261114-1146';
 
-import { fill, shellText } from './shell-text.js?v=20261110-1548';
-import { nextForRoom } from './decor.js?v=20261110-1548';
-import { achievementList, bestOf, bump, gameFinished, holdPopups, onPopup, playStats, rankProgress } from './achievements.js?v=20261110-1548';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261110-1548';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261110-1548';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261110-1548';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261110-1548';
-import { ask } from './dialog.js?v=20261110-1548';
-import { startReminder } from './reminder.js?v=20261110-1548';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261110-1548';
-import { adBreak, gameplayStart, gameplayStop, loadingDone } from '../platform/portal.js?v=20261110-1548';
+import { fill, shellText } from './shell-text.js?v=20261114-1146';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1146';
+import { bestOf, bump, gameFinished, holdPopups, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1146';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1146';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1146';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1146';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1146';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1146';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1146';
+import { startReminder } from './reminder.js?v=20261114-1146';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1146';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1146';
+import { roomLevel } from './decor.js?v=20261114-1146';
 
-const V = '?v=20261110-1548';
+import { viewButton } from './view-mode.js?v=20261114-1146';
+import { adBreak } from './ad-breaks.js?v=20261114-1146';
+import { gameStrip } from './game-strip.js?v=20261114-1146';
+import { mountParty } from '../net/party.js?v=20261114-1146';
+const V = '?v=20261114-1146';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -47,9 +55,10 @@ const EMOJIS = ['😂', '🤡', '😜', '😈', '🤫', '🙄', '💀', '🐔', 
 const myEmojis = () => [...SPECIAL_EMOJIS.filter(e => profile.owns(e.id)).map(e => e.symbol), ...EMOJIS];
 const CHAT_EMOJIS = [...EMOJIS, ...SPECIAL_EMOJIS.map(e => e.symbol), '👍', '😮', '😎', '🙏', '😱', '🤔', '👏', '💪'];
 const BOT_MS = [650, 1500];
-const AWAY_MS = 8000;       // a phone that's gone: a bot steps in after this long
-const IDLE_MS = 45000;      // on a public table, nobody waits longer than this for one player
+const TURN_TIMEOUT_MS = 30000; // every game mode lets a bot make one move after 30 seconds of inactivity
 const PUBLIC_WAIT_MS = 20000;
+const TOUCH_INPUT = typeof navigator !== 'undefined' && ((navigator.maxTouchPoints || 0) > 0
+  || (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches));
 
 /* ─── small DOM helpers: everything from the game or the network goes in as text, never HTML ─── */
 function h(tag, props = {}, kids = []) {
@@ -78,7 +87,7 @@ const LEVEL = SLIP[params.get('level')] != null ? params.get('level') : 'normal'
 const LANG = (() => { const q = new URLSearchParams(location.search).get('lang'); if (isLanguage(q)) { settingsStore.set('chatLang', q); return q; } const l = settingsStore.get('chatLang'); if (isLanguage(l)) return l; const B = { hi: 'hindi', ur: 'urdu', ne: 'nepali', bn: 'bangla', ja: 'romaji', ko: 'korean_roman', zh: 'pinyin', ru: 'russian_latin', de: 'german', fr: 'french', pt: 'portuguese', es: 'spanish', id: 'indonesian', ms: 'indonesian', tr: 'turkish', it: 'italian' }; return B[String(navigator.language || '').slice(0, 2).toLowerCase()] || 'en'; })();
 const REGION = LANG === 'en' ? detectNameRegion() : (NAME_REGION_FOR[LANG] || EDITION_FOR[LANG]);
 const EDITION = LANG === 'en' ? (COUNTRIES[detectCountryInfo().id] || editionFor('en')) : editionFor(LANG);
-const say = shellText(LANG);
+const say = { ...shellText(LANG), ...(MORE[LANG] || {}) };
 const localName = (taken) => pickOpponents(1, taken, REGION, profile.gender)[0];
 const localLook = (gender) => {
   const skins = EDITION.theme?.skins || [];
@@ -86,33 +95,183 @@ const localLook = (gender) => {
 };
 
 function show(...kids) {
+  // a new screen (not the next move of the same game) slides in; repainting the same screen never jumps
+  const fresh = kids.find(k => k?.classList?.contains('panel'));
+  const before = app.querySelector('.panel h1')?.textContent;
+  if (fresh && !fresh.classList.contains('panel--play') && !fresh.classList.contains('panel--tight') && fresh.querySelector('h1')?.textContent !== before) fresh.classList.add('panel--enter');
   app.replaceChildren(...kids.filter(Boolean));
+  // while a game is being played: one slim bar on top, a short tray at the bottom, the game in between
+  document.body.classList.toggle('in-play', !!fresh && (fresh.classList.contains('panel--play') || fresh.classList.contains('tvpanel')));
   fitBoard();
 }
+// 2D ⇄ 3D: the board is drawn again (chess swaps its pieces for flat tokens) and the camera re-frames
+addEventListener('chitplay:view', () => {
+  if (board && shown) { try { board.draw(shown.view, shown.ctx, Logic); } catch { /* the next move redraws it */ } }
+  fitBoard();
+});
 function panelOf() { return app.querySelector('.panel'); }
 // while playing there is one button up here: it pauses the game and holds everything else (rules, profile, sound, quit)
-const topBar = (game) => h('header', { class: 'bar' }, [
-  h('button', { type: 'button', class: 'back pausebtn', 'aria-label': 'Pause and menu', title: 'Pause and menu (Esc)', onclick: () => openPauseMenu() }, [h('span', { class: 'pausebtn__ico', html: iconSvg('pause') }), h('span', { class: 'wideonly' }, [' Menu'])]),
-  h('strong', { class: 'bartitle' }, [game ? `${game.icon} ${game.name}` : 'ChitPlay']),
-  // what matters right now: the round, and everyone's points (filled in as the game goes)
-  h('span', { class: 'barstatus', 'aria-live': 'polite' }, [statusNow]),
-  h('button', { type: 'button', class: 'back langpick', 'aria-label': 'Language', title: 'Language', onclick: () => openLanguages() }, [`🌐 ${(LANGUAGES.find(l => l.id === LANG) || LANGUAGES[0]).short}`]),
-]);
+const topBar = (game) => {
+  const rp = rankProgress();
+  return h('header', { class: 'bar' }, [
+    h('button', { type: 'button', class: 'back pausebtn', 'aria-label': 'Pause and menu', title: 'Pause and menu (Esc)', onclick: () => openPauseMenu() }, [h('span', { class: 'pausebtn__ico', html: iconSvg('pause') }), h('span', { class: 'wideonly' }, [' Menu'])]),
+    h('strong', { class: 'bartitle' }, [game ? `${game.icon} ${game.name}` : 'ChitPlay']),
+    h('button', { type: 'button', class: 'back rank-chip', title: `${rp.title} · ${rp.points.toLocaleString('en')} points`, 'aria-label': `${rp.title}, ${rp.points.toLocaleString('en')} points`, onclick: openStatusDetails }, [`${rp.icon} L${rp.index + 1}`]),
+    // the compact record and score line opens a fuller room scoreboard
+    h('span', { class: 'barstatus', 'aria-live': 'polite' }, statusKids()),
+    game ? viewButton('back viewbtn', () => audioManager.play('select')) : null,
+    h('button', { type: 'button', class: 'back langpick', 'aria-label': 'Language', title: 'Language', onclick: () => openLanguages() }, [`🌐 ${(LANGUAGES.find(l => l.id === LANG) || LANGUAGES[0]).short}`]),
+  ]);
+};
 let statusNow = '';
+let bestNow = '';          // the record to beat, shown at the top of every game
+let statusRound = '';
+let statusRows = [];
+/** The record to beat in this game, in a few words: a best score, a win streak, or a first-game nudge. */
+function refreshBest() {
+  if (!G) { bestNow = ''; return bestNow; }
+  if (G.video) { const b = bestOf(G.slug); bestNow = b ? fill(say.best, { n: b }) : say.firstBest; return bestNow; }
+  const rec = recordOf(G.slug);
+  if (!rec.played) { bestNow = say.firstGame; return bestNow; }
+  const parts = [];
+  if (SCORED.has(G.slug) && rec.bestScore) parts.push(fill(say.best, { n: rec.bestScore }));
+  else parts.push(fill(say.won, { n: rec.won }));
+  if (rec.bestStreak > 1 || rec.streak > 0) parts.push(`${fill(say.inRow, { n: rec.streak })}${rec.bestStreak > rec.streak ? ` ${fill(say.bestOf, { n: rec.bestStreak })}` : ''}`);
+  bestNow = parts.join(' ');
+  return bestNow;
+}
+/**
+ * Every game in its own colours: the panel, the buttons, the headings and the glow all take the
+ * game's accent (Ludo red, Chess walnut, Tunnel Race violet…), worked out so text stays readable:
+ * a light accent gets dark writing on its buttons, a dark one gets light.
+ */
+function applyTheme(game) {
+  const hex = /^#?([0-9a-f]{6})$/i.exec(game?.accent || '')?.[1] || 'c94c14';
+  const rgb = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v * (1 - t) + b[i] * t));
+  const css = (c) => `rgb(${c.join(', ')})`;
+  const lum = (c) => { const [r, g, b] = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const ink = [18, 10, 6], white = [255, 250, 240];
+  const hi = mix(rgb, white, 0.12), deep = mix(rgb, ink, 0.38);
+  const v = {
+    '--accent': css(rgb),
+    '--accent-rgb': rgb.join(', '),
+    '--acc-hi': css(hi),
+    '--acc-deep': css(deep),
+    '--acc-shadow': css(mix(rgb, ink, 0.62)),
+    '--acc-light': css(mix(rgb, white, 0.55)),
+    // whichever of light or dark writing stands out more on the button (WCAG contrast)
+    '--on-accent': ((L) => (1.05 / (L + 0.05) >= (L + 0.05) / (lum([29, 18, 6]) + 0.05) ? '#fffaf0' : '#1d1206'))(lum(mix(hi, deep, 0.5))),
+    '--panel-rgb': mix(rgb, [22, 12, 7], 0.86).join(', '),
+    '--panel-rgb2': mix(rgb, [14, 8, 5], 0.92).join(', '),
+    '--tile': css(mix(rgb, [42, 26, 16], 0.84)),
+    '--line': `rgba(${mix(rgb, white, 0.5).join(', ')}, .2)`,
+    '--hot': `linear-gradient(180deg, ${css(hi)}, ${css(deep)})`,
+  };
+  const root = document.documentElement.style;
+  Object.entries(v).forEach(([k, val]) => root.setProperty(k, val));
+  document.documentElement.dataset.kind = String(game?.kind || '').toLowerCase();
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', css(mix(rgb, [14, 8, 5], 0.9)));
+}
+/** Games where your own points are the thing to beat (in the others, it's wins in a row). */
+const SCORED = new Set(['yacht', 'color-clash', 'dots-and-boxes', 'memory-match', 'mancala', 'reversi']);
+const recordOf = (slug) => { try { return { played: 0, won: 0, streak: 0, bestStreak: 0, bestScore: 0, ...JSON.parse(localStorage.getItem(`chitplay.record.${slug}`)) }; } catch { return { played: 0, won: 0, streak: 0, bestStreak: 0, bestScore: 0 }; } };
+const watching = () => params.get('mode') === 'watch' || (!!match && !match.players.some(p => p.kind === 'me' || p.kind === 'pass'));
+function compactBest() {
+  if (!G || watching()) return '';
+  if (G.video) return `🏆${bestOf(G.slug) || '—'}`;
+  const rec = recordOf(G.slug);
+  if (!rec.played) return '🏆—';
+  return `🏆${SCORED.has(G.slug) ? rec.bestScore : `${rec.bestStreak || rec.won}W`}`;
+}
+function compactStatus() {
+  const scores = statusRows.map(row => `${row.mine ? say.you : row.name.slice(0, 5)} ${row.score}`).join(' · ');
+  return scores || statusRound.replace(/^Round /, 'R').replace(/^Question /, 'Q');
+}
+const statusKids = () => {
+  const best = compactBest();
+  const scores = compactStatus();
+  return [
+    best ? h('b', { class: 'barbest', title: bestNow }, [best]) : null,
+    scores ? h('span', { class: 'barstatus__summary' }, [scores]) : null,
+    h('button', { type: 'button', class: 'barstatus__more', title: say.more, 'aria-label': say.more, onclick: openStatusDetails }, [say.more]),
+  ];
+};
+function paintStatus() {
+  document.querySelectorAll('.barstatus').forEach((el) => {
+    el.replaceChildren(...statusKids().filter(Boolean));
+    el.title = [bestNow, statusNow].filter(Boolean).join(' · ');
+  });
+}
+/** A TV game's score going past your best, live: the chip at the top says so. */
+function liveBest(score) {
+  const was = bestOf(G?.slug);
+  if (score > was && was > 0) { bestNow = fill(say.newBest, { n: score }); paintStatus(); }
+}
 /** Round 3/15 · You 120 · Riya 90: from the game's view and the players' strip. */
 function setStatus(view, strip) {
-  let round = '';
-  if (view && Logic?.rounds && Number.isInteger(view.round) && (G.slug !== 'ludo' || view.style === 'score')) round = `Round ${Math.min(view.round, Logic.rounds)}/${Logic.rounds}`;
-  else if (view && Number.isInteger(view.at) && Number.isInteger(view.total)) round = `Question ${Math.min(view.at + 1, view.total)}/${view.total}`;
-  let scores = (strip || []).map(x => `${String(x.name).slice(0, 10)} ${x.text}`).join(' · ');
+  statusRound = '';
+  if (view && Logic?.rounds && Number.isInteger(view.round) && (G.slug !== 'ludo' || view.style === 'score')) statusRound = `Round ${Math.min(view.round, Logic.rounds)}/${Logic.rounds}`;
+  else if (view && Number.isInteger(view.at) && Number.isInteger(view.total)) statusRound = `Question ${Math.min(view.at + 1, view.total)}/${view.total}`;
+  statusRows = (strip || []).map((x, i) => ({
+    name: String(x.name || '').trim(),
+    score: String(x.text ?? ''),
+    active: !!x.on,
+    mine: i === shown?.ctx?.me && !shown?.ctx?.pass,
+  }));
   // no strip of players: the points from the game itself (penalty points where lower is better)
   const pts = view && [view.scores, view.pts, view.points, view.pen].find(a => Array.isArray(a) && a.every(Number.isFinite));
-  if (!scores && pts && shown?.ctx?.names) {
+  if (!statusRows.length && pts && shown?.ctx?.names) {
     const me = shown.ctx.me;
-    scores = pts.map((v, i) => `${i === me ? 'You' : String(shown.ctx.names[i] || '').slice(0, 10)} ${Math.round(v * 10) / 10}`).join(' · ') + (view.pen === pts ? ' (penalty)' : '');
+    statusRows = pts.map((v, i) => ({
+      name: i === me ? say.you : String(shown.ctx.names[i] || '').trim(),
+      score: `${Math.round(v * 10) / 10}${view.pen === pts ? ' (penalty)' : ''}`,
+      active: false,
+      mine: i === me && !shown.ctx.pass,
+    }));
   }
-  statusNow = [round, scores].filter(Boolean).join(' · ');
-  document.querySelectorAll('.barstatus').forEach((el) => { el.textContent = statusNow; el.title = statusNow; });
+  const scores = statusRows.map(row => `${row.name.slice(0, 10)} ${row.score}`).join(' · ');
+  statusNow = [statusRound, scores].filter(Boolean).join(' · ');
+  paintStatus();
+}
+function openStatusDetails() {
+  if (!G || document.querySelector('.score-sheet')) return;
+  const rp = rankProgress();
+  const room = roomLevel();
+  let sheet;
+  const close = () => {
+    sheet.remove();
+    removeEventListener('keydown', onKey, true);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } };
+  const rows = statusRows.map(row => h('li', { class: row.active ? 'score-sheet__active' : '' }, [
+    h('span', {}, [row.name]),
+    h('strong', {}, [row.score]),
+  ]));
+  sheet = h('div', { class: 'sheet score-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': `${G.name} scores`, onclick: e => { if (e.target === sheet) close(); } }, [
+    h('div', { class: 'sheet__box' }, [
+      h('div', { class: 'score-sheet__head' }, [
+        h('h1', {}, [`${G.icon} ${G.name}`]),
+        h('button', { type: 'button', class: 'score-sheet__close', 'aria-label': say.close, onclick: close }, ['×']),
+      ]),
+      statusRound ? h('p', { class: 'lead' }, [statusRound]) : null,
+      rows.length ? h('ol', { class: 'score-sheet__rows' }, rows) : null,
+      !watching() ? h('section', { class: 'score-sheet__rank' }, [
+        h('strong', {}, [`${rp.icon} Lv ${rp.index + 1} · ${rp.title}`]),
+        h('div', { class: 'rankbar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(rp.share * 100)) }, [h('i', { style: `width:${Math.round(rp.share * 100)}%` })]),
+        h('p', {}, [rp.next ? `${rp.next.at - rp.points} points to ${rp.next.title}` : 'Top rank']),
+        h('small', {}, [`Rank-up: +${COINS.rankUp} coins; some ranks unlock hats.`]),
+        h('strong', { class: 'score-sheet__room' }, [`🏠 Room Lv ${room.level} · ${room.title}`]),
+        h('div', { class: 'rankbar', role: 'progressbar', 'aria-label': 'Room level progress', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(room.share * 100)) }, [h('i', { style: `width:${Math.round(room.share * 100)}%` })]),
+        h('p', {}, [room.next ? `${room.next.at - room.points} room points to ${room.next.title}` : 'All room levels reached.']),
+        h('small', { class: 'score-sheet__room' }, ['Bigger room at Lv 3 + 800 coins · Gaming hall at Lv 5 + 10 wins + 2500 coins.']),
+      ]) : null,
+      bestNow ? h('p', { class: 'score-sheet__best' }, [bestNow]) : null,
+    ]),
+  ]);
+  document.body.append(sheet);
+  addEventListener('keydown', onKey, true);
+  sheet.querySelector('.score-sheet__close').focus({ preventScroll: true });
 }
 /** Change the language in the middle of a game: the page reloads and the game carries on where it was. */
 function openLanguages() {
@@ -140,8 +299,9 @@ const playingWithPeople = () => !!(room || guest || match?.opts?.public || windo
 let paused = false;
 function setPaused(on) {
   if (paused === on) return;
+  if (on && match) Logic.active(match.s).forEach(chargeClock);
   paused = on;
-  if (on) gameplayStop(); else if (match && !Logic.result(match.s)) gameplayStart();
+  audioManager.musicPause(on);
   if (match) {
     if (on) clearMatchTimers();
     else if (!Logic.result(match.s)) scheduleActive(Logic.active(match.s));
@@ -149,9 +309,8 @@ function setPaused(on) {
   dispatchEvent(new CustomEvent('chitplay:pause', { detail: { on } }));
 }
 /**
- * The game menu, the same as in Raja Rani Chor Police: who you are, then Pause game, Restart match,
- * How to play, Quit game, Your profile and Sound, and Back to the game. Alone, opening it already
- * holds the game; Pause game shows the paused screen until Resume.
+ * The game menu, in the order people reach for things: who you are, Resume (alone, opening the menu
+ * already holds the game), Restart, How to play, Sound and Voices, Your profile, and Quit last.
  */
 function openPauseMenu() {
   if (document.querySelector('.pausemenu')) return;
@@ -165,7 +324,6 @@ function openPauseMenu() {
     icon ? h('span', { class: 'game__choice-ico', html: iconSvg(icon) }) : null,
     h('strong', {}, [label]),
   ]);
-  const back = (label, onclick) => h('button', { type: 'button', class: 'game__back', onclick }, [h('span', { html: iconSvg('left') }), label]);
   const card = () => {
     const rp = rankProgress();
     return h('div', { class: 'game__card' }, [
@@ -178,29 +336,70 @@ function openPauseMenu() {
     ]);
   };
   const soundOn = () => audioManager.enabled !== false;
-  const paint = (kids) => { sheet.replaceChildren(h('div', { class: 'game__panel' }, kids.filter(Boolean))); sheet.querySelector('.game__choice--primary')?.focus({ preventScroll: true }); };
+  const paint = (kids) => { sheet.replaceChildren(h('div', { class: 'game__panel' }, kids.filter(Boolean))); sheet.querySelector('.game__choice--primary, .game__choice--row')?.focus({ preventScroll: true }); };
+  const styleSlots = gameStyleSlots(G?.slug);
+  const renderStyles = () => {
+    const kids = [
+      h('h2', { class: 'game__title' }, [say.styles]),
+      h('p', { class: 'game__sub' }, [`🪙 ${profile.coins} coins · Saved on this device; starts next game.`]),
+    ];
+    styleSlots.forEach((slot) => {
+      const selected = selectedGameCosmetic(G.slug, slot.id);
+      kids.push(h('p', { class: 'game__sub' }, [slot.label]));
+      kids.push(row(`${slot.defaultName}${selected ? ' · Use' : ' · Using'}`, () => chooseStyle(slot, null), null));
+      gameCosmeticsFor(G.slug, slot.id).forEach((item) => {
+        const owned = gameCosmeticOwned(item.id);
+        const active = selected?.id === item.id;
+        const action = active ? ' · Using' : owned ? ' · Use' : ` · ${item.price} coins`;
+        kids.push(row(`${item.icon} ${item.name}${action}`, () => chooseStyle(slot, item), null));
+      });
+    });
+    kids.push(row('Back to menu', menu, 'back'));
+    paint(kids);
+  };
+  const chooseStyle = async (slot, item) => {
+    try {
+      if (item && !gameCosmeticOwned(item.id)) {
+        const yes = await confirmSpend({ what: item.name, price: item.price, coins: profile.coins, icon: item.icon });
+        if (!yes) return;
+        if (!buyGameCosmetic(item.id)) {
+          await notice({ icon: '⚠️', tone: 'warn', title: 'Could not unlock style', body: 'Coins were not spent. Please try again.' });
+          return;
+        }
+      } else if (!equipGameCosmetic(G.slug, slot.id, item?.id ?? null)) {
+        await notice({ icon: '⚠️', tone: 'warn', title: 'Could not equip style', body: 'This style is not available for this game.' });
+        return;
+      }
+      if (!match && !G?.video) previewBoard();
+      renderStyles();
+    } catch (error) {
+      console.error('[game cosmetics] purchase or equip failed', error);
+      await notice({ icon: '⚠️', tone: 'warn', title: 'Style could not be saved', body: 'Check your device storage and try again.' });
+    }
+  };
   const menu = () => paint([
-    h('h2', { class: 'game__title' }, ['Game menu']),
+    h('h2', { class: 'game__title' }, [say.menu]),
     card(),
-    solo ? null : h('p', { class: 'game__sub' }, ['You are playing with other people: the game goes on for them while this menu is open.']),
-    solo ? row('Pause game', showPaused, 'pause', 'game__choice--primary') : null,
-    solo && match ? row('Restart match', () => { if (!window.confirm('Restart this match from the beginning?')) return; leaveAll(); clearSaved(G.slug); location.reload(); }, 'restart') : null,
+    h('p', { class: 'game__sub' }, [solo ? say.pausedNote : say.withPeople]),
+    // first what most people want (back to the game), then the game, then settings, then you; leaving is last
+    row(solo ? say.resume : say.backToGame, close, 'play', 'game__choice--primary'),
+    // every game, one tap away: bored of this one, open another without going home
+    gameStrip({ current: G?.slug || null, root: '../', title: say.moreGames || 'More games', leave: () => {
+      if (match && !Logic?.result?.(match.s) && !window.confirm('Leave this game and open the other one?')) return false;
+      leaveAll(); return true;
+    } }),
+    solo && match ? row(say.restart, () => { if (!window.confirm('Restart this match from the beginning?')) return; leaveAll(); clearSaved(G.slug); location.reload(); }, 'restart') : null,
     G ? row(say.howTo, async () => { leave(); await openRules(G); if (solo) setPaused(false); }, 'book') : null,
-    row('Quit game', () => { leaveAll(); location.href = '../'; }, 'exit'),
-    row('Your profile', () => { if (match && !Logic?.result?.(match.s) && !window.confirm('Open your profile? This game will end.')) return; leaveAll(); location.href = '../?profile=1'; }, 'user'),
-    row(settingsStore.get('voiceEnabled') !== false ? 'Voices: on' : 'Voices: off', () => { settingsStore.set('voiceEnabled', settingsStore.get('voiceEnabled') === false); if (settingsStore.get('voiceEnabled') === false) window.speechSynthesis?.cancel(); menu(); }, settingsStore.get('voiceEnabled') !== false ? 'mic' : 'micOff'),
-    row(soundOn() ? 'Sound: on' : 'Sound: off', () => { const next = !soundOn(); audioManager.setEnabled(next); settingsStore.set('soundEnabled', next); menu(); }, soundOn() ? 'sound' : 'soundOff'),
-    back('Back to the game', close),
+    styleSlots.length ? row(`🎨 ${say.styles}`, renderStyles, null) : null,
+    h('div', { class: 'game__menu-pair' }, [
+      row(soundOn() ? say.soundOn : say.soundOff, () => { const next = !soundOn(); audioManager.setEnabled(next); settingsStore.set('soundEnabled', next); menu(); }, soundOn() ? 'sound' : 'soundOff'),
+      row(settingsStore.get('voiceEnabled') !== false ? say.voicesOn : say.voicesOff, () => { settingsStore.set('voiceEnabled', settingsStore.get('voiceEnabled') === false); if (settingsStore.get('voiceEnabled') === false) window.speechSynthesis?.cancel(); menu(); }, settingsStore.get('voiceEnabled') !== false ? 'mic' : 'micOff'),
+    ]),
+    // background music: off until the player wants it; the game's sounds work either way
+    soundOn() ? row(audioManager.musicOn ? '🎵 Music: on' : '🎵 Music: off', () => { audioManager.unlock(); audioManager.setMusic(!audioManager.musicOn); if (solo && paused) audioManager.musicPause(true); menu(); }, null) : null,
+    row(say.profile, () => { if (match && !Logic?.result?.(match.s) && !window.confirm('Open your profile? This game will end.')) return; leaveAll(); location.href = '../?profile=1'; }, 'user'),
+    row(say.quit, () => { if (match && !Logic?.result?.(match.s) && !window.confirm('Quit this game?')) return; leaveAll(); location.href = '../'; }, 'exit', 'game__choice--danger'),
   ]);
-  // the paused screen: nothing moves until Resume
-  function showPaused() {
-    paint([
-      h('h2', { class: 'game__title' }, ['⏸ Paused']),
-      h('p', { class: 'game__sub' }, ['The game is waiting for you. Nothing moves until you come back.']),
-      row('Resume', close, 'play', 'game__choice--primary'),
-      back('Game menu', menu),
-    ]);
-  }
   menu();
   addEventListener('keydown', onKey, true);
   document.body.append(sheet);
@@ -216,19 +415,27 @@ async function openRules(game) {
   let r = null;
   try { r = (await import(`./rules.js${V}`)).RULES[game.slug]; } catch {}
   if (!r) return;
+  // in the player's language where it has been written; the same steps, so anything missing stays English
+  if (RULES_IN.includes(LANG)) {
+    try {
+      const own = (await import(`./rules-i18n/${LANG}.js${V}`)).default[game.slug];
+      if (own?.steps?.length === r.steps.length) r = { ...r, ...own, house: own.house?.length === r.house?.length ? own.house : r.house };
+    } catch { /* the English stays */ }
+  }
+  const words = { ...RULE_WORDS.en, ...(RULE_WORDS[LANG] || {}) };
   document.querySelector('.sheet')?.remove();
   await new Promise((done) => {
     const sheet = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': `${game.name}: how to play` }, [
       h('div', { class: 'sheet__box' }, [
         h('h1', {}, [`${game.icon} ${say.howTo}: ${game.name}`]),
         h('ol', { class: 'steps' }, r.steps.map(s => h('li', {}, [s]))),
-        h('h2', {}, ['Who wins']), h('p', {}, [r.win]),
-        r.levels ? h('h2', {}, ['Levels']) : null,
+        h('h2', {}, [words.whoWins]), h('p', {}, [r.win]),
+        r.levels ? h('h2', {}, [words.levels]) : null,
         r.levels ? h('ol', {}, r.levels.map(([k, d]) => h('li', {}, [h('strong', {}, [`${k}:`]), ` ${d}`]))) : null,
-        r.house ? h('h2', {}, ['House rules']) : null,
+        r.house ? h('h2', {}, [words.house]) : null,
         r.house ? h('ul', {}, r.house.map(([k, d]) => h('li', {}, [h('strong', {}, [k]), ` ${d}`]))) : null,
-        h('h2', {}, ['Scoring']), h('p', {}, [r.scoring]),
-        h('a', { class: 'rules', href: `../games/${game.slug}/` }, ['Tips and the full guide →']),
+        h('h2', {}, [words.scoring]), h('p', {}, [r.scoring]),
+        h('a', { class: 'rules', href: `../games/${game.slug}/` }, [words.guide]),
         h('div', { class: 'sheet__go' }, [btn(say.gotIt, () => { sheet.remove(); done(); }, 'primary')]),
       ]),
     ]);
@@ -256,7 +463,7 @@ const seatOf = (i) => seats4.indexOf(i);
 
 function fitBoard() {
   if (!world?.story || !board) return;
-  world.story.boardMode(true, { span: board.span, panel: panelOf() });
+  world.story.boardMode(true, { span: board.span, panel: panelOf(), half: board.half });
 }
 function lookFor(name) {
   let n = 0;
@@ -264,10 +471,25 @@ function lookFor(name) {
   const adults = PRESETS.filter(p => p.age !== 'child');
   return lookOf(adults[n % adults.length].id);
 }
+/**
+ * Where everyone sits round the table. The room has four places: 0 back-left, 1 back-right, 2 front-right,
+ * 3 front-left (the camera looks in from the front). The first player (you, usually) sits at the front,
+ * and the others face you across the table, the way people really sit for a game:
+ *  - two players sit opposite each other, corner to corner, so in Chess, Checkers, Carrom and Mancala
+ *    each sits on the side of their own pieces (the first player's side of every board is the front);
+ *  - three: you at the front, the other two across from you;
+ *  - four: round the table in turn order.
+ * A game can ask for something else (Ludo puts each player by their own coloured corner).
+ */
+let seatsFlipped = false;
+const PLACES = { 1: [-1, -1, 0, -1], 2: [1, -1, 0, -1], 3: [1, 2, 0, -1], 4: [2, 3, 0, 1] };
 /** Sit the players down: all of them at four or fewer, otherwise the current player and the next three. */
 function sitDown(players, current = 0) {
   const n = players.length;
-  seats4 = Logic?.places?.(n) || (n <= 4 ? [0, 1, 2, 3].map(k => (k < n ? k : -1)) : [0, 1, 2, 3].map(k => (current + k) % n));
+  seats4 = Logic?.places?.(n) || (n <= 4 ? PLACES[n].slice() : [0, 1, 2, 3].map(k => (current + k) % n));
+  // a board that turns round for the second player (Chess): on their phone they sit at the front too
+  seatsFlipped = !!(board?.def?.faces && n === 2 && shown?.ctx?.me === 1);
+  if (seatsFlipped) seats4 = [0, -1, 1, -1];
   if (!world?.story) return;
   world.story.begin(seats4.map((p, k) => (p < 0
     ? { name: '', look: lookOf(PRESETS[(k * 7) % PRESETS.length].id), color: COLORS[k], isHuman: false, label: '', hidden: true }
@@ -275,17 +497,98 @@ function sitDown(players, current = 0) {
   fitBoard();
 }
 function startBoard(players) {
+  calmTable();
   board?.dispose();
   board = createBoard(G.slug, world, { seatOf });
   sitDown(players);
 }
-const act = (seat, pose, emoji) => {
+const poseTimers = new Map();
+/**
+ * Somebody at the table reacts: a pose, maybe an emoji over their head. A reaction lasts a moment and
+ * then they settle back (into thinking, if it is still their move). `hold` 0 keeps the pose.
+ */
+const act = (seat, pose, emoji, hold = 1900) => {
   if (!world?.story) return;
   const k = seatOf(seat);
   if (k < 0) return;
-  if (pose) world.story.pose(k, pose);
+  if (pose) {
+    world.story.pose(k, pose);
+    clearTimeout(poseTimers.get(k));
+    poseTimers.delete(k);
+    if (hold) poseTimers.set(k, setTimeout(() => { poseTimers.delete(k); world?.story?.pose(k, k === thinking ? 'think' : 'idle'); }, hold));
+  }
   if (emoji) world.story.emote(k, emoji, 2.2);
 };
+const calmTable = () => { poseTimers.forEach(t => clearTimeout(t)); poseTimers.clear(); clearInterval(fidgetTimer); fidgetTimer = 0; lookTurn = -2; };
+
+/* the table's director: who looks where, who's nervous, who's restless, as the game goes */
+let lookTurn = -2, fidgetTimer = 0, lookBack = 0;
+/** Seats one good move from winning: the last card, the last token, the last few squares. */
+function nearWin(view) {
+  if (!view || typeof view !== 'object') return [];
+  const out = [];
+  // the last card only matters where emptying your hand wins (not in Call Break, where hands run down together)
+  if (Array.isArray(view.counts) && ['color-clash', 'crazy-eights'].includes(G?.slug)) view.counts.forEach((c, p) => { if (c === 1) out.push(p); });
+  if (Array.isArray(view.t) && Array.isArray(view.t[0])) view.t.forEach((tok, p) => { if (tok.filter(x => x === 56).length === 3) out.push(p); });
+  if (Array.isArray(view.at)) view.at.forEach((sq, p) => { if (sq >= 90) out.push(p); });
+  return out;
+}
+function direct(ctx, view, players, result) {
+  const st = world?.story;
+  if (!st) return;
+  clearInterval(fidgetTimer);
+  fidgetTimer = 0;
+  if (result) { lookTurn = -2; return; }
+  const seated = players.map((_, i) => seatOf(i)).filter(k => k >= 0);
+  const turn = ctx.active.length === 1 ? seatOf(ctx.active[0]) : -1;
+  if (turn !== lookTurn) {
+    lookTurn = turn;
+    clearTimeout(lookBack);
+    if (turn >= 0) {
+      // the player whose move it is looks at the board; the others glance at them, then back at the board
+      st.look(turn, 'center');
+      seated.forEach((k) => { if (k !== turn) st.look(k, turn); });
+      lookBack = setTimeout(() => seated.forEach((k) => { if (k !== lookTurn) world?.story?.look(k, 'center'); }), 1300);
+    } else seated.forEach(k => st.look(k, 'center'));
+  }
+  // one move from winning: a sly smile for them, worried faces round the table
+  const near = nearWin(view);
+  if (near.length) {
+    near.forEach((p) => { const k = seatOf(p); if (k >= 0) st.mood?.(k, 'sly', 4); });
+    players.forEach((_, p) => { const k = seatOf(p); if (k >= 0 && !near.includes(p)) st.mood?.(k, 'worried', 3); });
+  }
+  // a long wait: the others get restless, one small thing at a time
+  if (turn >= 0) {
+    fidgetTimer = setInterval(() => {
+      const idle = players.map((_, p) => p).filter(p => seatOf(p) >= 0 && seatOf(p) !== lookTurn && !isMe(p) && !poseTimers.has(seatOf(p)));
+      if (!idle.length || document.hidden) return;
+      const p = idle[Math.floor(Math.random() * idle.length)];
+      const k = seatOf(p);
+      const r = Math.random();
+      if (r < 0.3) act(p, 'shrug', null, 1500);
+      else if (r < 0.55) act(p, 'think', null, 1800);
+      else if (r < 0.75) { world?.story?.look(k, lookTurn); setTimeout(() => world?.story?.look(k, 'center'), 1600); }
+      else if (r < 0.88) act(p, 'nervous', null, 1400);
+      else world?.story?.look(k, 'camera');
+    }, 5200 + Math.random() * 1800);
+  }
+}
+/** The end of a match: the winner jumps for joy and dances, the rest are surprised, then clap. */
+function cheerTable(winners, players) {
+  calmTable();
+  const st = world?.story;
+  if (!st) return;
+  if (!winners?.length) { players.forEach((_, p) => act(p, 'shrug', '🤝', 2600)); return; }
+  const w0 = seatOf(winners[0]);
+  winners.forEach((w) => { act(w, 'jump', '👑', 0); setTimeout(() => act(w, 'dance', null, 0), 1400); });
+  players.forEach((_, p) => {
+    if (winners.includes(p)) return;
+    act(p, isMe(p) ? 'facepalm' : 'surprised', null, 0);
+    if (w0 >= 0 && seatOf(p) >= 0) st.look(seatOf(p), w0);
+    setTimeout(() => act(p, 'clap', null, 0), 900);
+  });
+  st.effect('confetti');
+}
 /** Is this seat the person holding this phone? */
 const isMe = (seat) => (match ? match.players[seat]?.kind === 'me' : guest && shown?.ctx?.me === seat);
 /** What the people in the room do when something happens in the game. */
@@ -298,18 +601,23 @@ function react(events, players) {
         if (G.slug === 'ludo' && ev.n === 6) { if (isMe(seat)) bump('ludo', 'sixes'); if (match?.s?.sixes === 2 || (guest && 0)) world?.story?.emojiPop('🔥', `${players[seat]?.name || ''}: two sixes!`); }
         if (board?.throwDie) { if (ev.n === 6) setTimeout(() => act(seat, null, '🎉'), 1300); break; }
         // several dice at once (Yacht): the arm still throws them
-        audioManager.play('paper-toss'); if (seatOf(seat) >= 0) world?.story?.rollGesture(seatOf(seat)); break;
+        audioManager.play('dice-throw'); setTimeout(() => audioManager.play('dice-land'), 650); if (seatOf(seat) >= 0) world?.story?.rollGesture(seatOf(seat)); break;
       case 'block': if (seatOf(seat) >= 0) { act(seat, 'cheer', '🧱'); world?.story?.emojiPop('🧱', `${players[seat]?.name || ''}: blockade!`); } break;
-      case 'capture': audioManager.play('reveal');
+      case 'capture': audioManager.play('capture');
+        if (seatOf(seat) >= 0) players.forEach((_, p) => { if (p !== seat && p !== ev.victim && seatOf(p) >= 0) { world?.story?.look(seatOf(p), seatOf(seat)); act(p, 'surprised', null, 900); } });
+        if (isMe(seat) || (Number.isInteger(ev.victim) && isMe(ev.victim))) buzz('capture');
         if (G.slug === 'ludo') { world?.story?.emojiPop('⚔️', `${players[seat]?.name || ''} captured ${players[ev.victim]?.name || ''}!`); if (isMe(seat)) bump('ludo', 'caps'); } act(seat, 'cheer', '😎'); if (seatOf(seat) >= 0) world?.story?.effect('royal', seatOf(seat)); if (Number.isInteger(ev.victim)) act(ev.victim, 'facepalm', '😱'); break;
       case 'line': audioManager.play('confirm'); act(seat, 'cheer', '🔥'); break;
       case 'crown': audioManager.play('reveal'); act(seat, 'cheer', '👑'); break;
-      case 'check': audioManager.play('wrong'); act(seat, 'point', '⚠️'); break;
+      case 'check': audioManager.play('alert'); if (isMe(ev.victim ?? -1) || !isMe(seat)) buzz('wrong'); act(seat, 'point', '⚠️'); break;
       case 'home': if (G.slug === 'ludo') { world?.story?.emojiPop('🏠', `${players[seat]?.name || ''}: a token is home!`); if (isMe(seat)) bump('ludo', 'home'); }
         // falls through
-      case 'ladder': case 'bank': audioManager.play('score'); act(seat, 'clap', '🎉'); break;
-      case 'snake': case 'bust': case 'forfeit': case 'foul': case 'miss': audioManager.play('wrong'); act(seat, 'facepalm', '🙈'); break;
+      case 'ladder': case 'bank': audioManager.play(ev.k === 'ladder' ? 'climb' : ev.k === 'bank' ? 'coin' : 'score'); act(seat, 'clap', '🎉'); break;
+      case 'snake': audioManager.play('slide'); if (isMe(seat)) buzz('hit'); act(seat, 'facepalm', '🙈'); break;
+      case 'bust': case 'forfeit': case 'foul': case 'miss': audioManager.play('wrong'); if (isMe(seat)) buzz('wrong'); act(seat, 'facepalm', '🙈'); break;
       case 'laugh': act(seat, 'laugh', '😂'); break;
+      case 'last': act(seat, 'show', '☝️', 1600); audioManager.play('alert'); players.forEach((_, p) => { if (p !== seat && seatOf(p) >= 0) world?.story?.mood?.(seatOf(p), 'worried', 3); }); break;
+      case 'skip': if (Number.isInteger(ev.victim)) act(ev.victim, 'deny', '⏭️', 1300); act(seat, 'laugh', null, 1200); break;
       case 'prompt': act(seat, ev.kind === 'truth' ? 'think' : 'surprised', ev.kind === 'truth' ? '🤔' : '😬'); break;
       case 'say': if (seatOf(seat) >= 0 && typeof ev.text === 'string') world?.story?.say(seatOf(seat), ev.text.slice(0, 80)); break;
       case 'point': if (seatOf(seat) >= 0 && seatOf(ev.at) >= 0) world?.story?.point(seatOf(seat), seatOf(ev.at)); break;
@@ -320,12 +628,13 @@ function react(events, players) {
       case 'caught': audioManager.play('wrong'); act(seat, 'surprised', '😱'); break;
       case 'saved': audioManager.play('reveal'); act(seat, 'cheer', '🩺'); break;
       case 'move': case 'card': case 'place': case 'flip': case 'shot': case 'draw':
-        audioManager.play('select');
+        audioManager.play({ card: 'card', draw: 'card', flip: 'flip', shot: 'clack' }[ev.k] || 'piece');
+        if (isMe(seat)) buzz('move');
         if (seatOf(seat) >= 0) world?.story?.reachOut(seatOf(seat));
         break;
-      case 'trick': audioManager.play('select'); act(seat, 'clap', null); break;
+      case 'trick': audioManager.play('deal'); act(seat, 'clap', null); break;
       case 'pass': case 'stuck': act(seat, 'facepalm', null); break;
-      case 'deal': case 'draw': audioManager.play('select'); break;
+      case 'deal': case 'draw': audioManager.play('deal'); break;
       default:
     }
   }
@@ -356,24 +665,20 @@ function landThenShow(events, players, me, then) {
     if (finished) return;
     finished = true;
     throwing = false;
-    audioManager.play('select');
     const next = afterThrow || then;
     afterThrow = null;
     next();
   };
-  board.throwDie(r.n, () => world.story.handOf(k), finish, () => audioManager.play('paper-toss'));
+  board.throwDie(r.n, () => world.story.handOf(k), finish, () => audioManager.play('dice-throw'));
   setTimeout(finish, 2600);    // a hidden tab has no frames: never leave the game waiting
 }
-/* "Your turn!": hard to miss */
+/* A sound and optional haptic mark the start of a turn without taking room from the game. */
 let wasMine = false;
-function turnBanner(ctx) {
+function signalTurn(ctx) {
   const mine = ctx.mine;
   if (mine && !wasMine && !match?.opts?.silent) {
-    const b = h('div', { class: 'turnbanner', role: 'status' }, [ctx.pass ? `${ctx.names[ctx.me]}: ${say.yourTurn}` : say.yourTurn]);
-    document.body.append(b);
-    setTimeout(() => b.remove(), 1500);
-    audioManager.play('confirm');
-    navigator.vibrate?.(60);
+    audioManager.play('turn');
+    buzz('turn');
   }
   wasMine = mine && !ctx.pass;
 }
@@ -383,6 +688,9 @@ function present(view, ctx, players, send, result) {
   shown = { view, ctx, players, send, result };
   clearTimeout(autoTimer);
   ctx.mine = ctx.active.includes(ctx.me);
+  // playing the second side of a board that turns round: sit on that side
+  if (board?.def?.faces && players.length === 2 && (ctx.me === 1) !== seatsFlipped) sitDown(players);
+  direct(ctx, view, players, result);
   // whoever's working out a move looks like it, in games with something to work out
   if (world?.story && G.skill) {
     const thinker = ctx.active.length === 1 && !result ? seatOf(ctx.active[0]) : -1;
@@ -402,9 +710,10 @@ function present(view, ctx, players, send, result) {
     console.error('[table] panel', e);
     panel = { title: 'One moment…' };
   }
+  setStatus(view, panel.players);
   if (result) { wasMine = false; showResult(result, ctx, players); return; }
-  paintPanel(panel, ctx, send);
-  turnBanner(ctx);
+  paintPanel(panel, ctx, send, view);
+  signalTurn(ctx);
   // the first few turns of a game: a hand shows where to tap
   hideHint();
   if (ctx.mine && hintsLeft(G.slug) && !Number.isInteger(panel.auto)) {
@@ -425,20 +734,39 @@ function present(view, ctx, players, send, result) {
 let lastStrip = null;
 let thinking = -1;
 const stripOf = (list) => (list ? h('ul', { class: 'strip' }, list.map(x => h('li', { class: x.on ? 'on' : '', style: `--who:${x.color}` }, [h('strong', {}, [x.name]), h('span', {}, [x.text])]))) : null);
-function paintPanel(p, ctx, send) {
+function paintPanel(p, ctx, send, view) {
   lastStrip = p.players || null;
-  setStatus(shown?.view, p.players);
   const play = (i) => () => send(ctx.legal[i]);
   const cards = (p.buttons || []).filter(b => b.card);
   const plain = (p.buttons || []).filter(b => !b.card);
+  const boardPickIndices = board?.pickIndices;
+  const directTicTacToeInput = G?.slug === 'tic-tac-toe' && boardPickIndices?.size > 0;
+  const pickIndices = TOUCH_INPUT || directTicTacToeInput ? boardPickIndices : null;
+  const boardChoices = pickIndices ? plain.filter(b => pickIndices.has(b.i)) : [];
+  const boardChoiceIndices = new Set(boardChoices.map(b => b.i));
+  const panelChoices = plain.filter(b => !boardChoiceIndices.has(b.i));
   const inHand = new Set(cards.map(b => b.card));
   const rest = (p.hand || []).filter(c => !inHand.has(c));
+  const choiceGrid = (choices, alternative = false) => choices.length
+    ? h('div', { class: `${choices.every(b => b.label.length <= 2) ? 'grid tiny' : p.compact ? 'grid compact' : 'grid'}${alternative ? ' grid--board-alternative' : ''}` }, choices.map(b => btn(b.label, play(b.i), `${b.primary ? 'primary' : ''}${b.wide ? ' wide' : ''}`)))
+    : null;
+  const rawTitle = p.title || '';
+  const title = ctx.mine && /^your turn:\s*/i.test(rawTitle)
+    ? rawTitle.replace(/^your turn:\s*/i, '').replace(/^./, c => c.toUpperCase())
+    : rawTitle;
   const kids = [
+    clockRow(view, ctx),
     stripOf(p.players),
     h('div', { class: 'head' }, [
       Number.isInteger(p.die) && p.die >= 1 && p.die <= 6 ? h('span', { class: 'dieface', 'aria-label': `Die shows ${p.die}` }, [String.fromCodePoint(0x2680 + p.die - 1)]) : null,
-      h('h1', {}, [p.title || '']),
+      h('h1', {}, [title]),
+      // against the computer, in a game of skill: take your last move back
+      !shown?.result && canUndo() && ctx.mine && LEVEL !== 'hard' ? (ctx.hinting
+        ? h('button', { type: 'button', class: 'undobtn', title: 'Choose from every move again', onclick: () => { audioManager.play('button'); unhint(); } }, [say.allMoves])
+        : h('button', { type: 'button', class: 'undobtn', title: 'Show a good move (H)', 'aria-label': 'Show a hint', onclick: () => { audioManager.unlock(); hint(); } }, [say.hint])) : null,
+      !shown?.result && canUndo() && match.history?.length ? h('button', { type: 'button', class: 'undobtn', title: 'Take back your last move (Ctrl+Z)', 'aria-label': 'Undo your last move', onclick: () => { audioManager.unlock(); undo(); } }, [say.undo]) : null,
     ]),
+    ctx.hinting ? h('p', { class: 'hintline' }, [say.hintLine]) : null,
     p.lead ? h('p', { class: 'lead' }, [p.lead]) : null,
     p.big ? h('div', { class: 'chit open' }, [h('span', { class: 'big' }, [p.big])]) : null,
     p.prompt ? h('div', { class: 'chit open unfold' }, [h('span', { class: 'prompt' }, [p.prompt])]) : null,
@@ -450,10 +778,11 @@ function paintPanel(p, ctx, send) {
     cards.length ? h('div', { class: 'hand' }, cards.map(b => cardButton(b.label, b.card, play(b.i), b.tint))) : null,
     p.tiles?.length ? h('div', { class: 'hand hand--idle', 'aria-label': 'Your other cards' }, p.tiles.map(t => h('span', { class: `card card--idle card--tint-${t.tint}` }, [t.label]))) : null,
     rest.length ? h('div', { class: 'hand hand--idle', 'aria-label': 'Your other cards' }, rest.map(c => cardChip(c))) : null,
-    plain.length ? h('div', { class: plain.every(b => b.label.length <= 2) ? 'grid tiny' : p.compact ? 'grid compact' : 'grid' }, plain.map(b => btn(b.label, play(b.i), `${b.primary ? 'primary' : ''}${b.wide ? ' wide' : ''}`))) : null,
+    choiceGrid(panelChoices),
+    choiceGrid(boardChoices, true),
     trollBar(ctx),
   ];
-  show(topBar(G), h('section', { class: `panel${p.compact ? ' panel--tight' : ''}` }, kids));
+  show(topBar(G), h('section', { class: `panel panel--play${p.compact ? ' panel--tight' : ''}` }, kids));
   board?.aimOff();
   if (p.aim && selectedAim) board?.aim(ctx.me, selectedAim.x, selectedAim.a, selectedAim.p);
 }
@@ -487,6 +816,52 @@ function aimControls(ctx, send) {
     slider('Power', 0.15, 1, selectedAim.p, (v) => { selectedAim.p = v; }),
     btn('Shoot!', () => { board?.aimOff(); send({ x: selectedAim.x, a: selectedAim.a, p: selectedAim.p }); }, 'primary'),
   ]);
+}
+/* ─── your chess level: everyone starts as a Beginner, and beating a player of a higher level takes you up to it ─── */
+const CHESS_LEVELS = ['beginner', 'novice', 'intermediate', 'good', 'advanced', 'expert', 'master', 'grandmaster'];
+/** A chess table waits longer: finding someone of your own level takes a little time. */
+const publicWait = () => (G?.slug === 'chess' ? 60000 : PUBLIC_WAIT_MS);
+const an = (word) => `${/^[AEIOU]/.test(word) ? 'an' : 'a'} ${word}`;
+const CHESS_NAMES = ['Beginner', 'Novice', 'Intermediate', 'Good', 'Advanced', 'Expert', 'Master', 'Grandmaster'];
+const chessName = (id) => CHESS_NAMES[CHESS_LEVELS.indexOf(id)] || 'Beginner';
+function myChessLevel() {
+  let v = null;
+  try { v = localStorage.getItem('chitplay.chessLevel'); } catch {}
+  return CHESS_LEVELS.includes(v) ? v : 'beginner';
+}
+/** After a chess game you won: the level of the player you beat, if it's above yours, becomes yours. */
+function chessLevelUp(result, ctx) {
+  if (G?.slug !== 'chess' || !match || ctx.me < 0 || ctx.pass || !result.winners?.includes(ctx.me)) return null;
+  const loser = 1 - ctx.me, p = match.players[loser];
+  const beaten = p?.kind === 'bot' ? match.s.level : p?.kind === 'guest' ? p.level : guestState.hostLevel;
+  const was = myChessLevel();
+  if (!CHESS_LEVELS.includes(beaten) || CHESS_LEVELS.indexOf(beaten) <= CHESS_LEVELS.indexOf(was)) return null;
+  try { localStorage.setItem('chitplay.chessLevel', beaten); } catch {}
+  return beaten;
+}
+/* ─── a chess clock ─── */
+let clockTick = 0;
+const showTime = (ms) => { const t = Math.max(0, Math.ceil(ms / 1000)); return t >= 60 ? `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` : `0:${String(t).padStart(2, '0')}${ms < 10000 ? `.${Math.floor((ms % 1000) / 100)}` : ''}`; };
+function clockRow(view, ctx) {
+  clearInterval(clockTick);
+  if (!view?.clock) return null;
+  const since = Date.now(), running = view.end ? -1 : view.p;
+  const cells = [0, 1].map((seat) => h('span', { class: `clock${seat === running ? ' clock--on' : ''}${seat === ctx.me ? ' clock--me' : ''}` }, [
+    h('small', {}, [ctx.names[seat] || '']), h('b', {}, [showTime(view.clock.left[seat])]),
+  ]));
+  const row = h('div', { class: 'clocks', role: 'timer', 'aria-label': 'Chess clock' }, cells);
+  if (running >= 0) {
+    let warned = false;
+    clockTick = setInterval(() => {
+      if (!row.isConnected) { clearInterval(clockTick); return; }
+      if (paused) return;
+      const left = view.clock.left[running] - (Date.now() - since);
+      cells[running].lastChild.textContent = showTime(left);
+      cells[running].classList.toggle('clock--low', left < 20000);
+      if (left < 10000 && !warned && running === ctx.me) { warned = true; audioManager.play('tick'); }
+    }, 100);
+  }
+  return row;
 }
 /* ─── chat: emojis and fixed lines, shown over the sender's head in each reader's language ─── */
 let lines = [];            // this game's lines, in this phone's language
@@ -576,12 +951,13 @@ function showEmoji(seat, e, to = null) {
   const target = Number.isInteger(to) && list[to] && to !== seat ? to : null;
   const k = seatOf(seat), kt = target != null ? seatOf(target) : -1;
   if (k >= 0) world?.story?.throwEmoji(k, kt >= 0 ? kt : null, e);
-  world?.story?.emojiPop(e, target != null ? `${list[seat]?.name || ''} → ${list[target].name}` : list[seat]?.name || '');
+  // only somebody not sitting in the room (a fifth player) needs the small banner to be seen at all
+  else world?.story?.emojiPop(e, target != null ? `${list[seat]?.name || ''} → ${list[target].name}` : list[seat]?.name || '');
   audioManager.play('select');
 }
 const playersNow = () => match?.players || guestState.players;
 let emojiAt = 0;
-/** Always on screen in a game: one tap and everybody sees it, big, right in front of them. */
+/** Always on screen in a game, for everyone, on their turn or not: one tap and it flies across the room to the others. */
 let emojiTo = null;          // null: everybody; otherwise one player's seat
 /**
  * The chat row, always along the bottom of the panel in one line: who it goes to (tap to change),
@@ -592,7 +968,7 @@ function trollBar(ctx) {
   const others = ctx.names.map((n, i) => (i === ctx.me ? null : [i, n])).filter(Boolean);
   if (emojiTo != null && !others.some(([i]) => i === emojiTo)) emojiTo = null;
   const order = [null, ...others.map(([i]) => i)];
-  const nameOf = (i) => (i == null ? '👥 All' : ctx.names[i]);
+  const nameOf = (i) => (i == null ? `👥 ${say.everyone}` : ctx.names[i]);
   const who = h('button', { type: 'button', class: 'chatrow__to', 'aria-label': `Send to: ${nameOf(emojiTo)}. Tap to change.`, onclick: (e) => {
     emojiTo = order[(order.indexOf(emojiTo) + 1) % order.length];
     e.currentTarget.firstChild.textContent = nameOf(emojiTo);
@@ -628,6 +1004,11 @@ document.addEventListener('click', (e) => {
 let match = null;
 let room = null;           // the host's room, when other phones can join
 let guest = null;          // this phone's link to a host
+let pendingOffer = null;
+let postgameOfferNote = null;
+let lastOfferSent = 0;
+let sentOfferId = null;
+let incomingOfferId = null;
 
 function seededPlayers(humans, total) {
   const players = humans.slice();
@@ -640,8 +1021,10 @@ function seededPlayers(humans, total) {
   return players;
 }
 function startMatch(players, opts = {}, resumeState = null) {
-  gameplayStart();
-  recorded = false;
+  audioManager.musicStart('calm');
+  clearPendingOffer();
+  postgameOfferNote = null;
+  recorded = false; seriesDone = false;
   holdPopups(true);
   thinking = -1;
   wasMine = false;
@@ -693,15 +1076,34 @@ function pump(events) {
   if (result) return;
   if (!paused) scheduleActive(active);
 }
-/** Whoever's turn it is and isn't a person here: a computer player, or someone who has gone. */
+/** Bots play quickly; any human seat gets one bot move if its turn sits idle for 30 seconds. */
 function scheduleActive(active) {
   const players = match.players;
+  match.turnAt = Date.now();
+  // a game with a clock: the player to move loses when their time is up
+  const clock = match.s.clock;
+  if (clock && Logic.timeout && active.length === 1) {
+    const seat = active[0];
+    match.timers.set('clock', setTimeout(() => {
+      if (!match || Logic.result(match.s) || !Logic.active(match.s).includes(seat)) return;
+      Logic.timeout(match.s, seat);
+      pump([{ k: 'timeout', seat }]);
+    }, Math.max(0, clock.left[seat])));
+  }
   active.forEach((seat) => {
     const p = players[seat];
     if (p.kind === 'bot') schedule(seat, rand(...BOT_MS));
-    else if (p.kind === 'guest' && !guestLive(p)) schedule(seat, AWAY_MS);
-    else if (match.opts.public) schedule(seat, IDLE_MS);
+    // with other people waiting online, an idle player gets one move made for them after 30 seconds;
+    // playing alone or on one phone, nobody moves for you, and with a clock the clock decides
+    else if ((room || guest) && !clock) schedule(seat, TURN_TIMEOUT_MS);
   });
+}
+/** The time the player to move has used since their turn began comes off their clock. */
+function chargeClock(seat) {
+  const clock = match?.s.clock;
+  if (!clock || !match.turnAt || paused) return;
+  clock.left[seat] = Math.max(0, clock.left[seat] - (Date.now() - match.turnAt));
+  match.turnAt = Date.now();
 }
 function schedule(seat, ms) {
   const wait = Math.max(ms, match.busyUntil - Date.now());
@@ -711,7 +1113,7 @@ function autoMove(seat) {
   if (!match || Logic.result(match.s) || !Logic.active(match.s).includes(seat)) return;
   const legal = Logic.moves(match.s, seat);
   // an easier bot sometimes just makes any legal move; only when the seat is a real bot
-  const slip = match.players[seat].kind === 'bot' && !Logic.check && legal.length > 1 && G.skill && Math.random() < SLIP[LEVEL];
+  const slip = match.players[seat].kind === 'bot' && !match.s.level && !Logic.check && legal.length > 1 && G.skill && Math.random() < SLIP[LEVEL];
   const move = slip ? legal[Math.floor(Math.random() * legal.length)] : Logic.bot(match.s, seat, Math.random, legal);
   submit(seat, move);
 }
@@ -730,7 +1132,7 @@ function showHere(events, active, result, names) {
     me = next ?? match.lastSeat ?? here[0];
   }
   const legal = me >= 0 && active.includes(me) ? Logic.moves(match.s, me) : [];
-  const ctx = { me, legal, active, names, pass: here.length > 1 };
+  const ctx = { me, legal, active, names, pass: here.length > 1, level: LEVEL };
   react(events, players);
   if (result) celebrate(result);
   const send = (move) => submit(me, move);
@@ -752,6 +1154,49 @@ function showHere(events, active, result, names) {
   landThenShow(events, players, me, () => present(viewFor(me), ctx, players, send, result));
 }
 /** A move from someone at the table. Checked here, whoever it came from. */
+/*
+ * Take back a move: only where it's fair and makes sense, against the computer in the games of pure
+ * skill (no dice, no hidden cards: an undo there would let you re-roll or peek). It goes back to the
+ * start of your last turn, the computer's reply undone with it.
+ */
+const UNDO_GAMES = new Set(['chess', 'checkers', 'reversi', 'four-in-a-row', 'tic-tac-toe', 'mancala', 'nine-mens-morris', 'dots-and-boxes']);
+const canUndo = () => !!match && !room && !guest && !match.opts?.public && UNDO_GAMES.has(G?.slug)
+  && match.players.filter(p => p.kind === 'me').length === 1 && match.players.every(p => p.kind === 'me' || p.kind === 'bot');
+function undo() {
+  if (!canUndo() || !match.history?.length || Logic.result(match.s)) return;
+  clearMatchTimers();
+  match.s = match.history.pop();
+  match.lastMover = -1;
+  match.undos = (match.undos || 0) + 1;
+  match.busyUntil = 0;
+  audioManager.play('whoosh');
+  buzz('tap');
+  world?.story?.emojiPop?.('↶', say.movedBack);
+  pump([]);
+}
+addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey && !e.target.closest?.('input, textarea') && !document.querySelector('.sheet')) hint(); });
+addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.target.closest?.('input, textarea')) { e.preventDefault(); undo(); } });
+/**
+ * A hint, in the same fair places as undo: the computer works out a good move for you, and the board
+ * shows only that one (its piece and where it goes glow). Make it, or tap "All moves" to choose freely.
+ */
+function hint() {
+  if (!canUndo() || LEVEL === 'hard' || !shown || shown.result || !shown.ctx.mine || shown.ctx.hinting || !shown.ctx.legal?.length) return;
+  const me = shown.ctx.me;
+  const best = Logic.bot(match.s, me, Math.random, Logic.moves(match.s, me));
+  const i = shown.ctx.legal.findIndex(m => keepKey(m) === keepKey(best));
+  if (i < 0) return;
+  match.hints = (match.hints || 0) + 1;
+  audioManager.play('reveal');
+  buzz('tap');
+  const full = shown.ctx;
+  present(shown.view, { ...full, legal: [full.legal[i]], hinting: full }, shown.players, shown.send, null);
+}
+/** Back to every move after a hint. */
+function unhint() {
+  if (!shown?.ctx.hinting) return;
+  present(shown.view, shown.ctx.hinting, shown.players, shown.send, null);
+}
 function submit(seat, move) {
   if (!match || !move || typeof move !== 'object') return false;
   const { s } = match;
@@ -761,21 +1206,52 @@ function submit(seat, move) {
   let chosen = legal.find(m => keepKey(m) === key);
   if (!chosen && Logic.check) chosen = Logic.check(s, seat, move);
   if (!chosen) return false;
+  // the start of your turn is kept, so it can be taken back (a multi-jump or an extra turn is one turn)
+  if (match.players[seat]?.kind === 'me' && match.lastMover !== seat && canUndo()) {
+    (match.history ||= []).push(JSON.parse(JSON.stringify(s)));
+    if (match.history.length > 60) match.history.shift();
+  }
+  match.lastMover = seat;
+  chargeClock(seat);
   const events = Logic.apply(s, seat, chosen, Math.random) || [];
+  if (s.clock && !Logic.result(s)) s.clock.left[seat] += s.clock.inc || 0;
   pump(events);
   return true;
 }
+/** The sound (and buzz) at the end of a match, for the person holding this phone. */
+function endSound(winners, mine) {
+  if (!winners?.length) { audioManager.play('draw-game'); return; }
+  // nobody of ours at the table (watching), or everybody is (pass the phone): just celebrate
+  if (!mine.length || mine.length > 1) { audioManager.play('victory'); return; }
+  const won = winners.includes(mine[0]);
+  audioManager.play(won ? 'victory' : 'lose');
+  buzz(won ? 'win' : 'lose');
+}
 function celebrate(result) {
-  if (!result.winners?.length) return;
-  audioManager.play('victory');
-  result.winners.forEach((w) => { act(w, 'cheer', '👑'); });
-  match?.players.forEach((_, i) => { if (!result.winners.includes(i)) act(i, 'clap', null); });
-  world?.story?.effect('confetti');
+  endSound(result.winners, match ? match.players.map((p, i) => (isHere(p) ? i : -1)).filter(i => i >= 0) : []);
+  cheerTable(result.winners, match?.players || []);
 }
 /** Your record in each game, and your coins and rank: a finished game always counts for something. */
 let recorded = false;
+/** Wins in a row of matches at the same table (the same game and players), until the page is left. */
+let series = { key: '', wins: {}, draws: 0, played: 0 }, seriesDone = false;
+function countSeries(result, names) {
+  if (seriesDone) return;
+  seriesDone = true;
+  const key = `${G.slug}|${names.join('|')}`;
+  if (series.key !== key) series = { key, wins: {}, draws: 0, played: 0 };
+  series.played += 1;
+  if (!result.winners?.length) series.draws += 1;
+  else result.winners.forEach((w) => { series.wins[w] = (series.wins[w] || 0) + 1; });
+}
+/** "Series: You 2 · Ravi 1 · 1 draw", once there's more than one match to count. */
+function seriesLine(names, me) {
+  if (series.played < 2) return null;
+  const parts = names.map((n, i) => `${i === me ? say.you : n} ${series.wins[i] || 0}`);
+  if (series.draws) parts.push(fill(say.draws, { n: series.draws }));
+  return fill(say.series, { n: series.played, list: parts.join(' · ') });
+}
 function recordResult(result, ctx) {
-  gameplayStop();
   holdPopups(false);
   if (recorded || ctx.me < 0 || ctx.pass) return null;
   recorded = true;
@@ -785,57 +1261,230 @@ function recordResult(result, ctx) {
   try { rec = { ...rec, ...JSON.parse(localStorage.getItem(key)) }; } catch {}
   rec.played += 1;
   if (won) { rec.won += 1; rec.streak += 1; } else rec.streak = 0;
+  // records worth chasing: the longest run of wins, and (where points matter) the best score
+  const mine = Number(result.scores?.[ctx.me]);
+  const newStreak = rec.streak > 1 && rec.streak > (rec.bestStreak || 0);
+  const newScore = SCORED.has(G.slug) && !result.lowWins && Number.isFinite(mine) && rec.played > 1 && mine > (rec.bestScore || 0);
+  rec.bestStreak = Math.max(rec.bestStreak || 0, rec.streak);
+  if (SCORED.has(G.slug) && !result.lowWins && Number.isFinite(mine)) rec.bestScore = Math.max(rec.bestScore || 0, mine);
   try { localStorage.setItem(key, JSON.stringify(rec)); } catch {}
+  if (newScore) popup('🏆', 'New best score!', `${mine}: your best ever at ${G.name}.`);
+  else if (newStreak) popup('🔥', `${rec.streak} wins in a row!`, 'Your longest winning streak yet.');
+  rec.newBest = newScore ? mine : null;
+  rec.newStreak = newStreak;
+  refreshBest();
+  paintStatus();
   const done = gameFinished({ slug: G.slug, won, mode: room || guest ? 'nearby' : 'local', online: !!match?.opts?.public });
   return { ...rec, coins: done.coins, gained: done.gained };
 }
 let lastRecord = null;
-/** After a game: what your room gets next, as a link to My Room. */
-function roomTeaser() {
-  try {
-    const st = playStats();
-    const next = nextForRoom({ wins: Object.values(st.wins || {}).reduce((x, y) => x + y, 0), achievements: achievementList().filter(a => a.done).length, coins: profile.coins });
-    if (!next) return null;
-    return h('a', { class: `roomteaser${next.ready ? ' roomteaser--ready' : ''}`, href: '../', onclick: () => { try { sessionStorage.setItem('chitplay.openRoom', '1'); } catch {} leaveAll?.(); } }, [h('span', { class: 'roomteaser__icon' }, [next.icon]), h('span', {}, [next.text]), h('b', {}, ['🛋️ My Room →'])]);
-  } catch { return null; }
-}
 /** The slate on the wall: this game, and how you have done at it. */
 function chalkSlate() {
   if (!world?.story?.setSlate || !G) return;
   const st = playStats();
-  const row = (k, v) => `${k}${' '.repeat(Math.max(1, 12 - k.length))}${v}`;
-  world.story.setSlate(G.name, [row('Played', st.plays?.[G.slug] || 0), row('Won', st.wins?.[G.slug] || 0), G.video || G.medals ? row('Best', bestOf(G.slug)) : '', '']);
+  const rp = rankProgress();
+  const room = roomLevel();
+  world.story.setSlate(G.name, [
+    `Player L${rp.index + 1} ${rp.title}`,
+    rp.next ? `Next +${rp.next.at - rp.points} pts` : 'Top rank reached',
+    `Room L${room.level} ${room.title}`,
+    `Played ${st.plays?.[G.slug] || 0} · Won ${st.wins?.[G.slug] || 0}`,
+  ]);
+}
+function liveGuestIds() {
+  if (!room || !match) return [];
+  return [...room.guests.entries()]
+    .filter(([, g]) => match.players.some(p => p.kind === 'guest' && p.token === g.token))
+    .map(([id]) => id);
+}
+function setPostgameOfferNote(text, state = 'idle') {
+  if (!postgameOfferNote?.isConnected) return;
+  postgameOfferNote.replaceChildren();
+  postgameOfferNote.hidden = !text;
+  if (text) {
+    postgameOfferNote.append(document.createTextNode(text));
+    if (state === 'declined') postgameOfferNote.append(btn(say.findAnother, findAnotherPlayer, 'result-find'));
+  }
+  document.querySelectorAll('.result-actions .btn').forEach(button => { button.disabled = state === 'waiting'; });
+}
+function findAnotherPlayer() {
+  const url = new URL(location.href);
+  url.searchParams.set('mode', 'online');
+  url.searchParams.delete('join');
+  leaveAll();
+  location.assign(url.href);
+}
+function clearPendingOffer() {
+  if (pendingOffer?.timer) clearTimeout(pendingOffer.timer);
+  pendingOffer = null;
+}
+function showOfferPrompt({ kind, game, fromName }, reply) {
+  document.querySelector('.offer-sheet')?.remove();
+  const prompt = kind === 'again' ? say.offerRematch : fill(say.offerGame, { game: game.name });
+  let answered = false;
+  const sheet = h('div', { class: 'sheet offer-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': prompt }, [
+    h('div', { class: 'sheet__box' }, [
+      h('h1', {}, [fromName ? `${fromName}: ${prompt}` : prompt]),
+      btn(kind === 'again' ? say.playAgain : fill(say.startGame, { game: game.name }), () => {
+        if (answered) return;
+        answered = true;
+        sheet.remove();
+        reply(true);
+      }, 'primary'),
+      btn(say.declineOffer, () => {
+        if (answered) return;
+        answered = true;
+        sheet.remove();
+        reply(false);
+      }),
+    ]),
+  ]);
+  document.body.append(sheet);
+  sheet.querySelector('button')?.focus({ preventScroll: true });
+}
+async function beginOfferedMatch(offer) {
+  if (!room || guest || !match) return;
+  const current = match;
+  const players = current.players.map(p => p.kind === 'guest' && !guestLive(p) ? { ...p, kind: 'bot' } : p);
+  if (offer.kind === 'again') {
+    startMatch(players, current.opts);
+    return;
+  }
+  const next = gameBySlug(offer.game);
+  if (!next || next.video || players.length > next.max) throw new Error('The offered game is unavailable for this table.');
+  const publicMatch = !!current.opts?.public || !!room.isPublic;
+  await loadGame(next);
+  chosenStyle = next.modes?.[0]?.[0] || null;
+  try {
+    const url = new URL(location.href);
+    url.searchParams.set('game', next.slug);
+    ['mode', 'style', 'n', 'rules'].forEach(k => url.searchParams.delete(k));
+    history.replaceState(null, '', url);
+  } catch {}
+  room.broadcast({ t: 'lobby', arcade: true, game: next.slug, players: players.map(p => p.name) });
+  const opts = { ...(chosenStyle ? { style: chosenStyle } : {}), ...(publicMatch ? { public: true } : {}) };
+  startMatch(seededPlayers(players, Math.max(players.length, next.min)), opts);
+}
+function resolveOffer(id, accept, expired = false) {
+  const offer = pendingOffer;
+  if (!offer || offer.id !== id) return;
+  clearPendingOffer();
+  if (offer.source === 'guest') document.querySelector('.offer-sheet')?.remove();
+  const status = accept ? 'accepted' : expired ? 'expired' : 'declined';
+  const response = { t: 'offerResult', id, status };
+  if (offer.source === 'host') room?.broadcast(response);
+  else room?.send(offer.fromId, response);
+  setPostgameOfferNote(accept ? '' : expired ? say.offerExpired : say.offerDeclined, accept ? 'idle' : 'declined');
+  if (!accept) return;
+  beginOfferedMatch(offer).catch((e) => {
+    console.error('[table] offered game', e);
+    message('Couldn’t start the next game', 'Return to the room and try again.', btn(say.backToRoom, () => switchGame(G), 'primary'));
+  });
+}
+function offerFromGuest(id, seat, msg) {
+  if (typeof msg.id !== 'string' || msg.id.length > 64) return;
+  if (!match || !Logic.result(match.s)) { room.send(id, { t: 'offerResult', id: msg.id, status: 'busy' }); return; }
+  if (pendingOffer) { room.send(id, { t: 'offerResult', id: msg.id, status: 'busy' }); return; }
+  const request = normalizeOfferRequest(msg, { currentGame: G, gameBySlug, playerCount: match.players.length });
+  if (!request) {
+    room.send(id, { t: 'offerResult', id: msg.id, status: 'declined' });
+    return;
+  }
+  const offer = { ...request, game: request.game.slug, source: 'guest', fromId: id, timer: null };
+  pendingOffer = offer;
+  offer.timer = setTimeout(() => resolveOffer(offer.id, false, true), 30000);
+  showOfferPrompt({ ...offer, game: request.game, fromName: match.players[seat].name }, accept => resolveOffer(offer.id, accept));
+}
+function replyToOffer(id, msg) {
+  const offer = pendingOffer;
+  const result = applyOfferReply(offer, id, msg);
+  if (result.outcome) resolveOffer(offer.id, result.outcome === 'accepted');
+  else if (result.offer !== offer) pendingOffer = result.offer;
+}
+function createOffer(kind, gameSlug = G.slug) {
+  const ended = guest ? guestState.started && guestState.result : !!match && !!Logic.result(match.s);
+  if (!ended || sentOfferId || pendingOffer || Date.now() - lastOfferSent < 1000) return;
+  const people = guest ? guestState.players.length : match.players.length;
+  const request = normalizeOfferRequest({ id: 'local', kind, game: gameSlug }, { currentGame: G, gameBySlug, playerCount: people });
+  if (!request) return;
+  const game = request.game;
+  lastOfferSent = Date.now();
+  if (guest) {
+    const id = newToken();
+    sentOfferId = id;
+    guest.send({ t: 'offer', id, kind, game: game.slug });
+    setPostgameOfferNote(say.offerSent, 'waiting');
+    return;
+  }
+  if (!room || pendingOffer) return;
+  const targets = liveGuestIds();
+  if (!targets.length) return;
+  const offer = { id: newToken(), kind, game: game.slug, source: 'host', targets: new Set(targets), timer: null };
+  pendingOffer = offer;
+  offer.timer = setTimeout(() => resolveOffer(offer.id, false, true), 30000);
+  room.broadcast({ t: 'offer', id: offer.id, kind, game: game.slug });
+  setPostgameOfferNote(say.offerSent, 'waiting');
 }
 function showResult(result, ctx, players) {
+  audioManager.musicStop();
   setTimeout(chalkSlate, 600);
+  const levelUp = chessLevelUp(result, ctx);
+  if (levelUp) setTimeout(() => notice({ icon: '♟️', title: `Level up: ${chessName(levelUp)}!`, body: `You beat ${an(chessName(levelUp))} player, so that is your level now. Online, you are matched with ${chessName(levelUp)} players.` }), 900);
   lastRecord = recordResult(result, ctx) || lastRecord;
   const names = players.map(p => p.name);
+  countSeries(result, names);
+  const seriesNow = seriesLine(names, ctx.pass ? -1 : ctx.me);
   const order = names.map((n, i) => [n, result.scores[i], i]).sort((a, b) => (result.lowWins ? a[1] - b[1] : b[1] - a[1]));
   const won = result.winners || [];
   const title = !won.length ? (result.story ? 'The story unfolds…' : say.draw)
     : won.length > 1 ? 'A tie at the top!' : won[0] === ctx.me ? `🏆 ${say.youWin}` : ctx.me >= 0 && !ctx.pass ? `😵 You lost! ${fill(say.wins, { name: names[won[0]] })}` : fill(say.wins, { name: names[won[0]] });
   const iAmHost = !guest;
-  show(topBar(G), h('section', { class: 'panel' }, [
+  const hasOpponent = !!guest || liveGuestIds().length > 0;
+  postgameOfferNote = h('div', { class: 'result-feedback', role: 'status', 'aria-live': 'polite', hidden: true });
+  const againButton = hasOpponent
+    ? btn(say.offerRematchButton, () => createOffer('again'), 'primary')
+    : iAmHost
+      ? btn(say.playAgain, async (e) => { if (e?.currentTarget) e.currentTarget.disabled = true; const next = match.players.map(p => ((p.kind === 'guest' && !guestLive(p)) ? { ...p, kind: 'bot' } : p)); const opts = match.opts; if (!playingWithPeople()) await adBreak(`${G.slug}-again`, { pause: () => audioManager.musicPause(true), resume: () => audioManager.musicPause(false) }); startMatch(next, opts); }, 'primary')
+      : h('p', { class: 'lead' }, [say.waitHostAgain]);
+  const anotherButton = hasOpponent
+    ? btn(say.offerAnotherButton, () => openGamePicker(game => createOffer('game', game.slug)))
+    : iAmHost && inFriendsRoom()
+      ? btn(say.anotherGame, () => openGamePicker())
+      : null;
+  const resultActions = h('div', { class: 'result-actions' }, [
+    againButton,
+    anotherButton,
+    iAmHost && inFriendsRoom() ? btn(say.backToRoom, () => switchGame(G)) : null,
+  ].filter(Boolean));
+  const resultMore = h('details', { class: 'result-more' }, [
+    h('summary', {}, [say.more]),
+    guest || inFriendsRoom() ? null : suggestionRow(G.slug, '../', won.includes(ctx.me) ? 'Try these next' : 'Or try another game'),
+    h('a', { class: 'btn', href: '../', onclick: leaveAll }, [say.allGames]),
+    h('a', { class: 'rules', href: `../games/${G.slug}/` }, [{ ...RULE_WORDS.en, ...(RULE_WORDS[LANG] || {}) }.guide]),
+    hotPrompt(G.slug, G.name),
+  ]);
+  show(topBar(G), h('section', { class: 'panel panel--result' }, [
     h('h1', {}, [title]),
     result.note ? h('p', { class: 'lead' }, [result.note]) : null,
+    seriesNow ? h('p', { class: 'record record--series' }, [seriesNow]) : null,
+    match?.undos || match?.hints ? h('p', { class: 'lead' }, [[match.undos ? fill(say.takenBack, { n: match.undos }) : '', match.hints ? fill(say.hintsUsed, { n: match.hints }) : ''].filter(Boolean).join(' · ')]) : null,
     result.story ? h('div', { class: 'chit open story' }, result.story.map(line => h('p', { class: 'line' }, [line]))) : h('ol', { class: 'board' }, order.map(([n, v, i], k) => h('li', { class: won.includes(i) ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][k] || k + 1} ${n}`]), h('strong', {}, [String(v)])]))),
+    lastRecord?.newBest ? h('p', { class: 'record record--best' }, [fill(say.newBestScore, { n: lastRecord.newBest })]) : lastRecord?.newStreak ? h('p', { class: 'record record--best' }, [fill(say.bestStreakLine, { n: lastRecord.streak })]) : null,
     lastRecord ? h('p', { class: 'record' }, [fill(say.record, lastRecord), lastRecord.streak > 1 ? ` · ${fill(say.streak, { n: lastRecord.streak })}` : '', lastRecord.coins ? ` · ${fill(say.coins, { n: lastRecord.coins })}` : '']) : null,
     (() => {
       const rp = rankProgress();
       return h('div', { class: 'rankline' }, [h('span', {}, [`${rp.icon} ${rp.title}`]), h('div', { class: 'rankbar' }, [h('i', { style: `width:${Math.round(rp.share * 100)}%` })]), lastRecord?.gained ? h('small', {}, [`+${lastRecord.gained} rank points`]) : null]);
     })(),
-    roomTeaser(),
-    iAmHost ? btn(say.playAgain, async () => { await adBreak(); startMatch(match.players.map(p => ((p.kind === 'guest' && !guestLive(p)) ? { ...p, kind: 'bot' } : p)), match.opts); }, 'primary') : h('p', { class: 'lead' }, ['Waiting for the host to play again…']),
+    trollBar(ctx),
+    resultActions,
+    postgameOfferNote,
     btn(won.includes(ctx.me) ? '📤 Share my win' : '📤 Share', async () => {
       let pic = null;
       try { const img = new Image(); img.src = world?.story?.snapshot?.() || ''; await img.decode(); pic = img; } catch {}
       const card = resultImage({ picture: pic, game: G, headline: won.includes(ctx.me) ? 'I won!' : title.replace(/^\S+ /, ''), sub: names.join(' · ') });
       await shareResult({ canvas: card, text: `${won.includes(ctx.me) ? 'I won' : 'I played'} ${G.name} on ChitPlay!`, slug: G.slug });
-    }, 'sharebtn'),
-    suggestionRow(G.slug, '../', won.includes(ctx.me) ? 'Try these next' : 'Or try another game'),
-    h('a', { class: 'btn', href: '../', onclick: leaveAll }, [say.allGames]),
-    h('a', { class: 'rules', href: `../games/${G.slug}/` }, ['Tips and the full guide →']),
-    hotPrompt(G.slug, G.name),
+    }, 'result-share'),
+    resultMore,
   ]));
 }
 
@@ -864,8 +1513,8 @@ function intro(game) {
     game.modes ? modeHelp : null,
     btn('▶ Play with computer players', () => solo(size), 'primary'),
     btn('🌍 Play online', () => online(size)),
-    h('div', { class: 'grid two' }, [btn('📶 Nearby', () => nearby(size)), btn('📱 Pass the phone', () => passSetup(size))]),
-    btn('👀 Watch the computer play', () => watch(size)),
+    btn('👫 Play with friends', () => nearby(size)),
+    h('div', { class: 'grid two' }, [btn('👀 Just watch', () => watch(size)), btn('📱 Pass the phone', () => passSetup(size))]),
     btn('Join a friend’s code', () => joinForm()),
     btn(`📖 ${say.howTo}`, () => openRules(game)),
   ]));
@@ -933,7 +1582,9 @@ function openRoom(code, handlers) {
   }, { maxGuests: G.max - 1 });
   room.hostName = myName();
   room.country = homeCountry();
-  return room.open(code);
+  if (G.slug === 'chess') room.level = myChessLevel();
+  // a party's table lead reports the code, so the rest of the table can join it (src/net/party.js)
+  return room.open(code).then((c) => { if (c) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code: c, slug: G.slug } })); return c; });
 }
 const welcomed = new Set();
 function welcome() {
@@ -949,7 +1600,13 @@ function hostMessage(id, msg) {
   const token = room.guests.get(id)?.token;
   const seat = match.players.findIndex(p => p.kind === 'guest' && p.token === token);
   if (seat < 0) return;
-  if (msg.t === 'move') {
+  if (msg.t === 'offer') {
+    if (Date.now() - (match.players[seat].offerAt || 0) <= 4000) return;
+    match.players[seat].offerAt = Date.now();
+    offerFromGuest(id, seat, msg);
+  } else if (msg.t === 'offerReply') {
+    replyToOffer(id, msg);
+  } else if (msg.t === 'move') {
     if (!submit(seat, msg.move)) sendView(id, seat, [], Logic.result(match.s));
   } else if (msg.t === 'talk' && Date.now() - (match.players[seat].saidAt || 0) > 1500) {
     match.players[seat].saidAt = Date.now();
@@ -965,7 +1622,7 @@ function hostMessage(id, msg) {
   }
 }
 function lobbyPlayers() {
-  const guests = room.list.map(g => ({ name: g.name, kind: 'guest', token: g.token, look: g.look }));
+  const guests = room.list.map(g => ({ name: g.name, kind: 'guest', token: g.token, look: g.look, level: g.level }));
   return [{ name: room.hostLabel, kind: 'me', look: myLook() }, ...guests];
 }
 function pushLobby(extra = {}) {
@@ -974,44 +1631,133 @@ function pushLobby(extra = {}) {
   return names;
 }
 
+/* ─── a friends' room: everybody stays in it from game to game, and the host picks what's next ─── */
+let wanted = 0;            // seats at the table in a friends' room; computer players take the ones left
+let qrCache = null;        // the room's QR code, drawn once (repainting the lobby must not make it flicker)
+/** The games a friends' room can move to: every table game (the TV games have their own screens). */
+const ROOM_GAMES = ALL_GAMES.filter(g => !g.video);
+const inFriendsRoom = () => !!room && !guest && !match?.opts?.public && !paintPublic;
+
 async function nearby(size) {
   show(topBar(G), h('section', { class: 'panel' }, [h('h1', {}, ['Opening a room…']), h('p', { class: 'lead' }, ['Getting a code for your friends.'])]));
-  let wanted = size;
-  const paint = () => {
-    const names = pushLobby();
-    const link = `${location.origin}${location.pathname}?join=${room.code}`;
-    const err = h('p', { class: 'err', role: 'alert' });
-    const qr = h('div', { class: 'qr' });
-    import(`../net/qr.js${V}`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join'); if (svg) qr.append(svg); }).catch(() => {});
-    show(topBar(G), h('section', { class: 'panel' }, [
-      h('h1', {}, ['Friends join with this code']),
-      h('p', { class: 'code', 'aria-label': `Room code ${room.code}` }, [`${room.code.slice(0, 3)} ${room.code.slice(3)}`]),
-      qr,
-      h('button', { type: 'button', class: 'btn', onclick: async (e) => { const b = e.currentTarget; try { if (navigator.share) await navigator.share({ title: G.name, text: `Join my ${G.name} game on ChitPlay`, url: link }); else { await navigator.clipboard.writeText(link); b.textContent = 'Link copied!'; } } catch {} } }, ['Share the invite link']),
-      h('h2', {}, [`Players (${names.length} of ${G.max === G.min ? G.max : `${G.min}–${G.max}`})`]),
-      h('ol', { class: 'names joined' }, names.map((n, i) => h('li', {}, [i ? n : `${n} (host)`]))),
-      h('p', { class: 'lead' }, [wanted > names.length ? `Computer players will take the other ${wanted - names.length} seat${wanted - names.length > 1 ? 's' : ''}.` : 'Everyone here plays.']),
-      err,
-      btn('Start', () => {
-        const players = lobbyPlayers();
-        room.lock();
-        startMatch(seededPlayers(players, Math.max(wanted, players.length, G.min)), styleOpts());
-      }, 'primary'),
-      btn('Back', () => { room.close(); room = null; intro(G); }),
-    ]));
-  };
+  wanted = size;
   try {
-    await openRoom(null, { onChange: () => { if (!match) paint(); } });
-    paint();
+    await openRoom(null, { onChange: () => { if (!match) hostLobby(); } });
+    hostLobby();
   } catch (e) {
     room?.close();
     room = null;
     message('Couldn’t open a room', netError(e), btn('Play with computer players instead', () => solo(size), 'primary'), btn('Back', () => intro(G)));
   }
 }
+/** The host's lobby: the code, who's here, how many seats, which mode, and which game. */
+function hostLobby() {
+  if (!room) return;
+  const names = pushLobby();
+  const people = names.length;
+  wanted = Math.min(Math.max(G.max, people), Math.max(G.min, people, wanted || G.seats));
+  const link = `${location.origin}${location.pathname}?join=${room.code}`;
+  if (qrCache?.code !== room.code) {
+    qrCache = { code: room.code, el: h('div', { class: 'qr' }) };
+    const el = qrCache.el;
+    import(`../net/qr.js${V}`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join'); if (svg) el.append(svg); }).catch(() => {});
+  }
+  // seats: never fewer than the people here, never more than the game takes
+  const sizes = [];
+  for (let n = Math.max(G.min, people); n <= Math.max(people, Math.min(G.max, 6)); n++) sizes.push(n);
+  const guests = room.list;
+  const seatsLeft = wanted - people;
+  show(topBar(G), h('section', { class: 'panel lobby' }, [
+    h('div', { class: 'lobby__game' }, [
+      h('span', { class: 'lobby__icon', 'aria-hidden': 'true' }, [G.icon]),
+      h('div', {}, [h('small', {}, [say.nowPlaying]), h('strong', {}, [G.name])]),
+      btn(say.change, () => openGamePicker(), 'lobby__change'),
+    ]),
+    h('h1', {}, [say.friendsJoin]),
+    h('p', { class: 'code', 'aria-label': `Room code ${room.code}` }, [`${room.code.slice(0, 3)} ${room.code.slice(3)}`]),
+    qrCache.el,
+    h('button', { type: 'button', class: 'btn', onclick: async (e) => { const b = e.currentTarget; try { if (navigator.share) await navigator.share({ title: 'ChitPlay', text: `Join my ${G.name} game on ChitPlay`, url: link }); else { await navigator.clipboard.writeText(link); b.textContent = 'Link copied!'; } } catch {} } }, [say.shareInvite]),
+    h('h2', {}, [`Players (${people} of ${G.max === G.min ? G.max : `${G.min}–${G.max}`})`]),
+    h('ol', { class: 'names joined lobby__names' }, [
+      h('li', {}, [h('span', {}, [`${names[0]} (host)`])]),
+      ...guests.map(g => h('li', {}, [
+        h('span', {}, [g.name]),
+        h('button', { type: 'button', class: 'x', 'aria-label': `Remove ${g.name} from the room`, title: 'Remove from the room', onclick: () => { if (window.confirm(`Remove ${g.name} from the room?`)) room.kick(g.id); } }, ['✕']),
+      ])),
+    ]),
+    sizes.length > 1 ? h('div', { class: 'opt' }, [h('span', {}, [say.seats]), h('div', { class: 'chips', role: 'group', 'aria-label': 'Seats at the table' }, sizes.map(n => h('button', { type: 'button', class: `chip${n === wanted ? ' on' : ''}`, 'aria-pressed': String(n === wanted), onclick: () => { wanted = n; hostLobby(); } }, [String(n)])))]) : null,
+    G.modes ? h('div', { class: 'opt' }, [h('span', {}, ['Mode']), h('div', { class: 'chips' }, G.modes.map(([id, label]) => h('button', { type: 'button', class: `chip wide${id === chosenStyle ? ' on' : ''}`, 'aria-pressed': String(id === chosenStyle), onclick: () => { chosenStyle = id; hostLobby(); } }, [label])))]) : null,
+    G.modes ? h('p', { class: 'lead' }, [G.modes.find(m => m[0] === chosenStyle)?.[2] || '']) : null,
+    h('p', { class: 'lead' }, [seatsLeft > 0 ? `Computer players will take the other ${seatsLeft} seat${seatsLeft > 1 ? 's' : ''}.` : 'Everyone here plays.']),
+    btn(fill(say.startGame, { game: G.name }), () => {
+      const players = lobbyPlayers();
+      room.lock();
+      startMatch(seededPlayers(players, Math.max(wanted, players.length, G.min)), styleOpts());
+    }, 'primary'),
+    btn(`📖 ${say.howTo}`, () => openRules(G)),
+    btn(say.closeRoom, () => { if (guests.length && !window.confirm('Close the room? Your friends will be sent out.')) return; room.close(); room = null; intro(G); }),
+  ]));
+}
+/** The host picks the next game for everybody. Games that can't seat everyone here are greyed out. */
+function openGamePicker(onPick = null) {
+  if ((!room || guest) && !onPick) return;
+  document.querySelector('.sheet')?.remove();
+  const people = match?.players.length || guestState.players.length || (room ? 1 + room.guests.size : 1);
+  const close = () => sheet.remove();
+  const groups = ['Board', 'Cards', 'Dice', 'Puzzle', 'Party'].map(kind => [kind, ROOM_GAMES.filter(g => g.kind === kind)]).filter(([, list]) => list.length);
+  const tile = (g) => {
+    const fits = g.max >= people && (world || !ROOM_GAMES_NEED_3D.has(g.slug)) && (!onPick || g !== G);
+    return h('button', { type: 'button', class: `pick${g === G ? ' on' : ''}`, disabled: !fits, 'aria-pressed': String(g === G), style: `--accent:${g.accent}`, title: fits ? g.blurb : `Up to ${g.max} players`, onclick: () => { close(); audioManager.play('button'); if (onPick) onPick(g); else switchGame(g); } }, [
+      h('span', { class: 'pick__icon', 'aria-hidden': 'true' }, [g.icon]),
+      h('strong', {}, [g.name]),
+      h('small', {}, [fits ? `${g.min === g.max ? g.min : `${g.min}–${g.max}`} players` : `Up to ${g.max}`]),
+    ]);
+  };
+  const sheet = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Pick a game', onclick: (e) => { if (e.target === sheet) close(); } }, [
+    h('div', { class: 'sheet__box' }, [
+      h('h1', {}, [say.pickNext]),
+      h('p', { class: 'lead' }, [onPick ? say.offerPickHelp : fill(say.everyoneMoves, { n: people })]),
+      ...groups.flatMap(([kind, list]) => [h('h2', {}, [kind]), h('div', { class: 'picks' }, list.map(tile))]),
+      btn(say.close, close),
+    ]),
+  ]);
+  document.body.append(sheet);
+  sheet.querySelector('.pick.on, .pick:not([disabled])')?.focus({ preventScroll: true });
+}
+/** The same board on the mat as the game everybody is about to play. */
+function previewBoard() {
+  board?.dispose();
+  board = null;
+  if (world?.story) { try { board = createBoard(G.slug, world, { seatOf }); } catch (e) { console.warn('[table] board preview', e); } }
+  fitBoard();
+}
+/** Everybody in the room moves to another game: new rules, new board, back to the lobby. */
+async function switchGame(game) {
+  if (!room || guest) return;
+  clearPendingOffer();
+  document.querySelector('.sheet')?.remove();
+  postgameOfferNote = null;
+  clearMatchTimers();
+  match = null;
+  paused = false;
+  holdPopups(false);
+  if (game !== G) {
+    await loadGame(game);
+    chosenStyle = game.modes?.[0]?.[0] || null;
+    wanted = game.seats;
+    try { const u = new URL(location.href); u.searchParams.set('game', game.slug); ['mode', 'style', 'n'].forEach(k => u.searchParams.delete(k)); history.replaceState(null, '', u); } catch {}
+    world?.story?.emojiPop?.(game.icon, `Next game: ${game.name}`);
+  }
+  setStatus(null, []);
+  previewBoard();
+  chalkSlate();
+  room.unlock(G.max - 1);
+  hostLobby();
+}
 
 /** Play online: a table with people already waiting (your own country first), or open one for the next player. */
 async function online(size = G.seats) {
+  if (G.slug === 'chess') { chessOnline(); return; }
   let cancelled = false;
   show(topBar(G), h('section', { class: 'panel' }, [
     h('h1', {}, ['Finding a table…']),
@@ -1049,11 +1795,78 @@ async function online(size = G.seats) {
   if (cancelled) return;
   message('No connection right now', 'You can still play this game with computer players, and try online again later.', btn('Play with computer players', () => solo(size), 'primary'), btn('Try again', () => online(size)), btn('Back', () => intro(G)));
 }
+/**
+ * Chess online: you are matched with a player of your own level. If nobody of your level is waiting,
+ * you can play someone waiting at a lower level instead, wait at your own level's table, or play the
+ * computer at your level.
+ */
+const CHESS_TABLES = 4;
+const chessCodes = (level) => Array.from({ length: CHESS_TABLES }, (_, i) => tableCode(`chess-${level}`, i + 1));
+async function chessOnline() {
+  let cancelled = false;
+  const mine = myChessLevel(), myName_ = chessName(mine);
+  const searching = (lead) => show(topBar(G), h('section', { class: 'panel' }, [
+    h('h1', {}, [`Finding ${an(myName_)} player…`]),
+    h('p', { class: 'lead' }, [lead]),
+    h('div', { class: 'spinner', 'aria-hidden': 'true' }),
+    btn('Back', () => { cancelled = true; room?.close(); room = null; intro(G); }),
+  ]));
+  searching(`Your level: ${myName_}. Looking for someone at the same level.`);
+  const open = (list) => list.filter(t => !t.locked && t.seats < 1);
+  let same = [];
+  try { same = open(await peekTables(chessCodes(mine))); } catch { /* offline: handled below */ }
+  if (cancelled) return;
+  for (const t of same) if (await joinGame(t.code, myName(), true) === 'joined' || cancelled) return;
+  // nobody at your level: who is waiting below it?
+  searching(`No ${myName_} player is waiting. Looking at the levels below yours…`);
+  const lower = CHESS_LEVELS.slice(0, CHESS_LEVELS.indexOf(mine)).reverse();
+  let below = [];
+  try { below = open(await peekTables(lower.flatMap(chessCodes))); } catch { /* none */ }
+  if (cancelled) return;
+  const levelOfCode = (code) => /^public-chess-([a-z]+)-\d+$/.exec(code)?.[1];
+  below.sort((a, b) => CHESS_LEVELS.indexOf(levelOfCode(b.code)) - CHESS_LEVELS.indexOf(levelOfCode(a.code)));
+  const home = homeCountry();
+  const offers = below.slice(0, 3).map((t) => {
+    const lv = levelOfCode(t.code);
+    return btn(`♟️ Play ${an(chessName(lv))} player${t.country ? ` · ${t.country === home ? 'from your country' : t.country}` : ''}`, async () => {
+      if (await joinGame(t.code, myName()) !== 'joined') chessOnline();
+    }, 'primary');
+  });
+  show(topBar(G), h('section', { class: 'panel' }, [
+    h('h1', {}, [`No ${myName_} player online right now`]),
+    h('p', { class: 'lead' }, [offers.length
+      ? `These players are waiting at a lower level. Beating them won't raise your level, but it's a real game.`
+      : `Nobody else is waiting for chess at the moment.`]),
+    ...offers,
+    btn(`⏳ Wait for ${an(myName_)} player`, () => hostChessTable(), offers.length ? '' : 'primary'),
+    btn(`🤖 Play the computer at ${myName_} level`, () => { chosenRating = mine; solo(2); }),
+    btn('Back', () => intro(G)),
+  ]));
+}
+/** Sit at a free table of your own level and wait; a computer of your level plays you if nobody comes. */
+async function hostChessTable() {
+  const codes = chessCodes(myChessLevel());
+  for (const code of codes) {
+    try {
+      await openRoom(code, { onChange: () => paintPublic?.() });
+      chosenRating = myChessLevel();
+      publicTable(2);
+      return;
+    } catch (e) {
+      room?.close(); room = null;
+      if (e?.type !== 'unavailable-id') break;
+      if (await joinGame(code, myName(), true) === 'joined') return;
+    }
+  }
+  message('No connection right now', 'You can still play chess with the computer, and try online again later.', btn('Play with the computer', () => solo(2), 'primary'), btn('Back', () => intro(G)));
+}
+/** The computer's level when it fills a seat at your own table online. */
+let chosenRating = null;
 let paintPublic = null;
 /** Which way of playing this game was chosen (Ludo: normal or score). */
 let chosenStyle = null;
 const houseRules = Object.fromEntries((params.get('rules') || '').split(',').filter(Boolean).map(k => [k, true]));
-const styleOpts = () => ({ ...(chosenStyle ? { style: chosenStyle } : {}), ...(Object.keys(houseRules).length ? { rules: houseRules } : {}) });
+const styleOpts = () => ({ ...(chosenStyle ? { style: chosenStyle } : {}), ...(Object.keys(houseRules).length ? { rules: houseRules } : {}), ...((chosenRating || params.get('rating')) ? { rating: chosenRating || params.get('rating') } : {}), ...(/^\d+(\+\d+)?$/.test(params.get('clock') || '') ? { clock: params.get('clock') } : {}) });
 /** Hosting a public table: it starts when it's full, or when the wait is over. Bots take the seats left. */
 function publicTable(size) {
   const opened = Date.now();
@@ -1070,10 +1883,11 @@ function publicTable(size) {
     startMatch(seededPlayers(players, Math.max(total, players.length)), { public: true, ...styleOpts() });
   };
   const tick = () => {
-    const left = Math.max(0, Math.ceil((opened + PUBLIC_WAIT_MS - Date.now()) / 1000));
+    const left = Math.max(0, Math.ceil((opened + publicWait() - Date.now()) / 1000));
     const humans = lobbyPlayers();
     // seats fill one by one, so the table is full by the time the wait is over; real players come first
-    const due = Math.min(total - humans.length, Math.floor(((Date.now() - opened) / PUBLIC_WAIT_MS) * (total - 0.2)));
+    // chess: the computer sits down only when the wait is over, so a player of your level can still find the seat
+    const due = G.slug === 'chess' ? (Date.now() - opened >= publicWait() ? total - humans.length : 0) : Math.min(total - humans.length, Math.floor(((Date.now() - opened) / publicWait()) * (total - 0.2)));
     while (bots.length > Math.max(0, total - humans.length)) bots.pop();
     while (bots.length < due) {
       const b = localName([...humans.map(p => p.name), ...bots.map(x => x.name)]);
@@ -1096,7 +1910,7 @@ function publicTable(size) {
 }
 
 /* ─── a player's own phone, at somebody else's table ─── */
-const guestState = { players: [], me: -1, code: '', name: '', started: false };
+const guestState = { players: [], me: -1, code: '', name: '', started: false, result: false };
 const TOKEN = 'chitplay.table.token';
 async function joinGame(code, name, quiet = false) {
   let token = null;
@@ -1104,7 +1918,8 @@ async function joinGame(code, name, quiet = false) {
   if (!token) { token = newToken(); try { sessionStorage.setItem(TOKEN, token); } catch {} }
   const link = new NearbyGuest({ onMessage: guestMessage, onClose: guestClosed });
   try {
-    const hello = await link.join(code, name, token, { look: myLook() });
+    const hello = await link.join(code, name, token, { look: myLook(), ...(G?.slug === 'chess' ? { level: myChessLevel() } : {}) });
+    guestState.hostLevel = /^public-chess-([a-z]+)-\d+$/.exec(code)?.[1] || '';
     if (!hello?.arcade) {
       // it's a room of the main game: that page knows how to join it
       link.close();
@@ -1136,20 +1951,76 @@ async function joinGame(code, name, quiet = false) {
 function guestLobby(m) {
   if (guestState.started) return;
   const names = Array.isArray(m.players) ? m.players.slice(0, 12).map(n => String(n).slice(0, 20)) : [];
-  show(topBar(G), h('section', { class: 'panel' }, [
-    h('h1', {}, ['You’re in!']),
-    h('p', { class: 'lead' }, [Number.isFinite(m.startsIn) ? `Starting in ${Math.max(0, m.startsIn | 0)} seconds…` : 'Waiting for the host to start.']),
-    names.length ? h('ol', { class: 'names joined' }, names.map(n => h('li', {}, [n]))) : null,
-    h('a', { class: 'btn', href: '../', onclick: leaveAll }, ['Leave']),
+  show(topBar(G), h('section', { class: 'panel lobby' }, [
+    h('h1', {}, [say.youreIn]),
+    G ? h('div', { class: 'lobby__game' }, [
+      h('span', { class: 'lobby__icon', 'aria-hidden': 'true' }, [G.icon]),
+      h('div', {}, [h('small', {}, [say.nextGame]), h('strong', {}, [G.name])]),
+    ]) : null,
+    h('p', { class: 'lead' }, [Number.isFinite(m.startsIn) ? `Starting in ${Math.max(0, m.startsIn | 0)} seconds…` : say.waitHost]),
+    names.length ? h('ol', { class: 'names joined' }, names.map((n, i) => h('li', {}, [i ? n : `${n} (host)`]))) : null,
+    G ? btn(`📖 ${say.howTo}`, () => openRules(G)) : null,
+    h('a', { class: 'btn', href: '../', onclick: leaveAll }, [say.leave]),
   ]));
 }
+/** Messages are handled one at a time: moving to another game loads its rules before anything else lands. */
+let guestChain = Promise.resolve();
 function guestMessage(m) {
-  if (m.t === 'lobby') { guestLobby(m); return; }
+  guestChain = guestChain.then(() => onGuestMessage(m)).catch(e => console.warn('[table] guest message', e));
+}
+/** The host moved the room to another game (or back to the lobby): follow along. */
+async function guestFollow(m) {
+  const next = gameBySlug(m.game);
+  if (next && !next.video && next !== G) {
+    await loadGame(next);
+    chosenStyle = next.modes?.[0]?.[0] || null;
+    previewBoard();
+    chalkSlate();
+    world?.story?.emojiPop?.(next.icon, `Next game: ${next.name}`);
+    await howToFirstTime(next);
+  }
+  if (guestState.started) { guestState.started = false; guestState.result = false; recorded = false; seriesDone = false; setStatus(null, []); }
+}
+async function onGuestMessage(m) {
+  if (m.t === 'offer') {
+    if (!guest || !guestState.started || !guestState.result || typeof m.id !== 'string' || m.id.length > 64) return;
+    const request = normalizeOfferRequest(m, { currentGame: G, gameBySlug, playerCount: guestState.players.length });
+    if (!request) {
+      guest.send({ t: 'offerReply', id: m.id, accept: false });
+      return;
+    }
+    incomingOfferId = m.id;
+    showOfferPrompt({ kind: request.kind, game: request.game, fromName: guestState.players[0]?.name }, accept => {
+      incomingOfferId = null;
+      guest?.send({ t: 'offerReply', id: m.id, accept });
+    });
+    return;
+  }
+  if (m.t === 'offerResult') {
+    if (m.id === sentOfferId) sentOfferId = null;
+    else if (m.id === incomingOfferId) {
+      incomingOfferId = null;
+      document.querySelector('.offer-sheet')?.remove();
+    } else return;
+    setPostgameOfferNote(m.status === 'accepted' ? '' : m.status === 'expired' ? say.offerExpired : say.offerDeclined, m.status === 'accepted' ? 'idle' : 'declined');
+    return;
+  }
+  if (m.t === 'lobby') {
+    if (!guest) return;   // the welcome while joining: joinGame shows the lobby itself
+    await guestFollow(m);
+    guestLobby(m);
+    return;
+  }
   if (m.t === 'sit') {
     if (!Array.isArray(m.players)) return;
+    document.querySelector('.sheet')?.remove();
+    postgameOfferNote = null;
+    sentOfferId = null;
+    incomingOfferId = null;
     guestState.players = m.players.slice(0, 12).map((p, i) => ({ name: String(p?.name || `Player ${i + 1}`).slice(0, 20), look: p?.look || null }));
     guestState.started = true;
-    recorded = false;
+    guestState.result = false;
+    recorded = false; seriesDone = false;
     startBoard(guestState.players.map(p => ({ ...p, look: p.look || lookFor(p.name) })));
     return;
   }
@@ -1162,16 +2033,15 @@ function guestMessage(m) {
     const legal = Array.isArray(m.legal) ? m.legal : [];
     const active = Array.isArray(m.active) ? m.active.filter(Number.isInteger) : [];
     const ctx = { me, legal, active, names: players.map(p => p.name) };
+    guestState.result = !!m.result;
     react(m.events, players);
     if (m.result) celebrateGuest(m.result, players);
     landThenShow(m.events, players, me, () => present(m.view, ctx, players, (move) => { app.querySelectorAll('.panel button').forEach((b) => { b.disabled = true; }); guest?.send({ t: 'move', move }); }, m.result || null));
   }
 }
 function celebrateGuest(result, players) {
-  if (!result.winners?.length) return;
-  audioManager.play('victory');
-  result.winners.forEach((w) => { if (players[w]) act(w, 'cheer', '👑'); });
-  world?.story?.effect('confetti');
+  endSound(result.winners, Number.isInteger(shown?.ctx?.me) && shown.ctx.me >= 0 ? [shown.ctx.me] : []);
+  cheerTable(result.winners, players);
 }
 function guestClosed(reason) {
   const again = { code: guestState.code, name: guestState.name };
@@ -1180,6 +2050,7 @@ function guestClosed(reason) {
   if (reason === 'lost' && started) { reconnect(again, 6); return; }
   const why = { 'host-left': 'The host closed the game.', kicked: 'The host removed you from the game.', started: 'That game had already started.' }[reason] || 'Lost the connection to the host’s phone.';
   guestState.started = false;
+  guestState.result = false;
   message('Game over here', why, reason === 'lost' ? btn('Join again', () => joinForm(again.code), 'primary') : null, h('a', { class: 'btn', href: '../', onclick: leaveAll }, ['All games']));
 }
 async function reconnect(again, tries) {
@@ -1191,7 +2062,7 @@ async function reconnect(again, tries) {
   guestState.started = false;
   message('Game over here', 'Couldn’t get back to the host’s phone.', h('a', { class: 'btn', href: '../', onclick: leaveAll }, ['All games']));
 }
-function joinForm(code = '') {
+function joinForm(code = '', auto = false) {
   const codeIn = h('input', { value: code, inputmode: 'numeric', maxlength: '7', autocomplete: 'off', 'aria-label': 'Room code', placeholder: '6-digit code' });
   const nameIn = h('input', { value: myName(), maxlength: '14', 'aria-label': 'Your name', placeholder: 'Your name' });
   const err = h('p', { class: 'err', role: 'alert' });
@@ -1205,16 +2076,19 @@ function joinForm(code = '') {
   }, 'primary');
   show(topBar(G), h('section', { class: 'panel' }, [
     h('h1', {}, ['Join a friend’s game']),
-    h('p', { class: 'lead' }, ['The host taps Nearby and gets a code. Type it here.']),
+    h('p', { class: 'lead' }, ['The host taps Play with friends and gets a code. Type it here.']),
     h('label', { class: 'opt' }, [h('span', {}, ['Code']), codeIn]),
     h('label', { class: 'opt' }, [h('span', {}, ['Your name']), nameIn]),
     err, go,
   ]));
+  // sent here by a party: join straight away, no tap needed
+  if (auto && isCode(code)) setTimeout(() => go.click(), 250);
 }
 
 function leaveAll() {
+  audioManager.musicStop(0.4);
   paused = false;
-  gameplayStop();
+  clearPendingOffer();
   holdPopups(false);
   clearMatchTimers();
   guest?.close();
@@ -1231,12 +2105,17 @@ async function loadGame(game) {
   Logic = (await import(`./games/${game.slug}.js${V}`)).default;
   document.title = `${game.name}: Play Free in 3D | ChitPlay`;
   lines = linesFor(game.slug, LANG);
+  applyTheme(game);
+  refreshBest();
 }
 const ROOM_GAMES_NEED_3D = new Set(ALL_GAMES.filter(g => g.kind !== 'Party' && !g.video).map(g => g.slug));
 /** The TV games have their own screen and controls; the room and the words are shared. */
 async function startTv(game, extra) {
   const { runTv } = await import(`./tv.js${V}`);
-  return runTv({ game, world, h, btn, show, topBar, say, LANG, myName, myLook, localName, localLook, leaveAll, audio: n => audioManager.play(n), emojis: myEmojis, join: code => joinGame(code, myName(), true), ...extra });
+  G = game;
+  applyTheme(game);
+  refreshBest();
+  return runTv({ game, world, h, btn, show, topBar, say, LANG, myName, myLook, localName, localLook, leaveAll, music: on => (on ? audioManager.musicStart('arcade') : audioManager.musicStop()), audio: n => audioManager.play(n), haptic: k => audioManager.haptic(k), liveBest, refreshBest: () => { refreshBest(); paintStatus(); }, emojis: myEmojis, join: code => joinGame(code, myName(), true), ...extra });
 }
 
 async function main() {
@@ -1245,8 +2124,10 @@ async function main() {
   const game = gameBySlug(slug);
   if (!game && !isCode(join)) { location.replace('../'); return; }
   G = game;
+  applyTheme(game);
+  // the party button: a party follows its host from game to game
+  try { mountParty({ root: '../', game: game?.slug || null, place: 'play' }); } catch (e) { console.warn('[party]', e); }
   const w = await loadWorld();
-  loadingDone();
   if (w?.story) {
     world = w;
     document.body.classList.add('room');
@@ -1257,7 +2138,7 @@ async function main() {
     chalkSlate();
     addEventListener('resize', fitBoard);
   }
-  if (isCode(join)) { joinForm(join); return; }
+  if (isCode(join)) { joinForm(join, params.get('auto') === '1'); return; }
   onPopup((k) => audioManager.play(k || 'reveal'));
   startReminder(LANG);
   if (game.video) {
@@ -1265,7 +2146,8 @@ async function main() {
     document.title = `${game.name}: Play Free | ChitPlay`;
     const n = Math.min(game.max, Math.max(game.min, Number(params.get('n')) || game.seats));
     const tvMode = params.get('mode') || 'play';
-    if (tvMode !== 'watch') await howToFirstTime(game);
+    // a party is waiting at this table: its lead opens the room at once (the rules stay in the menu)
+    if (tvMode !== 'watch' && params.get('party') !== '1') await howToFirstTime(game);
     await startTv(game, { mode: tvMode, size: n });
     return;
   }
@@ -1291,7 +2173,7 @@ async function main() {
     }
     clearSaved(game.slug);
   }
-  if (mode && mode !== 'watch') await howToFirstTime(game);
+  if (mode && mode !== 'watch' && params.get('party') !== '1') await howToFirstTime(game);
   if (mode === 'play') solo(size);
   else if (mode === 'online') online(size);
   else if (mode === 'nearby') nearby(size);

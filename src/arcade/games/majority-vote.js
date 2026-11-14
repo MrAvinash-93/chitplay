@@ -2,8 +2,8 @@
  * Majority Vote: everyone secretly picks what they think most of the table will pick. One point for
  * being with the majority (two answers level both count).
  */
-import { leaders, pick, seatsOf, shuffle } from '../lib.js?v=20261110-1548';
-import { MAJORITY } from '../content.js?v=20261110-1548';
+import { leaders, pick, seatsOf, shuffle, strip } from '../lib.js?v=20261114-1146';
+import { MAJORITY } from '../content.js?v=20261114-1146';
 
 function open(s) { const [q, choices] = s.deck[s.at]; s.q = q; s.choices = choices; s.picks = seatsOf(s.n).map(() => null); s.reveal = false; }
 function winnersOf(s) {
@@ -44,16 +44,17 @@ export default {
   // bots lean towards the first answers, like people do, which gives the table something to read
   bot(s, seat, rng, moves) { return rng() < 0.5 ? moves[0] : pick(moves, rng); },
   ui(v, ctx) {
-    const lead = `Question ${v.at + 1} of ${v.total} · ${seatsOf(v.n).map(p => `${ctx.names[p]} ${v.scores[p]}`).join(' · ')}`;
+    const lead = `Question ${v.at + 1} of ${v.total}${v.n <= 6 ? ' · a point for picking what most pick' : ` · ${seatsOf(v.n).map(p => `${ctx.names[p]} ${v.scores[p]}`).join(' · ')}`}`;
     const mine = ctx.active.includes(ctx.me);
+    const players = (v.n <= 6 ? strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f', '#8e44ad', '#e67e22'], p => `${v.scores[p]} pts${v.reveal ? '' : ctx.active.includes(p) ? ' · …' : ' · ✓'}`) : undefined);
     if (v.reveal) {
       return {
-        title: `Most picked: ${v.won.join(' and ')}`, prompt: v.q, lead,
+        title: `Most picked: ${v.won.join(' and ')}`, prompt: v.q, lead, players,
         bars: v.choices.map((c, i) => ({ label: c, n: v.tally[i], of: v.n, win: v.won.includes(c) })),
         buttons: mine ? [{ label: 'Next question', i: 0, primary: true }] : [],
       };
     }
-    return { title: mine ? 'What will most players pick?' : 'Waiting for votes…', prompt: v.q, lead, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.c, i })) : [] };
+    return { title: mine ? 'What will most players pick?' : 'Waiting for votes…', prompt: v.q, lead, players, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.c, i })) : [] };
   },
   chit: (v) => ({ text: v.q, label: `Question ${v.at + 1}` }),
 };

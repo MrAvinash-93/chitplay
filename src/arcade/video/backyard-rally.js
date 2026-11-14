@@ -2,7 +2,7 @@
  * Backyard Rally: bat and tennis ball in the backyard. Keep the rally going: the ball
  * speeds up with every hit. First to seven points wins.
  */
-import { H, r1, scoreBar, SEAT_COLORS, rnd, TICK, W } from './lib.js?v=20261110-1548';
+import { H, r1, scoreBar, SEAT_COLORS, rnd, TICK, W } from './lib.js?v=20261114-1146';
 
 export const TOP = 42, BAT = 66, WIN = 7;
 const SPEED = 300;
@@ -12,6 +12,9 @@ function serve(s, to) {
   s.pause = 60;
   s.rally = 0;
 }
+/* the flat picture's ground, drawn once */
+let yardPicture = null;
+
 export default {
   hint: 'Drag to move your bat',
   pad: [['u', '▲'], ['d', '▼']],
@@ -66,22 +69,70 @@ export default {
     if (s.rally > 2) { g.fillStyle = '#fff'; g.font = '800 26px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`Rally ${s.rally}`, W / 2, 66); }
   },
   draw(g, s, names) {
-    g.fillStyle = '#3d7a46'; g.fillRect(0, 0, W, H);
-    g.fillStyle = 'rgba(255,255,255,.05)';
-    for (let i = 0; i < 8; i++) if (i % 2) g.fillRect(i * 80, TOP, 80, H);
-    g.strokeStyle = 'rgba(255, 255, 255, .55)'; g.lineWidth = 3;
-    g.strokeRect(4, TOP + 2, W - 8, H - TOP - 6);
-    g.setLineDash([12, 12]); g.beginPath(); g.moveTo(W / 2, TOP); g.lineTo(W / 2, H); g.stroke(); g.setLineDash([]);
-    s.bats.forEach((y, i) => {
-      const x = i === 0 ? 34 : W - 34;
-      g.fillStyle = '#7b4a26'; g.fillRect(x - (i === 0 ? 16 : -6), y - 4, 10, 8);
-      g.fillStyle = SEAT_COLORS[i]; g.fillRect(x - 6, y - BAT / 2, 12, BAT);
-      g.strokeStyle = '#111'; g.lineWidth = 2; g.strokeRect(x - 6, y - BAT / 2, 12, BAT);
+    // the backyard: worn grass with bare earth where everyone stands, drawn once and kept
+    if (!yardPicture && typeof document !== 'undefined') {
+      yardPicture = document.createElement('canvas');
+      yardPicture.width = W * 2; yardPicture.height = H * 2;
+      const f = yardPicture.getContext('2d');
+      f.scale(2, 2);
+      f.fillStyle = '#4f8a3f'; f.fillRect(0, 0, W, H);
+      let seed = 3;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      [[60, H / 2 + 20], [W - 60, H / 2 + 20], [W / 2, H / 2 + 30]].forEach(([x, y], k) => {
+        const dirt = f.createRadialGradient(x, y, 10, x, y, k === 2 ? 110 : 90);
+        dirt.addColorStop(0, 'rgba(176,130,82,.85)'); dirt.addColorStop(1, 'rgba(176,130,82,0)');
+        f.fillStyle = dirt; f.fillRect(0, TOP, W, H - TOP);
+      });
+      for (let i = 0; i < 900; i++) {
+        const x = rnd() * W, y = TOP + rnd() * (H - TOP);
+        f.strokeStyle = `rgba(${rnd() < 0.5 ? '35,80,30' : '150,200,105'},${0.3 + rnd() * 0.35})`; f.lineWidth = 1;
+        f.beginPath(); f.moveTo(x, y); f.lineTo(x + (rnd() - 0.5) * 3, y - 2 - rnd() * 4); f.stroke();
+      }
+      f.strokeStyle = 'rgba(255,255,240,.6)'; f.lineWidth = 3; f.setLineDash([16, 4]);
+      f.strokeRect(6, TOP + 4, W - 12, H - TOP - 10); f.setLineDash([]);
+    }
+    if (yardPicture) g.drawImage(yardPicture, 0, 0, W, H);
+    else { g.fillStyle = '#4f8a3f'; g.fillRect(0, 0, W, H); }
+    // the "net": a washing line between two bricks, with clothes pegged on it
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(W / 2 - 2 + 4, TOP + 6, 4, H - TOP - 10);
+    g.strokeStyle = '#efe6d2'; g.lineWidth = 2; g.beginPath(); g.moveTo(W / 2, TOP + 10); g.lineTo(W / 2, H - 10); g.stroke();
+    [[TOP + 4], [H - 18]].forEach(([y]) => { g.fillStyle = '#a4563a'; g.fillRect(W / 2 - 9, y, 18, 12); g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(W / 2 - 9, y, 18, 2); });
+    [[120, '#e86a5c'], [210, '#5aa9e6'], [300, '#f2c94c']].forEach(([y, c]) => {
+      if (y > H - 40) return;
+      g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(W / 2 + 3, y + 3, 10, 26);
+      g.fillStyle = c; g.fillRect(W / 2 - 5, y, 10, 26);
+      g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(W / 2 - 5, y, 3, 26);
     });
+    // the bats: round wooden paddles with a coloured rubber face and a handle
+    s.bats.forEach((y, i) => {
+      const x = i === 0 ? 34 : W - 34, dir = i === 0 ? -1 : 1;
+      g.save();
+      g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(x + 4, y + 6, 10, BAT / 2, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#8a5a2b'; g.strokeStyle = '#3d2410'; g.lineWidth = 2;
+      g.beginPath(); g.roundRect?.(x + dir * 8 - 5, y - 5, 18 * (dir > 0 ? 1 : 1), 10, 4) ?? g.rect(x + dir * 8 - 5, y - 5, 18, 10); g.fill(); g.stroke();
+      const face = g.createLinearGradient(x - 8, 0, x + 8, 0);
+      face.addColorStop(0, SEAT_COLORS[i]); face.addColorStop(0.5, '#ffffff'); face.addColorStop(0.62, SEAT_COLORS[i]); face.addColorStop(1, SEAT_COLORS[i]);
+      g.fillStyle = '#c99a5c'; g.beginPath(); g.ellipse(x, y, 9, BAT / 2, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = face; g.beginPath(); g.ellipse(x - dir * 1.5, y, 6.5, BAT / 2 - 3, 0, 0, Math.PI * 2); g.fill();
+      g.restore();
+    });
+    // the ball: a fuzzy tennis ball with its seam, a shadow, and a faint trail when it flies fast
     const b = s.ball;
-    g.fillStyle = '#d7f24f'; g.beginPath(); g.arc(b.x, b.y, 8, 0, 7); g.fill();
-    g.strokeStyle = '#6d8a12'; g.lineWidth = 2; g.stroke();
+    if (b) {
+      const vx = b.vx || 0, vy = b.vy || 0, fast = Math.hypot(vx, vy);
+      if (fast > 1) {
+        for (let k = 3; k >= 1; k--) { g.fillStyle = `rgba(215,242,79,${0.12 * (4 - k)})`; g.beginPath(); g.arc(b.x - vx * 0.012 * k * 3, b.y - vy * 0.012 * k * 3, 8 - k, 0, Math.PI * 2); g.fill(); }
+      }
+      g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(b.x + 4, b.y + 9, 8, 3.5, 0, 0, Math.PI * 2); g.fill();
+      const fuzz = g.createRadialGradient(b.x - 3, b.y - 3, 1, b.x, b.y, 9);
+      fuzz.addColorStop(0, '#f6ffb0'); fuzz.addColorStop(1, '#b9d43a');
+      g.fillStyle = fuzz; g.beginPath(); g.arc(b.x, b.y, 8, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1.4;
+      g.beginPath(); g.arc(b.x - 7, b.y, 6, -0.9, 0.9); g.stroke();
+      g.beginPath(); g.arc(b.x + 7, b.y, 6, Math.PI - 0.9, Math.PI + 0.9); g.stroke();
+    }
     scoreBar(g, s.points.map((v, i) => [names[i] || `P${i + 1}`, v, SEAT_COLORS[i]]));
-    if (s.rally > 2) { g.fillStyle = 'rgba(255,255,255,.75)'; g.font = '800 26px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`Rally ${s.rally}`, W / 2, 66); }
+    if (s.rally > 2) { g.fillStyle = 'rgba(255,255,255,.85)'; g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = 4; g.font = '800 26px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText(`Rally ${s.rally}`, W / 2, 66); g.fillText(`Rally ${s.rally}`, W / 2, 66); }
   },
 };
+

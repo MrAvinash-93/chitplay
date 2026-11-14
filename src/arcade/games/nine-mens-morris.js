@@ -3,7 +3,7 @@
  * the other player's pieces. Down to two pieces, or with no move, you lose. With three pieces left
  * yours may fly to any free point. 50 moves each without a capture is a draw.
  */
-import { best, turnLine } from '../lib.js?v=20261110-1548';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 // 24 points: three squares, numbered clockwise from the top-left of each
 export const POINTS = 24;
@@ -94,6 +94,15 @@ export default {
   ui(v, ctx) {
     const on = [0, 1].map(p => countOf(v.b, p));
     const verb = v.take ? 'take one of their pieces' : v.left[ctx.me] > 0 ? 'place a piece' : 'tap a piece, then a point';
-    return { title: turnLine(ctx, verb), lead: `${ctx.names[0]} ⚪ ${on[0]}+${v.left[0]} · ${ctx.names[1]} ⚫ ${on[1]}+${v.left[1]}` };
+    const phase = (p) => (v.left[p] > 0 ? `placing, ${v.left[p]} to go` : on[p] === 3 ? 'flying 🕊️' : 'moving');
+    const turn = ctx.active.includes(ctx.me);
+    const lead = v.take ? (turn ? '🎯 A mill! Take one of their pieces. Pieces in a mill are safe while others are left.' : `${who(ctx, v.p)} made a mill!`)
+      : turn && v.left[ctx.me] === 0 && on[ctx.me] === 3 ? '🕊️ Three pieces left: yours can fly to any free point.'
+        : 'Three in a line is a mill: it takes a piece. Down to two pieces loses.';
+    return {
+      title: turnLine(ctx, verb),
+      lead,
+      players: strip(ctx, ['#f4ead5', '#5a4636'], p => `${p ? '⚫' : '⚪'} ${on[p]} · ${phase(p)}`),
+    };
   },
 };

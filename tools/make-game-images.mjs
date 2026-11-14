@@ -4,8 +4,11 @@
  *   assets/games/<slug>-square.jpg  600 x 600  (search results, structured data)
  * from the same logo the game list uses, so they always match.
  *
- * Needs Google Chrome installed. Run it again when a game is added or renamed:
+ * Needs Google Chrome installed. Run it again when a game is added or renamed, then make the
+ * WebP copies the pages show. Pass game slugs to update only selected game images:
  *     node tools/make-game-images.mjs
+ *     node tools/make-game-images.mjs spin-duel pen-fight
+ *     node tools/make-webp.mjs
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -23,6 +26,10 @@ const { logoSvg } = await import('../src/arcade/logo.js');
 
 const MAIN = { slug: 'cops-and-robbers', name: 'Raja Rani Chor Police', kind: 'Party', accent: '#b5341f', icon: '👑' };
 const games = [MAIN, ...ALL_GAMES];
+const requestedSlugs = process.argv.slice(2);
+const unknownSlugs = requestedSlugs.filter(slug => !games.some(g => g.slug === slug));
+if (unknownSlugs.length) throw new Error(`Unknown game slug(s): ${unknownSlugs.join(', ')}`);
+const selectedGames = requestedSlugs.length ? games.filter(g => requestedSlugs.includes(g.slug)) : games;
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const tagline = (g) => (g.slug === MAIN.slug ? 'Cops and Robbers · the 4-chit game' : `${g.min === g.max ? g.min : `${g.min}–${g.max}`} players · ${g.kind} game`);
 
@@ -32,11 +39,13 @@ const page = (g, w, h) => {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden}
 body{display:flex;${square ? 'flex-direction:column;justify-content:center;gap:22px' : 'gap:56px;padding:0 70px;box-sizing:border-box'};align-items:center;
-background:radial-gradient(ellipse 80% 90% at 28% 40%, ${g.accent || '#b5341f'}66, transparent 70%),linear-gradient(160deg,#2a1509,#110804);font-family:"Segoe UI",system-ui,sans-serif;color:#fff3d6}
-.logo{filter:drop-shadow(0 18px 30px rgba(0,0,0,.55));flex:none;line-height:0}
-.txt{display:flex;flex-direction:column;gap:14px;${square ? 'align-items:center;text-align:center' : ''}}
-h1{margin:0;font-size:${square ? 50 : 76}px;line-height:1.05;color:#ffd27a;font-weight:900;letter-spacing:-.5px;text-shadow:0 4px 0 #5a2a0c}
-p{margin:0;font-size:${square ? 24 : 32}px;font-weight:600;opacity:.92}
+position:relative;isolation:isolate;background:radial-gradient(ellipse 80% 90% at 28% 40%, ${g.accent || '#b5341f'}66, transparent 70%),linear-gradient(160deg,#2a1509,#110804);font-family:"Segoe UI",system-ui,sans-serif;color:#fff3d6}
+body::before{content:"";position:absolute;inset:22px;z-index:-1;border:1px solid rgba(255,235,190,.16);border-radius:26px;box-shadow:inset 0 0 48px rgba(255,220,150,.035)}
+body::after{content:"";position:absolute;z-index:-1;left:${square ? '50%' : '28%'};top:50%;width:${square ? 500 : 540}px;height:${square ? 500 : 540}px;transform:translate(-50%,-50%);border:1px solid ${g.accent || '#b5341f'}44;border-radius:50%;box-shadow:0 0 80px ${g.accent || '#b5341f'}22,inset 0 0 50px ${g.accent || '#b5341f'}14}
+.logo{position:relative;z-index:1;filter:drop-shadow(0 18px 30px rgba(0,0,0,.55));flex:none;line-height:0}
+.txt{position:relative;z-index:1;display:flex;flex-direction:column;gap:14px;${square ? 'align-items:center;text-align:center' : ''}}
+h1{margin:0;font-size:${square ? 50 : 76}px;line-height:1.05;color:#ffd27a;font-weight:900;letter-spacing:-.5px;text-shadow:0 4px 0 #5a2a0c,0 0 28px ${g.accent || '#b5341f'}55}
+p{display:inline-flex;align-self:flex-start;margin:0;padding:7px 13px;border:1px solid rgba(255,235,190,.18);border-radius:999px;background:rgba(255,255,255,.07);font-size:${square ? 24 : 28}px;font-weight:650;opacity:.96}
 .cta{display:inline-block;align-self:${square ? 'center' : 'flex-start'};margin-top:8px;padding:12px 26px;border-radius:16px;background:linear-gradient(180deg,#ff9a3d,#e0572a);color:#fff8e6;font-size:${square ? 24 : 30}px;font-weight:800}
 .site{font-size:${square ? 20 : 24}px;opacity:.75;font-weight:700;letter-spacing:1px}
 </style></head><body><div class="logo">${logo}</div><div class="txt">
@@ -59,7 +68,7 @@ const send = (method, params = {}) => new Promise(r => { const i = ++id; wait.se
 await send('Page.enable');
 
 let bytes = 0;
-for (const g of games) {
+for (const g of selectedGames) {
   if (g !== MAIN && !RULES[g.slug]) continue;
   for (const [w, h, suffix] of [[1200, 630, ''], [600, 600, '-square']]) {
     await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
@@ -73,6 +82,7 @@ for (const g of games) {
     fs.writeFileSync(path.join(OUT, `${g.slug}${suffix}.jpg`), buf);
   }
 }
+if (!requestedSlugs.length) {
 // the home page's picture: what ChitPlay is, at a glance, with the games people search for most
 const FEATURED = ['ludo', 'carrom', 'chess', 'call-break', 'color-clash', 'snakes-and-ladders', 'flying-chit'];
 const tiles = [MAIN, ...FEATURED.map(s => ALL_GAMES.find(g => g.slug === s)).filter(Boolean)].map(g => `<div class="t">${logoSvg(g, 150)}</div>`).join('');
@@ -111,6 +121,7 @@ for (const [file, size, svg] of [['apple-touch-icon.png', 180, iconSvg], ['icon-
   const r = await send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: size, height: size, scale: 1 } });
   fs.writeFileSync(path.join(ROOT, 'assets', file), Buffer.from(r.result.data, 'base64'));
 }
-console.log(`${games.length} games, ${(bytes / 1024 / 1024).toFixed(2)} MB in assets/games/, assets/home.jpg and the app icons`);
+}
+console.log(`${selectedGames.length} games, ${(bytes / 1024 / 1024).toFixed(2)} MB in assets/games/${requestedSlugs.length ? '' : ', assets/home.jpg and the app icons'}`);
 ws.close(); chrome.kill();
 process.exit(0);

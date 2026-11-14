@@ -3,8 +3,8 @@
  * answers with a little act in the room. Nothing is typed, so nothing personal can be shared with
  * strangers on an online table.
  */
-import { leaders, pick, seatsOf, shuffle, turnLine } from '../lib.js?v=20261110-1548';
-import { DARES, TRUTHS } from '../content.js?v=20261110-1548';
+import { leaders, pick, seatsOf, shuffle, turnLine, strip } from '../lib.js?v=20261114-1146';
+import { DARES, TRUTHS } from '../content.js?v=20261114-1146';
 
 export default {
   init: ({ n, rng, opts }) => ({ n, turn: 0, total: n * (Number(opts?.turns) || 3), scores: seatsOf(n).map(() => 0), bags: { truth: shuffle(TRUTHS, rng), dare: shuffle(DARES, rng) }, kind: null, text: '', done: false }),
@@ -34,12 +34,14 @@ export default {
   ui(v, ctx) {
     const mine = ctx.active.includes(ctx.me);
     const who = ctx.names[ctx.active[0]] || '';
-    const lead = `Turn ${Math.min(v.turn + 1, v.total)} of ${v.total} · ${seatsOf(v.n).map(p => `${ctx.names[p]} ${v.scores[p]}`).join(' · ')}`;
-    if (!v.kind) return { title: mine ? 'Your turn: truth or dare?' : `${who}: truth or dare?`, lead, buttons: mine ? [{ label: 'Truth', i: 0, primary: true }, { label: 'Dare', i: 1, primary: true }] : [] };
+    const lead = `Turn ${Math.min(v.turn + 1, v.total)} of ${v.total}${v.n <= 6 ? ' · every prompt can be skipped' : ` · ${seatsOf(v.n).map(p => `${ctx.names[p]} ${v.scores[p]}`).join(' · ')}`}`;
+    const players = (v.n <= 6 ? strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f', '#8e44ad', '#e67e22'], p => `${v.scores[p]} ⭐`) : undefined);
+    if (!v.kind) return { title: mine ? 'Your turn: truth or dare?' : `${who}: truth or dare?`, lead, players, buttons: mine ? [{ label: 'Truth', i: 0, primary: true }, { label: 'Dare', i: 1, primary: true }] : [] };
     return {
       title: `${mine ? 'You' : who} · ${v.kind === 'truth' ? 'Truth' : 'Dare'}`,
       prompt: v.text,
       lead,
+      players,
       buttons: mine ? [{ label: v.kind === 'truth' ? 'Answered (+1)' : 'Done (+1)', i: 0, primary: true }, { label: 'Skip, no worries', i: 1 }] : [],
     };
   },

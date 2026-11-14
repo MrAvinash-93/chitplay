@@ -4,7 +4,7 @@
  * continues with the same piece while it can; reaching the far row ends the turn with a crown.
  * No moves left loses. 40 moves each without a capture or a man moving is a draw.
  */
-import { searchMove, turnLine } from '../lib.js?v=20261110-1548';
+import { searchMove, turnLine, strip, who } from '../lib.js?v=20261114-1146';
 
 const owner = (x) => x % 2;
 const isKing = (x) => x >= 2;
@@ -57,13 +57,24 @@ const search = {
   order: (list) => list,
   score(s, depth) {
     if (!legal(s.b, s.p, s.chain).length) return -1000 - depth;
-    let v = 0;
+    let v = 0, mine = 0, theirs = 0;
+    const mineAt = [], theirsAt = [];
     s.b.forEach((x, i) => {
       if (x < 0) return;
       const y = (i - (i % 8)) / 8;
       const worth = isKing(x) ? 30 : 10 + (owner(x) === 0 ? 7 - y : y);
-      v += owner(x) === s.p ? worth : -worth;
+      if (owner(x) === s.p) { v += worth; mine += isKing(x) ? 3 : 2; mineAt.push(i); } else { v -= worth; theirs += isKing(x) ? 3 : 2; theirsAt.push(i); }
     });
+    // the endgame, as a strong player plays it: ahead, trade down and close in; behind, keep away
+    const lead = mine - theirs, left = mineAt.length + theirsAt.length;
+    if (lead && left <= 12) {
+      const [hunters, prey] = lead > 0 ? [mineAt, theirsAt] : [theirsAt, mineAt];
+      const gap = (a, b) => Math.max(Math.abs((a % 8) - (b % 8)), Math.abs(((a - (a % 8)) / 8) - ((b - (b % 8)) / 8)));
+      const chase = hunters.reduce((t, h) => t + Math.min(...prey.map(q => gap(h, q))), 0);
+      // the side behind is safest in the middle and in the double corners; drive it to the edges
+      const edge = prey.reduce((t, q) => { const x = q % 8, y = (q - x) / 8; return t + Math.min(x, 7 - x, y, 7 - y); }, 0);
+      v += Math.sign(lead) * ((24 - left) * 1.5 - chase * 1.6 - edge * 2);
+    }
     return v;
   },
 };
@@ -97,9 +108,21 @@ export default {
     if (s.winner < 0) return { scores: [0, 0], winners: [], note: '40 moves each without progress: a draw.' };
     return { scores: s.winner === 0 ? [1, 0] : [0, 1], winners: [s.winner] };
   },
-  bot(s, seat, rng, moves) { return searchMove({ b: s.b, p: seat, chain: s.chain }, 4, search, rng, moves); },
+  // looks further ahead once the board empties out, where the endgame is won or drawn
+  bot(s, seat, rng, moves) { const left = s.b.filter(x => x >= 0).length; return searchMove({ b: s.b, p: seat, chain: s.chain }, left <= 5 ? 8 : left <= 7 ? 7 : left <= 10 ? 6 : 4, search, rng, moves); },
   ui(v, ctx) {
-    const men = [0, 1].map(p => v.b.filter(x => x >= 0 && owner(x) === p).length);
-    return { title: turnLine(ctx, v.chain >= 0 ? 'keep jumping' : 'tap a piece, then a square'), lead: `${ctx.names[0]} ${men[0]} · ${ctx.names[1]} ${men[1]}${ctx.me >= 0 && ctx.legal.some(m => m.x != null) ? ' · you must capture' : ''}` };
+    const pieces = [0, 1].map(p => v.b.filter(x => x >= 0 && owner(x) === p));
+    const kings = pieces.map(l => l.filter(isKing).length);
+    const mine = ctx.active.includes(ctx.me);
+    const mustTake = mine && ctx.legal.some(m => m.x != null);
+    const lead = v.chain >= 0 ? (mine ? '⚔️ Keep jumping with the same piece!' : `${who(ctx, v.p)} is jumping again…`)
+      : mustTake ? '⚔️ You must capture: the glowing pieces can jump.'
+        : (v.quiet || 0) >= 50 ? `No capture for a while: a draw in ${Math.ceil((80 - v.quiet) / 2)} more moves each.`
+          : 'Reach the far row to crown a king 👑. Kings move both ways.';
+    return {
+      title: turnLine(ctx, v.chain >= 0 ? 'keep jumping' : 'tap a piece, then a square'),
+      lead,
+      players: strip(ctx, ['#d32f2f', '#f7f0e0'], p => `${pieces[p].length} left${kings[p] ? ` · ${kings[p]} 👑` : ''} · took ${12 - pieces[1 - p].length}`),
+    };
   },
 };

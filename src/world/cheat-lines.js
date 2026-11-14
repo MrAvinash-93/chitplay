@@ -136,8 +136,15 @@ function deal(table, kind, lang, vars) {
   const lines = table[set];
   const decks = memory || (memory = readDecks());
   const key = `${kind}.${set}`;
-  if (!Array.isArray(decks[key]) || !decks[key].length || decks[key].some(i => !lines[i])) decks[key] = shuffledIndexes(lines.length);
-  const scene = lines[decks[key].shift()];
+  if (!Array.isArray(decks[key]) || !decks[key].length || decks[key].some(i => !lines[i])) {
+    // a new deck: the scenes seen most recently go to the back, so none repeats right after the reshuffle
+    const recent = (Array.isArray(decks[`${key}.recent`]) ? decks[`${key}.recent`] : []).filter(i => lines[i]).slice(-Math.floor(lines.length / 2));
+    const fresh = shuffledIndexes(lines.length).filter(i => !recent.includes(i));
+    decks[key] = fresh.concat(recent);   // oldest first, the very last one at the very end
+  }
+  const index = decks[key].shift();
+  decks[`${key}.recent`] = (decks[`${key}.recent`] || []).filter(i => i !== index).concat(index).slice(-lines.length);
+  const scene = lines[index];
   saveDecks(decks);
   return scene.map(t => t.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? ''));
 }
@@ -146,4 +153,6 @@ function deal(table, kind, lang, vars) {
 export const nextCaughtScene = (lang, vars = {}) => deal(CAUGHT, 'caught', lang, vars);
 /** [ask, deny, apologise] */
 export const nextCloseCall = (lang, vars = {}) => deal(CLOSE_CALL, 'close', lang, vars);
-export const SCENE_COUNTS = { caught: CAUGHT.english.length, closeCall: CLOSE_CALL.english.length };
+/** Start both decks over, as on a first visit (used by the tests). */
+export function resetSceneDecks() { memory = {}; saveDecks(memory); }
+export const SCENE_COUNTS ={ caught: CAUGHT.english.length, closeCall: CLOSE_CALL.english.length };

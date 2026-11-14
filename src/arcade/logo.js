@@ -14,29 +14,45 @@ const PATTERN = {
   Puzzle: (id) => `<pattern id="p${id}" width="28" height="28" patternUnits="userSpaceOnUse"><rect x="3" y="3" width="22" height="22" rx="5" fill="none" stroke="#fff" stroke-width="1.5" opacity=".14"/></pattern>`,
   Arcade: (id) => `<pattern id="p${id}" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M10 6l1.6 3.4 3.6.4-2.7 2.4.8 3.6-3.3-1.9-3.3 1.9.8-3.6-2.7-2.4 3.6-.4z" fill="#fff" opacity=".18"/><path d="M0 30h40" stroke="#fff" stroke-width="1" opacity=".08"/></pattern>`,
 };
+const DETAIL = {
+  Board: '<g fill="#fff" opacity=".25"><path d="M18 45h28v28H18zM18 45h14v14H18zM32 59h14v14H32zM154 45h28v28h-28zM154 45h14v14h-14zM168 59h14v14h-14z"/></g>',
+  Cards: '<g fill="none" stroke="#fff" stroke-width="2" opacity=".3"><path d="M19 54l15-7 11 19-15 7zM155 66l11-19 15 7-11 19z"/><path d="M29 61h5m-2.5-2.5v5M164 60h5m-2.5-2.5v5" stroke-linecap="round"/></g>',
+  Dice: '<g fill="none" stroke="#fff" stroke-width="2" opacity=".3"><rect x="18" y="51" width="25" height="25" rx="6"/><rect x="157" y="51" width="25" height="25" rx="6"/></g><g fill="#fff" opacity=".45"><circle cx="25" cy="58" r="2"/><circle cx="36" cy="69" r="2"/><circle cx="164" cy="58" r="2"/><circle cx="175" cy="69" r="2"/></g>',
+  Party: '<g fill="#fff" opacity=".38"><path d="M25 49l5 8-8-2zM170 48l-2 9 8-4zM35 86l2 7-7-3zM163 87l7 3-6 4z"/><circle cx="42" cy="51" r="2"/><circle cx="158" cy="54" r="2"/></g>',
+  Puzzle: '<g fill="none" stroke="#fff" stroke-width="2" opacity=".28"><rect x="18" y="48" width="28" height="28" rx="5"/><path d="M32 48v28M18 62h28"/><rect x="154" y="48" width="28" height="28" rx="5"/><path d="M168 48v28M154 62h28"/></g>',
+  Arcade: '<g fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".3"><path d="M17 56h23M22 65h18M17 74h23M160 56h23M160 65h18M160 74h23"/><path d="M32 42l3 5 6 1-4 4 1 6-6-3-5 3 1-6-5-4 6-1zM168 42l3 5 6 1-4 4 1 6-6-3-5 3 1-6-5-4 6-1z"/></g>',
+};
 let n = 0;
 /** The logo as an SVG string, size in CSS pixels. */
 export function logoSvg(game, size = 96) {
   const id = `${(game.slug || 'g').replace(/[^a-z0-9]/gi, '')}${n++}`;
   const accent = game.accent || '#b5341f';
   const name = String(game.name || '');
-  const long = name.length > 13;
+  const fontSize = name.length > 18 ? 13 : name.length > 13 ? 16 : 19;
+  const textWidth = Math.min(160, Math.round(name.length * fontSize * .57));
   const pattern = (PATTERN[game.kind] || PATTERN.Board)(id);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="${esc(name)}">
 <defs>
 <radialGradient id="g${id}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="${accent}" stop-opacity="1"/><stop offset=".55" stop-color="${accent}"/><stop offset="1" stop-color="#140806"/></radialGradient>
 <linearGradient id="s${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
 <linearGradient id="r${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b1509"/><stop offset="1" stop-color="#120804"/></linearGradient>
+<radialGradient id="m${id}" cx="35%" cy="25%" r="85%"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#120804" stop-opacity=".62"/></radialGradient>
 ${pattern}
 </defs>
 <rect x="4" y="4" width="192" height="192" rx="40" fill="url(#g${id})"/>
 <rect x="4" y="4" width="192" height="192" rx="40" fill="url(#p${id})"/>
+${DETAIL[game.kind] || DETAIL.Board}
 <path d="M44 4h112a40 40 0 0 1 40 40v14C140 86 70 52 4 70V44A40 40 0 0 1 44 4z" fill="url(#s${id})"/>
-<circle cx="100" cy="86" r="50" fill="#000" opacity=".18"/>
-<text x="100" y="${long ? 104 : 108}" font-size="${long ? 66 : 72}" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif">${esc(game.icon || '🎲')}</text>
+<circle cx="100" cy="86" r="53" fill="#090609" opacity=".28"/>
+<circle cx="100" cy="85" r="49" fill="url(#m${id})" stroke="#fff" stroke-opacity=".48" stroke-width="2"/>
+<circle cx="100" cy="85" r="42" fill="none" stroke="${accent}" stroke-opacity=".85" stroke-width="2"/>
+<path d="M64 71a42 42 0 0 1 58-19" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+<text x="100" y="108" font-size="68" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif">${esc(game.icon || '🎲')}</text>
 <path d="M14 142h172l-8 14 8 14H14l8-14z" fill="url(#r${id})" stroke="${accent}" stroke-width="3"/>
-<text x="100" y="${162}" font-size="${long ? 15 : 19}" font-weight="900" text-anchor="middle" fill="#ffe7a8" font-family="system-ui,'Segoe UI',sans-serif" letter-spacing=".5">${esc(name.toUpperCase())}</text>
+<path d="M25 145h150" stroke="#fff" stroke-opacity=".24" stroke-width="1.5"/>
+<text x="100" y="162" textLength="${textWidth}" lengthAdjust="spacingAndGlyphs" font-size="${fontSize}" font-weight="900" text-anchor="middle" fill="#ffe7a8" font-family="system-ui,'Segoe UI',sans-serif" letter-spacing=".5">${esc(name.toUpperCase())}</text>
 <g transform="translate(154 12) scale(.066)">${MARK}</g>
 <rect x="4" y="4" width="192" height="192" rx="40" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="3"/>
+<rect x="9" y="9" width="182" height="182" rx="36" fill="none" stroke="${accent}" stroke-opacity=".45" stroke-width="1.5"/>
 </svg>`;
 }

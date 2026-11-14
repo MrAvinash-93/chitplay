@@ -3,7 +3,8 @@
  * stays on this device. Coins and rank points come from the same profile as the rest of the game,
  * so playing anything moves you up the same ladder. Nothing here is bought or has any real value.
  */
-import { profile, RANKS } from '../persistence/profile-store.js?v=20261110-1548';
+import { profile, RANKS } from '../persistence/profile-store.js?v=20261114-1146';
+import { ALL_GAMES } from './catalog.js?v=20261114-1146';
 
 const KEY = 'chitplay.achievements';
 // games that were renamed keep their scores under the new name
@@ -30,6 +31,18 @@ const sum = (o) => Object.values(o).reduce((x, y) => x + y, 0);
  */
 export const TIERS = { bronze: { name: 'Bronze', color: '#cd7f32' }, silver: { name: 'Silver', color: '#cfd8e3' }, gold: { name: 'Gold', color: '#ffd23f' }, legend: { name: 'Legend', color: '#c77dff' } };
 const sumOf = (o) => Object.values(o).reduce((x, y) => x + y, 0);
+const gameMilestones = ALL_GAMES.flatMap((game) => [
+  {
+    id: `game-first-${game.slug}`, tier: 'bronze', icon: game.icon,
+    name: `${game.name} Debut`, hint: `Finish one game of ${game.name}`, coins: 20,
+    test: a => (a.plays[game.slug] || 0) >= 1,
+  },
+  {
+    id: `game-regular-${game.slug}`, tier: 'silver', icon: game.icon,
+    name: `${game.name} Regular`, hint: `Finish 5 games or win 3 in ${game.name}`, coins: 80,
+    test: a => (a.plays[game.slug] || 0) >= 5 || (a.wins[game.slug] || 0) >= 3,
+  },
+]);
 export const ACHIEVEMENTS = [
   { id: 'chit-15', tier: 'bronze', icon: '📨', name: 'Paper Wings', hint: 'Score 50 in Flying Chit', coins: 40, test: a => a.best['flying-chit'] >= 50 },
   { id: 'chit-120', tier: 'silver', icon: '✈️', name: 'Bangle Chaser', hint: 'Score 200 in Flying Chit', coins: 120, test: a => a.best['flying-chit'] >= 200 },
@@ -37,6 +50,21 @@ export const ACHIEVEMENTS = [
   { id: 'chit-500', tier: 'legend', icon: '👑', name: 'Chit of Legend', hint: 'Score 1000 in Flying Chit', coins: 1000, test: a => a.best['flying-chit'] >= 1000 },
   { id: 'tunnel-150', tier: 'silver', icon: '🌀', name: 'Into the Spiral', hint: 'Score 150 in Tunnel Race', coins: 120, test: a => a.best['tunnel-race'] >= 150 },
   { id: 'tunnel-600', tier: 'legend', icon: '⚡', name: 'Light Speed', hint: 'Score 600 in Tunnel Race', coins: 1000, test: a => a.best['tunnel-race'] >= 600 },
+  { id: 'digits-150', tier: 'silver', icon: '🔢', name: 'Number Keeper', hint: 'Score 150 in Number Memory', coins: 120, test: a => a.best['number-memory'] >= 150 },
+  { id: 'digits-400', tier: 'legend', icon: '🧠', name: 'Memory Palace', hint: 'Score 400 in Number Memory', coins: 1000, test: a => a.best['number-memory'] >= 400 },
+  { id: 'words-160', tier: 'silver', icon: '🔤', name: 'Word Spotter', hint: 'Score 160 in Word Guess', coins: 120, test: a => a.best['word-guess'] >= 160 },
+  { id: 'words-320', tier: 'legend', icon: '📚', name: 'Walking Dictionary', hint: 'Score 320 in Word Guess', coins: 1000, test: a => a.best['word-guess'] >= 320 },
+  { id: 'typing-200', tier: 'silver', icon: '⌨️', name: 'Quick Fingers', hint: 'Score 200 in Fast Typing', coins: 120, test: a => a.best['fast-typing'] >= 200 },
+  { id: 'typing-360', tier: 'legend', icon: '⚡', name: 'Keyboard Lightning', hint: 'Score 360 in Fast Typing', coins: 1000, test: a => a.best['fast-typing'] >= 360 },
+  { id: 'bingo-10', tier: 'silver', icon: '🎱', name: 'Full House', hint: 'Win 10 games of Bingo', coins: 200, test: a => a.wins.bingo >= 10 },
+  { id: 'unblock-400', tier: 'silver', icon: '🛺', name: 'Parking Pro', hint: 'Score 400 in Unblock Puzzle', coins: 150, test: a => a.best['unblock-puzzle'] >= 400 },
+  { id: 'unblock-470', tier: 'legend', icon: '🅿️', name: 'Gridlock Breaker', hint: 'Score 470 in Unblock Puzzle', coins: 1000, test: a => a.best['unblock-puzzle'] >= 470 },
+  { id: 'stroop-1200', tier: 'silver', icon: '🎨', name: 'Ink Reader', hint: 'Score 1200 in Stroop Test', coins: 120, test: a => a.best['stroop-test'] >= 1200 },
+  { id: 'stroop-2100', tier: 'legend', icon: '🧠', name: 'Unshakeable Focus', hint: 'Score 2100 in Stroop Test', coins: 1000, test: a => a.best['stroop-test'] >= 2100 },
+  { id: 'reflex-900', tier: 'silver', icon: '⚡', name: 'Quick Hands', hint: 'Score 900 in Reaction Time', coins: 120, test: a => a.best['reaction-time'] >= 900 },
+  { id: 'reflex-1300', tier: 'legend', icon: '🎯', name: 'Lightning Reflexes', hint: 'Score 1300 in Reaction Time', coins: 1000, test: a => a.best['reaction-time'] >= 1300 },
+  { id: 'turbo-300', tier: 'silver', icon: '🏎️', name: 'Tunnel Driver', hint: 'Score 300 in Turbo Tunnel', coins: 120, test: a => a.best['turbo-tunnel'] >= 300 },
+  { id: 'turbo-1500', tier: 'legend', icon: '🏁', name: 'Turbo Legend', hint: 'Score 1500 in Turbo Tunnel', coins: 1000, test: a => a.best['turbo-tunnel'] >= 1500 },
   { id: 'road-400', tier: 'gold', icon: '🛺', name: 'King of the Road', hint: 'Score 400 in Road Dash', coins: 300, test: a => a.best['road-dash'] >= 400 },
   { id: 'snake-50', tier: 'gold', icon: '🐍', name: 'Very Long Snake', hint: 'Score 50 in Hungry Snake', coins: 300, test: a => a.best['hungry-snake'] >= 50 },
   { id: 'knife-10', tier: 'silver', icon: '📌', name: 'Steady Hand', hint: 'Score 60 in Pin Spin', coins: 150, test: a => a.best['pin-spin'] >= 60 },
@@ -67,6 +95,7 @@ export const ACHIEVEMENTS = [
   { id: 'wins-200', tier: 'legend', icon: '💎', name: 'Unbeatable', hint: 'Win 200 games', coins: 2000, test: a => sumOf(a.wins) >= 200 },
   { id: 'streak-7', tier: 'gold', icon: '🌟', name: 'A Whole Week', hint: 'Play 7 days in a row', coins: 400, test: () => profile.streak >= 7 },
   { id: 'streak-30', tier: 'legend', icon: '🔥', name: 'A Whole Month', hint: 'Play 30 days in a row', coins: 3000, test: () => profile.streak >= 30 },
+  ...gameMilestones,
 ];
 
 /* ─── popups: one at a time, each with its moment ─── */

@@ -9,8 +9,9 @@
  *  - capture: a token can only go up its home path once its player has captured; until then it goes
  *             round again (straight on to its own start square)
  *  - quick:   everyone starts with one token already out
+ *  - places:  with three or four players the game goes on after the winner, for second and third place
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261110-1548';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261114-1146';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];
@@ -21,6 +22,7 @@ export const RULES = [
   ['block', 'Blockades', 'Two of your tokens on one square block everyone else.'],
   ['capture', 'Capture to go home', 'A token can only go up its home path after you have captured one.'],
   ['quick', 'Quick start', 'Everyone starts with one token already out.'],
+  ['places', 'Play on for places', 'After the winner, the others play on for second and third place.'],
 ];
 // with two players they sit opposite each other
 export const quarter = (s, seat) => (s.n === 2 ? seat * 2 : seat);
@@ -57,11 +59,15 @@ function legal(s, seat) {
 }
 /** Score mode: how the points work, and how long a game lasts. */
 export const SCORE = { step: 1, capture: 20, home: 30, finish: 50, rounds: 15 };
+const finished = (s, seat) => !!s.order?.includes(seat);
 function nextSeat(s) {
-  s.p = (s.p + 1) % s.n;
+  // players who have finished sit out the rest
+  const was = s.p;
+  do s.p = (s.p + 1) % s.n; while (finished(s, s.p) && s.order.length < s.n);
   s.sixes = 0;
   s.die = null;
-  if (s.p === 0) {
+  // back round to the start of the table: a new round (even when the first seat has finished)
+  if (s.p <= was) {
     s.round += 1;
     if (s.style === 'score' && s.round > SCORE.rounds) s.ended = true;
   }
@@ -113,13 +119,14 @@ function describe(v, seat, t) {
 export default {
   rounds: SCORE.rounds,   // in Score mode only
   // with two players they sit opposite each other, next to their own corners
-  places: (n) => (n === 2 ? [0, -1, 1, -1] : null),
-  init({ n, opts }) {
+  // each player sits by their own coloured corner: with two, in opposite corners
+  places: (n) => (n === 2 ? [0, -1, 1, -1] : [0, 1, 2, 3].map(k => (k < n ? k : -1))),
+  init({ n, opts, names }) {
     const rules = Object.fromEntries(RULES.map(([k]) => [k, !!opts?.rules?.[k]]));
     return {
-      n, style: opts?.style === 'score' ? 'score' : 'normal', rules,
+      n, names: Array.isArray(names) ? names.slice(0, n) : null, style: opts?.style === 'score' ? 'score' : 'normal', rules,
       points: seatsOf(n).map(() => 0), caps: seatsOf(n).map(() => 0), sixesRolled: seatsOf(n).map(() => 0),
-      round: 1, ended: false, t: seatsOf(n).map(() => (rules.quick ? [0, -1, -1, -1] : [-1, -1, -1, -1])),
+      round: 1, ended: false, order: [], t: seatsOf(n).map(() => (rules.quick ? [0, -1, -1, -1] : [-1, -1, -1, -1])),
       p: 0, die: null, sixes: 0, shown: 1, rollId: 0, won: -1, note: null,
     };
   },
@@ -163,7 +170,23 @@ export default {
       s.points[seat] += SCORE.home;
       s.note = { seat, kind: 'home' };
       events.push({ k: 'home', seat });
-      if (home(s, seat) === 4) { s.points[seat] += SCORE.finish; s.won = seat; s.die = null; return events; }
+      if (home(s, seat) === 4) {
+        if (!s.order?.length) s.points[seat] += SCORE.finish;
+        // playing on for places: the game ends when only one player is left out
+        if (rule(s, 'places') && s.n > 2) {
+          s.order.push(seat);
+          s.note = { seat, kind: 'place', place: s.order.length };
+          if (s.order.length >= s.n - 1) {
+            s.order.push(seatsOf(s.n).find(p => !s.order.includes(p)));
+            s.won = s.order[0];
+            s.die = null;
+            return events;
+          }
+          nextSeat(s);
+          return events;
+        }
+        s.won = seat; s.die = null; return events;
+      }
     }
     s.die = null;
     if (!bonus) nextSeat(s);
@@ -172,6 +195,10 @@ export default {
   result(s) {
     if (s.won < 0 && !s.ended) return null;
     if (s.style === 'score') return { scores: s.points.slice(), winners: leaders(s.points), note: s.won >= 0 ? `${SCORE.finish} bonus points for finishing first.` : `${SCORE.rounds} rounds played: most points wins.` };
+    if (s.order?.length >= s.n) {
+      const places = ['1st', '2nd', '3rd', '4th'];
+      return { scores: seatsOf(s.n).map(p => s.n - s.order.indexOf(p)), winners: [s.order[0]], note: `Finishing order: ${s.order.map((p, i) => `${places[i]} ${s.names?.[p] || `Player ${p + 1}`}`).join(', ')}.` };
+    }
     return { scores: seatsOf(s.n).map(p => home(s, p)), winners: [s.won], note: 'Scores are tokens brought home.' };
   },
   // weighs every move: captures, getting home, safety, blockades, and what it leaves exposed
@@ -207,12 +234,14 @@ export default {
     const says = !n ? '' : n.kind === 'stuck' ? `${nameOf(n.seat)} rolled ${n.n}: no token can move. ${v.t[n.seat].every(x => x < 0) ? 'A 6 brings a token out.' : ''}`
       : n.kind === 'forfeit' ? `${nameOf(n.seat)} rolled three sixes: turn lost.`
         : n.kind === 'capture' ? `${nameOf(n.seat)} sent ${nameOf(n.victim)}’s token back! Roll again.`
-          : `${nameOf(n.seat)} brought a token home! Roll again.`;
+          : n.kind === 'place' ? `${nameOf(n.seat)} finished ${['first 🥇', 'second 🥈', 'third 🥉'][n.place - 1] || ''}! The others play on.`
+            : `${nameOf(n.seat)} brought a token home! Roll again.`;
     const round = v.style === 'score' ? `Round ${Math.min(v.round, SCORE.rounds)} of ${SCORE.rounds}` : '';
     const lock = rule(v, 'capture') && ctx.me >= 0 && !v.caps[ctx.me] ? 'Capture a token to open your home path 🔒' : '';
     const panel = { title, die: v.die ?? v.shown, players, lead: says || round || lock, compact: true, buttons: [] };
     if (!mine) return panel;
     if (rolling) {
+      panel.lead = `${says ? `${says} ` : ''}Tap the die to roll.`;
       panel.buttons = [{ label: '🎲 Roll the die', i: 0, primary: true, wide: true }];
       return panel;
     }
@@ -223,9 +252,8 @@ export default {
       const d = describe(v, ctx.me, ctx.legal[i].t);
       return { label: `${d.text}${d.tag === 'risky' ? ' · ⚠️ risky' : ''}`, i, wide: true };
     });
-    // only one thing you can do: the game does it for you
-    if (seen.size === 1) { panel.auto = [...seen.values()][0]; panel.buttons = []; }
-    else panel.lead = says || 'Tap a glowing token, or choose here. The ring shows where it lands.';
+    // you move your own token, even when only one can go: the game never plays your turn for you
+    panel.lead = says || (seen.size === 1 ? 'Only one token can move: tap it.' : 'Tap a glowing token. The ring shows where it lands.');
     if (v.style === 'score') panel.buttons = panel.buttons.map((b) => {
       const pos = v.t[ctx.me][ctx.legal[b.i].t];
       const to = destination(v, ctx.me, ctx.legal[b.i].t);

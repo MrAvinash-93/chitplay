@@ -9,7 +9,7 @@
  *
  * Side view, in screen pixels: x to the right, y down. Gravity pulls down (+y).
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261110-1548';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1146';
 
 export const PER_LEVEL = 5;
 export const STAGES = ['Still hoops', 'Moving hoops', 'Windy court', 'Wind and moving hoops'];
@@ -125,7 +125,9 @@ export default {
   },
   revive(s, seat) { const p = s.players[seat]; p.alive = true; rest(s, p, p.home); },
   over(s) {
-    if (s.players.some(p => p.alive)) return null;
+    const alive = s.players.map((p, i) => p.alive ? i : -1).filter(i => i >= 0);
+    if (s.n > 1 && alive.length === 1) return { scores: s.players.map(p => p.score), winners: alive, endless: true };
+    if (alive.length) return null;
     const scores = s.players.map(p => p.score), top = Math.max(...scores);
     return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true };
   },

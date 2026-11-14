@@ -25,22 +25,28 @@ export const leaders = (scores) => { const top = Math.max(...scores); return sco
 /** Rounded numbers keep the state small on its way to other phones. */
 export const r1 = (v) => Math.round(v * 10) / 10;
 
-/** The score line along the top of the TV. */
+/** A compact, centered score card for each player. */
 export function scoreBar(g, items) {
-  g.font = '700 18px system-ui, sans-serif';
+  if (!items.length) return { left: W / 2, cellWidth: 0, gap: 8 };
+  const gap = 8;
+  const cellWidth = Math.min(130, (W - 48 - gap * (items.length - 1)) / items.length);
+  const total = cellWidth * items.length + gap * (items.length - 1);
+  const left = (W - total) / 2;
+  g.font = `700 ${items.length > 2 ? 14 : 16}px system-ui, sans-serif`;
   g.textBaseline = 'middle';
-  const w = W / items.length;
   items.forEach(([label, value, color], i) => {
+    const x = left + i * (cellWidth + gap);
     g.fillStyle = 'rgba(10, 6, 3, .72)';
-    g.fillRect(i * w + 6, 6, w - 12, 28);
+    g.fillRect(x, 6, cellWidth, 28);
     g.fillStyle = color;
-    g.fillRect(i * w + 6, 6, 6, 28);
+    g.fillRect(x, 6, 5, 28);
     g.fillStyle = '#fff';
     g.textAlign = 'left';
-    g.fillText(String(label).slice(0, 10), i * w + 18, 21);
+    g.fillText(String(label).slice(0, 8), x + 12, 21, Math.max(24, cellWidth - 54));
     g.textAlign = 'right';
-    g.fillText(String(value), i * w + w - 12, 21);
+    g.fillText(String(value), x + cellWidth - 9, 21, 40);
   });
+  return { left, cellWidth, gap };
 }
 
 /**
