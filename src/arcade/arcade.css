@@ -520,3 +520,6 @@ body.room.in-play.tv-keys .tvpanel { max-height: min(64dvh, 480px); }
 /* the ad on a result screen: last, below every button, with room around it */
 .adbox--result { margin: 14px 0 4px; padding: 8px 0 0; border-top: 1px solid rgba(255,210,122,.15); text-align: center; }
 .adbox--result small { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .55; margin-bottom: 4px; }
+
+/* the score chip in a game bar never shrinks to nothing: room for the score and the best beside it */
+body.room.in-play .barstatus { min-width: min(220px, 40vw); }

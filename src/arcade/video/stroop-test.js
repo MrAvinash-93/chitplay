@@ -5,7 +5,7 @@
  * Fair on any connection, like Reaction Time: each phone times its own player from the moment the card
  * appeared on that screen, and sends which answer was tapped with the time (tv.js, logic.signal).
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1515';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1538';
 
 export const CARDS = 15;
 // ink is how the word is printed on the card; btn is the answer button, a shade deeper so white text reads on it

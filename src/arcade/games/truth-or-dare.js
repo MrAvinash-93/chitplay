@@ -3,8 +3,8 @@
  * answers with a little act in the room. Nothing is typed, so nothing personal can be shared with
  * strangers on an online table.
  */
-import { leaders, pick, seatsOf, shuffle, turnLine, strip } from '../lib.js?v=20261114-1515';
-import { DARES, TRUTHS } from '../content.js?v=20261114-1515';
+import { leaders, pick, seatsOf, shuffle, turnLine, strip } from '../lib.js?v=20261114-1538';
+import { DARES, TRUTHS } from '../content.js?v=20261114-1538';
 
 export default {
   init: ({ n, rng, opts }) => ({ n, turn: 0, total: n * (Number(opts?.turns) || 3), scores: seatsOf(n).map(() => 0), bags: { truth: shuffle(TRUTHS, rng), dare: shuffle(DARES, rng) }, kind: null, text: '', done: false }),

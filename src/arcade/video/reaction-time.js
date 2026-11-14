@@ -8,7 +8,7 @@
  *
  * Rounds 3 and 4 may flash blue first: a fake signal. Tapping on blue is a false start too.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1515';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1538';
 
 export const ROUNDS = 5;
 export const MIN_HUMAN = 100;        // ms: quicker than this is a guess
