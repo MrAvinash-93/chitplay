@@ -5,7 +5,7 @@
  * Every six samosas is a new level: the snakes speed up, a short brick wall goes up somewhere on the
  * field (away from every snake's head), and a golden samosa appears for a few seconds: three points.
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261114-1146';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261114-1217';
 
 export const COLS = 32, ROWS = 18;
 const CELL = 20, TOP = 40;

@@ -16,10 +16,10 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261114-1146';
-import { logoSvg } from '../arcade/logo.js?v=20261114-1146';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261114-1146';
-import { profile } from '../persistence/profile-store.js?v=20261114-1146';
+import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261114-1217';
+import { logoSvg } from '../arcade/logo.js?v=20261114-1217';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261114-1217';
+import { profile } from '../persistence/profile-store.js?v=20261114-1217';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
@@ -41,7 +41,8 @@ let HERE = null;       // the game on this page (null on the home page)
 
 let host = null, guest = null, members = [], state = { go: null }, status = 'off';
 let ui = null;
-let pendingTable = null;   // a table code to report once the party line is back
+let pendingTable = null;
+const chips = new Set();   // party buttons inside a game's top bar (partyChip)   // a table code to report once the party line is back
 
 /* ─── the plan: who plays where ─── */
 export function planFor(slug, list) {
@@ -50,7 +51,9 @@ export function planFor(slug, list) {
   const tables = [];
   for (let i = 0; i < list.length; i += size) tables.push(list.slice(i, i + size));
   // one person left alone at the end joins the table before (unless that one is full: then they play the computer)
-  if (tables.length > 1 && tables.at(-1).length === 1 && tables.at(-2).length < size) tables.at(-2).push(...tables.pop());
+  // (written without Array.at, which older phones do not have)
+  const last = tables[tables.length - 1], before = tables[tables.length - 2];
+  if (tables.length > 1 && last.length === 1 && before.length < size) before.push(...tables.pop());
   return { id: Date.now(), slug, tables, codes: {} };
 }
 const tableOf = (go, token) => go.tables.findIndex(t => t.includes(token));
@@ -99,6 +102,7 @@ async function openHost(code) {
       host = room;
       status = 'on';
       hostShare();
+      if (pendingPick) { const s = pendingPick; pendingPick = null; pick(s); }
       return;
     } catch (e) {
       // the last page's line can take a moment to let go of the code
@@ -118,8 +122,9 @@ function hostMessage(id, msg) {
     askHost(from, msg.slug);
   }
 }
+let pendingPick = null;
 function pick(slug) {
-  if (!host) return;
+  if (!host) { pendingPick = slug; return; }
   state.go = planFor(slug, members.map(m => m.token));
   write(STATE_KEY, state);
   hostShare();
@@ -213,6 +218,10 @@ addEventListener('pagehide', () => { try { host?.peer?.destroy(); } catch {} try
 const CSS = `
 .party-pill{position:fixed;z-index:60;display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;border:2px solid rgba(255,210,63,.55);background:rgba(28,16,10,.92);color:#ffd27a;font:800 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .party-pill:hover{background:rgba(48,28,16,.95)}
+.partychip{display:inline-flex;align-items:center;gap:5px;font-weight:800;white-space:nowrap}
+.partychip[hidden]{display:none}
+.partychip__dot{width:8px;height:8px;border-radius:50%;background:#888;display:inline-block}
+.partychip__dot.on{background:#3ddc6a}.partychip__dot.connecting{background:#ffd23f}
 .party-pill--home{left:14px;bottom:14px}
 .party-pill--play{left:50%;transform:translateX(-50%);top:10px;padding:6px 12px;font-size:13px}
 .party-pill i{width:9px;height:9px;border-radius:50%;background:#888;display:inline-block}
@@ -279,6 +288,12 @@ function paint() {
     p ? `👫 Party · ${Math.max(1, n)}` : '👫 Play with Friends',
   );
   ui.pill.setAttribute('aria-label', p ? `Your party: ${n} players. Open party` : 'Play with friends: start or join a party');
+  for (const c of chips) {
+    if (!c.isConnected) { chips.delete(c); continue; }
+    c.hidden = !p;
+    c.replaceChildren(el('i', { class: `partychip__dot ${status}` }), `👫 ${Math.max(1, n)}`);
+    c.setAttribute('aria-label', `Your party: ${n} players. Open party`);
+  }
   if (ui.open) openPanel();
 }
 function gameGrid(onPick) {
@@ -341,7 +356,7 @@ export function mountParty({ root = '', game = null, place = 'home' } = {}) {
   document.head.append(style);
   const pill = el('button', { class: `party-pill party-pill--${place}`, type: 'button', onclick: () => openPanel() });
   ui = { pill, open: false, place };
-  document.body.append(pill);
+  if (place !== 'play') document.body.append(pill);
   // an invite link: ?party=123456
   const params = new URLSearchParams(location.search);
   const invited = (params.get('party') || '').replace(/\D/g, '');
@@ -357,3 +372,31 @@ export function mountParty({ root = '', game = null, place = 'home' } = {}) {
   paint();
 }
 export const inParty = () => !!read(KEY);
+
+/** A party button for a game's top bar: it sits with the other buttons, so it never covers the game. */
+export function partyChip() {
+  const c = el('button', { type: 'button', class: 'back partychip', title: 'Your party', onclick: () => openPanel() });
+  chips.add(c);
+  queueMicrotask(paint);
+  return c;
+}
+
+/**
+ * Opening a game while in a party: the party plays it together. The host is asked to take everyone
+ * there; a friend is asked to suggest it. Asked once the party line is back and friends who were
+ * changing pages have had a few seconds to return, so nobody is left out of the plan.
+ */
+export async function offerParty(slug) {
+  const p = read(KEY);
+  const game = gameBySlug(slug);
+  if (!p || !game || game.max < 2) return;
+  const start = Date.now();
+  while (Date.now() - start < 9000 && (status !== 'on' || (p.host && members.length < 2))) await sleep(400);
+  if (status !== 'on' || read(KEY)?.code !== p.code) return;
+  if (p.host) {
+    if (members.length < 2) return;   // nobody else is here right now: just play
+    confirmBox(`Play ${game.name} with your party (${members.length})?`, '👫 Yes, everyone', 'Just me', (yes) => { if (yes) pick(slug); });
+  } else {
+    confirmBox(`Suggest ${game.name} to the host?`, '👫 Suggest it', 'Play alone', (yes) => { if (yes) suggest(slug); });
+  }
+}

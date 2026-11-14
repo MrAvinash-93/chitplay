@@ -1,34 +1,34 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261114-1146';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261114-1146';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261114-1146';
+import { GAME_PHASES } from '../../app/config.js?v=20261114-1217';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261114-1217';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261114-1217';
 import { audioManager } from '../../audio/audio-manager.js';
-import { viewButton } from '../../arcade/view-mode.js?v=20261114-1146';
-import { loadWorld } from '../../world/world-loader.js?v=20261114-1146';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261114-1146';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261114-1146';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261114-1146';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261114-1146';
-import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261114-1146';
+import { viewButton } from '../../arcade/view-mode.js?v=20261114-1217';
+import { loadWorld } from '../../world/world-loader.js?v=20261114-1217';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261114-1217';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261114-1217';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261114-1217';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261114-1217';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261114-1217';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261114-1146';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261114-1146';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261114-1146';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261114-1146';
-import { iconSvg } from '../icons.js?v=20261114-1146';
-import { shellText, fill } from '../../arcade/shell-text.js?v=20261114-1146';
-import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261114-1146';
-import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261114-1146';
-import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261114-1146';
-import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261114-1146';
-import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261114-1146';
-import { savedList } from '../../arcade/resume.js?v=20261114-1146';
-import { logoSvg } from '../../arcade/logo.js?v=20261114-1146';
-import { gameStrip } from '../../arcade/game-strip.js?v=20261114-1146';
-import { hotPrompt } from '../../arcade/share.js?v=20261114-1146';
-import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261114-1146';
+} from '../../world/character-looks.js?v=20261114-1217';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261114-1217';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261114-1217';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261114-1217';
+import { iconSvg } from '../icons.js?v=20261114-1217';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261114-1217';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261114-1217';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261114-1217';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261114-1217';
+import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261114-1217';
+import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261114-1217';
+import { savedList } from '../../arcade/resume.js?v=20261114-1217';
+import { logoSvg } from '../../arcade/logo.js?v=20261114-1217';
+import { gameStrip } from '../../arcade/game-strip.js?v=20261114-1217';
+import { hotPrompt } from '../../arcade/share.js?v=20261114-1217';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261114-1217';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -347,7 +347,11 @@ export function GameScreen({ transition }) {
 
   /* On small screens the switches fold away behind one button, so the top bar never overflows */
   const toolsBox = el('div', { className: 'game__tools' }, [rotateBtn, chatBtn, soundBtn]);
-  const toolsBtn = iconBtn('sliders', () => toolsBox.classList.toggle('game__tools--open'), 'game__toolsbtn');
+  const toolsBtn = iconBtn('sliders', () => {
+    const open = toolsBox.classList.toggle('game__tools--open');
+    // the bar comes above the games list while its menu is open, or the menu would open behind the list
+    toolsBox.closest('.game__top')?.classList.toggle('game__top--raised', open);
+  }, 'game__toolsbtn');
 
   /** Every label on the always-visible controls, for the first paint and after a language change. */
   function paintHud() {
@@ -460,7 +464,7 @@ export function GameScreen({ transition }) {
 
   // a tap anywhere else closes the small pop-ups; the tap still does what it was going to do
   const onOutsideTap = (e) => {
-    if (toolsBox.classList.contains('game__tools--open') && !toolsBox.contains(e.target) && !toolsBtn.contains(e.target)) toolsBox.classList.remove('game__tools--open');
+    if (toolsBox.classList.contains('game__tools--open') && !toolsBox.contains(e.target) && !toolsBtn.contains(e.target)) { toolsBox.classList.remove('game__tools--open'); toolsBox.closest('.game__top')?.classList.remove('game__top--raised'); }
     if (!talkPanel.hidden && !talkPanel.contains(e.target) && !talkBtn.contains(e.target)) closeTalk();
   };
   document.addEventListener('pointerdown', onOutsideTap, true);
@@ -692,7 +696,7 @@ export function GameScreen({ transition }) {
         // chess: you say how strong you are, and the computer plays at that level
         const CHESS_RATINGS = [['beginner', 'Beginner', '0–400'], ['novice', 'Novice', '400–800'], ['intermediate', 'Intermediate', '800–1200'], ['good', 'Good', '1200–1600'], ['advanced', 'Advanced', '1600–1900'], ['expert', 'Expert', '1900–2200'], ['master', 'Master', '2200–2500'], ['grandmaster', 'Grandmaster', '2500+']];
         const CHESS_CLOCKS = [['', '∞ No clock'], ['60', '1 min'], ['180+2', '3 + 2'], ['300', '5 min'], ['600', '10 min'], ['900+10', '15 + 10']];
-        // your own level is earned (beat a player of a higher level to take theirs); everyone starts as a Beginner
+        // your own level is earned (one level at a time: beat a higher level, or three of your own); everyone starts as a Beginner
         const myChess = () => { let r = null; try { r = localStorage.getItem('chitplay.chessLevel'); } catch {} return CHESS_RATINGS.some(x => x[0] === r) ? r : 'beginner'; };
         const ratingFor = () => { let r = null; try { r = localStorage.getItem('chitplay.chessRating'); } catch {} return CHESS_RATINGS.some(x => x[0] === r) ? r : myChess(); };
         const clockFor = () => { let c = ''; try { c = localStorage.getItem('chitplay.chessClock') || ''; } catch {} return CHESS_CLOCKS.some(x => x[0] === c) ? c : ''; };
@@ -708,7 +712,7 @@ export function GameScreen({ transition }) {
             levelPicker.className = 'game__rounds game__rounds--wrap';
             const own = CHESS_RATINGS.find(x => x[0] === myChess());
             levelPicker.append(el('div', { className: 'game__mylevel' }, [el('span', {}, ['♟️ Your level']), el('b', {}, [own[1]]), el('small', {}, [own[2]])]),
-              el('p', { className: 'game__mylevel-help' }, ['Beat a player of a higher level to take their level. Online you meet players of your level.']),
+              el('p', { className: 'game__mylevel-help' }, ['Climb one level at a time: beat a player of a higher level, or win three games against your own level. Online you meet players of your level.']),
               el('span', { className: 'game__rounds-label' }, ['🤖 Computer’s level']), ...CHESS_RATINGS.map(([id, name, range]) => el('button', {
               className: `game__pill game__pill--rating${id === ratingFor() ? ' game__pill--on' : ''}`, type: 'button', attrs: { 'aria-pressed': String(id === ratingFor()), title: `${name} (${range})` },
               onClick: () => { try { localStorage.setItem('chitplay.chessRating', id); } catch {} haptic(10); paintLevel(); },
@@ -1798,7 +1802,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261114-1146').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261114-1217').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -2013,7 +2017,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261114-1146').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261114-1217').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -2219,7 +2223,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261114-1146');
+        const scanner = import('../../net/qr-scan.js?v=20261114-1217');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });

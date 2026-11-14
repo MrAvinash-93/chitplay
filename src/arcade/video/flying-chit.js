@@ -15,7 +15,7 @@
  *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1146';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1217';
 
 export const AHEAD = 70;
 export const LEVEL_D = 320;

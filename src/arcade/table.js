@@ -10,42 +10,42 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1146';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1146';
-import { loadWorld } from '../world/world-loader.js?v=20261114-1146';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1146';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1146';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1146';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1146';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1146';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1217';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1217';
+import { loadWorld } from '../world/world-loader.js?v=20261114-1217';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1217';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1217';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1217';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1217';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1217';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261114-1146';
-import { faceHtml } from './photo.js?v=20261114-1146';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1146';
+import { iconSvg } from '../ui/icons.js?v=20261114-1217';
+import { faceHtml } from './photo.js?v=20261114-1217';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1217';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261114-1146';
+import { settingsStore } from '../persistence/settings-store.js?v=20261114-1217';
 
-import { fill, shellText } from './shell-text.js?v=20261114-1146';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1146';
-import { bestOf, bump, gameFinished, holdPopups, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1146';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1146';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1146';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1146';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1146';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1146';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1146';
-import { startReminder } from './reminder.js?v=20261114-1146';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1146';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1146';
-import { roomLevel } from './decor.js?v=20261114-1146';
+import { fill, shellText } from './shell-text.js?v=20261114-1217';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1217';
+import { bestOf, bump, gameFinished, holdPopups, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1217';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1217';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1217';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1217';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1217';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1217';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1217';
+import { startReminder } from './reminder.js?v=20261114-1217';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1217';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1217';
+import { roomLevel } from './decor.js?v=20261114-1217';
 
-import { viewButton } from './view-mode.js?v=20261114-1146';
-import { adBreak } from './ad-breaks.js?v=20261114-1146';
-import { gameStrip } from './game-strip.js?v=20261114-1146';
-import { mountParty } from '../net/party.js?v=20261114-1146';
-const V = '?v=20261114-1146';
+import { viewButton } from './view-mode.js?v=20261114-1217';
+import { adBreak } from './ad-breaks.js?v=20261114-1217';
+import { gameStrip } from './game-strip.js?v=20261114-1217';
+import { mountParty, partyChip, offerParty, inParty } from '../net/party.js?v=20261114-1217';
+const V = '?v=20261114-1217';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -119,6 +119,8 @@ const topBar = (game) => {
     h('button', { type: 'button', class: 'back rank-chip', title: `${rp.title} · ${rp.points.toLocaleString('en')} points`, 'aria-label': `${rp.title}, ${rp.points.toLocaleString('en')} points`, onclick: openStatusDetails }, [`${rp.icon} L${rp.index + 1}`]),
     // the compact record and score line opens a fuller room scoreboard
     h('span', { class: 'barstatus', 'aria-live': 'polite' }, statusKids()),
+    // the party, if this phone is in one: in the bar with the other buttons, never over the game
+    inParty() ? partyChip() : null,
     game ? viewButton('back viewbtn', () => audioManager.play('select')) : null,
     h('button', { type: 'button', class: 'back langpick', 'aria-label': 'Language', title: 'Language', onclick: () => openLanguages() }, [`🌐 ${(LANGUAGES.find(l => l.id === LANG) || LANGUAGES[0]).short}`]),
   ]);
@@ -817,7 +819,7 @@ function aimControls(ctx, send) {
     btn('Shoot!', () => { board?.aimOff(); send({ x: selectedAim.x, a: selectedAim.a, p: selectedAim.p }); }, 'primary'),
   ]);
 }
-/* ─── your chess level: everyone starts as a Beginner, and beating a player of a higher level takes you up to it ─── */
+/* ─── your chess level: everyone starts as a Beginner and climbs one level at a time (see chessLevelUp) ─── */
 const CHESS_LEVELS = ['beginner', 'novice', 'intermediate', 'good', 'advanced', 'expert', 'master', 'grandmaster'];
 /** A chess table waits longer: finding someone of your own level takes a little time. */
 const publicWait = () => (G?.slug === 'chess' ? 60000 : PUBLIC_WAIT_MS);
@@ -829,15 +831,30 @@ function myChessLevel() {
   try { v = localStorage.getItem('chitplay.chessLevel'); } catch {}
   return CHESS_LEVELS.includes(v) ? v : 'beginner';
 }
-/** After a chess game you won: the level of the player you beat, if it's above yours, becomes yours. */
+/**
+ * After a chess game you won, you climb one level at a time, the way rating ladders work:
+ *  - beat a player of a higher level: up one level (never straight to theirs);
+ *  - beat three players of your own level: up one level.
+ * A level is never lost, so a bad day never takes away what you earned.
+ */
+const WINS_TO_CLIMB = 3;
 function chessLevelUp(result, ctx) {
   if (G?.slug !== 'chess' || !match || ctx.me < 0 || ctx.pass || !result.winners?.includes(ctx.me)) return null;
   const loser = 1 - ctx.me, p = match.players[loser];
   const beaten = p?.kind === 'bot' ? match.s.level : p?.kind === 'guest' ? p.level : guestState.hostLevel;
   const was = myChessLevel();
-  if (!CHESS_LEVELS.includes(beaten) || CHESS_LEVELS.indexOf(beaten) <= CHESS_LEVELS.indexOf(was)) return null;
-  try { localStorage.setItem('chitplay.chessLevel', beaten); } catch {}
-  return beaten;
+  const at = CHESS_LEVELS.indexOf(was), them = CHESS_LEVELS.indexOf(beaten);
+  if (them < 0 || at >= CHESS_LEVELS.length - 1) return null;
+  let wins = 0;
+  try { wins = Number(localStorage.getItem('chitplay.chessWins')) || 0; } catch {}
+  let next = null;
+  if (them > at) next = CHESS_LEVELS[at + 1];
+  else if (them === at) { wins += 1; if (wins >= WINS_TO_CLIMB) next = CHESS_LEVELS[at + 1]; }
+  try {
+    if (next) { localStorage.setItem('chitplay.chessLevel', next); localStorage.setItem('chitplay.chessWins', '0'); }
+    else localStorage.setItem('chitplay.chessWins', String(wins));
+  } catch {}
+  return next;
 }
 /* ─── a chess clock ─── */
 let clockTick = 0;
@@ -2127,6 +2144,8 @@ async function main() {
   applyTheme(game);
   // the party button: a party follows its host from game to game
   try { mountParty({ root: '../', game: game?.slug || null, place: 'play' }); } catch (e) { console.warn('[party]', e); }
+  // in a party and opened a game by hand (not sent here by the party): offer to play it together
+  if (game && !params.get('party') && !isCode(join) && inParty()) offerParty(game.slug).catch(() => {});
   const w = await loadWorld();
   if (w?.story) {
     world = w;

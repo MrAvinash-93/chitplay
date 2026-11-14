@@ -433,7 +433,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1146">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261114-1217">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -541,7 +541,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1146">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1217">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -618,7 +618,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1146">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261114-1217">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -994,7 +994,7 @@ ${ANALYTICS}
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ChitPlay">
 <meta property="og:title" content="${esc(title)}">
@@ -1300,7 +1300,7 @@ ${ANALYTICS}
 <title>${esc(/ChitPlay/.test(headTitle) ? headTitle : `${headTitle} | ChitPlay`)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${SITE}/${slug}/">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ChitPlay">
 <meta property="og:title" content="${esc(/ChitPlay/.test(headTitle) ? headTitle : `${headTitle} | ChitPlay`)}">

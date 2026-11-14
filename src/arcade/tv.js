@@ -3,20 +3,20 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261114-1146';
-import { is2d } from './view-mode.js?v=20261114-1146';
-import { adBreak } from './ad-breaks.js?v=20261114-1146';
-import { W, H, TICK } from './video/lib.js?v=20261114-1146';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1146';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1146';
-import { MOMENT, linesFor } from './talk.js?v=20261114-1146';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1146';
-import { ask, confirmSpend } from './dialog.js?v=20261114-1146';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1146';
-import { profile } from '../persistence/profile-store.js?v=20261114-1146';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1146';
+import { hintsLeft, showHint } from './hint.js?v=20261114-1217';
+import { is2d } from './view-mode.js?v=20261114-1217';
+import { adBreak } from './ad-breaks.js?v=20261114-1217';
+import { W, H, TICK } from './video/lib.js?v=20261114-1217';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1217';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1217';
+import { MOMENT, linesFor } from './talk.js?v=20261114-1217';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1217';
+import { ask, confirmSpend } from './dialog.js?v=20261114-1217';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1217';
+import { profile } from '../persistence/profile-store.js?v=20261114-1217';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1217';
 
-const V = '?v=20261114-1146';
+const V = '?v=20261114-1217';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
