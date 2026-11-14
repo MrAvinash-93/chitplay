@@ -1,3 +1,3 @@
-import { makeTagGame } from './tag-game-core.js?v=20261114-1428';
+import { makeTagGame } from './tag-game-core.js?v=20261114-1435';
 
 export default makeTagGame('pakda-padi');

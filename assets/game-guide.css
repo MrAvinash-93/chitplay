@@ -241,3 +241,7 @@
 /* an ad place on a reading page (empty until an ad unit is set in tools/build-seo.mjs) */
 .adbox{margin:28px 0;padding:10px 0;border-top:1px solid rgba(255,210,122,.15);border-bottom:1px solid rgba(255,210,122,.15);text-align:center}
 .adbox small{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.6;margin-bottom:6px}
+
+/* the display banner keeps its place while it loads */
+.adbanner{display:flex;justify-content:center;min-height:250px;overflow:hidden}
+@media (min-width:760px){.adbanner{min-height:90px}}

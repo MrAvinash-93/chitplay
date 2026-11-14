@@ -6,7 +6,7 @@
  * the highway things come two at a time; in rush hour the other rickshaws race at you. Each new
  * level opens with a coin rush: a few seconds of coins in a zigzag line, and nothing new in the way.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1428';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1435';
 
 export const LANES = 4;
 export const LEVEL_DIST = 4000;

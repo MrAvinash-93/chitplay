@@ -3,7 +3,7 @@
  * the other player's pieces. Down to two pieces, or with no move, you lose. With three pieces left
  * yours may fly to any free point. 50 moves each without a capture is a draw.
  */
-import { best, turnLine, strip, who } from '../lib.js?v=20261114-1428';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1435';
 
 // 24 points: three squares, numbered clockwise from the top-left of each
 export const POINTS = 24;

@@ -6,7 +6,7 @@
  * The lines themselves live in the language files (src/i18n), so each phone reads
  * a message in its own language.
  */
-import { talkText } from '../i18n/index.js?v=20261114-1428';
+import { talkText } from '../i18n/index.js?v=20261114-1435';
 
 export const TALK_EMOJIS = ['😂', '🤣', '😜', '🤫', '😎', '🤡', '🙄', '😱', '🥶', '🤔', '😈', '👀', '🙏', '🔥', '💀', '🐔', '🍌', '👋'];
 export const TALK_LINE_COUNT = 24;

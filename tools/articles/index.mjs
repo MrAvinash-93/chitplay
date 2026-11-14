@@ -31,7 +31,7 @@ const PUBLISHED = '2026-11-14';
  * languages, the games); returns the URLs with their language clusters for the sitemap.
  */
 export async function writeArticles(site) {
-  const { ROOT, SITE, TODAY, ANALYTICS, esc, json, iconLinks, logoLink, footerLinks, LANG_PAGES, PARTY, MAIN_SLUG, imageFor, guideFor, adSlot = () => '' } = site;
+  const { ROOT, SITE, TODAY, ANALYTICS, esc, json, iconLinks, logoLink, footerLinks, LANG_PAGES, PARTY, MAIN_SLUG, imageFor, guideFor, adSlot = () => '', bannerSlot = () => '' } = site;
   const text = { en: (await import('./en.mjs')).default };
   // a language whose articles are not written yet is left out everywhere, links and hreflang included
   for (const L of LANG_PAGES) text[L.code] = (await import(`./${L.code}.mjs`).catch(() => ({ default: null }))).default;
@@ -122,6 +122,7 @@ ${adSlot('article')}
 <h2>${esc(T.ui.faq)}</h2>
 ${a.faq.map(([q, ans]) => `<details><summary>${esc(q)}</summary><p>${esc(ans)}</p></details>`).join('\n')}
 </article>
+${bannerSlot()}
 <h2>${esc(T.ui.more)}</h2>
 <ul class="list">${more}</ul>
 ${langList(L, urlFor)}
