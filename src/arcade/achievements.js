@@ -3,8 +3,8 @@
  * stays on this device. Coins and rank points come from the same profile as the rest of the game,
  * so playing anything moves you up the same ladder. Nothing here is bought or has any real value.
  */
-import { profile, RANKS } from '../persistence/profile-store.js?v=20261114-1217';
-import { ALL_GAMES } from './catalog.js?v=20261114-1217';
+import { profile, RANKS } from '../persistence/profile-store.js?v=20261114-1305';
+import { ALL_GAMES } from './catalog.js?v=20261114-1305';
 
 const KEY = 'chitplay.achievements';
 // games that were renamed keep their scores under the new name
@@ -130,7 +130,28 @@ function nextPopup() {
 }
 let popupSound = null;
 export const onPopup = (fn) => { popupSound = fn; };
-export function popup(icon, title, sub = '', tier = '') { queue.push({ icon, title, sub, tier }); nextPopup(); }
+/**
+ * Nothing pops up over a game any more: what a player earns (achievements, badges, ranks) is kept
+ * as news and shown when they choose to look (the profile and the achievements list), never mid-play.
+ */
+const NEWS_KEY = 'chitplay.news';
+export function popup(icon, title, sub = '', tier = '') {
+  try {
+    const news = JSON.parse(localStorage.getItem(NEWS_KEY) || '[]');
+    news.unshift({ icon, title, sub, tier, at: Date.now() });
+    localStorage.setItem(NEWS_KEY, JSON.stringify(news.slice(0, 30)));
+  } catch {}
+}
+/** What was earned lately, newest first (for the profile). */
+export function recentNews() { try { return JSON.parse(localStorage.getItem(NEWS_KEY) || '[]'); } catch { return []; } }
+
+/**
+ * The player's level, 1 to 100, from all the points they have earned. Quick at first (level 2
+ * after a first game, about level 10 after twenty), slow at the top (level 100 is a long road).
+ */
+export const levelOf = (points) => Math.max(1, Math.min(100, Math.floor(Math.sqrt(Math.max(0, points) / 100)) + 1));
+export const pointsForLevel = (level) => 100 * (Math.max(1, level) - 1) ** 2;
+export const myLevel = () => { try { return levelOf(profile.all.points); } catch { return 1; } };
 
 /** Anything newly earned: popups and coins. Safe to call at any time. */
 export function checkUnlocks(a = load()) {

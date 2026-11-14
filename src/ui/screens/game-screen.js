@@ -1,34 +1,35 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261114-1217';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261114-1217';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261114-1217';
+import { GAME_PHASES } from '../../app/config.js?v=20261114-1305';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261114-1305';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261114-1305';
 import { audioManager } from '../../audio/audio-manager.js';
-import { viewButton } from '../../arcade/view-mode.js?v=20261114-1217';
-import { loadWorld } from '../../world/world-loader.js?v=20261114-1217';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261114-1217';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261114-1217';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261114-1217';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261114-1217';
-import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261114-1217';
+import { viewButton, setView, is2d } from '../../arcade/view-mode.js?v=20261114-1305';
+import { loadWorld } from '../../world/world-loader.js?v=20261114-1305';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261114-1305';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261114-1305';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261114-1305';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261114-1305';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261114-1305';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261114-1217';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261114-1217';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261114-1217';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261114-1217';
-import { iconSvg } from '../icons.js?v=20261114-1217';
-import { shellText, fill } from '../../arcade/shell-text.js?v=20261114-1217';
-import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261114-1217';
-import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261114-1217';
-import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261114-1217';
-import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261114-1217';
-import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261114-1217';
-import { savedList } from '../../arcade/resume.js?v=20261114-1217';
-import { logoSvg } from '../../arcade/logo.js?v=20261114-1217';
-import { gameStrip } from '../../arcade/game-strip.js?v=20261114-1217';
-import { hotPrompt } from '../../arcade/share.js?v=20261114-1217';
-import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261114-1217';
+} from '../../world/character-looks.js?v=20261114-1305';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261114-1305';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261114-1305';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261114-1305';
+import { iconSvg } from '../icons.js?v=20261114-1305';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261114-1305';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, levelOf, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261114-1305';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261114-1305';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261114-1305';
+import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261114-1305';
+import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261114-1305';
+import { savedList } from '../../arcade/resume.js?v=20261114-1305';
+import { logoSvg } from '../../arcade/logo.js?v=20261114-1305';
+import { gameStrip } from '../../arcade/game-strip.js?v=20261114-1305';
+import { partyChip } from '../../net/party.js?v=20261114-1305';
+import { hotPrompt } from '../../arcade/share.js?v=20261114-1305';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261114-1305';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -808,7 +809,7 @@ export function GameScreen({ transition }) {
           const rank = profile.rank;
           playerFace.innerHTML = faceHtml(portraitSvg(profile.look));
           playerName.textContent = profile.name;
-          playerRank.textContent = `${rank.icon} ${fmt(ui.rankLine, {
+          playerRank.textContent = `${rank.icon} Lv ${levelOf(profile.all.points)} · ${fmt(ui.rankLine, {
             title: rankTitle(rank), pts: profile.all.points.toLocaleString('en'),
             streak: profile.streak > 1 ? fmt(ui.streak, { n: profile.streak }) : '',
           })}`;
@@ -835,7 +836,7 @@ export function GameScreen({ transition }) {
         later(700, () => {
           if (!(alive && !match && !net && overlay.hidden && sheet.classList.contains('game__sheet--start'))) return;
           if (needsWelcome()) { markWelcomed(); showToast(fmt(ui.welcomeHi, { name: profile.name }), 3200); return; }
-          if (!profile.login.claimed) openLoginReward(paintDaily);
+          // the daily reward waits in the profile (Rewards): nothing opens over the games by itself
         });
         const baseRefresh = rankRefresh;
         rankRefresh = () => { baseRefresh(); paintDaily(); };
@@ -875,6 +876,10 @@ export function GameScreen({ transition }) {
         let kind = '';
         const search = el('input', { className: 'allgames__search', attrs: { type: 'search', placeholder: shell.search, 'aria-label': shell.search, enterkeyhint: 'search' } });
         const grid = el('div', { className: 'allgames__grid' });
+        // search is a small icon until it is wanted; until then Play with Friends gets the room
+        const searchBtn = el('button', { className: 'game__roombtn game__searchbtn', type: 'button', attrs: { 'aria-label': shell.search, title: shell.search }, onClick: () => { listRow.classList.add('game__list-row--searching'); search.focus(); } }, ['🔍']);
+        const listRow = el('div', { className: 'game__list-row' }, [searchBtn, search, partyChip({ always: true, className: 'game__roombtn partychip' })]);
+        search.addEventListener('blur', () => { if (!search.value.trim()) listRow.classList.remove('game__list-row--searching'); });
         const hotRow = el('div', { className: 'hotrow' });
         const recentRow = el('div', { className: 'hotrow recent' });
         const carryRow = el('div', { className: 'hotrow recent' });
@@ -958,9 +963,10 @@ export function GameScreen({ transition }) {
         let gridShown = false;
         search.addEventListener('input', paintList);
         const listView = el('div', { className: 'game__list' }, [
-          el('div', { className: 'game__list-me' }, [playerCard, dailyPill]),
+          // your card and your Gaming Room; the daily rewards live in the profile (Rewards)
+          el('div', { className: 'game__list-me' }, [playerCard, el('button', { className: 'game__roombtn game__roombtn--card', type: 'button', attrs: { 'aria-label': 'Gaming Room' }, onClick: () => { sfx.play('open'); haptic(8); openMyRoom(); } }, ['🎮 Room'])]),
           ...(ticket?.left ? [bigPlay('restart', ui.rejoinBtn, fmt(ui.rejoinSub, { code: ticket.code }), 'rejoin')] : []),
-          el('div', { className: 'game__list-row' }, [search, el('button', { className: 'game__roombtn', type: 'button', attrs: { 'aria-label': 'Gaming Room' }, onClick: () => { sfx.play('open'); haptic(8); openMyRoom(); } }, ['🎮 Room'])]),
+          listRow,
           chips,
           el('div', { className: 'game__list-scroll' }, [carryRow, hotRow, recentRow, grid, legalLinksNow()]),
         ]);
@@ -1802,7 +1808,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261114-1217').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261114-1305').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -2017,7 +2023,7 @@ export function GameScreen({ transition }) {
           status.textContent = '';
           inviteBtn.hidden = false;
           keepAwake(true);
-          import('../../net/qr.js?v=20261114-1217').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261114-1305').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -2223,7 +2229,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261114-1217');
+        const scanner = import('../../net/qr-scan.js?v=20261114-1305');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });
@@ -3885,13 +3891,29 @@ export function GameScreen({ transition }) {
     const resetBtn = el('button', {
       className: 'game__danger', type: 'button',
       onClick: () => {
-        if (!armed) { armed = true; resetBtn.textContent = ui.resetSure; return; }
-        profile.resetScore();
-        armed = false;
-        resetBtn.textContent = ui.resetScore;
-        paintScore();
-        rankRefresh?.();
-        showToast(ui.resetDone, 1800);
+        // a warning first: the whole record goes, and only a ticked box unlocks the final Delete
+        const box = el('div', { className: 'dlg', attrs: { role: 'alertdialog', 'aria-modal': 'true', 'aria-label': 'Reset your record?' } });
+        const close = () => box.remove();
+        const agree = el('input', { attrs: { type: 'checkbox', id: 'reset-agree' } });
+        const del = el('button', { className: 'dlg__btn dlg__btn--ok', type: 'button', attrs: { disabled: 'disabled' }, onClick: () => {
+          if (!agree.checked) return;
+          profile.resetScore();
+          close();
+          paintScore();
+          rankRefresh?.();
+          showToast(ui.resetDone, 1800);
+        } }, ['🗑️ Delete my record']);
+        agree.addEventListener('change', () => { del.disabled = !agree.checked; });
+        box.append(el('div', { className: 'dlg__box dlg__box--warn' }, [
+          el('span', { className: 'dlg__icon', attrs: { 'aria-hidden': 'true' } }, ['⚠️']),
+          el('strong', { className: 'dlg__title' }, ['Reset your whole record?']),
+          el('p', { className: 'dlg__body' }, ['This deletes your points, level, rank, wins and scores on this device. It cannot be undone.']),
+          el('label', { className: 'dlg__body', attrs: { for: 'reset-agree' }, style: { display: 'flex', gap: '8px', alignItems: 'flex-start', textAlign: 'left', cursor: 'pointer' } }, [agree, 'I agree: delete my whole record']),
+          el('div', { className: 'dlg__row' }, [el('button', { className: 'dlg__btn', type: 'button', onClick: close }, ['← Back']), del]),
+        ]));
+        box.addEventListener('click', (e) => { if (e.target === box) close(); });
+        document.body.append(box);
+        box.querySelector('.dlg__btn')?.focus();
       },
     }, [ui.resetScore]);
 
@@ -3936,6 +3958,8 @@ export function GameScreen({ transition }) {
     const settingsBox = el('div', { className: 'game__custom' }, [
       row(ui.language, languageSelect),
       el('p', { className: 'game__netnote' }, [ui.languageHelp]),
+      // 3D (the room) or 2D (the board from above): the same choice as the switch inside every game
+      row('View', el('select', { className: 'game__select', attrs: { 'aria-label': 'View: 3D or 2D' }, onChange: (e) => { setView(e.target.value); sfx.play('select'); } }, [['3d', '3D: the room'], ['2d', '2D: board only']].map(([v, label]) => el('option', { attrs: { value: v, ...((is2d() ? '2d' : '3d') === v ? { selected: 'selected' } : {}) } }, [label])))),
       row(ui.graphics, graphics),
       el('p', { className: 'game__netnote' }, [ui.graphicsHelp]),
       toggle('sound', 'soundOff', ui.soundLabel, soundOn, setSound),

@@ -6,7 +6,7 @@
  * The caller types the number on the phone keypad. Cards are private: friends' phones are sent only
  * their own card (publicState), so nobody can call numbers just to block someone else's lines.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1217';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1305';
 
 export const SIZE = 5;
 export const NEED = 5;                    // lines for BINGO

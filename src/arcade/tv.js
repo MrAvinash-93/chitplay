@@ -3,20 +3,20 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261114-1217';
-import { is2d } from './view-mode.js?v=20261114-1217';
-import { adBreak } from './ad-breaks.js?v=20261114-1217';
-import { W, H, TICK } from './video/lib.js?v=20261114-1217';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1217';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1217';
-import { MOMENT, linesFor } from './talk.js?v=20261114-1217';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1217';
-import { ask, confirmSpend } from './dialog.js?v=20261114-1217';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1217';
-import { profile } from '../persistence/profile-store.js?v=20261114-1217';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1217';
+import { hintsLeft, showHint } from './hint.js?v=20261114-1305';
+import { is2d } from './view-mode.js?v=20261114-1305';
+import { adBreak } from './ad-breaks.js?v=20261114-1305';
+import { W, H, TICK } from './video/lib.js?v=20261114-1305';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1305';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1305';
+import { MOMENT, linesFor } from './talk.js?v=20261114-1305';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1305';
+import { ask, confirmSpend } from './dialog.js?v=20261114-1305';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1305';
+import { profile } from '../persistence/profile-store.js?v=20261114-1305';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1305';
 
-const V = '?v=20261114-1217';
+const V = '?v=20261114-1305';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -36,6 +36,8 @@ export async function runTv(ctx) {
   const music = ctx.music || (() => {});
   const endSound = (res, seats) => { music(false); const w = res?.winners || []; audio(w.length && seats.length && !seats.some(x => w.includes(x)) ? 'lose' : 'victory'); haptic(w.length && seats.length && !seats.some(x => w.includes(x)) ? 'lose' : 'win'); };
   const logic = (await import(`./video/${game.slug}.js${V}`)).default;
+  // games answered on a keypad or with answer buttons need room under the TV for every key (arcade.css)
+  document.body.classList.toggle('tv-keys', !!(logic.keypad || logic.choices));
   const story = world?.story || null;
   const lines = linesFor(game.slug, LANG);
 

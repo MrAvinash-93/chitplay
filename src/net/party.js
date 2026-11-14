@@ -16,10 +16,10 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261114-1217';
-import { logoSvg } from '../arcade/logo.js?v=20261114-1217';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261114-1217';
-import { profile } from '../persistence/profile-store.js?v=20261114-1217';
+import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261114-1305';
+import { logoSvg } from '../arcade/logo.js?v=20261114-1305';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261114-1305';
+import { profile } from '../persistence/profile-store.js?v=20261114-1305';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
@@ -186,7 +186,7 @@ function startParty() {
   write(STATE_KEY, state);
   openHost(code);
 }
-function joinParty(code) {
+export function joinParty(code) {
   write(KEY, { code, host: false });
   write(DONE_KEY, null);
   openGuest(code);
@@ -236,6 +236,7 @@ const CSS = `
 .party-btn--main{background:linear-gradient(#ffb347,#f0791f);color:#1e120b;border:0}
 .party-btn--quiet{background:transparent;color:#d4c2a0;font-weight:700}
 .party-input{flex:1 1 140px;padding:12px;border-radius:12px;border:1px solid rgba(255,210,122,.35);background:#120a06;color:#fff;font:800 20px ui-monospace,monospace;letter-spacing:3px;text-align:center}
+.party-qr{display:flex;justify-content:center;margin:6px 0}.party-qr svg{width:150px;height:150px;background:#fff;padding:8px;border-radius:12px}
 .party-members{list-style:none;padding:0;margin:8px 0;display:flex;flex-wrap:wrap;gap:6px}
 .party-members li{padding:5px 10px;border-radius:999px;background:#2c1a10;font-weight:700;font-size:13px}
 .party-games{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:8px}
@@ -278,9 +279,18 @@ function confirmBox(title, yes, no, done) {
 function inviteLink(code) { return `${new URL(ROOT || './', location.href).href.split('?')[0]}?party=${code}`; }
 
 function paint() {
-  if (!ui) return;
   const p = read(KEY);
   const n = members.length;
+  for (const c of chips) {
+    // a button that was on the page and has gone (the bar was redrawn) is forgotten; a new one not yet placed is painted
+    if (c.isConnected) c.dataset.placed = '1';
+    else if (c.dataset.placed) { chips.delete(c); continue; }
+    c.hidden = !p && !c.dataset.always;
+    if (p) c.replaceChildren(el('i', { class: `partychip__dot ${status}` }), `👫 ${Math.max(1, n)}`);
+    else c.replaceChildren('👫 ', el('span', { class: 'partychip__long' }, ['Play with ']), 'Friends');
+    c.setAttribute('aria-label', p ? `Your party: ${n} players. Open party` : 'Play with friends: start or join a party');
+  }
+  if (!ui) return;
   // in a game, the button is there for a party only: the game's own menu already offers Play with friends
   ui.pill.hidden = ui.place === 'play' && !p;
   ui.pill.replaceChildren(
@@ -288,12 +298,6 @@ function paint() {
     p ? `👫 Party · ${Math.max(1, n)}` : '👫 Play with Friends',
   );
   ui.pill.setAttribute('aria-label', p ? `Your party: ${n} players. Open party` : 'Play with friends: start or join a party');
-  for (const c of chips) {
-    if (!c.isConnected) { chips.delete(c); continue; }
-    c.hidden = !p;
-    c.replaceChildren(el('i', { class: `partychip__dot ${status}` }), `👫 ${Math.max(1, n)}`);
-    c.setAttribute('aria-label', `Your party: ${n} players. Open party`);
-  }
   if (ui.open) openPanel();
 }
 function gameGrid(onPick) {
@@ -328,6 +332,8 @@ function openPanel() {
       el('h2', {}, [iAmHost ? '🎉 Your party' : '👫 Party']),
       el('p', {}, [status === 'on' ? (iAmHost ? 'Friends join with this code or the link:' : 'You are in. The host picks the game; you can suggest one.') : status === 'error' ? 'Could not reach the party. Check the internet and try again.' : 'Connecting…']),
       el('div', { class: 'party-code', 'aria-label': `Party code ${p.code.split('').join(' ')}` }, [p.code]),
+      // a QR of the invite link: friends point their camera at it and are asked to join
+      iAmHost ? (() => { const q = el('div', { class: 'party-qr', 'aria-label': 'Scan to join the party' }); import(`./qr.js?v=20261114-1305`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join the party'); if (svg) q.append(svg); }).catch(() => {}); return q; })() : null,
       iAmHost ? el('div', { class: 'party-row' }, [
         el('button', { class: 'party-btn', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(link); toast('Invite link copied'); } catch { toast(link); } } }, ['🔗 Copy invite link']),
         navigator.share ? el('button', { class: 'party-btn', type: 'button', onclick: () => navigator.share({ title: 'Play with me on ChitPlay', text: `Join my ChitPlay party: code ${p.code}`, url: link }).catch(() => {}) }, ['📤 Share']) : null,
@@ -356,7 +362,8 @@ export function mountParty({ root = '', game = null, place = 'home' } = {}) {
   document.head.append(style);
   const pill = el('button', { class: `party-pill party-pill--${place}`, type: 'button', onclick: () => openPanel() });
   ui = { pill, open: false, place };
-  if (place !== 'play') document.body.append(pill);
+  // the button sits in each page's own bar (partyChip); only a page without one gets the floating button
+  if (place === 'float') document.body.append(pill);
   // an invite link: ?party=123456
   const params = new URLSearchParams(location.search);
   const invited = (params.get('party') || '').replace(/\D/g, '');
@@ -374,8 +381,9 @@ export function mountParty({ root = '', game = null, place = 'home' } = {}) {
 export const inParty = () => !!read(KEY);
 
 /** A party button for a game's top bar: it sits with the other buttons, so it never covers the game. */
-export function partyChip() {
-  const c = el('button', { type: 'button', class: 'back partychip', title: 'Your party', onclick: () => openPanel() });
+export function partyChip({ always = false, className = 'back partychip' } = {}) {
+  const c = el('button', { type: 'button', class: className, title: 'Play with friends', onclick: () => openPanel() });
+  if (always) c.dataset.always = '1';
   chips.add(c);
   queueMicrotask(paint);
   return c;

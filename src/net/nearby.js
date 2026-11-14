@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName, politeName } from '../world/names.js?v=20261114-1217';
-import { cleanLook } from '../world/character-looks.js?v=20261114-1217';
+import { cleanName, politeName } from '../world/names.js?v=20261114-1305';
+import { cleanLook } from '../world/character-looks.js?v=20261114-1305';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261114-1217.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261114-1305.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -62,7 +62,7 @@ export async function peekTables(codes, ms = 3500) {
       const t = setTimeout(() => finish(null), ms);
       const conn = me.connect(PREFIX + code, { reliable: true });
       conn.on('open', () => safeSend(conn, { t: 'peek' }));
-      conn.on('data', (m) => { if (m?.t === 'info') finish({ code, country: String(m.country || ''), seats: Number(m.seats) || 0, locked: !!m.locked, level: cleanLevel(m.level) }); });
+      conn.on('data', (m) => { if (m?.t === 'info') finish({ code, country: String(m.country || ''), seats: Number(m.seats) || 0, locked: !!m.locked, level: cleanLevel(m.level), lv: Math.max(0, Math.min(100, Math.floor(Number(m.lv) || 0))) }); });
       conn.on('error', () => finish(null));
     })))).filter(Boolean);
   } finally {
@@ -202,7 +202,7 @@ export class NearbyHost {
       if (msg.t === 'bye') { this.#drop(id); return; }
       // somebody looking for a table: tell them where we're from and how full we are, nothing else
       if (msg.t === 'peek') {
-        safeSend(conn, { t: 'info', country: this.isPublic ? this.country || '' : '', seats: this.guests.size, locked: this.locked || !this.isPublic, level: this.isPublic ? this.level || '' : '' });
+        safeSend(conn, { t: 'info', country: this.isPublic ? this.country || '' : '', seats: this.guests.size, locked: this.locked || !this.isPublic, level: this.isPublic ? this.level || '' : '', lv: this.isPublic ? this.lv || 0 : 0 });
         setTimeout(() => { try { conn.close(); } catch {} }, 400);
         return;
       }

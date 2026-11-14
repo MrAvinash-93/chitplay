@@ -66,12 +66,15 @@ export function levelTag(g, level, name, since, y = 52, title = name) {
     const a = since < 15 ? since / 15 : since > 95 ? (120 - since) / 25 : 1;
     g.save();
     g.globalAlpha = a;
-    g.fillStyle = 'rgba(10, 6, 3, .55)';
-    g.fillRect(0, H / 2 - 54, W, 92);
+    // a new level is announced in a band at the top, under the scores: never over the play area,
+    // where it could hide an obstacle
+    const line = `LEVEL ${level}${title ? ` · ${title}` : ''}`;
+    g.font = '900 20px system-ui, sans-serif';
+    const bw = Math.min(W - 16, g.measureText(line).width + 36);
+    g.fillStyle = 'rgba(10, 6, 3, .78)';
+    g.fillRect(W / 2 - bw / 2, 34, bw, 30);
     g.fillStyle = '#ffd23f';
-    g.font = '900 46px system-ui, sans-serif';
-    g.fillText(`LEVEL ${level}`, W / 2, H / 2 - 22);
-    if (title) { g.fillStyle = '#fff'; g.font = '700 22px system-ui, sans-serif'; g.fillText(title, W / 2, H / 2 + 18); }
+    g.fillText(line, W / 2, 50);
     g.restore();
   }
 }

@@ -961,3 +961,17 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 
 /* the tools menu (sound, chat, rotate) opens over the games list (60) while it is open; menus and dialogs stay above */
 .game__top--raised { z-index: 61; }
+
+/* the 3D / 2D switch belongs to playing: shown in a match, not on the list of games */
+.game:not(.game--playing) .game__viewbtn { display: none; }
+.game__viewbtn.vtoggle { width: auto; padding: 3px; }
+
+/* the games list: search is a small icon until tapped; Play with Friends takes the room meanwhile */
+.game__list-row .game__searchbtn { flex: none; font-size: 18px; }
+.game__list-row:not(.game__list-row--searching) .allgames__search { display: none; }
+.game__list-row:not(.game__list-row--searching) .partychip { flex: 1 1 auto; justify-content: center; }
+.game__list-row--searching .game__searchbtn { display: none; }
+.game__list-row--searching .allgames__search { flex: 1 1 auto; min-width: 0; }
+.game__list-row--searching .partychip__long { display: none; }
+
+.dlg__btn:disabled { opacity: .45; cursor: not-allowed; }

@@ -497,3 +497,22 @@ html[data-view="2d"] .bigbtn { display: none; }
 body.room.in-play .clock { padding: 2px 8px; }
 body.room.in-play .clock b { font-size: 16px; }
 
+
+/* small screens: the whole keypad fits without scrolling (Word Guess, Fast Typing, Number Memory, Bingo) */
+@media (max-height: 820px) {
+  .pad--keypad-letters .keypad { gap: 3px; }
+  .pad--keypad-letters .keypad__key { min-height: 34px; font-size: 14px; border-radius: 9px; }
+  .pad--keypad .keypad__show { min-height: 34px; padding: 3px 10px; font-size: 20px; }
+  .pad--keypad:not(.pad--keypad-letters) .keypad__key { min-height: 40px; }
+}
+@media (max-height: 660px) {
+  .pad--keypad-letters .keypad__key { min-height: 30px; font-size: 13px; }
+  .pad--keypad:not(.pad--keypad-letters) .keypad__key { min-height: 34px; font-size: 18px; }
+  .pad--keypad .keypad__show { min-height: 30px; font-size: 18px; }
+}
+
+/* keypad and answer-button games: the controls get the room they need under the TV, so no key is cut off */
+body.room.in-play.tv-keys .tvpanel { max-height: min(64dvh, 480px); }
+
+/* the 3D / 2D switch in a game bar: as wide as its two labels */
+.back.viewbtn.vtoggle { width: auto; min-width: 0; padding: 3px; }
