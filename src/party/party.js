@@ -4,13 +4,13 @@
  * Plain DOM, no 3D, no network: light enough for any phone. Secrets are shown only to the player
  * holding the phone, behind a "pass the phone" screen.
  */
-import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261114-1305';
-import { createStage } from './stage3d.js?v=20261114-1305';
-import { loadWorld } from '../world/world-loader.js?v=20261114-1305';
-import { PRESETS, lookOf } from '../world/character-looks.js?v=20261114-1305';
-import { asOneGame, editionFor } from '../world/countries.js?v=20261114-1305';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken } from '../net/nearby.js?v=20261114-1305';
-import { ser, deser, cleanOp } from './party-net.js?v=20261114-1305';
+import { SPY_WORDS, SPY_CATEGORIES, TRUTHS, DARES, RIDDLES, MAJORITY, CONSEQUENCES } from './content.js?v=20261114-1334';
+import { createStage } from './stage3d.js?v=20261114-1334';
+import { loadWorld } from '../world/world-loader.js?v=20261114-1334';
+import { PRESETS, lookOf } from '../world/character-looks.js?v=20261114-1334';
+import { asOneGame, editionFor } from '../world/countries.js?v=20261114-1334';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken } from '../net/nearby.js?v=20261114-1334';
+import { ser, deser, cleanOp } from './party-net.js?v=20261114-1334';
 
 export const GAMES = [
   { slug: 'who-is-the-spy', name: 'Who Is the Spy?', icon: '🕵️', min: 4, max: 10, minutes: '10–20', blurb: 'Everyone gets the same secret word, except the spy. Give clues, find the spy.' },

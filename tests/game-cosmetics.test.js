@@ -11,8 +11,8 @@ globalThis.localStorage = {
   },
 };
 
-const { profile } = await import('../src/persistence/profile-store.js?v=20261114-1305');
-const cosmetics = await import('../src/arcade/game-cosmetics.js?v=20261114-1305');
+const { profile } = await import('../src/persistence/profile-store.js?v=20261114-1334');
+const cosmetics = await import('../src/arcade/game-cosmetics.js?v=20261114-1334');
 
 test('game cosmetics spend earned coins and only equip in their own game slot', async () => {
   assert.equal(cosmetics.buyGameCosmetic('ludo-candy-board'), false);
@@ -23,7 +23,7 @@ test('game cosmetics spend earned coins and only equip in their own game slot', 
   assert.equal(profile.coins, 200);
   assert.equal(cosmetics.gameCosmeticOwned('ludo-candy-board'), true);
   assert.equal(cosmetics.selectedGameCosmetic('ludo', 'board')?.style, 'candy');
-  const reloaded = await import('../src/arcade/game-cosmetics.js?v=20261114-1305');
+  const reloaded = await import('../src/arcade/game-cosmetics.js?v=20261114-1334');
   assert.equal(reloaded.gameCosmeticOwned('ludo-candy-board'), true);
   assert.equal(reloaded.selectedGameCosmetic('ludo', 'board')?.style, 'candy');
   assert.equal(cosmetics.buyGameCosmetic('ludo-candy-board'), false);

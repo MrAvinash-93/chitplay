@@ -3,7 +3,7 @@
  * fifty-move rule, threefold repetition and insufficient material. Seat 0 is White.
  * Squares are 0–63, a8 = 0, h1 = 63. A piece is 'P','N','B','R','Q','K' (White) or lower case (Black).
  */
-import { best, turnLine, strip, who } from '../lib.js?v=20261114-1305';
+import { best, turnLine, strip, who } from '../lib.js?v=20261114-1334';
 
 const START = 'rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR';
 const isWhite = (c) => c >= 'A' && c <= 'Z';

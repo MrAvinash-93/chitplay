@@ -4,7 +4,7 @@
  * playing (they have no value outside the game), and the best things also need wins, achievements
  * or a rank: a room shows how far you have come as a gamer.
  */
-import { RANKS } from '../persistence/profile-store.js?v=20261114-1305';
+import { RANKS } from '../persistence/profile-store.js?v=20261114-1334';
 
 export const RARITY = {
   common: { name: 'Common', color: '#b9c3cf', points: 1 },
