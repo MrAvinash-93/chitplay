@@ -1,4 +1,4 @@
-import { settingsStore } from '../persistence/settings-store.js?v=20261114-1538';
+import { settingsStore } from '../persistence/settings-store.js?v=20261114-1549';
 
 /**
  * Web Audio API sound manager. All sounds are synthesized — no external files.

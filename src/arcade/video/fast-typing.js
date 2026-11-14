@@ -6,7 +6,7 @@
  * Fair on any connection: each phone times its own player from when the word appeared on that screen
  * (tv.js keypad, signal) and sends the whole word on ✓, so a slow connection never costs speed.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1538';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1549';
 
 /** Everyday words by length band: short first, longer as the game goes on. */
 export const WORDS = [

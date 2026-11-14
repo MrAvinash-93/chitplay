@@ -5,7 +5,7 @@
  * House rule "bonus", as most modern dice games play it: 63 or more in Ones to Sixes (three of each,
  * on average) earns 35 extra points.
  */
-import { best, leaders, roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1538';
+import { best, leaders, roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1549';
 
 export const CATEGORIES = [
   ['ones', 'Ones'], ['twos', 'Twos'], ['threes', 'Threes'], ['fours', 'Fours'], ['fives', 'Fives'], ['sixes', 'Sixes'],

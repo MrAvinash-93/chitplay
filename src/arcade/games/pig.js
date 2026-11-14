@@ -9,7 +9,7 @@
  * Two dice (a mode): roll a pair. A single 1 loses the turn's total as usual; two 1s lose everything
  * you have banked too. Doubles must be rolled again.
  */
-import { leaders, roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1538';
+import { leaders, roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1549';
 
 export const TARGET = 50;
 const targetOf = (s) => (s.style === 'classic' || s.style === 'two' ? 100 : TARGET);

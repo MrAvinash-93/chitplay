@@ -3,8 +3,8 @@
  * opens straight away, so someone bored of a game can jump to another without going back home.
  * The game being played comes first and is marked; the chit game sits at the front of the rest.
  */
-import { ALL_GAMES } from './catalog.js?v=20261114-1538';
-import { logoSvg } from './logo.js?v=20261114-1538';
+import { ALL_GAMES } from './catalog.js?v=20261114-1549';
+import { logoSvg } from './logo.js?v=20261114-1549';
 
 const CSS = ".gamestrip { margin: 4px 0 6px; }\n.gamestrip__title { margin: 0 0 6px; font: 800 13px system-ui, sans-serif; opacity: .85; }\n.gamestrip__row { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 2px 2px 8px; scrollbar-width: thin; scrollbar-color: rgba(255,210,63,.55) transparent; -webkit-overflow-scrolling: touch; }\n.gamestrip__game { flex: 0 0 76px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border-radius: 14px; text-decoration: none; color: inherit; background: rgba(255,255,255,.05); border: 2px solid transparent; scroll-snap-align: start; }\n.gamestrip__game:hover, .gamestrip__game:focus-visible { background: rgba(255,255,255,.12); outline: none; }\n.gamestrip__game:active { transform: scale(.96); }\n.gamestrip__game--here { border-color: #ffd23f; cursor: default; }\n.gamestrip__logo svg { display: block; width: 56px; height: 56px; }\n.gamestrip__name { font: 700 11px/1.2 system-ui, sans-serif; text-align: center; max-width: 72px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }\n.gamestrip__row::-webkit-scrollbar { height: 6px; }\n.gamestrip__row::-webkit-scrollbar-track { background: transparent; }\n.gamestrip__row::-webkit-scrollbar-thumb { background: rgba(255,210,63,.55); border-radius: 6px; }";
 function addStyle() {

@@ -1,10 +1,10 @@
-import { createApp } from './lifecycle.js?v=20261114-1538';
-import { GAME_PHASES } from './config.js?v=20261114-1538';
+import { createApp } from './lifecycle.js?v=20261114-1549';
+import { GAME_PHASES } from './config.js?v=20261114-1549';
 import { audioManager } from '../audio/audio-manager.js';
-import { loadWorld } from '../world/world-loader.js?v=20261114-1538';
-import { GameScreen } from '../ui/screens/game-screen.js?v=20261114-1538';
-import { mountParty } from '../net/party.js?v=20261114-1538';
-import { maybeShowIntro } from '../ui/intro.js?v=20261114-1538';
+import { loadWorld } from '../world/world-loader.js?v=20261114-1549';
+import { GameScreen } from '../ui/screens/game-screen.js?v=20261114-1549';
+import { mountParty } from '../net/party.js?v=20261114-1549';
+import { maybeShowIntro } from '../ui/intro.js?v=20261114-1549';
 
 /**
  * ChitPlay is now a single 3D game: one screen (the 3D room) that hosts the

@@ -3,21 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261114-1538';
-import { is2d } from './view-mode.js?v=20261114-1538';
-import { adBreak } from './ad-breaks.js?v=20261114-1538';
-import { resultAd } from './ads.js?v=20261114-1538';
-import { W, H, TICK } from './video/lib.js?v=20261114-1538';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1538';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1538';
-import { MOMENT, linesFor } from './talk.js?v=20261114-1538';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1538';
-import { ask, confirmSpend } from './dialog.js?v=20261114-1538';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1538';
-import { profile } from '../persistence/profile-store.js?v=20261114-1538';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1538';
+import { hintsLeft, showHint } from './hint.js?v=20261114-1549';
+import { is2d } from './view-mode.js?v=20261114-1549';
+import { adBreak } from './ad-breaks.js?v=20261114-1549';
+import { resultAd } from './ads.js?v=20261114-1549';
+import { myTableSize } from '../net/party.js?v=20261114-1549';
+import { W, H, TICK } from './video/lib.js?v=20261114-1549';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1549';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1549';
+import { MOMENT, linesFor } from './talk.js?v=20261114-1549';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1549';
+import { ask, confirmSpend } from './dialog.js?v=20261114-1549';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1549';
+import { profile } from '../persistence/profile-store.js?v=20261114-1549';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1549';
 
-const V = '?v=20261114-1538';
+const V = '?v=20261114-1549';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -855,6 +856,7 @@ export async function runTv(ctx) {
   function nearbyLobby(size) {
     show(topBar(game), h('section', { class: 'panel' }, [h('h1', {}, ['Opening a room…'])]));
     const welcomed = new Set();
+    let partyAutoStart = 0;
     const paint2 = () => {
       room.guests.forEach((gu) => { if (!welcomed.has(gu.id)) { welcomed.add(gu.id); room.send(gu.id, { t: 'lobby', arcade: true, video: true, game: game.slug }); } });
       if (state && !result) return;
@@ -863,7 +865,12 @@ export async function runTv(ctx) {
       const link = `${location.origin}${location.pathname}?join=${room.code}`;
       const qr = h('div', { class: 'qr' });
       import(`../net/qr.js${V}`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join'); if (svg) qr.append(svg); }).catch(() => {});
+      // sent here by a party: once everyone meant for this table is in, the game starts by itself
+      const expected = new URLSearchParams(location.search).get('party') === '1' ? myTableSize(game.slug) : 0;
+      const everyoneIn = expected > 1 && names.length >= expected;
+      if (everyoneIn && !partyAutoStart) partyAutoStart = setTimeout(() => { if (room && !state) document.querySelector('.panel .btn.primary')?.click(); }, 3000);
       show(topBar(game), h('section', { class: 'panel' }, [
+        everyoneIn ? h('p', { class: 'lead', role: 'status' }, ['🎉 Everyone is here! Starting in 3 seconds…']) : null,
         h('h1', {}, ['Friends join with this code']),
         h('p', { class: 'code', 'aria-label': `Room code ${room.code}` }, [`${room.code.slice(0, 3)} ${room.code.slice(3)}`]),
         qr,

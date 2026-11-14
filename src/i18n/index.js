@@ -4,9 +4,9 @@
  * only when somebody picks it. Anything a language doesn't have yet falls back to English,
  * so nothing is ever blank.
  */
-import EN from './en.js?v=20261114-1538';
+import EN from './en.js?v=20261114-1549';
 
-const V = '?v=20261114-1538';
+const V = '?v=20261114-1549';
 const LOADERS = {
   hinglish: () => import(`./hinglish.js${V}`),
   urdu: () => import(`./urdu.js${V}`),
