@@ -2,7 +2,7 @@
  * Spin Duel: launch a schoolyard spinning top with one fast swipe. Both players get three seconds;
  * the tops then battle in a shallow arena. First to three round wins takes the match.
  */
-import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1448';
+import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1459';
 
 export const LAUNCH_TICKS = 180;
 export const ARENA_RADIUS = 142;

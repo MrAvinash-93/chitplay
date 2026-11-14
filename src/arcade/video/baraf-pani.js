@@ -1,3 +1,3 @@
-import { makeTagGame } from './tag-game-core.js?v=20261114-1448';
+import { makeTagGame } from './tag-game-core.js?v=20261114-1459';
 
 export default makeTagGame('baraf-pani');

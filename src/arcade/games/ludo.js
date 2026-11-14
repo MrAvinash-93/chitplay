@@ -11,7 +11,7 @@
  *  - quick:   everyone starts with one token already out
  *  - places:  with three or four players the game goes on after the winner, for second and third place
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261114-1448';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261114-1459';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];

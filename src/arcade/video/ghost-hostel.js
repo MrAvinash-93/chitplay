@@ -8,7 +8,7 @@
  *
  * Screen pixels: the rooms are a row along the top, the corridor runs underneath.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1448';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1459';
 
 export const NIGHT = 60 * 150;          // two and a half minutes until sunrise
 export const WAKE = 60 * 15;            // the ghost sleeps for the first fifteen seconds

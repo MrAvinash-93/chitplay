@@ -7,7 +7,7 @@
  * Each player gets the same lots on their own board. Drag a vehicle with a finger or the mouse, or use
  * the arrows to pick one, the button to hold it and the arrows to slide it.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1448';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1459';
 
 export const N = 6, EXIT_ROW = 2;
 /** Lots as 36 cells row by row: '.' empty, 'A' the rickshaw, other letters a vehicle each; then the par. */
