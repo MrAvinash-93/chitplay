@@ -1,36 +1,36 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261115-1958';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261115-1958';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261115-1958';
+import { GAME_PHASES } from '../../app/config.js?v=20261115-2019';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261115-2019';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261115-2019';
 import { audioManager } from '../../audio/audio-manager.js';
-import { viewButton, setView, is2d } from '../../arcade/view-mode.js?v=20261115-1958';
-import { loadWorld } from '../../world/world-loader.js?v=20261115-1958';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261115-1958';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261115-1958';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261115-1958';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261115-1958';
-import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261115-1958';
+import { viewButton, setView, is2d } from '../../arcade/view-mode.js?v=20261115-2019';
+import { loadWorld } from '../../world/world-loader.js?v=20261115-2019';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261115-2019';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261115-2019';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261115-2019';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261115-2019';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261115-2019';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261115-1958';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261115-1958';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261115-1958';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261115-1958';
-import { iconSvg } from '../icons.js?v=20261115-1958';
-import { shellText, fill } from '../../arcade/shell-text.js?v=20261115-1958';
-import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, levelOf, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261115-1958';
-import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261115-1958';
-import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261115-1958';
-import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261115-1958';
-import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261115-1958';
-import { savedList } from '../../arcade/resume.js?v=20261115-1958';
-import { logoSvg } from '../../arcade/logo.js?v=20261115-1958';
-import { gameStrip } from '../../arcade/game-strip.js?v=20261115-1958';
-import { resultAd } from '../../arcade/ads.js?v=20261115-1958';
-import { partyChip, partyPlay, inParty, joinParty, myTableSize, COPS } from '../../net/party.js?v=20261115-1958';
-import { hotPrompt } from '../../arcade/share.js?v=20261115-1958';
-import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug, localName, allNames } from '../../arcade/catalog.js?v=20261115-1958';
+} from '../../world/character-looks.js?v=20261115-2019';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261115-2019';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261115-2019';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261115-2019';
+import { iconSvg } from '../icons.js?v=20261115-2019';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261115-2019';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, levelOf, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261115-2019';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261115-2019';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261115-2019';
+import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261115-2019';
+import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261115-2019';
+import { savedList } from '../../arcade/resume.js?v=20261115-2019';
+import { logoSvg } from '../../arcade/logo.js?v=20261115-2019';
+import { gameStrip } from '../../arcade/game-strip.js?v=20261115-2019';
+import { resultAd } from '../../arcade/ads.js?v=20261115-2019';
+import { partyChip, partyPlay, inParty, joinParty, myTableSize, COPS } from '../../net/party.js?v=20261115-2019';
+import { hotPrompt } from '../../arcade/share.js?v=20261115-2019';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug, localName, allNames } from '../../arcade/catalog.js?v=20261115-2019';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -883,6 +883,12 @@ export function GameScreen({ transition }) {
         paintRank();
         const ticket = loadRejoin();
         const legalLinksNow = () => legalLinks();
+        // the home page keeps its welcome text (and its one H1) under the games, folded away: readers and
+        // search engines find it, players are not slowed down by it
+        const homeAbout = () => {
+          const intro = !COPS_PAGE && document.querySelector('.seo-intro');
+          return intro ? el('details', { className: 'game__about game__about--home' }, [el('summary', {}, [el('span', { html: iconSvg('book') }), ` ${ui.about || 'About'} ChitPlay`]), intro]) : null;
+        };
 
         /* A: what you see when ChitPlay opens: every game, with search and pins */
         const entries = () => {
@@ -1004,7 +1010,7 @@ export function GameScreen({ transition }) {
           listRow,
           chips,
           // one ad after every game in the list, never between tiles or near a button (src/arcade/ads.js)
-          el('div', { className: 'game__list-scroll' }, [carryRow, hotRow, recentRow, grid, resultAd(), legalLinksNow()].filter(Boolean)),
+          el('div', { className: 'game__list-scroll' }, [carryRow, hotRow, recentRow, grid, resultAd(), homeAbout(), legalLinksNow()].filter(Boolean)),
         ]);
 
         /*
@@ -1404,9 +1410,9 @@ export function GameScreen({ transition }) {
               ]),
               el('p', { className: 'game__aka' }, [
                 `${(GAME_AKA[base.id] || []).slice(0, 5).join(' · ')} · `,
-                el('a', { className: 'game__howto', attrs: { href: 'games/cops-and-robbers/' } }, ['→']),
+                el('a', { className: 'game__howto', attrs: { href: 'games/cops-and-robbers/', 'aria-label': ui.howto, title: ui.howto } }, ['→']),
               ]),
-              seoIntro,
+              COPS_PAGE ? seoIntro : null,
             ]),
             // always visible, so visitors and ad-network reviewers can find these pages
             legalLinks(),
@@ -1864,7 +1870,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261115-1958').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261115-2019').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -2090,7 +2096,7 @@ export function GameScreen({ transition }) {
           // a party's table: tell the party the room's code, so the friends sit down by themselves
           if (partyHost) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code, slug: COPS.slug } }));
           keepAwake(true);
-          import('../../net/qr.js?v=20261115-1958').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261115-2019').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -2305,7 +2311,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261115-1958');
+        const scanner = import('../../net/qr-scan.js?v=20261115-2019');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });

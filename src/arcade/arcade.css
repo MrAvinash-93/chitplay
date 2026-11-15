@@ -305,7 +305,8 @@ body.room .panel > .chatrow { position: sticky; bottom: 0; z-index: 2; padding-b
 .barstatus { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 4px 8px; border-radius: 999px; background: rgba(20, 11, 7, .72); color: #ffe6b0; font: 700 12px system-ui, sans-serif; }
 .barstatus:empty { display: none; }
 .barstatus__summary { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.barstatus__more { flex: none; min-height: 26px; padding: 2px 6px; border: 0; border-radius: 999px; background: rgba(var(--accent-rgb), .18); color: var(--acc-light); font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
+.barstatus__more { flex: none; min-height: 26px; padding: 2px 6px; border: 0; border-radius: 999px; background: rgba(var(--accent-rgb), .18); color: var(--acc-light); font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; position: relative; }
+.barstatus__more::after { content: ""; position: absolute; inset: -9px -4px; }   /* easy to hit with a thumb */
 .rank-chip { flex: none; min-height: 36px; padding: 0 8px; font-size: 12px; white-space: nowrap; color: var(--acc-light); }
 .bar .langpick { flex: none; margin-left: auto; font-size: 13px; min-height: 36px; padding: 0 10px; }
 .langlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin: 8px 0 12px; }

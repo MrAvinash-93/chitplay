@@ -364,6 +364,9 @@ const imageFor = (slug, square = false, extension = 'webp') => {
   return existsSync(join(ROOT, 'assets', 'games', file)) ? `games/${file}` : `chitplay-game.${extension}`;
 };
 const gameplayImageFor = (slug) => `gameplay/${slug}.jpg`;
+// the page shows a light WebP (800 px wide on phones, 1200 on big screens); the JPG stays for old browsers,
+// the share preview and the sitemap, so no image address ever changes
+const gameplayPicture = (prefix, slug, alt) => `<picture><source type="image/webp" srcset="${prefix}assets/gameplay/${slug}-800.webp 800w, ${prefix}assets/gameplay/${slug}.webp 1200w" sizes="(max-width: 860px) 100vw, 820px"><img src="${prefix}assets/${gameplayImageFor(slug)}" alt="${alt}" width="1200" height="630" fetchpriority="high" decoding="async"></picture>`;
 /**
  * The questions people ask a phone or a smart speaker about a game, answered in a sentence or two.
  * They go after the game's own questions (never twice), on the page and in its FAQ data.
@@ -451,7 +454,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261115-1958">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261115-2019">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -462,7 +465,7 @@ ${logoLink('../../')}
 <p class="playtop playmodes"><a class="btn btn--big" href="${play}&mode=play">▶ Play ${esc(g.name)} now</a><a class="btn btn--mode" href="${play}&mode=online">🌍 Play online</a><a class="btn btn--mode" href="${play}&mode=nearby">👫 Play with friends</a></p>
 <ul class="facts"><li>👥 ${g.players} players</li><li>⏱ ${g.time}</li><li>👤 guest play</li><li>🌍 online opponents</li><li>🤖 computer players</li><li>👫 play with friends</li><li>🆓 free, no sign-up</li></ul>
 <p>${esc(g.intro)}</p>
-<figure class="gameplay-preview"><img src="../../assets/${gameplayImageFor(g.slug)}" alt="${esc(plain)} gameplay in ChitPlay's 3D room" width="1200" height="630" fetchpriority="high" decoding="async"><figcaption>Actual gameplay in the ChitPlay 3D room.</figcaption></figure>
+<figure class="gameplay-preview">${gameplayPicture('../../', g.slug, `${esc(plain)} gameplay in ChitPlay's 3D room`)}<figcaption>Actual gameplay in the ChitPlay 3D room.</figcaption></figure>
 ${waysToPlay(g)}
 ${adSlot('guide')}
 <h2>How to play</h2>
@@ -561,7 +564,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1958">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-2019">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -576,7 +579,7 @@ ${logoLink('../../../')}
 <p>${esc(description)}</p>
 <p class="english-name" lang="en">English name: <strong>${esc(g.name)}</strong></p>
 </section>
-<figure class="gameplay-preview"><img src="../../../assets/${gameplayImageFor(g.slug)}" alt="${esc(name)} gameplay in ChitPlay's 3D room" width="1200" height="630" fetchpriority="high" decoding="async"><figcaption>${esc(name)} · ${esc(g.name)}</figcaption></figure>
+<figure class="gameplay-preview">${gameplayPicture('../../../', g.slug, `${esc(name)} gameplay in ChitPlay's 3D room`)}<figcaption>${esc(name)} · ${esc(g.name)}</figcaption></figure>
 ${guideHtml}
 <h2>${esc(L.waysTitle)}</h2>
 <ul class="ways">${L.ways.map(([heading, detail]) => `<li><strong>${esc(heading)}:</strong> ${esc(detail)}</li>`).join('')}</ul>
@@ -639,7 +642,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1958">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-2019">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -654,7 +657,7 @@ ${logoLink('../../../')}
 <p>${esc(description)}</p>
 <p class="english-name" lang="en">English names: <strong>Raja Rani Chor Police · Cops and Robbers</strong></p>
 </section>
-<figure class="gameplay-preview"><img src="../../../assets/${gameplayImageFor(MAIN_SLUG)}" alt="${esc(name)} gameplay in ChitPlay's 3D room" width="1200" height="630" fetchpriority="high" decoding="async"><figcaption>${esc(name)} · Raja Rani Chor Police</figcaption></figure>
+<figure class="gameplay-preview">${gameplayPicture('../../../', MAIN_SLUG, `${esc(name)} gameplay in ChitPlay's 3D room`)}<figcaption>${esc(name)} · Raja Rani Chor Police</figcaption></figure>
 ${MAIN_GUIDES[L.code] ? `<section class="guide-card" aria-labelledby="main-how">
 <h2 id="main-how">${esc(MAIN_GUIDES[L.code].how)}</h2>
 <ol>${MAIN_GUIDES[L.code].steps.map(step => `<li>${esc(step)}</li>`).join('')}</ol>
@@ -1125,7 +1128,7 @@ ${logoLink('../../')}
 <nav aria-label="Breadcrumb"><a href="../../">ChitPlay</a> › <a href="../">Games</a> › Cops and Robbers</nav>
 <h1>Raja Rani Chor Police (Cops and Robbers): play the chit game online</h1>
 <p><a class="btn" href="../../${mainPlay()}">▶ Play Raja Rani Chor Police now</a></p>
-<figure class="gameplay-preview"><img src="../../assets/${gameplayImageFor(MAIN_SLUG)}" alt="Raja Rani Chor Police gameplay in ChitPlay's 3D room" width="1200" height="630" fetchpriority="high" decoding="async"><figcaption>Actual gameplay in the ChitPlay 3D room.</figcaption></figure>
+<figure class="gameplay-preview">${gameplayPicture('../../', MAIN_SLUG, `Raja Rani Chor Police gameplay in ChitPlay's 3D room`)}<figcaption>Actual gameplay in the ChitPlay 3D room.</figcaption></figure>
 <p>Four folded chits, four players, one thief. The same game is played all over the world under different names: <strong>Raja Rani Chor Police</strong> and <strong>Raja Rani Chor Sipahi</strong> in India, <strong>Raja Wazir Chor Sipahi</strong> in Pakistan, <strong>Raja Mantri Chor Sipahi</strong> in Nepal, <strong>Cops and Robbers</strong> in the USA and UK, <strong>Räuber und Gendarm</strong> in Germany. ChitPlay plays it free in your browser, in 3D, under the name of the language you pick.</p>
 <h2>How to play</h2>
 <ol><li>Four chits are folded and thrown down: King (1000), Queen (800), Police (500) and Thief (0).</li><li>Each player picks one and reads it secretly.</li><li>The Police says who they are and has to find the Thief among the other three.</li><li>The Police names a suspect, then everyone opens their chit.</li><li>Right guess: the Police keeps 500 and the Thief gets 0. Wrong guess: the Thief takes the Police's 500. King and Queen always keep their points.</li><li>Play as many rounds as you like; the highest total wins.</li></ol>

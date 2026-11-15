@@ -10,44 +10,44 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1958';
-import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261115-1958';
-import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-1958';
-import { loadWorld } from '../world/world-loader.js?v=20261115-1958';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1958';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1958';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1958';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1958';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1958';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-2019';
+import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261115-2019';
+import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-2019';
+import { loadWorld } from '../world/world-loader.js?v=20261115-2019';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-2019';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-2019';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-2019';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-2019';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-2019';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-1958';
-import { faceHtml } from './photo.js?v=20261115-1958';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1958';
+import { iconSvg } from '../ui/icons.js?v=20261115-2019';
+import { faceHtml } from './photo.js?v=20261115-2019';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-2019';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1958';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-2019';
 
-import { fill, shellText } from './shell-text.js?v=20261115-1958';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1958';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1958';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1958';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1958';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1958';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1958';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1958';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1958';
-import { startReminder } from './reminder.js?v=20261115-1958';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1958';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1958';
-import { roomLevel } from './decor.js?v=20261115-1958';
+import { fill, shellText } from './shell-text.js?v=20261115-2019';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-2019';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-2019';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-2019';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-2019';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-2019';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-2019';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-2019';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2019';
+import { startReminder } from './reminder.js?v=20261115-2019';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-2019';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-2019';
+import { roomLevel } from './decor.js?v=20261115-2019';
 
-import { is2d, setView } from './view-mode.js?v=20261115-1958';
-import { adBreak } from './ad-breaks.js?v=20261115-1958';
-import { resultAd, sideAd } from './ads.js?v=20261115-1958';
-import { gameStrip } from './game-strip.js?v=20261115-1958';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1958';
-const V = '?v=20261115-1958';
+import { is2d, setView } from './view-mode.js?v=20261115-2019';
+import { adBreak } from './ad-breaks.js?v=20261115-2019';
+import { resultAd, sideAd } from './ads.js?v=20261115-2019';
+import { gameStrip } from './game-strip.js?v=20261115-2019';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-2019';
+const V = '?v=20261115-2019';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -652,6 +652,18 @@ function streaks(events, players) {
  * a bust in Pig, a long ladder or a long slide in Snakes and Ladders, a corner or a big flip in Reversi.
  */
 let lastView = null;
+const SUIT_SIGN = { S: '♠', H: '♥', D: '♦', C: '♣' }, SUIT_WORD = { S: 'spades', H: 'hearts', D: 'diamonds', C: 'clubs' };
+/** Four in a Row: does the disc at cell i make four in a line? (7 x 6, cell = col + row * 7) */
+function fourAt(b, i) {
+  const C = 7, R = 6, c = i % C, r = Math.floor(i / C), p = b[i];
+  const at = (x, y) => (x >= 0 && x < C && y >= 0 && y < R ? b[x + y * C] : -2);
+  return [[1, 0], [0, 1], [1, 1], [1, -1]].some(([dx, dy]) => {
+    let n = 1;
+    for (let k = 1; at(c + dx * k, r + dy * k) === p; k++) n++;
+    for (let k = 1; at(c - dx * k, r - dy * k) === p; k++) n++;
+    return n >= 4;
+  });
+}
 let quiz = { at: -1, snap: null, run: [] };   // Riddle Chits and Majority Vote: right answers in a row
 function moments(events, players, view) {
   const prev = lastView;
@@ -698,6 +710,34 @@ function moments(events, players, view) {
       if (got >= b) pop('✅', `You made your call: ${got} of ${b} tricks`, p);
       else pop('❌', `Missed the call: ${got} of ${b} tricks`, p);
     });
+  }
+  if ((G.slug === 'crazy-eights' || G.slug === 'color-clash') && Array.isArray(view.counts) && Array.isArray(prev.counts)) {
+    const card = ev('card');
+    // down to one card: everyone should know
+    view.counts.forEach((c, p) => {
+      if (c === 1 && prev.counts[p] > 1 && !view.between && !view.done) pop('☝️', isMe(p) ? 'One card left: almost out!' : `${name(p)} has ONE card left!`, p);
+    });
+    // a wild changes the suit or the colour
+    if (card && G.slug === 'crazy-eights' && view.suit && prev.suit && view.suit !== prev.suit && /^8/.test(String(view.top || ''))) pop('🎱', `${name(card.seat)}: an 8! ${SUIT_SIGN[view.suit] || ''} ${SUIT_WORD[view.suit] || ''} now`, card.seat);
+    if (card && G.slug === 'color-clash' && /^W/.test(String(view.top || '')) && view.colour && view.colour !== prev.colour) pop('🌈', `${name(card.seat)}: colour is now ${{ R: 'Red', G: 'Green', B: 'Blue', Y: 'Yellow' }[view.colour] || view.colour}`, card.seat);
+    // made to pick up a pile
+    const stuck = events.find(e => e?.k === 'stuck' && e.n >= 4);
+    if (stuck) { pop('😵', `${name(stuck.seat)} picked up ${stuck.n} cards!`, stuck.seat); audioManager.play('whoosh'); }
+  }
+  if (G.slug === 'four-in-a-row' && Array.isArray(view.b) && Array.isArray(prev.b) && !view.line) {
+    // a disc that stopped the other player's four: a block worth a cheer
+    const put = ev('place');
+    const i = put ? view.b.findIndex((x, k) => x !== prev.b[k]) : -1;
+    if (i >= 0) {
+      const rival = 1 - view.b[i];
+      const b = prev.b.slice(); b[i] = rival;
+      if (fourAt(b, i)) { pop('🛡️', `${name(put.seat)} blocked a four!`, put.seat); audioManager.play('select'); }
+    }
+  }
+  if (G.slug === 'nine-mens-morris' && ev('line')) {
+    const seat = ev('line').seat;
+    pop('⚡', isMe(seat) ? 'A mill! Take one of their pieces' : `${name(seat)} made a mill!`, seat);
+    audioManager.play('correct');
   }
   if (G.slug === 'ludo' && Array.isArray(view.t) && Array.isArray(prev.t)) {
     // Ludo's sounds, timed to the token's walk: out of the yard, onto a safe square, home, a capture

@@ -891,6 +891,7 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 .game__list .allgames__best { font-size: 11.5px; }
 .game__list .game__pin { top: 4px; left: 4px; right: auto; width: 28px; height: 28px; padding: 5px; border-width: 1px; opacity: .8; }
 .game__list .game__pin--on { opacity: 1; }
+.game__list .game__pin::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; }   /* a bigger target for a finger than the star looks */
 .game__list-row .allgames__search { flex: 1; width: auto; }
 .game__list-row .game__roombtn { min-height: 46px; padding: 4px 14px; font-size: 14px; }
 .hotcard { transition: transform .14s ease, box-shadow .14s ease; }
