@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261115-1522';
-import { is2d } from './view-mode.js?v=20261115-1522';
-import { adBreak } from './ad-breaks.js?v=20261115-1522';
-import { resultAd, sideAd } from './ads.js?v=20261115-1522';
-import { myTableSize } from '../net/party.js?v=20261115-1522';
-import { W, H, TICK } from './video/lib.js?v=20261115-1522';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-1522';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-1522';
-import { MOMENT, linesFor } from './talk.js?v=20261115-1522';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1522';
-import { ask, confirmSpend } from './dialog.js?v=20261115-1522';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1522';
-import { profile } from '../persistence/profile-store.js?v=20261115-1522';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-1522';
+import { hintsLeft, showHint } from './hint.js?v=20261115-1528';
+import { is2d } from './view-mode.js?v=20261115-1528';
+import { adBreak } from './ad-breaks.js?v=20261115-1528';
+import { resultAd, sideAd } from './ads.js?v=20261115-1528';
+import { myTableSize } from '../net/party.js?v=20261115-1528';
+import { W, H, TICK } from './video/lib.js?v=20261115-1528';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-1528';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-1528';
+import { MOMENT, linesFor } from './talk.js?v=20261115-1528';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1528';
+import { ask, confirmSpend } from './dialog.js?v=20261115-1528';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1528';
+import { profile } from '../persistence/profile-store.js?v=20261115-1528';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-1528';
 
-const V = '?v=20261115-1522';
+const V = '?v=20261115-1528';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -600,7 +600,7 @@ export async function runTv(ctx) {
     result = null;
     tick = 0;
     if (!resumeState) revives = 0;
-    toldBest = false; medalsTold = 0; bestAtStart = bestOf(game.slug); liveShown = 0; ctx.refreshBest?.();
+    toldBest = false; toldNear = false; medalsTold = 0; bestAtStart = bestOf(game.slug); liveShown = 0; ctx.refreshBest?.();
     holdPopups(true);
     waitingFirst = !resumeState && !!logic.tapToPlay && players.length === 1 && players[0].kind === 'me';
     countdown = waitingFirst ? 1 : 150;
@@ -735,7 +735,7 @@ export async function runTv(ctx) {
 
   /* ─── while playing: a new best or a medal shows up, but nothing stops ─── */
   const liveScore = (seat) => (state?.chits || state?.planes || state?.carts || state?.cars || state?.snakes || state?.birds || state?.players)?.[seat]?.score;
-  let bestAtStart = 0, toldBest = false, medalsTold = 0, revives = 0, liveShown = 0;
+  let bestAtStart = 0, toldBest = false, toldNear = false, medalsTold = 0, revives = 0, liveShown = 0;
   function milestones() {
     const seat = localSeats()[0];
     if (seat == null || localSeats().length > 1) return;
@@ -743,6 +743,8 @@ export async function runTv(ctx) {
     if (!Number.isFinite(sc)) return;
     // the score, live, in the chip at the top beside the best (table.js liveScore)
     ctx.liveScore?.(sc);
+    // close to your best: a nudge, once a game
+    if (!toldNear && !toldBest && bestAtStart >= 20 && sc >= bestAtStart * 0.9 && sc <= bestAtStart) { toldNear = true; popup('🎯', 'Almost there!', `${bestAtStart - sc + 1} more to beat your best of ${bestAtStart}`); }
     if (!toldBest && bestAtStart > 0 && sc > bestAtStart) { toldBest = true; popup('🏅', 'New best score!', `You passed ${bestAtStart}. Keep going!`); }
     // past your best: the chip at the top keeps count
     if (bestAtStart > 0 && sc > bestAtStart && sc !== liveShown) { liveShown = sc; ctx.liveBest?.(sc); }
