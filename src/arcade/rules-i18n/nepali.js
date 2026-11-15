@@ -253,7 +253,7 @@ export default {
    "borda ghumepachhi goti tapaainko gharako pangktitir modinchha. ghar pugna thyaakkai sangkhyaa chaahinchha.",
    "chhakkaa, goti kaatnu ra goti ghar puryaaunu, harekamaa arko paalo. lagaataar tin chhakkaa aae paalo jaanchha."
   ],
-  "win": "saamaanya mod: pahile chaarai goti ghar lyaaune jitchha. skor mod: 15 raaundapachhi, waa kasaile chaarai goti ghar lyaaudaa, sabaibhandaa dherai angka hune jitchha.",
+  "win": "saamaanya mod: pahile chaarai goti ghar lyaaune jitchha. skor mod: 10 minet sakiepachhi, waa kasaile chaarai goti ghar lyaaudaa, sabaibhandaa dherai angka hune jitchha.",
   "scoring": "khelaaghi mod chhaannuhos. saamaanya modamaa angka hudain: natijaamaa kasale kati goti ghar puryaayo dekhinchha. skor modamaa harek kothaa 1, goti kaate 20, goti ghar puge 30, ra sabaibhandaa pahile chaarai sake bonas 50.",
   "house": [
    [

@@ -15,6 +15,7 @@
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GUIDES as STRATEGY_GUIDES, writeStrategyGuides } from './strategy-guides.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ARGS = process.argv.slice(2);
@@ -235,7 +236,7 @@ function pageFor(id) {
       url, description: desc, genre: ['Party game', 'Social deduction game', 'Paper chit game'],
       countryOfOrigin: { '@type': 'Country', name: country },
       gamePlatform: 'Web browser', applicationCategory: 'Game', operatingSystem: 'Any',
-      numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 }, playMode: ['https://schema.org/SinglePlayer', 'https://schema.org/MultiPlayer'],
+      numberOfPlayers: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 10 }, playMode: ['https://schema.org/SinglePlayer', 'https://schema.org/MultiPlayer'],
       inLanguage: ['en', LANG[id]], image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/home.jpg`],
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       author: DEVELOPER_LD,
@@ -448,7 +449,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261115-1055">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261115-1340">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -558,7 +559,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1055">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1340">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -636,7 +637,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1055">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1340">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -1294,7 +1295,9 @@ ${logoLink('../')}
 ${t.sections.map(([h, p]) => `<h2>${esc(h)}</h2>\n<p>${esc(p)}</p>`).join('\n')}
 ${slug === 'indoor-games' ? `<h2>All our indoor games</h2>\n<ul>${PARTY.map(g => `<li><a href="../games/${g.slug}/">${esc(g.name)}</a>: ${esc(g.blurb)}</li>`).join('')}</ul>` : ''}
 ${adSlot('article')}
-<h2>Play it now</h2>
+${slug === 'strategy' ? `<h2>Strategy guides for every game</h2>
+<p>${Object.entries(STRATEGY_GUIDES).map(([g, o]) => `<a href="${g}/">${esc(o.title)}</a>`).join(' · ')}</p>
+` : ''}<h2>Play it now</h2>
 <p><a href="../games/cops-and-robbers/">Cops and Robbers</a>, also known as Raja Rani Chor Police, Chor Sipahi, Mafia or Räuber und Gendarm: one game, every name.</p>
 <h2>Questions</h2>
 ${t.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
@@ -1552,10 +1555,12 @@ for (const L of LANG_PAGES) {
 const { writeArticles } = await import('./articles/index.mjs');
 const articlePages = await writeArticles({ ROOT, SITE, TODAY, ANALYTICS, esc, json, iconLinks, logoLink, footerLinks, LANG_PAGES, PARTY, MAIN_SLUG, imageFor, guideFor, adSlot, bannerSlot });
 const articleCluster = new Map(articlePages.map(p => [p.url, p]));
+// strategy guides, one per game (tools/strategy-guides.mjs)
+const strategyUrls = writeStrategyGuides({ ROOT, SITE, TODAY, ANALYTICS, esc, json, iconLinks, logoLink, footerLinks, bannerSlot, adSlot, imageFor, DEVELOPER_LD });
 
 const gameGuideUrls = PARTY.flatMap(g => [`${SITE}/games/${g.slug}/`, ...guidedLangs(g.slug).map(L => `${SITE}/${L.dir}/games/${g.slug}/`)]);
 const localizedMainGuideUrls = LANG_PAGES.map(L => `${SITE}/${L.dir}/games/${MAIN_SLUG}/`);
-const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), MAIN_URL, ...localizedMainGuideUrls, ...gameGuideUrls, ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`), ...LANG_PAGES.map(L => `${SITE}/${L.dir}/`), ...articlePages.map(p => p.url), ...CATEGORIES.map(c => `${SITE}/games/${c.slug}/`)];
+const urls = [`${SITE}/`, `${SITE}/games/`, ...Object.keys(TOPICS).map(slug => `${SITE}/${slug}/`), ...strategyUrls, MAIN_URL, ...localizedMainGuideUrls, ...gameGuideUrls, ...Object.keys(INFO).map(slug => `${SITE}/${slug}/`), ...LANG_PAGES.map(L => `${SITE}/${L.dir}/`), ...articlePages.map(p => p.url), ...CATEGORIES.map(c => `${SITE}/games/${c.slug}/`)];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.map((u, i) => {
@@ -1605,8 +1610,9 @@ writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
 // ── refresh the SEO blocks inside index.html ────────────────
 const mainNames = [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id].slice(0, 4)]))];
 // ChitPlay is the name people should see; the title carries the names the game is searched by in each country
-const homeTitle = 'ChitPlay: Raja Rani Chor Police & 45+ Indoor Games';
-const homeDesc = 'Play Raja Rani Chor Police, Ludo, Carrom, Chess and 45+ free indoor games in 3D. No sign-up: play the computer, online or with friends.';
+// every game is equal on the home page: the title names a few that people search for, not one game
+const homeTitle = `ChitPlay: ${PARTY.length + 1} Free Games – Ludo, Chess, Carrom, Call Break & More`;
+const homeDesc = `Play ${PARTY.length + 1} free games online: Ludo, Chess, Carrom, Call Break, Bingo, racing and more. No sign-up: play the computer, online or with friends.`;
 const homeLd = [
   // Google's site name comes from this block on the home page: https://developers.google.com/search/docs/appearance/site-names
   { '@context': 'https://schema.org', '@type': 'WebSite', name: 'ChitPlay', alternateName: ['CHITPLAY', 'Chit Play'], url: `${SITE}/`, inLanguage: 'en' },
@@ -1618,9 +1624,9 @@ const homeLd = [
   {
     '@context': 'https://schema.org', '@type': 'VideoGame', name: 'ChitPlay',
     alternateName: mainNames, url: `${SITE}/`, description: homeDesc, author: DEVELOPER_LD,
-    genre: ['Party game', 'Social deduction game', 'Paper chit game', 'Indoor game'], audience: { '@type': 'PeopleAudience', suggestedMinAge: 6 }, gamePlatform: 'Web browser',
+    genre: ['Board game', 'Card game', 'Party game', 'Arcade game', 'Puzzle game', 'Indoor game'], audience: { '@type': 'PeopleAudience', suggestedMinAge: 6 }, gamePlatform: 'Web browser',
     applicationCategory: 'Game', operatingSystem: 'Any', image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/home.jpg`],
-    numberOfPlayers: { '@type': 'QuantitativeValue', value: 4 },
+    numberOfPlayers: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 10 },
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   },
 ];
@@ -1648,13 +1654,18 @@ const body = `<!-- seo:body -->
   <section class="seo-intro" aria-label="About ChitPlay">
     <h1>ChitPlay: indoor games online, for every age</h1>
     <p>ChitPlay is a 3D living room full of games: ${PARTY.length + 1} of them, free in your browser. Play as a guest with no sign-up, get matched with players online, play the computer, or invite friends nearby with a code.</p>
-    <img src="assets/chitplay-game.webp" alt="ChitPlay: four players at the Raja Rani Chor Police chit game in a 3D room" width="1200" height="675" loading="lazy" decoding="async" style="width:100%;height:auto;border-radius:12px">
-    <p>ChitPlay is the 4-player paper chit game, free in your browser for players of every age. Draw a folded chit, keep a straight face, and let the Police (or Sipahi, Wazir, Sheriff…) catch the Thief.</p>
-    <p>The same game has many names: Raja Rani Chor Police and Raja Rani Chor Sipahi in India, Raja Mantri Chor Sipahi in Nepal, Raja Wazir Chor Sipahi in Pakistan, Chor Police in Bangladesh, Mafia in Korea and Russia, Cops and Robbers in the USA and UK, Räuber und Gendarm in Germany. ChitPlay has all of them, each with its own rules.</p>
-    <h2>Every game at one table</h2>
-    <p>Swipe through the games on the start screen: ${PARTY.map(g => `<a href="games/${g.slug}/">${esc(g.name)}</a>`).join(', ')}. Each one plays in 3D, with computer players, online, or with friends nearby.</p>
-    <h2>One game, many names</h2>
-    <p><a href="games/cops-and-robbers/">Cops and Robbers</a> is played as ${esc(COUNTRY_ORDER.map(id => GAME_NAME_EN[id]).filter(n => n !== 'Cops and Robbers').join(', '))}. Pick your language and the game takes your name for it.</p>
+    <img src="assets/chitplay-game.webp" alt="The ChitPlay 3D games room, with players around a game on the table" width="1200" height="675" loading="lazy" decoding="async" style="width:100%;height:auto;border-radius:12px">
+    <p>Every game here is a full game with real rules, made to play well on a phone: board games families have played for generations, card games, party games for a group of friends, quick arcade games and brain teasers. Each one plays in 3D (or in 2D, straight from above), against the computer, with strangers online, on one phone passed round, or with friends on their own phones.</p>
+${CATEGORIES.map(c => {
+  const list = c.slugs ? PARTY.filter(g => c.slugs.includes(g.slug)) : PARTY.filter(g => c.kinds.includes(g.kind));
+  const extra = c.kinds.includes('Party') ? [`<a href="games/${MAIN_SLUG}/">Raja Rani Chor Police (Cops and Robbers)</a>`] : [];
+  return list.length || extra.length ? `    <h2><a href="games/${c.slug}/">${esc(c.name)}</a></h2>
+    <p>${[...extra, ...list.map(g => `<a href="games/${g.slug}/">${esc(g.name)}</a>`)].join(', ')}.</p>` : '';
+}).filter(Boolean).join(String.fromCharCode(10))}
+    <h2>Play with friends</h2>
+    <p>Start a party with Play with Friends and share the code, the QR or the link. Once your friends are in, whatever game anyone starts, the whole party plays it together, on their own phones, near or far.</p>
+    <h2>Learn and get better</h2>
+    <p>Every game has its own page with the full rules and tips. Strategy guides: <a href="strategy/ludo/">Ludo</a>, <a href="strategy/call-break/">Call Break</a>, <a href="strategy/carrom/">Carrom</a>, <a href="strategy/chess/">Chess</a> and <a href="strategy/">the chit game</a>.</p>
     <p><a href="games/">All games and rules</a> · <a href="how-to-play/">How to play (full guide)</a> · <a href="strategy/">Strategy and tips</a> · <a href="indoor-games/">Indoor games for 4 people</a> · <a href="school-games/">Paper games for school</a> · <a href="articles/">Game ideas: at home, with friends, at school, for 2 or 4 people</a> · <a href="about/">About</a> · <a href="contact/">Contact</a> · <a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> · <a href="disclaimer/">Disclaimer</a></p>
     <p>🌍 ${langLinks('')}</p>
   </section>

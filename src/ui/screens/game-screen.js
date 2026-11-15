@@ -1,36 +1,36 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261115-1055';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261115-1055';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261115-1055';
+import { GAME_PHASES } from '../../app/config.js?v=20261115-1340';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261115-1340';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261115-1340';
 import { audioManager } from '../../audio/audio-manager.js';
-import { viewButton, setView, is2d } from '../../arcade/view-mode.js?v=20261115-1055';
-import { loadWorld } from '../../world/world-loader.js?v=20261115-1055';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261115-1055';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261115-1055';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261115-1055';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261115-1055';
-import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261115-1055';
+import { viewButton, setView, is2d } from '../../arcade/view-mode.js?v=20261115-1340';
+import { loadWorld } from '../../world/world-loader.js?v=20261115-1340';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261115-1340';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261115-1340';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261115-1340';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261115-1340';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261115-1340';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261115-1055';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261115-1055';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261115-1055';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261115-1055';
-import { iconSvg } from '../icons.js?v=20261115-1055';
-import { shellText, fill } from '../../arcade/shell-text.js?v=20261115-1055';
-import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, levelOf, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261115-1055';
-import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261115-1055';
-import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261115-1055';
-import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261115-1055';
-import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261115-1055';
-import { savedList } from '../../arcade/resume.js?v=20261115-1055';
-import { logoSvg } from '../../arcade/logo.js?v=20261115-1055';
-import { gameStrip } from '../../arcade/game-strip.js?v=20261115-1055';
-import { resultAd } from '../../arcade/ads.js?v=20261115-1055';
-import { partyChip, partyPlay, inParty, joinParty, myTableSize, COPS } from '../../net/party.js?v=20261115-1055';
-import { hotPrompt } from '../../arcade/share.js?v=20261115-1055';
-import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261115-1055';
+} from '../../world/character-looks.js?v=20261115-1340';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261115-1340';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261115-1340';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261115-1340';
+import { iconSvg } from '../icons.js?v=20261115-1340';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261115-1340';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, levelOf, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261115-1340';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261115-1340';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261115-1340';
+import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261115-1340';
+import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261115-1340';
+import { savedList } from '../../arcade/resume.js?v=20261115-1340';
+import { logoSvg } from '../../arcade/logo.js?v=20261115-1340';
+import { gameStrip } from '../../arcade/game-strip.js?v=20261115-1340';
+import { resultAd } from '../../arcade/ads.js?v=20261115-1340';
+import { partyChip, partyPlay, inParty, joinParty, myTableSize, COPS } from '../../net/party.js?v=20261115-1340';
+import { hotPrompt } from '../../arcade/share.js?v=20261115-1340';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug } from '../../arcade/catalog.js?v=20261115-1340';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -298,8 +298,12 @@ export function GameScreen({ transition }) {
   const setIcon = (btn, iconName) => { btn.innerHTML = iconSvg(iconName); };
   const overlay = el('div', { className: 'game__overlay', attrs: { role: 'dialog', 'aria-modal': 'true' } });
   overlay.hidden = true;
-  const exitBtn = iconBtn('pause', () => openMenu());
-  exitBtn.hidden = true;
+  // the Menu button: an icon with the word, the same as in every other game; on the game's own page it is
+  // always there (before a match too), on the home page only during a match
+  const exitBtn = el('button', { className: 'game__exit game__menubtn', type: 'button', onClick: () => openMenu() }, [
+    el('span', { className: 'game__menubtn-ico', html: iconSvg('pause') }), el('span', {}, ['Menu']),
+  ]);
+  exitBtn.hidden = !COPS_PAGE;
   const profileBtn = el('button', { className: 'game__exit game__profilebtn', type: 'button', onClick: () => openProfile() });
   const paintProfileBtn = () => { profileBtn.innerHTML = faceHtml(portraitSvg(profile.look)); };
   // from the list and a game's own screen it opens straight away; from a match, it asks first
@@ -309,6 +313,15 @@ export function GameScreen({ transition }) {
     if (match && !window.confirm(`${ui.scanJoin}?`)) return;
     location.href = './?scan=1';
   }, 'game__scanbtn');
+  // Share: chitplay.com's link and a line about it, so a friend can open the site and play (the scanner
+  // lives inside Play with Friends, where joining happens)
+  const shareBtn = iconBtn('share', async () => {
+    audioManager.unlock(); sfx.play('select');
+    const url = new URL('./', document.baseURI).href;
+    const r = await shareGame({ title: 'ChitPlay: 47 free games', text: 'Play Ludo, Chess, Carrom, Call Break, Raja Rani Chor Police and 40+ more free games with me on ChitPlay. No download, no sign-up.', url });
+    if (r === 'copied') showToast(ui.copied || 'Link copied', 2200);
+  }, 'game__sharebtn');
+  shareBtn.setAttribute('aria-label', 'Share ChitPlay'); shareBtn.title = 'Share ChitPlay';
   const langBtn = el('button', { className: 'game__exit game__langbtn', type: 'button', onClick: () => openLanguage() });
   // 3D (the room) or 2D (one still picture from above), kept on this phone
   const viewBtn = viewButton('game__exit game__langbtn game__viewbtn', () => audioManager.play('select'));
@@ -450,7 +463,8 @@ export function GameScreen({ transition }) {
 
   const topBar = el('div', { className: 'game__top' }, [
     exitBtn, roundPill, scoreRow,
-    el('div', { className: 'game__top-right' }, [scanBtn, viewBtn, langBtn, toolsBox, toolsBtn, profileBtn]),
+    // the party (when this phone is in one): top right, with Leave on it, on every screen
+    el('div', { className: 'game__top-right' }, [partyChip({ className: 'game__exit game__partychip partychip' }), shareBtn, viewBtn, langBtn, toolsBox, toolsBtn, profileBtn]),
   ]);
   // the prompt, the chips and the rotate pill stack at the bottom, so they can never overlap
   const dock = el('div', { className: 'game__dock' }, [prompt, sheet, rotatePill]);
@@ -644,7 +658,13 @@ export function GameScreen({ transition }) {
         const shell = shellText(lang);
         let recent = [];
         try { recent = JSON.parse(localStorage.getItem('chitplay.recent')) || []; } catch {}
-        const everyGame = [base.id, ...TABLE_GAMES.map(g => g.slug)];
+        // every game is equal: the chit game sits with the other party games, not at the front
+        const everyGame = (() => {
+          const list = TABLE_GAMES.map(g => g.slug);
+          const at = TABLE_GAMES.findIndex(g => g.kind === 'Party');
+          list.splice(at < 0 ? list.length : at, 0, base.id);
+          return list;
+        })();
         // your pinned games come first, then the ones you last started
         const orderNow = () => {
           const pins = profile.pins.filter(id => everyGame.includes(id));
@@ -661,6 +681,8 @@ export function GameScreen({ transition }) {
         // Start buttons + options (built once)
         const leave = async (value) => {
           audioManager.unlock(); sfx.play('select'); haptic(15);
+          // the home page plays nothing itself: rejoining a room happens on the game's own page
+          if (!COPS_PAGE && value === 'rejoin' && ticket) { location.href = copsUrl('cops-and-robbers', `&join=${ticket.code}`); return; }
           // in a party: the host's game takes the friends along (no codes); a friend's pick asks the host
           if (value !== 'rejoin' && value !== 'scan' && value !== 'watch' && inParty()) {
             if (await partyPlay(tableGame()?.slug || COPS.slug)) return;
@@ -863,10 +885,13 @@ export function GameScreen({ transition }) {
         const legalLinksNow = () => legalLinks();
 
         /* A: what you see when ChitPlay opens: every game, with search and pins */
-        const entries = () => [
-          { id: base.id, slug: 'cops', name: country.game, icon: GAME_ICON[base.id], kind: 'Party', accent: '#b5341f', blurb: ['king', 'queen', 'detective', 'thief'].map(r => country.roles[r].name).join(' · '), aka: [GAME_NAME_EN[base.id], ...(GAME_AKA[base.id] || []), 'raja rani chor police sipahi mafia cops robbers'].join(' ') },
-          ...TABLE_GAMES.map(g => ({ id: g.slug, slug: g.slug, name: g.name, icon: g.icon, kind: g.kind, also: g.also, hot: g.hot, video: g.video, accent: g.accent, blurb: g.blurb, aka: g.aka || '' })),
-        ];
+        const entries = () => {
+          const chit = { id: base.id, slug: 'cops', name: country.game, icon: GAME_ICON[base.id], kind: 'Party', accent: '#b5341f', blurb: ['king', 'queen', 'detective', 'thief'].map(r => country.roles[r].name).join(' · '), aka: [GAME_NAME_EN[base.id], ...(GAME_AKA[base.id] || []), 'raja rani chor police sipahi mafia cops robbers'].join(' ') };
+          const list = TABLE_GAMES.map(g => ({ id: g.slug, slug: g.slug, name: g.name, icon: g.icon, kind: g.kind, also: g.also, hot: g.hot, video: g.video, accent: g.accent, blurb: g.blurb, aka: g.aka || '' }));
+          const at = list.findIndex(g => g.kind === 'Party');
+          list.splice(at < 0 ? list.length : at, 0, chit);
+          return list;
+        };
         const pinButton = (id, onChange) => {
           const star = el('button', {
             className: 'game__pin', type: 'button',
@@ -948,9 +973,10 @@ export function GameScreen({ transition }) {
           }
           // games in progress: carry on with one tap
           clear(carryRow);
-          const going = !q && !kind ? savedList().map(x => gameBySlug(x.slug)).filter(Boolean).slice(0, 4) : [];
+          const copsSaved = !COPS_PAGE && loadSave() ? [{ slug: GAME_SLUGS[loadSave().country] || 'cops-and-robbers', name: country.game, kind: 'Party', accent: '#b5341f', chit: true }] : [];
+          const going = !q && !kind ? [...copsSaved, ...savedList().map(x => gameBySlug(x.slug)).filter(Boolean)].slice(0, 4) : [];
           carryRow.hidden = !going.length;
-          if (going.length) carryRow.append(el('h2', { className: 'hotrow__title' }, ['⏯️ Carry on']), el('div', { className: 'recent__list' }, going.map(g => el('a', { className: 'recent__game carry', attrs: { href: `play/?game=${g.slug}&mode=play`, 'aria-label': `Carry on ${g.name}` } }, [el('span', { html: logoSvg(g, 52) }), el('small', {}, [g.name])]))));
+          if (going.length) carryRow.append(el('h2', { className: 'hotrow__title' }, ['⏯️ Carry on']), el('div', { className: 'recent__list' }, going.map(g => el('a', { className: 'recent__game carry', attrs: { href: g.chit ? `play/?game=${g.slug}` : `play/?game=${g.slug}&mode=play`, 'aria-label': `Carry on ${g.name}` } }, [el('span', { html: logoSvg(g, 52) }), el('small', {}, [g.name])]))));
           // the games you played last, one tap away
           clear(recentRow);
           const rec = !q && !kind ? recent.filter(id => everyGame.includes(id)).slice(0, 6) : [];
@@ -974,7 +1000,7 @@ export function GameScreen({ transition }) {
         const listView = el('div', { className: 'game__list' }, [
           // your card and your Gaming Room; the daily rewards live in the profile (Rewards)
           el('div', { className: 'game__list-me' }, [playerCard, el('button', { className: 'game__roombtn game__roombtn--card', type: 'button', attrs: { 'aria-label': 'Gaming Room' }, onClick: () => { sfx.play('open'); haptic(8); openMyRoom(); } }, ['🎮 Room'])]),
-          ...(ticket?.left ? [bigPlay('restart', ui.rejoinBtn, fmt(ui.rejoinSub, { code: ticket.code }), 'rejoin')] : []),
+          ...((COPS_PAGE ? ticket?.left : ticket) ? [bigPlay('restart', ui.rejoinBtn, fmt(ui.rejoinSub, { code: ticket.code }), 'rejoin')] : []),
           listRow,
           chips,
           // one ad after every game in the list, never between tiles or near a button (src/arcade/ads.js)
@@ -1256,16 +1282,31 @@ export function GameScreen({ transition }) {
         ]);
         const head = el('div', { className: 'game__gamehead' });
         const pick = el('div', { className: 'game__home-pick' }, [head]);
+        // in a party: only one way to play, with the friends (src/net/party.js); everything else waits
+        const partyGo = el('button', { className: 'game__choice game__choice--primary game__choice--icon game__choice--party', type: 'button', onClick: () => leave('nearby') }, [
+          el('span', { className: 'game__choice-ico', html: iconSvg('wifi') }),
+          el('span', { className: 'game__choice-text' }, [el('strong', {}, ['👫 Play with your party']), el('span', {}, ['Everyone connected plays this game with you'])]),
+        ]);
+        const soloGo = bigPlay('play', shell.guestPlay, ui.playSub, 'play');
+        const modeTiles = el('div', { className: 'game__tiles game__tiles--three' }, [
+          // play with friends comes first; watching the computer play goes last
+          tile('wifi', ui.nearby, ui.nearbySub, 'nearby'),
+          tile('phone', ui.pass, ui.passSub, 'pass'),
+          tile('eye', ui.watch, ui.watchSub, 'watch'),
+        ]);
+        const paintPartyLock = () => {
+          const locked = inParty();
+          partyGo.hidden = !locked;
+          soloGo.hidden = locked; onlineBtn.hidden = locked; modeTiles.hidden = locked;
+        };
+        addEventListener('chitplay:party-changed', paintPartyLock);
         const go = el('div', { className: 'game__home-go' }, [
-          bigPlay('play', shell.guestPlay, ui.playSub, 'play'),
+          partyGo,
+          soloGo,
           // strangers from anywhere: random matching on free public tables
           onlineBtn,
-          el('div', { className: 'game__tiles game__tiles--three' }, [
-            // play with friends comes first; watching the computer play goes last
-            tile('wifi', ui.nearby, ui.nearbySub, 'nearby'),
-            tile('phone', ui.pass, ui.passSub, 'pass'),
-            tile('eye', ui.watch, ui.watchSub, 'watch'),
-          ]),
+          modeTiles,
+
           rounds,
           seatPicker,
           stylePicker,
@@ -1302,6 +1343,7 @@ export function GameScreen({ transition }) {
           const st = playStats();
           const bestLine = st.best[id] ? `🏅 Your best: ${st.best[id]}. Can you beat it?` : st.plays[id] ? `🎮 Played ${st.plays[id]} · won ${st.wins[id] || 0}. Go for another win!` : '✨ New for you: give it a try!';
           head.append(el('p', { className: 'game__bestline' }, [bestLine]));
+          paintPartyLock();
           sheet.className = 'game__sheet game__sheet--show game__sheet--start game__sheet--home';
           sheet.replaceChildren(pick, go, details);
           sheet.scrollTop = 0;
@@ -1822,7 +1864,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261115-1055').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261115-1340').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -2046,7 +2088,7 @@ export function GameScreen({ transition }) {
           // a party's table: tell the party the room's code, so the friends sit down by themselves
           if (partyHost) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code, slug: COPS.slug } }));
           keepAwake(true);
-          import('../../net/qr.js?v=20261115-1055').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261115-1340').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -2254,7 +2296,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261115-1055');
+        const scanner = import('../../net/qr-scan.js?v=20261115-1340');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });
@@ -2808,7 +2850,17 @@ export function GameScreen({ transition }) {
       screen.addEventListener('pointerdown', () => audioManager.unlock(), { once: true });
     }
 
-    const saved = nearbyStart ? null : loadSave();
+    // chitplay.com is the list of every game: it never plays or resumes one itself. An invite, a scan or a
+    // friend's phone coming back goes to the game's own page; a match left half way waits in Carry on
+    // (a room this phone was in waits behind the Rejoin button in the list: it never takes over the home page)
+    if (!COPS_PAGE && nearbyStart?.rejoin) nearbyStart = null;
+    if (!COPS_PAGE && nearbyStart) {
+      const slug = GAME_SLUGS[loadSave()?.country] || 'cops-and-robbers';
+      const keep = new URLSearchParams(location.search); keep.delete('game');
+      location.replace(copsUrl(slug, keep.toString() ? `&${keep}` : ''));
+      return;
+    }
+    const saved = nearbyStart || !COPS_PAGE ? null : loadSave();
     const fromUrl = readUrlGame();
     // the home page: a link to Cops and Robbers (old links, the guides' Play buttons) opens its own page
     if (!COPS_PAGE && fromUrl) {
@@ -3470,6 +3522,8 @@ export function GameScreen({ transition }) {
     world?.story?.portrait(null);
   }
   function quitGame() {
+    // on the game's own page with no match going: Quit goes back to the list of every game
+    if (COPS_PAGE && !match && !net) { location.href = new URL('./', document.baseURI).href; return; }
     clearSave();
     const ticket = net?.role === 'guest' ? loadRejoin() : null;
     if (ticket) saveRejoin({ ...ticket, left: true }); else clearRejoin();
@@ -3524,6 +3578,9 @@ export function GameScreen({ transition }) {
         menuBtn(`${ui.voiceLabel || 'Voices'}: ${settingsStore.get('voiceEnabled') !== false ? 'on' : 'off'}`, () => { const next = settingsStore.get('voiceEnabled') === false; settingsStore.set('voiceEnabled', next); if (!next) window.speechSynthesis?.cancel(); openMenu(); }, '', settingsStore.get('voiceEnabled') !== false ? 'mic' : 'micOff'),
       ]),
       menuBtn(`${chatOn() ? '💬' : '🔕'} ${ui.chatLabel}`, () => { setChat(!chatOn()); openMenu(); }, '', null),
+      // on the game's own page the top bar keeps only Menu: scanning and turning the screen live here too
+      COPS_PAGE && !match ? menuBtn(`📷 ${ui.scanJoin}`, () => { closeOverlay(); scanBtn.click(); }, '', null) : null,
+      COPS_PAGE && isTouch ? menuBtn('🔄 Turn the screen', () => { closeOverlay(); if (isSolo()) holdTimers(false); rotateBtn.click(); }, '', null) : null,
       menuBtn(ui.profile, () => openProfile({ fromMenu: true }), '', 'user'),
       menuBtn(net ? ui.disconnect : ui.quit, quitGame, 'game__choice--danger', 'exit'),
     ].filter(Boolean)));

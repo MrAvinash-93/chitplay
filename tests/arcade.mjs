@@ -253,10 +253,23 @@ const place = (fen) => fen.replace(/\s/g, '').split('');
   ludo.apply(h, 0, { roll: 1 }, fixed(3));
   ludo.apply(h, 0, { t: 0 });
   ok(h.points[0] === 33, 'ludo score: a token home scores 30 more');
+  // Score mode runs against a clock: 40 moves in, the time runs out and the most points wins
   const r = ludo.init({ n: 2, opts: { style: 'score' } });
   const rng = seeded(9);
-  while (!ludo.result(r)) { const seat = ludo.active(r)[0]; ludo.apply(r, seat, ludo.bot(r, seat, rng, ludo.moves(r, seat)), rng); }
-  ok(ludo.result(r).winners.length >= 1 && (r.ended || r.won >= 0) && r.round <= 16, 'ludo score: the game ends by round 15, most points wins');
+  for (let k = 0; k < 40 && !ludo.result(r); k++) { const seat = ludo.active(r)[0]; ludo.apply(r, seat, ludo.bot(r, seat, rng, ludo.moves(r, seat)), rng); }
+  ok(r.limitMs === 600000, 'ludo score: a 10-minute clock');
+  if (!ludo.result(r)) ludo.timeUp(r);
+  const rr = ludo.result(r);
+  ok(rr && rr.winners.every(p => r.points[p] === Math.max(...r.points)) && ludo.active(r).length === 0, 'ludo score: when the time is up the game ends, most points wins');
+  // with people: three turns played by the computer and that player is out; the last one left wins
+  const o = ludo.init({ n: 2, opts: {} });
+  ludo.strike(o, 0); ludo.strike(o, 0);
+  ok(!ludo.result(o) && o.strikes[0] === 2, 'ludo lifelines: two missed turns, still playing');
+  const ev = ludo.strike(o, 0);
+  ok(ev.some(e => e.k === 'offline') && ludo.result(o)?.winners[0] === 1, 'ludo lifelines: the third time, offline and out; the other player wins');
+  const f = ludo.init({ n: 4, opts: {} });
+  f.p = 2; [0, 0, 0].forEach(() => ludo.strike(f, 2));
+  ok(!ludo.result(f) && f.p !== 2 && ludo.active(f)[0] !== 2, 'ludo lifelines: with four, an offline player is skipped and the others play on');
   ok(ludo.init({ n: 4 }).style === 'normal', 'ludo: normal is the default mode');
 }
 { // ludo house rules

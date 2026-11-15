@@ -253,7 +253,7 @@ export default {
    "Oboidya dosku, fishka svorachivaet na tvoyu finishnuyu dorozhku. Chtoby doiti do finisha, nuzhno tochnoe chislo.",
    "Shesterka, vzyatie i fishka na finishe dayut eshche odin brosok. Tri shesterki podryad — i khod poteryan."
   ],
-  "win": "Obychnyi rezhim: pobezhdaet tot, kto pervym privedet domoi vse chetyre fishki. Rezhim ochkov: pobezhdaet bolshe vsekh ochkov, kogda proidut 15 raundov ili kto-to privedet vse chetyre fishki.",
+  "win": "Obychnyi rezhim: pobezhdaet tot, kto pervym privedet domoi vse chetyre fishki. Rezhim ochkov: pobezhdaet bolshe vsekh ochkov, kogda proidut 10 minut ili kto-to privedet vse chetyre fishki.",
   "scoring": "Vyberi rezhim pered igroi. V obychnom rezhime ochkov net: v tablitse itogov vidno, skolko fishek privel kazhdyi. V rezhime ochkov kazhdaya proidennaya kletka — 1, vzyatie — 20, fishka na finishe — 30, a kto pervym privedet vse chetyre — bonus 50.",
   "house": [
    [

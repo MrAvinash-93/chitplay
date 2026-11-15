@@ -11,7 +11,7 @@
  *  - quick:   everyone starts with one token already out
  *  - places:  with three or four players the game goes on after the winner, for second and third place
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-1055';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-1340';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];
@@ -57,19 +57,23 @@ function legal(s, seat) {
   if (s.die == null) return [{ roll: 1 }];
   return s.t[seat].map((_, t) => (destination(s, seat, t) == null ? null : { t })).filter(Boolean);
 }
-/** Score mode: how the points work, and how long a game lasts. */
-export const SCORE = { step: 1, capture: 20, home: 30, finish: 50, rounds: 15 };
-const finished = (s, seat) => !!s.order?.includes(seat);
+/** Score mode: how the points work, and how long a game lasts (a clock: most points when it runs out). */
+export const SCORE = { step: 1, capture: 20, home: 30, finish: 50, rounds: 15, minutes: 10 };
+/** With people: a turn left alone is played by the computer; the third time, that player is out (offline). */
+export const LIFELINES = 3;
+const finished = (s, seat) => !!s.order?.includes(seat) || !!s.out?.includes(seat);
+const inGame = (s) => seatsOf(s.n).filter(p => !finished(s, p));
 function nextSeat(s) {
   // players who have finished sit out the rest
   const was = s.p;
-  do s.p = (s.p + 1) % s.n; while (finished(s, s.p) && s.order.length < s.n);
+  do s.p = (s.p + 1) % s.n; while (finished(s, s.p) && inGame(s).length > 0);
   s.sixes = 0;
   s.die = null;
   // back round to the start of the table: a new round (even when the first seat has finished)
   if (s.p <= was) {
     s.round += 1;
-    if (s.style === 'score' && s.round > SCORE.rounds) s.ended = true;
+    // (a game saved before the clock came in still ends after its rounds)
+    if (s.style === 'score' && !s.limitMs && s.round > SCORE.rounds) s.ended = true;
   }
 }
 export const victims = (s, seat, sq) => {
@@ -128,7 +132,40 @@ export default {
       points: seatsOf(n).map(() => 0), caps: seatsOf(n).map(() => 0), sixesRolled: seatsOf(n).map(() => 0),
       round: 1, ended: false, order: [], t: seatsOf(n).map(() => (rules.quick ? [0, -1, -1, -1] : [-1, -1, -1, -1])),
       p: 0, die: null, sixes: 0, shown: 1, rollId: 0, won: -1, note: null,
+      strikes: seatsOf(n).map(() => 0), out: [],
+      // Score mode is played against a clock; the host's phone sets when it ends (deadline)
+      limitMs: opts?.style === 'score' ? SCORE.minutes * 60000 : 0, deadline: 0, timeUp: false,
     };
+  },
+  /** The clock ran out (Score mode): the game ends, most points wins. */
+  timeUp(s) {
+    if (s.style !== 'score' || s.ended || s.won >= 0) return [];
+    s.ended = true; s.timeUp = true; s.die = null;
+    return [{ k: 'timeup', seat: -1 }];
+  },
+  /**
+   * A turn played by the computer for a person who let the time run out: one lifeline gone. The third
+   * time, that player is taken out of the game (offline); the others play on, or the last one left wins.
+   */
+  strike(s, seat) {
+    if (!Array.isArray(s.strikes)) s.strikes = seatsOf(s.n).map(() => 0);
+    if (!Array.isArray(s.out)) s.out = [];
+    if (finished(s, seat)) return [];
+    s.strikes[seat] += 1;
+    if (s.strikes[seat] < LIFELINES) return [{ k: 'strike', seat, left: LIFELINES - s.strikes[seat] }];
+    s.out.push(seat);
+    s.note = { seat, kind: 'offline' };
+    const events = [{ k: 'offline', seat }];
+    const left = inGame(s);
+    if (left.length <= 1) {
+      if (s.style === 'score') s.ended = true;
+      else s.won = left.length ? left[0] : -1;
+      if (left.length) s.order = [...(s.order || []).filter(p => !s.out.includes(p)), left[0]];
+      s.die = null;
+      return events;
+    }
+    if (s.p === seat) nextSeat(s);
+    return events;
   },
   active: (s) => (s.won >= 0 || s.ended ? [] : [s.p]),
   moves: (s, seat) => legal(s, seat),
@@ -194,7 +231,16 @@ export default {
   },
   result(s) {
     if (s.won < 0 && !s.ended) return null;
-    if (s.style === 'score') return { scores: s.points.slice(), winners: leaders(s.points), note: s.won >= 0 ? `${SCORE.finish} bonus points for finishing first.` : `${SCORE.rounds} rounds played: most points wins.` };
+    const gone = (s.out || []).map(p => s.names?.[p] || `Player ${p + 1}`);
+    const offline = gone.length ? ` ${gone.join(', ')} went offline and left the game.` : '';
+    if (s.style === 'score') {
+      // players who went offline can't win; among the rest, most points
+      const live = seatsOf(s.n).filter(p => !(s.out || []).includes(p));
+      const top = Math.max(...live.map(p => s.points[p]));
+      const winners = live.filter(p => s.points[p] === top);
+      return { scores: s.points.slice(), winners, note: (s.won >= 0 ? `${SCORE.finish} bonus points for finishing first.` : s.timeUp ? `Time's up: most points wins.` : s.limitMs ? 'Most points wins.' : `${SCORE.rounds} rounds played: most points wins.`) + offline };
+    }
+    if (s.won >= 0 && (s.out || []).length && !(s.order || []).length) return { scores: seatsOf(s.n).map(p => (p === s.won ? 1 : 0)), winners: [s.won], note: `Last player left in the game.${offline}` };
     if (s.order?.length >= s.n) {
       const places = ['1st', '2nd', '3rd', '4th'];
       return { scores: seatsOf(s.n).map(p => s.n - s.order.indexOf(p)), winners: [s.order[0]], note: `Finishing order: ${s.order.map((p, i) => `${places[i]} ${s.names?.[p] || `Player ${p + 1}`}`).join(', ')}.` };
@@ -226,17 +272,21 @@ export default {
     const who = ctx.active[0];
     const colorOf = (p) => COLOR_NAMES[quarter(v, p)];
     const nameOf = (p) => (p === ctx.me && !ctx.pass ? 'You' : ctx.names[p]);
-    const players = seatsOf(v.n).map(p => ({ name: nameOf(p), color: COLORS[quarter(v, p)], text: v.style === 'score' ? `${v.points[p]} pts` : `${home(v, p)}/4 🏠${rule(v, 'capture') ? (v.caps[p] ? ' ⚔️' : ' 🔒') : ''}`, on: p === who }));
+    const gone = (p) => (v.out || []).includes(p);
+    // lifelines (with people): a hollow heart for each turn the computer had to play
+    const hearts = (p) => (v.strikes?.[p] ? ` ${'❤️'.repeat(Math.max(0, LIFELINES - v.strikes[p]))}${'🤍'.repeat(Math.min(LIFELINES, v.strikes[p]))}` : '');
+    const players = seatsOf(v.n).map(p => ({ name: nameOf(p), color: COLORS[quarter(v, p)], text: gone(p) ? '📴 offline' : `${v.style === 'score' ? `${v.points[p]} pts` : `${home(v, p)}/4 🏠${rule(v, 'capture') ? (v.caps[p] ? ' ⚔️' : ' 🔒') : ''}`}${hearts(p)}`, on: p === who }));
     let title;
     if (mine) title = `${ctx.pass ? `${ctx.names[who]} (${colorOf(who)})` : `You are ${colorOf(who)}`}: ${rolling ? 'roll the die' : `you rolled ${v.die}`}`;
     else title = `${ctx.names[who]} (${colorOf(who)}) ${rolling ? 'is rolling…' : `rolled ${v.die}`}`;
     const n = v.note;
     const says = !n ? '' : n.kind === 'stuck' ? `${nameOf(n.seat)} rolled ${n.n}: no token can move. ${v.t[n.seat].every(x => x < 0) ? 'A 6 brings a token out.' : ''}`
       : n.kind === 'forfeit' ? `${nameOf(n.seat)} rolled three sixes: turn lost.`
+        : n.kind === 'offline' ? `${nameOf(n.seat)} missed three turns: offline, out of the game.`
         : n.kind === 'capture' ? `${nameOf(n.seat)} sent ${nameOf(n.victim)}’s token back! Roll again.`
           : n.kind === 'place' ? `${nameOf(n.seat)} finished ${['first 🥇', 'second 🥈', 'third 🥉'][n.place - 1] || ''}! The others play on.`
             : `${nameOf(n.seat)} brought a token home! Roll again.`;
-    const round = v.style === 'score' ? `Round ${Math.min(v.round, SCORE.rounds)} of ${SCORE.rounds}` : '';
+    const round = v.style === 'score' ? (v.limitMs ? `Most points in ${Math.round(v.limitMs / 60000)} minutes wins` : `Round ${Math.min(v.round, SCORE.rounds)} of ${SCORE.rounds}`) : '';
     const lock = rule(v, 'capture') && ctx.me >= 0 && !v.caps[ctx.me] ? 'Capture a token to open your home path 🔒' : '';
     const panel = { title, die: v.die ?? v.shown, players, lead: says || round || lock, compact: true, buttons: [] };
     if (!mine) return panel;

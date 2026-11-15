@@ -870,7 +870,7 @@ body.room-only #app, body.room-only .myroom, body.room-only .player-tags, body.r
 @media (max-width: 600px) { .world-caption { top: calc(var(--hud-h) + 48px); } }
 
 /* in a match only the ⏸ menu stays in the top bar; profile, sound and chat are inside it */
-.game--playing .game__top-right > :is(.game__scanbtn, .game__profilebtn, .game__toolsbtn, .game__tools, .game__langbtn, .game__viewbtn) { display: none; }
+.game--playing .game__top-right > :is(.game__scanbtn, .game__sharebtn, .game__profilebtn, .game__toolsbtn, .game__tools, .game__langbtn, .game__viewbtn) { display: none; }
 /* paused: names, speech and emojis from the room wait behind the menu */
 html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-fx, .player-chit) { display: none; }
 /* after a game: liked it? put it in the Hot games */
@@ -979,3 +979,24 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 /* two settings side by side in the menu (3D/2D + language, sound + voices), as in every game */
 .game__menu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .game__menu-pair > .game__choice { min-width: 0; }
+
+/* the Menu button: the pause icon and the word, as in every game */
+.game__exit.game__menubtn { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 9px; font: 800 14px system-ui, sans-serif; }
+.game__exit.game__menubtn[hidden] { display: none; }
+.game__menubtn-ico { display: inline-grid; place-items: center; width: 16px; height: 16px; }
+.game__menubtn-ico svg { width: 16px; height: 16px; }
+
+/* the game's own page (/play/?game=cops-and-robbers): only Menu at the top left; scan, view, language,
+   switches and profile are in the Menu */
+.game__sharebtn { color: #ffd27a; }
+
+/* the party chip, top right: the count and Leave; shown on every screen while in a party (the game's own page too) */
+.game__exit.game__partychip { width: auto; padding: 0 6px 0 10px; gap: 4px; display: inline-flex; align-items: center; font: 800 13px system-ui, sans-serif; white-space: nowrap; }
+.game__exit.game__partychip[hidden] { display: none; }
+.cops-page .game__top-right { display: flex; }
+.cops-page .game__top-right > :not(.game__partychip) { display: none; }
+/* in a party the list's own Play with Friends button gives way to the chip at the top */
+.game__list-row .partychip:has(.partychip__leave) { display: none; }
+
+/* whatever the party lock hides stays hidden, whatever its own display rule says */
+.game__home-go [hidden] { display: none !important; }

@@ -571,3 +571,13 @@ body.room.in-play .panel > .chatrow { position: static; }
 @media (orientation: portrait) {
   body.room.in-play .panel--play, body.room.in-play .tvpanel { max-height: min(50dvh, 430px); }
 }
+
+/* the Menu button says Menu on every screen, phones too */
+.bar .pausebtn { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; }
+
+/* the game clock (Ludo Score mode): time left at the top; the turn timer moves under it */
+.gameclock { position: fixed; z-index: 41; left: 50%; transform: translateX(-50%); top: calc(max(8px, env(safe-area-inset-top)) + 50px); padding: 5px 14px; border-radius: 999px; background: rgba(20, 12, 8, .94); border: 1.5px solid #ffd27a; color: #ffd27a; font: 900 15px/1.2 system-ui, sans-serif; font-variant-numeric: tabular-nums; pointer-events: none; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.gameclock--hurry { border-color: #ff6b57; color: #ff9b8a; animation: turnclock-pulse .8s ease-in-out infinite; }
+body.has-gameclock .turnclock { top: calc(max(8px, env(safe-area-inset-top)) + 88px); }
+@media (min-width: 900px) { body.room .gameclock { left: calc(50% - min(200px, 22vw)); } }
+@media (prefers-reduced-motion: reduce) { .gameclock--hurry { animation: none; } }

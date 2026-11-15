@@ -31,7 +31,7 @@ export const VIDEO_GAMES = [
 ];
 export const GAMES = [
   { slug: 'ludo', aka: 'pachisi goti pasa', skill: true, name: 'Ludo', icon: '🎲', min: 2, max: 4, seats: 4, minutes: '20–40', kind: 'Board', accent: '#c62828', blurb: 'Race your four tokens home. Roll a six to start, and send rivals back.',
-    modes: [['normal', 'Normal', 'First to bring all four tokens home wins.'], ['score', 'Score', 'Every square, capture and token home scores points. Most points after 15 rounds wins.']],
+    modes: [['normal', 'Normal', 'First to bring all four tokens home wins.'], ['score', 'Score', 'Every square, capture and token home scores points. Most points when the 10 minutes run out wins.']],
     rules: [['block', '🧱 Blockades', 'Two of your tokens on one square block everyone else.'], ['capture', '⚔️ Capture to go home', 'A token can only go up its home path after you have captured one.'], ['quick', '⚡ Quick start', 'Everyone starts with one token already out.'], ['places', '🥈 Play on for places', 'After the winner, the others play on for second and third place (3–4 players).']] },
   { slug: 'carrom', aka: 'carom karam striker', name: 'Carrom', icon: '🎯', min: 2, max: 2, seats: 2, minutes: '10–20', kind: 'Board', accent: '#a9713a', blurb: 'Flick the striker, pocket your coins, and cover the queen.' },
   { slug: 'chess', aka: 'shatranj', skill: true, name: 'Chess', icon: '♟️', min: 2, max: 2, seats: 2, minutes: '10–40', kind: 'Board', accent: '#6d5a3f', blurb: 'The full game: castling, en passant, promotion and checkmate.' },

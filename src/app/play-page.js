@@ -5,8 +5,8 @@
  *    plays in the 3D room (src/app/bootstrap.js), the same game that used to open on the home page.
  * The home page keeps the list of every game, search, scan and the profile.
  */
-import { gameBySlug } from '../arcade/catalog.js?v=20261115-1055';
-import { GAME_SLUGS } from '../world/countries.js?v=20261115-1055';
+import { gameBySlug } from '../arcade/catalog.js?v=20261115-1340';
+import { GAME_SLUGS } from '../world/countries.js?v=20261115-1340';
 
 const q = new URLSearchParams(location.search);
 const slug = (q.get('game') || '').trim().toLowerCase();
@@ -14,6 +14,7 @@ const isCops = !!slug && !gameBySlug(slug) && (Object.values(GAME_SLUGS).include
 
 if (isCops) {
   window.__chitplayCopsPage = true;
+  document.documentElement.classList.add('cops-page');   // its top bar keeps only Menu, the round and the scores
   // the 3D room's links, pictures and pages are all written from the site's root
   const base = document.createElement('base');
   base.href = new URL('../', location.href).href;
@@ -23,7 +24,7 @@ if (isCops) {
   for (const f of ['base.css', 'layout.css']) {
     const l = document.createElement('link');
     l.rel = 'stylesheet';
-    l.href = new URL(`../styles/${f}?v=20261115-1055`, import.meta.url).href;
+    l.href = new URL(`../styles/${f}?v=20261115-1340`, import.meta.url).href;
     document.head.append(l);
   }
   document.title = 'Cops and Robbers (Raja Rani Chor Police): Play Free in 3D | ChitPlay';
@@ -32,7 +33,7 @@ if (isCops) {
   app.setAttribute('role', 'application');
   app.setAttribute('aria-label', 'Cops and Robbers');
   document.getElementById('party')?.replaceWith(app);
-  await import('./bootstrap.js?v=20261115-1055');
+  await import('./bootstrap.js?v=20261115-1340');
 } else {
-  await import('../arcade/table.js?v=20261115-1055');
+  await import('../arcade/table.js?v=20261115-1340');
 }

@@ -10,7 +10,7 @@ import { MORE_LANG_PAGES } from './seo-langs-more.mjs';
 export const LANG_PAGES = [
   {
     code: 'hi', dir: 'hi', game: 'hindi', label: 'हिन्दी',
-    title: "ChitPlay: राजा रानी चोर पुलिस और 45+ इनडोर गेम मुफ़्त",
+    title: "ChitPlay: लूडो, शतरंज, कैरम, कॉल ब्रेक और 47 मुफ़्त गेम",
     desc: "राजा रानी चोर पुलिस, लूडो, कैरम, शतरंज और 45+ इनडोर गेम 3D में मुफ़्त खेलें। बिना साइन-अप: कंप्यूटर, ऑनलाइन या दोस्तों के साथ पास में।",
     h1: "ChitPlay: दोस्तों के साथ खेलने के लिए 45+ मुफ़्त इनडोर गेम",
     intro: [
@@ -87,7 +87,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'hi-Latn', dir: 'hinglish', game: 'hinglish', label: 'Hinglish',
-    title: "ChitPlay: Raja Rani Chor Police aur 45+ Indoor Games Free",
+    title: "ChitPlay: Ludo, Chess, Carrom, Call Break aur 47 Free Games",
     desc: "Raja Rani Chor Police, Ludo, Carrom, Chess aur 45+ indoor games 3D mein free khelo. Bina sign-up: computer, online ya dosto ke saath nearby.",
     h1: "ChitPlay: dosto ke saath khelne wale 45+ free indoor games",
     intro: [
@@ -164,7 +164,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'es', dir: 'es', game: 'spanish', label: 'Español',
-    title: "ChitPlay: Policías y Ladrones y 45+ juegos de mesa gratis",
+    title: "ChitPlay: Ludo, ajedrez, carrom y 47 juegos gratis",
     desc: "Juega gratis en 3D a Policías y Ladrones, Ludo, Carrom, Ajedrez y más de 45 juegos de mesa. Sin registro: contra la computadora, online o con amigos.",
     h1: "ChitPlay: más de 45 juegos gratis para jugar con amigos",
     intro: [
@@ -241,7 +241,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'pt', dir: 'pt', game: 'portuguese', label: 'Português',
-    title: "ChitPlay: Polícia e Ladrão e 45+ jogos de tabuleiro grátis",
+    title: "ChitPlay: Ludo, xadrez, carrom e 47 jogos grátis",
     desc: "Jogue grátis em 3D Polícia e Ladrão, Ludo, Carrom, Xadrez e mais de 45 jogos. Sem cadastro: contra o computador, online ou com amigos por perto.",
     h1: "ChitPlay: mais de 45 jogos grátis para jogar com amigos",
     intro: [
@@ -318,7 +318,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'fr', dir: 'fr', game: 'french', label: 'Français',
-    title: "ChitPlay : Gendarmes et Voleurs et 45+ jeux de société gratuits",
+    title: "ChitPlay : Ludo, échecs, carrom et 47 jeux gratuits",
     desc: "Jouez gratuitement en 3D à Gendarmes et Voleurs, Ludo, Carrom, Échecs et plus de 45 jeux. Sans inscription : contre l'ordinateur, en ligne ou entre amis.",
     h1: "ChitPlay : plus de 45 jeux gratuits à jouer entre amis",
     intro: [
@@ -395,7 +395,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'de', dir: 'de', game: 'german', label: 'Deutsch',
-    title: "ChitPlay: Räuber und Gendarm und 45+ Brettspiele gratis",
+    title: "ChitPlay: Ludo, Schach, Carrom und 47 Spiele gratis",
     desc: "Spiele gratis in 3D Räuber und Gendarm, Ludo, Carrom, Schach und über 45 Spiele. Ohne Anmeldung: gegen den Computer, online oder mit Freunden.",
     h1: "ChitPlay: über 45 kostenlose Spiele für dich und deine Freunde",
     intro: [
@@ -472,7 +472,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'id', dir: 'id', game: 'indonesian', label: 'Bahasa Indonesia',
-    title: "ChitPlay: Polisi dan Maling dan 45+ game papan gratis",
+    title: "ChitPlay: Ludo, catur, carrom dan 47 game gratis",
     desc: "Main gratis dalam 3D: Polisi dan Maling, Ludo, Karambol, Catur dan 45+ game lain. Tanpa daftar: lawan komputer, online, atau bareng teman.",
     h1: "ChitPlay: 45+ game gratis untuk dimainkan bareng teman",
     intro: [
@@ -549,7 +549,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'tr', dir: 'tr', game: 'turkish', label: 'Türkçe',
-    title: "ChitPlay: Polis ve Hırsız ve 45+ ücretsiz kutu oyunu",
+    title: "ChitPlay: Ludo, satranç, carrom ve 47 ücretsiz oyun",
     desc: "Polis ve Hırsız, Ludo, Carrom, Satranç ve 45+ oyunu 3D ücretsiz oyna. Üyelik yok: bilgisayara karşı, online veya yakındaki arkadaşlarınla.",
     h1: "ChitPlay: arkadaşlarınla oynayabileceğin 45+ ücretsiz oyun",
     intro: [
@@ -626,7 +626,7 @@ export const LANG_PAGES = [
   },
   {
     code: 'it', dir: 'it', game: 'italian', label: 'Italiano',
-    title: "ChitPlay: Guardie e Ladri e 45+ giochi da tavolo gratis",
+    title: "ChitPlay: Ludo, scacchi, carrom e 47 giochi gratis",
     desc: "Gioca gratis in 3D a Guardie e Ladri, Ludo, Carrom, Scacchi e oltre 45 giochi. Senza registrazione: contro il computer, online o con gli amici.",
     h1: "ChitPlay: oltre 45 giochi gratis da fare con gli amici",
     intro: [

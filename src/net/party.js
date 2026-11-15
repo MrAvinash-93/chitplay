@@ -16,15 +16,15 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261115-1055';
-import { logoSvg } from '../arcade/logo.js?v=20261115-1055';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261115-1055';
-import { profile } from '../persistence/profile-store.js?v=20261115-1055';
+import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261115-1340';
+import { logoSvg } from '../arcade/logo.js?v=20261115-1340';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261115-1340';
+import { profile } from '../persistence/profile-store.js?v=20261115-1340';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
 const STATE_KEY = 'chitplay.partyState'; // the host's plan: { go }
-const V = '?v=20261115-1055';
+const V = '?v=20261115-1340';
 const DONE_KEY = 'chitplay.partyDone';   // the last plan this phone acted on
 const MAX_FRIENDS = 9;
 const channel = (code) => `party-${code}`;
@@ -125,7 +125,9 @@ function hostMessage(id, msg) {
     write(STATE_KEY, state);
     hostShare();
   } else if (msg.t === 'suggest' && from && gameOf(msg.slug)) {
-    askHost(from, msg.slug);
+    // whoever starts a game, the whole party plays it: no request, no waiting for a yes
+    toast(`${from.name} started ${nameOf(msg.slug, 'a game')}: everyone is going`);
+    pick(msg.slug);
   }
 }
 let pendingPick = null;
@@ -135,13 +137,6 @@ function pick(slug) {
   write(STATE_KEY, state);
   hostShare();
   follow(state.go);   // the host leads the first table
-}
-function askHost(from, slug) {
-  const game = gameOf(slug);
-  confirmBox(`${from.name} wants to play ${game.name}`, '👍 Play it', 'Not now', (yes) => {
-    if (yes) pick(slug);
-    else host?.send(from.id, { t: 'nope', slug });
-  });
 }
 
 /* ─── friend ─── */
@@ -160,6 +155,7 @@ async function openGuest(code) {
     try {
       const lobby = await g.join(channel(code), myName(), myToken());
       guest = g;
+      if (status !== 'on' && ui?.open) setTimeout(() => { if (ui?.open && guest === g) { document.querySelector('.party-sheet')?.remove(); ui.open = false; toast('You are in the party! Start any game to play together.'); } }, 1600);
       status = 'on';
       if (pendingTable) g.send(pendingTable);
       guestMessage(lobby);
@@ -181,7 +177,7 @@ function guestMessage(msg) {
 }
 function suggest(slug) {
   guest?.send({ t: 'suggest', slug });
-  toast(`Request sent: ${nameOf(slug, 'the game')}. The host decides.`);
+  toast(`Starting ${nameOf(slug, 'the game')} for everyone…`);
 }
 
 /**
@@ -189,7 +185,7 @@ function suggest(slug) {
  * once (no codes, no questions); a friend's pick becomes a request to the host. Resolves true when the
  * party took over (the caller should not open the game itself).
  */
-export async function partyPlay(slug) {
+export async function partyPlay(slug) {   // resolves true when the party takes over
   const p = read(KEY);
   const game = gameOf(slug);
   if (!p || !game || game.max < 2) return false;
@@ -204,14 +200,20 @@ export async function partyPlay(slug) {
     pick(slug);
     return true;
   }
-  return new Promise((done) => confirmBox(`Ask the host to play ${game.name}?`, '📨 Send request', 'Play alone', (yes) => {
-    if (yes) suggest(slug);
-    done(yes);
-  }));
+  // a friend: the same, through the host's phone (which leads the table)
+  if (status !== 'on') {
+    toast('Getting your party together…');
+    const start = Date.now();
+    while (Date.now() - start < 5000 && status !== 'on' && read(KEY)?.code === p.code) await sleep(200);
+  }
+  if (status !== 'on') return false;
+  suggest(slug);
+  return true;
 }
 
 /* ─── start, join, leave ─── */
 function startParty() {
+  setTimeout(() => dispatchEvent(new CustomEvent('chitplay:party-changed')), 0);
   const code = randomCode();
   write(KEY, { code, host: true });
   state = { go: null };
@@ -219,6 +221,7 @@ function startParty() {
   openHost(code);
 }
 export function joinParty(code) {
+  setTimeout(() => dispatchEvent(new CustomEvent('chitplay:party-changed')), 0);
   if (read(KEY)?.code === code && (guest || status === 'connecting')) return;
   // one party at a time: let go of any other first
   try { host?.close(); } catch {}
@@ -260,6 +263,7 @@ const CSS = `
 .partychip[hidden]{display:none}
 .partychip__dot{width:8px;height:8px;border-radius:50%;background:#888;display:inline-block}
 .partychip__dot.on{background:#3ddc6a}.partychip__dot.connecting{background:#ffd23f}
+.partychip__leave{margin-left:6px;padding:2px 8px;border-radius:999px;background:rgba(255,107,87,.18);border:1px solid rgba(255,140,120,.45);color:#ffb3a6;font-weight:800;font-size:12px;cursor:pointer}
 .party-pill--home{left:14px;bottom:14px}
 .party-pill--play{left:50%;transform:translateX(-50%);top:10px;padding:6px 12px;font-size:13px}
 .party-pill i{width:9px;height:9px;border-radius:50%;background:#888;display:inline-block}
@@ -321,6 +325,18 @@ function confirmBox(title, yes, no, done) {
   document.body.append(sheet);
 }
 // from the page's base: on the Cops and Robbers page that is the site's root, like the home page
+/** Leave (a friend) or stop hosting (the host): asked once, then done. */
+function askLeave() {
+  const host = !!read(KEY)?.host;
+  confirmBox(host ? 'Stop hosting? The party ends for everyone.' : 'Leave the party?', host ? 'Stop hosting' : 'Leave', 'Stay', (yes) => {
+    if (!yes) return;
+    document.querySelector('.party-sheet')?.remove();
+    if (ui) ui.open = false;
+    leaveParty();
+    // out of the party: the page offers every way of playing again
+    dispatchEvent(new CustomEvent('chitplay:party-changed'));
+  });
+}
 function inviteLink(code) { return `${new URL(ROOT || './', document.baseURI).href.split('?')[0]}?party=${code}`; }
 
 function paint() {
@@ -331,7 +347,11 @@ function paint() {
     if (c.isConnected) c.dataset.placed = '1';
     else if (c.dataset.placed) { chips.delete(c); continue; }
     c.hidden = !p && !c.dataset.always;
-    if (p) c.replaceChildren(el('i', { class: `partychip__dot ${status}` }), `👫 ${Math.max(1, n)}`);
+    if (p) {
+      const leave = el('span', { class: 'partychip__leave', role: 'button', 'aria-label': p.host ? 'Stop hosting' : 'Leave the party' }, ['🚪 Leave']);
+      leave.addEventListener('click', (e) => { e.stopPropagation(); askLeave(); });
+      c.replaceChildren(el('i', { class: `partychip__dot ${status}` }), `👫 ${Math.max(1, n)}`, leave);
+    }
     else c.replaceChildren('👫 ', el('span', { class: 'partychip__long' }, ['Play with ']), 'Friends');
     c.setAttribute('aria-label', p ? `Your party: ${n} players. Open party` : 'Play with friends: start or join a party');
   }
@@ -380,25 +400,25 @@ function openPanel() {
   } else {
     const iAmHost = !!p.host;
     const link = inviteLink(p.code);
-    card.append(
+    card.append(...[
       el('h2', {}, [iAmHost ? '🎉 Your party' : '👫 Party']),
-      el('p', {}, [status === 'on' ? (iAmHost ? 'Friends join with this code or the link:' : 'You are in. The host picks the game; you can suggest one.') : status === 'error' ? 'Could not reach the party. Check the internet and try again.' : 'Connecting…']),
+      el('p', {}, [status === 'on' ? (iAmHost ? 'Friends join with this code or the link:' : 'You are in! Start any game: everyone in the party plays it together.') : status === 'error' ? 'Could not reach the party. Check the internet and try again.' : 'Connecting…']),
       el('div', { class: 'party-code', 'aria-label': `Party code ${p.code.split('').join(' ')}` }, [p.code]),
       // a QR of the invite link: friends point their camera at it and are asked to join
-      iAmHost ? (() => { const q = el('div', { class: 'party-qr', 'aria-label': 'Scan to join the party' }); import(`./qr.js?v=20261115-1055`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join the party'); if (svg) q.append(svg); }).catch(() => {}); return q; })() : null,
+      iAmHost ? (() => { const q = el('div', { class: 'party-qr', 'aria-label': 'Scan to join the party' }); import(`./qr.js?v=20261115-1340`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join the party'); if (svg) q.append(svg); }).catch(() => {}); return q; })() : null,
       iAmHost ? el('div', { class: 'party-row' }, [
         el('button', { class: 'party-btn', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(link); toast('Invite link copied'); } catch { toast(link); } } }, ['🔗 Copy invite link']),
         navigator.share ? el('button', { class: 'party-btn', type: 'button', onclick: () => navigator.share({ title: 'Play with me on ChitPlay', text: `Join my ChitPlay party: code ${p.code}`, url: link }).catch(() => {}) }, ['📤 Share']) : null,
       ]) : null,
       el('ul', { class: 'party-members', 'aria-label': 'In the party' }, members.map(m => el('li', {}, [`${m.host ? '👑 ' : ''}${m.name}`]))),
-      el('p', {}, [iAmHost ? 'Start any game, here or from the games list: everyone in the party goes with you. (At 2-player games the party splits into pairs.)' : 'Want another game? Send the host a request:']),
-      gameGrid((slug) => { close(); if (iAmHost) pick(slug); else suggest(slug); }),
+      el('p', {}, ['Start any game, here or from the games list: everyone in the party goes with you. (At 2-player games the party splits into pairs.)']),
+      gameGrid((slug) => { close(); if (iAmHost) pick(slug); else suggest(slug); }),   // anyone's pick takes everyone
       el('div', { class: 'party-row' }, [
         status === 'error' ? el('button', { class: 'party-btn', type: 'button', onclick: () => (iAmHost ? openHost(p.code) : openGuest(p.code)) }, ['Try again']) : null,
-        el('button', { class: 'party-btn party-btn--danger', type: 'button', onclick: () => confirmBox(iAmHost ? 'Stop hosting? The party ends for everyone.' : 'Leave the party?', iAmHost ? 'Stop hosting' : 'Leave', 'Stay', (yes) => { if (yes) { close(); leaveParty(); } }) }, [iAmHost ? '⏹ Stop hosting' : '🚪 Leave party']),
+        el('button', { class: 'party-btn party-btn--danger', type: 'button', onclick: () => askLeave() }, [iAmHost ? '⏹ Stop hosting' : '🚪 Leave party']),
         el('button', { class: 'party-btn party-btn--quiet', type: 'button', onclick: close }, ['Close']),
       ]),
-    );
+    ].filter(Boolean));
   }
   document.body.append(sheet);
 }
@@ -455,18 +475,7 @@ export function partyChip({ always = false, className = 'back partychip' } = {})
  * changing pages have had a few seconds to return, so nobody is left out of the plan.
  */
 export async function offerParty(slug) {
-  const p = read(KEY);
-  const game = gameOf(slug);
-  if (!p || !game || game.max < 2) return;
-  const start = Date.now();
-  while (Date.now() - start < 6000 && (status !== 'on' || (p.host && members.length < 2))) await sleep(200);
-  if (status !== 'on' || read(KEY)?.code !== p.code) return;
-  if (p.host) {
-    if (members.length < 2) return;   // nobody else is here right now: just play
-    pick(slug);   // the host started it: the friends come along, nobody is asked
-  } else {
-    confirmBox(`Ask the host to play ${game.name}?`, '📨 Send request', 'Play alone', (yes) => { if (yes) suggest(slug); });
-  }
+  return partyPlay(slug);
 }
 
 /** The camera (or a photo) reads the host's party QR code. */

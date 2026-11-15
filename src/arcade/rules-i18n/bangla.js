@@ -117,7 +117,7 @@ export default {
   },
   ludo: {
     steps: ['Nijer dane Roll chapo. Ghunti ghor theke shurur ghore ante chhokka lage.', 'Jholjhole ghunti ba tar button chapo, chhokkay joto poreche toto egobe. Ektai ghunti cholte parleo tumi nijei chapbe; konota na chole dan shesh.', 'Protipokkher ghuntite namle seta ghore phere. Shurur ghor ar tarar ghor nirapod: sekhane keu kata pore na.', 'Board ghure ghunti tomar ghore pherar sarite dhoke. Ghore pouchate thik songkha lage.', 'Chhokka, ghunti kata ar ghunti ghore pouchano, protitay arekta dan. Porpor tin chhokkay dan jay.'],
-    win: 'Normal mode: je age charta ghunti ghore ane se jete. Score mode: 15 round sheshe, ba keu charta ghunti ghore anle, sobcheye beshi point jar se jete.',
+    win: 'Normal mode: je age charta ghunti ghore ane se jete. Score mode: 10 minit sesh hole, ba keu charta ghunti ghore anle, sobcheye beshi point jar se jete.',
     scoring: 'Khelar age mode beche nao. Normal mode-e point nei: phalaphole dekhay ke kota ghunti ghore enechhe. Score mode-e protita ghor 1, ghunti kata 20, ghunti ghore 30, ar sobar age charta shesh korle bonus 50.',
     house: [['Atok', 'Ek-i ronger duto ghunti pother ek-i ghore thakle atok toiri hoy. Ar keu seta perote ba sekhane namte pare na, ar oi ghuntigulo kata jay na.'], ['Katle tobei ghor', 'Kheloyar ontoto ekta protipokkho ghunti na kata porjonto ghunti ghore pherar sarite dhukte pare na. Totokkhon se arek pak ghore.'], ['Druto shuru', 'Sobai ekta ghunti age thekei shurur ghore niye shuru kore, jate khela shonge shonge chole.'], ['Sthaner jonno khela chole', 'Tin ba charjone bijoyi paoar poro khela thame na: bakira dwitiyo ar tritiyo sthaner jonno khele, ar sheshe krom dekhano hoy.']],
   },
