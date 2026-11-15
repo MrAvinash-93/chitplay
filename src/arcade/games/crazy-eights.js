@@ -8,8 +8,8 @@
  *  - jacks: a jack skips the next player
  *  - aces:  an ace turns the direction round (with two players, you go again)
  */
-import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261115-1821';
-import { newPack, rankOf, sortHand, SUIT_ICON, SUIT_NAME, SUITS, suitOf, showCard } from '../cards.js?v=20261115-1821';
+import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261115-1854';
+import { newPack, rankOf, sortHand, SUIT_ICON, SUIT_NAME, SUITS, suitOf, showCard } from '../cards.js?v=20261115-1854';
 
 const ROUNDS = 3;
 export const RULES = [

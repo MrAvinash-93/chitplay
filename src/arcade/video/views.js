@@ -4,21 +4,21 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, TICK } from './lib.js?v=20261115-1821';
-import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261115-1821';
-import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261115-1821';
-import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261115-1821';
-import { speedOf as roadSpeed } from './road-dash.js?v=20261115-1821';
-import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261115-1821';
-import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261115-1821';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261115-1821';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261115-1821';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261115-1821';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261115-1821';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261115-1821';
-import { selectedGameCosmetic } from '../game-cosmetics.js?v=20261115-1821';
-import { TAG_COVER, FURNITURE } from './tag-game-core.js?v=20261115-1821';
-import { turboView } from './turbo-view.js?v=20261115-1821';
+import { SEAT_COLORS, TICK } from './lib.js?v=20261115-1854';
+import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261115-1854';
+import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261115-1854';
+import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261115-1854';
+import { speedOf as roadSpeed } from './road-dash.js?v=20261115-1854';
+import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261115-1854';
+import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261115-1854';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261115-1854';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261115-1854';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261115-1854';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261115-1854';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261115-1854';
+import { selectedGameCosmetic } from '../game-cosmetics.js?v=20261115-1854';
+import { TAG_COVER, FURNITURE } from './tag-game-core.js?v=20261115-1854';
+import { turboView } from './turbo-view.js?v=20261115-1854';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });

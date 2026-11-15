@@ -10,44 +10,44 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1821';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1821';
-import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-1821';
-import { loadWorld } from '../world/world-loader.js?v=20261115-1821';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1821';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1821';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1821';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1821';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1821';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1854';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1854';
+import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-1854';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1854';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1854';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1854';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1854';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1854';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1854';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-1821';
-import { faceHtml } from './photo.js?v=20261115-1821';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1821';
+import { iconSvg } from '../ui/icons.js?v=20261115-1854';
+import { faceHtml } from './photo.js?v=20261115-1854';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1854';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1821';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1854';
 
-import { fill, shellText } from './shell-text.js?v=20261115-1821';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1821';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1821';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1821';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1821';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1821';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1821';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1821';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1821';
-import { startReminder } from './reminder.js?v=20261115-1821';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1821';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1821';
-import { roomLevel } from './decor.js?v=20261115-1821';
+import { fill, shellText } from './shell-text.js?v=20261115-1854';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1854';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1854';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1854';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1854';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1854';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1854';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1854';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1854';
+import { startReminder } from './reminder.js?v=20261115-1854';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1854';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1854';
+import { roomLevel } from './decor.js?v=20261115-1854';
 
-import { is2d, setView } from './view-mode.js?v=20261115-1821';
-import { adBreak } from './ad-breaks.js?v=20261115-1821';
-import { resultAd, sideAd } from './ads.js?v=20261115-1821';
-import { gameStrip } from './game-strip.js?v=20261115-1821';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1821';
-const V = '?v=20261115-1821';
+import { is2d, setView } from './view-mode.js?v=20261115-1854';
+import { adBreak } from './ad-breaks.js?v=20261115-1854';
+import { resultAd, sideAd } from './ads.js?v=20261115-1854';
+import { gameStrip } from './game-strip.js?v=20261115-1854';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1854';
+const V = '?v=20261115-1854';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -508,11 +508,15 @@ function lookFor(name) {
  * A game can ask for something else (Ludo puts each player by their own coloured corner).
  */
 let seatsFlipped = false;
+let ludoTurnNow = 0;   // how many quarter turns the Ludo board makes on this phone
 const PLACES = { 1: [-1, -1, 0, -1], 2: [1, -1, 0, -1], 3: [1, 2, 0, -1], 4: [2, 3, 0, 1] };
 /** Sit the players down: all of them at four or fewer, otherwise the current player and the next three. */
 function sitDown(players, current = 0) {
   const n = players.length;
   seats4 = Logic?.places?.(n) || (n <= 4 ? PLACES[n].slice() : [0, 1, 2, 3].map(k => (current + k) % n));
+  // Ludo seen from a friend's phone: the board turns to put their corner bottom left, so the people
+  // round the table move with it (each still sits by their own corner)
+  if (G?.slug === 'ludo' && ludoTurnNow) seats4 = [0, 1, 2, 3].map(place => [...Array(n).keys()].find(seat => (ludoQuarterOf({ n }, seat) - ludoTurnNow + 4) % 4 === place) ?? -1);
   // a board that turns round for the second player (Chess): on their phone they sit at the front too
   seatsFlipped = !!(board?.def?.faces && n === 2 && shown?.ctx?.me === 1);
   if (seatsFlipped) seats4 = [0, -1, 1, -1];
@@ -523,6 +527,7 @@ function sitDown(players, current = 0) {
   fitBoard();
 }
 function startBoard(players) {
+  ludoTurnNow = 0;
   calmTable();
   board?.dispose();
   board = createBoard(G.slug, world, { seatOf });
@@ -895,6 +900,11 @@ function present(view, ctx, players, send, result) {
   ctx.mine = ctx.active.includes(ctx.me);
   // playing the second side of a board that turns round: sit on that side
   if (board?.def?.faces && players.length === 2 && (ctx.me === 1) !== seatsFlipped) sitDown(players);
+  // Ludo: everyone sees their own corner bottom left; the table turns once we know whose phone this is
+  if (G?.slug === 'ludo') {
+    const turn = ctx.me >= 0 && !ctx.pass ? (ludoQuarterOf(view, ctx.me) + 1) % 4 : 0;
+    if (turn !== ludoTurnNow) { ludoTurnNow = turn; sitDown(players); }
+  }
   direct(ctx, view, players, result);
   // whoever's working out a move looks like it, in games with something to work out
   if (world?.story && G.skill) {
@@ -2402,7 +2412,7 @@ async function main() {
   // in a party and opened a game by hand (not sent here by the party): offer to play it together
   // in a party, any game opened is played with the friends: the party takes everyone there (no solo game first)
   if (game && !params.get('party') && !isCode(join) && inParty() && game.max >= 2) {
-    app.replaceChildren(h('section', { class: 'panel' }, [h('h1', {}, [`👫 ${game.name}`]), h('p', { class: 'lead' }, ['Taking your party to this game…'])]));
+    app.replaceChildren(h('section', { class: 'panel' }, [h('h1', {}, [`👫 ${game.name}`]), h('p', { class: 'lead' }, ['Asking your party to play this game… everyone gets a moment to accept.']), h('a', { class: 'btn', href: '../' }, ['👫 Back to the party lobby'])]));
     let took = false;
     try { took = await offerParty(game.slug); } catch { took = false; }
     if (took) return;

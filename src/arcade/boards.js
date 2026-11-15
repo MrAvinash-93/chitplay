@@ -6,13 +6,13 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { audioManager } from '../audio/audio-manager.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-1821';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-1821';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-1821';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-1821';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-1821';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-1821';
-import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1821';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-1854';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-1854';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-1854';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-1854';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-1854';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-1854';
+import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1854';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1458,7 +1458,9 @@ export function createBoard(slug, world, ctxHelpers) {
     stage: st,
     def,
     draw(view, ctx, game) {
-      st.world.rotation.y = def.faces && ctx.me === 1 ? Math.PI : 0;
+      // Ludo: the board turns so the corner of the player on this phone is at the bottom left
+      const ludoTurn = slug === 'ludo' && ctx.me >= 0 && !ctx.pass ? (ludoQuarter(view, ctx.me) + 1) % 4 : 0;
+      st.world.rotation.y = def.faces && ctx.me === 1 ? Math.PI : ludoTurn * Math.PI / 2;
       const seatOf = ctxHelpers.seatOf;
       if (def.chit) {
         st.begin();
