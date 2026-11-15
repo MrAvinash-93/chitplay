@@ -6,16 +6,20 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { audioManager } from '../audio/audio-manager.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-1946';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-1946';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-1946';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-1946';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-1946';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-1946';
-import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1946';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-1958';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-1958';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-1958';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-1958';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-1958';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-1958';
+import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1958';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** The turn's countdown ({ deadline, ms } or null), set by the table: Ludo shows it as a light round the corner. */
+let turnLight = null;
+export function setTurnLight(t) { turnLight = t && t.deadline ? t : null; }
+const LIGHT_FULL = new THREE.Color('#3ddc84'), LIGHT_MID = new THREE.Color('#ffd23f'), LIGHT_END = new THREE.Color('#ff4d4d');
 const TAU = Math.PI * 2;
 const CHESS_BOARD_STYLES = {
   jade: { dark: '#28614f', light: '#d8e8ce', frame: '#174538' },
@@ -526,6 +530,7 @@ class Stage {
     this.clock = (this.clock || 0) + dt;
     if (!reduced) this.marks.forEach((m) => { if (m.userData.pulse) m.material.opacity = 0.5 + 0.4 * Math.sin(this.clock * 5); });
     this.glows.forEach((r) => { r.material.opacity = r.userData.on ? (reduced ? 0.7 : 0.55 + Math.sin(this.clock * 4) * 0.35) : 0; });
+    this.turnLightTick?.();
     for (const p of this.live) {
       if (p.route && p.dying == null) {
         p.routeT += dt / STEP_SECONDS;
@@ -979,6 +984,43 @@ const BOARDS = {
         return ring;
       });
       st.glows.push(...st.ludoGlow);
+      // the turn's 5 seconds: a light runs round the edge of the player's corner and goes out as time runs down
+      const span = (SIZE / 15) * 2.8, lift = TOP_Y + 0.014;
+      const lightMat = new THREE.MeshBasicMaterial({ color: LIGHT_FULL.clone(), transparent: true, opacity: 0.95, depthWrite: false });
+      st.ludoLight = [0, 1, 2, 3].map((q) => {
+        const [x, y] = yards[q];
+        const [cx, cz] = cell(x + 2.5, y + 2.5, 15);
+        const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [cx + a * span, cz + b * span]);
+        const bars = corners.map(([ax, az], i) => {
+          const [bx, bz] = corners[(i + 1) % 4];
+          const len = Math.hypot(bx - ax, bz - az);
+          const g = new THREE.BoxGeometry(len, 0.014, (SIZE / 15) * 0.3);
+          g.translate(len / 2, 0, 0);   // grows from its first corner
+          const m = new THREE.Mesh(g, lightMat);
+          m.position.set(ax, lift, az);
+          m.rotation.y = Math.atan2(-(bz - az), bx - ax);
+          m.visible = false;
+          st.add(m);
+          return m;
+        });
+        return bars;
+      });
+      st.ludoLightQ = -1;
+      st.turnLightTick = () => {
+        const q = st.ludoLightQ;
+        const f = turnLight && q >= 0 ? Math.max(0, Math.min(1, (turnLight.deadline - Date.now()) / turnLight.ms)) : 0;
+        st.ludoLight.forEach((bars, k) => bars.forEach((m, i) => {
+          const part = k === q ? Math.max(0, Math.min(1, f * 4 - i)) : 0;
+          m.visible = part > 0.001;
+          if (m.visible) m.scale.x = part;
+        }));
+        if (q >= 0) {
+          if (f > 0.5) lightMat.color.copy(LIGHT_MID).lerp(LIGHT_FULL, (f - 0.5) * 2);
+          else lightMat.color.copy(LIGHT_END).lerp(LIGHT_MID, f * 2);
+          // the last second blinks
+          lightMat.opacity = f < 0.2 && !reduced ? 0.55 + 0.4 * Math.abs(Math.sin(st.clock * 10)) : 0.95;
+        }
+      };
     },
     tokenAt(v, seat, t, pos) {
       const q = ludoQuarter(v, seat);
@@ -995,6 +1037,7 @@ const BOARDS = {
       const before = st.ludoWas || v.t;
       // whose turn: their yard glows
       st.ludoGlow?.forEach((r, q) => { const on = (ctx.active || []).some(seat => ludoQuarter(v, seat) === q); r.userData.on = on; if (!on) r.material.opacity = 0; });
+      st.ludoLightQ = (ctx.active || []).length && !(v.won >= 0 || v.ended) ? ludoQuarter(v, ctx.active[0]) : -1;
       // a token that has just reached home: gold sparks in the middle of the board
       v.t.forEach((tokens, seat) => tokens.forEach((pos, t) => { if (pos === LUDO_HOME && before[seat]?.[t] !== LUDO_HOME && st.ludoWas !== v.t) { const [hx, hz] = cell(7, 7, 15); setTimeout(() => st.burst(hx, TOP_Y + 0.08, hz, '#ffd23f', 24, 0.7), 600); } }));
       st.ludoWas = v.t;

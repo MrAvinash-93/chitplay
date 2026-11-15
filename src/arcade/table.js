@@ -10,44 +10,44 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1946';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1946';
-import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-1946';
-import { loadWorld } from '../world/world-loader.js?v=20261115-1946';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1946';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1946';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1946';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1946';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1946';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1958';
+import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261115-1958';
+import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-1958';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1958';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1958';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1958';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1958';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1958';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1958';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-1946';
-import { faceHtml } from './photo.js?v=20261115-1946';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1946';
+import { iconSvg } from '../ui/icons.js?v=20261115-1958';
+import { faceHtml } from './photo.js?v=20261115-1958';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1958';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1946';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1958';
 
-import { fill, shellText } from './shell-text.js?v=20261115-1946';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1946';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1946';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1946';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1946';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1946';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1946';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1946';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1946';
-import { startReminder } from './reminder.js?v=20261115-1946';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1946';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1946';
-import { roomLevel } from './decor.js?v=20261115-1946';
+import { fill, shellText } from './shell-text.js?v=20261115-1958';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1958';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1958';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1958';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1958';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1958';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1958';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1958';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1958';
+import { startReminder } from './reminder.js?v=20261115-1958';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1958';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1958';
+import { roomLevel } from './decor.js?v=20261115-1958';
 
-import { is2d, setView } from './view-mode.js?v=20261115-1946';
-import { adBreak } from './ad-breaks.js?v=20261115-1946';
-import { resultAd, sideAd } from './ads.js?v=20261115-1946';
-import { gameStrip } from './game-strip.js?v=20261115-1946';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1946';
-const V = '?v=20261115-1946';
+import { is2d, setView } from './view-mode.js?v=20261115-1958';
+import { adBreak } from './ad-breaks.js?v=20261115-1958';
+import { resultAd, sideAd } from './ads.js?v=20261115-1958';
+import { gameStrip } from './game-strip.js?v=20261115-1958';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1958';
+const V = '?v=20261115-1958';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -60,6 +60,8 @@ const BOT_MS = [650, 1500];
 const TURN_TIMEOUT_MS = 30000; // every game mode lets a bot make one move after 30 seconds of inactivity
 // Ludo with people moves fast: 5 seconds a move, then the computer moves for you (a lifeline gone)
 const turnMs = () => (G?.slug === 'ludo' ? 5000 : TURN_TIMEOUT_MS);
+/** Ludo: every turn has 5 seconds in every game (with the computer too); then the computer plays your best move. */
+const timedTurns = () => !!(room || guest) || G?.slug === 'ludo';
 const PUBLIC_WAIT_MS = 20000;
 const TOUCH_INPUT = typeof navigator !== 'undefined' && ((navigator.maxTouchPoints || 0) > 0
   || (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches));
@@ -226,7 +228,7 @@ function liveBest(score) {
 /** Round 3/15 · You 120 · Riya 90: from the game's view and the players' strip. */
 function setStatus(view, strip) {
   statusRound = '';
-  if (view && Logic?.rounds && Number.isInteger(view.round) && (G.slug !== 'ludo' || view.style === 'score')) statusRound = `Round ${Math.min(view.round, Logic.rounds)}/${Logic.rounds}`;
+  if (view && Logic?.rounds && Number.isInteger(view.round) && (G.slug !== 'ludo' || (view.style === 'score' && !view.limitMs))) statusRound = `Round ${Math.min(view.round, Logic.rounds)}/${Logic.rounds}`;
   else if (view && Number.isInteger(view.at) && Number.isInteger(view.total)) statusRound = `Question ${Math.min(view.at + 1, view.total)}/${view.total}`;
   statusRows = (strip || []).map((x, i) => ({
     name: String(x.name || '').trim(),
@@ -871,8 +873,8 @@ function stopGameClock() { clearInterval(gameClockTick); gameClockTick = 0; game
  */
 let turnClockEl = null, turnClockTick = 0, turnDeadline = 0, turnTimedView = null;
 function turnClock(view, ctx, players, result) {
-  const timed = (room || guest) && !view?.clock && !result && ctx.active.length > 0;
-  if (!timed) { clearInterval(turnClockTick); turnClockTick = 0; turnClockEl?.remove(); turnClockEl = null; turnTimedView = null; return; }
+  const timed = timedTurns() && !view?.clock && !result && ctx.active.length > 0;
+  if (!timed) { clearInterval(turnClockTick); turnClockTick = 0; turnClockEl?.remove(); turnClockEl = null; turnTimedView = null; setTurnLight(null); return; }
   // every new position starts the count again (the host's own count restarts the same way); a game's
   // state can be the same object from move to move, so the position is told apart by who moves and the die
   const pos = `${ctx.active.join(',')}|${view?.rollId ?? ''}|${view?.die ?? ''}|${view?.p ?? ''}|${JSON.stringify(ctx.legal || []).length}`;
@@ -889,6 +891,8 @@ function turnClock(view, ctx, players, result) {
     turnClockEl.classList.toggle('turnclock--mine', mine);
     turnClockEl.classList.toggle('turnclock--hurry', left <= 10);
   };
+  // Ludo: the light round the player's corner runs down with the same count
+  setTurnLight({ deadline: turnDeadline, ms: turnMs() });
   paint();
   clearInterval(turnClockTick);
   turnClockTick = setInterval(() => { if (!turnClockEl?.isConnected) { clearInterval(turnClockTick); return; } paint(); }, 250);
@@ -1331,7 +1335,7 @@ function scheduleActive(active) {
     if (p.kind === 'bot') schedule(seat, rand(...BOT_MS));
     // with other people waiting online, an idle player gets one move made for them after 30 seconds;
     // playing alone or on one phone, nobody moves for you, and with a clock the clock decides
-    else if ((room || guest) && !clock) schedule(seat, turnMs());
+    else if (timedTurns() && !clock) { schedule(seat, turnMs()); if (isHere(p) || p.kind === 'guest') { turnDeadline = Date.now() + Math.max(turnMs(), match.busyUntil - Date.now()); setTurnLight({ deadline: turnDeadline, ms: turnMs() }); } }
   });
 }
 /** The time the player to move has used since their turn began comes off their clock. */

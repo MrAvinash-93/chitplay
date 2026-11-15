@@ -4,7 +4,7 @@
  * `seats` is how many sit down by default when bots fill the table. All names are traditional or
  * plain descriptions, and every board and piece is drawn by us.
  */
-import { LOCAL_NAMES } from './local-names.js?v=20261115-1946';
+import { LOCAL_NAMES } from './local-names.js?v=20261115-1958';
 export const VIDEO_GAMES = [
   { slug: 'flying-chit', video: true, hot: true, aka: 'flappy chit wings endless udti bangle', name: 'Flying Chit', icon: '📨', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#e8a317', medals: [50, 200, 500, 1000], blurb: 'Steer a winged chit through classroom bangles, chain combos and earn coins for new 3D chit styles.' },
   { slug: 'tunnel-race', video: true, hot: true, aka: 'paper plane tunnel 3d endless race hawai jahaz', name: 'Tunnel Race', icon: '✈️', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#7b3fe4', medals: [50, 150, 300, 600], blurb: 'A paper plane in an endless tunnel. Steer round the walls and grab the gems.' },
@@ -32,7 +32,7 @@ export const VIDEO_GAMES = [
 ];
 export const GAMES = [
   { slug: 'ludo', aka: 'pachisi goti pasa', skill: true, name: 'Ludo', icon: '🎲', min: 2, max: 4, seats: 4, minutes: '20–40', kind: 'Board', accent: '#c62828', blurb: 'Race your four tokens home. Roll a six to start, and send rivals back.',
-    modes: [['normal', 'Normal', 'First to bring all four tokens home wins.'], ['score', 'Score', 'Every square, capture and token home scores points. Most points when the 5 minutes run out wins.']],
+    modes: [['normal', 'Normal', 'First to bring all four tokens home wins.'], ['score', 'Score', 'Every square, capture and token home scores points. Most points when the 5 minutes run out wins.'], ['moves', '10 Moves', 'Everyone gets 10 rolls and all four tokens start on the board. Every square, capture and token home scores points: most points after 10 moves wins.']],
     rules: [['block', '🧱 Blockades', 'Two of your tokens on one square block everyone else.'], ['capture', '⚔️ Capture to go home', 'A token can only go up its home path after you have captured one.'], ['quick', '⚡ Quick start', 'Everyone starts with one token already out.'], ['places', '🥈 Play on for places', 'After the winner, the others play on for second and third place (3–4 players).']] },
   { slug: 'carrom', aka: 'carom karam striker', name: 'Carrom', icon: '🎯', min: 2, max: 2, seats: 2, minutes: '10–20', kind: 'Board', accent: '#a9713a', blurb: 'Flick the striker, pocket your coins, and cover the queen.' },
   { slug: 'chess', aka: 'shatranj', skill: true, name: 'Chess', icon: '♟️', min: 2, max: 2, seats: 2, minutes: '10–40', kind: 'Board', accent: '#6d5a3f', blurb: 'The full game: castling, en passant, promotion and checkmate.' },
