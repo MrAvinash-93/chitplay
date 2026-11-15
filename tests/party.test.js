@@ -24,3 +24,7 @@ test('nobody is left out, and the host always leads the first table', () => {
   // three at a two-player game: a pair and one who plays the computer (never three at one board)
   assert.deepEqual(planFor('chess', ['a', 'b', 'c']).tables, [['a', 'b'], ['c']]);
 });
+test('Cops and Robbers (the home page game) is a party game too: four at a table', () => {
+  assert.deepEqual(planFor('cops-and-robbers', ['a', 'b', 'c']).tables, [['a', 'b', 'c']]);
+  assert.deepEqual(planFor('cops-and-robbers', ['a', 'b', 'c', 'd', 'e']).tables, [['a', 'b', 'c', 'd'], ['e']]);
+});

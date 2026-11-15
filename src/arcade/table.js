@@ -10,43 +10,43 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261114-1604';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261114-1604';
-import { loadWorld } from '../world/world-loader.js?v=20261114-1604';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261114-1604';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261114-1604';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261114-1604';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261114-1604';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261114-1604';
+import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261115-1048';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1048';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1048';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1048';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1048';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1048';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1048';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1048';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261114-1604';
-import { faceHtml } from './photo.js?v=20261114-1604';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261114-1604';
+import { iconSvg } from '../ui/icons.js?v=20261115-1048';
+import { faceHtml } from './photo.js?v=20261115-1048';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1048';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261114-1604';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1048';
 
-import { fill, shellText } from './shell-text.js?v=20261114-1604';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261114-1604';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261114-1604';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261114-1604';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1604';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261114-1604';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1604';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261114-1604';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1604';
-import { startReminder } from './reminder.js?v=20261114-1604';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261114-1604';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261114-1604';
-import { roomLevel } from './decor.js?v=20261114-1604';
+import { fill, shellText } from './shell-text.js?v=20261115-1048';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1048';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1048';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1048';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1048';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1048';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1048';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1048';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1048';
+import { startReminder } from './reminder.js?v=20261115-1048';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1048';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1048';
+import { roomLevel } from './decor.js?v=20261115-1048';
 
-import { viewButton } from './view-mode.js?v=20261114-1604';
-import { adBreak } from './ad-breaks.js?v=20261114-1604';
-import { resultAd, sideAd } from './ads.js?v=20261114-1604';
-import { gameStrip } from './game-strip.js?v=20261114-1604';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261114-1604';
-const V = '?v=20261114-1604';
+import { is2d, setView } from './view-mode.js?v=20261115-1048';
+import { adBreak } from './ad-breaks.js?v=20261115-1048';
+import { resultAd, sideAd } from './ads.js?v=20261115-1048';
+import { gameStrip } from './game-strip.js?v=20261115-1048';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1048';
+const V = '?v=20261115-1048';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -122,8 +122,7 @@ const topBar = (game) => {
     h('span', { class: 'barstatus', 'aria-live': 'polite' }, statusKids()),
     // the party, if this phone is in one: in the bar with the other buttons, never over the game
     inParty() ? partyChip() : null,
-    game ? viewButton('back viewbtn', () => audioManager.play('select')) : null,
-    h('button', { type: 'button', class: 'back langpick', 'aria-label': 'Language', title: 'Language', onclick: () => openLanguages() }, [`🌐 ${(LANGUAGES.find(l => l.id === LANG) || LANGUAGES[0]).short}`]),
+    // 3D / 2D and the language live in the menu: the bar keeps only what is needed while playing
   ]);
 };
 let statusNow = '';
@@ -355,7 +354,7 @@ function openPauseMenu() {
   const renderStyles = () => {
     const kids = [
       h('h2', { class: 'game__title' }, [say.styles]),
-      h('p', { class: 'game__sub' }, [`🪙 ${profile.coins} coins · Saved on this device; starts next game.`]),
+      h('p', { class: 'game__sub' }, [`💰 ${profile.coins} coins · Saved on this device; starts next game.`]),
     ];
     styleSlots.forEach((slot) => {
       const selected = selectedGameCosmetic(G.slug, slot.id);
@@ -404,6 +403,11 @@ function openPauseMenu() {
     } }),
     solo && match ? row(say.restart, () => { if (!window.confirm('Restart this match from the beginning?')) return; leaveAll(); clearSaved(G.slug); location.reload(); }, 'restart') : null,
     G ? row(say.howTo, async () => { leave(); await openRules(G); if (solo) setPaused(false); }, 'book') : null,
+    // how it looks, and in which language: here, out of the way of the game
+    h('div', { class: 'game__menu-pair' }, [
+      G ? row(is2d() ? '🗺️ View: 2D' : '🧊 View: 3D', () => { setView(is2d() ? '3d' : '2d'); menu(); }, null) : null,
+      row(`🌐 ${(LANGUAGES.find(l => l.id === LANG) || LANGUAGES[0]).short}`, () => { close(); openLanguages(); }, null),
+    ]),
     styleSlots.length ? row(`🎨 ${say.styles}`, renderStyles, null) : null,
     h('div', { class: 'game__menu-pair' }, [
       row(soundOn() ? say.soundOn : say.soundOff, () => { const next = !soundOn(); audioManager.setEnabled(next); settingsStore.set('soundEnabled', next); menu(); }, soundOn() ? 'sound' : 'soundOff'),
@@ -670,7 +674,8 @@ function landThenShow(events, players, me, then) {
   shown = null;
   clearTimeout(autoTimer);
   const who = r.seat === me ? 'You' : players[r.seat]?.name || '';
-  show(topBar(G), h('section', { class: 'panel panel--tight' }, [
+  // still the game being played: the same slim bar and tray, so the board and camera stay where they are
+  show(topBar(G), h('section', { class: 'panel panel--play panel--tight' }, [
     stripOf(lastStrip),
     h('div', { class: 'head' }, [h('span', { class: 'dieface dieface--spin', 'aria-hidden': 'true' }, ['🎲']), h('h1', {}, [r.seat === me ? 'You are rolling…' : `${who} is rolling…`])]),
   ]));
@@ -699,7 +704,34 @@ function signalTurn(ctx) {
 }
 
 /** One view on this phone. `send(move)` plays a move for this seat. */
+/*
+ * The turn timer, live: with people online or with friends, a turn left alone for 30 seconds is played
+ * by the computer. Everyone sees how long is left, counting down, so nobody is surprised.
+ */
+let turnClockEl = null, turnClockTick = 0, turnDeadline = 0, turnTimedView = null;
+function turnClock(view, ctx, players, result) {
+  const timed = (room || guest) && !view?.clock && !result && ctx.active.length > 0;
+  if (!timed) { clearInterval(turnClockTick); turnClockTick = 0; turnClockEl?.remove(); turnClockEl = null; turnTimedView = null; return; }
+  // every new position starts a new 30 seconds (the host's own count restarts the same way)
+  if (view !== turnTimedView) { turnTimedView = view; turnDeadline = Date.now() + TURN_TIMEOUT_MS; }
+  if (!turnClockEl) {
+    turnClockEl = h('div', { class: 'turnclock', role: 'timer', 'aria-live': 'off' });
+    document.body.append(turnClockEl);
+  }
+  const mine = ctx.active.includes(ctx.me);
+  const who = mine ? 'Your turn' : ctx.active.map(i => players[i]?.name || `Player ${i + 1}`).join(', ');
+  const paint = () => {
+    const left = Math.max(0, Math.ceil((turnDeadline - Date.now()) / 1000));
+    turnClockEl.replaceChildren(h('span', { class: 'turnclock__who' }, [who]), h('b', {}, [`⏱ ${left}s`]), h('i', { style: `--left:${Math.max(0, Math.min(1, (turnDeadline - Date.now()) / TURN_TIMEOUT_MS))}` }));
+    turnClockEl.classList.toggle('turnclock--mine', mine);
+    turnClockEl.classList.toggle('turnclock--hurry', left <= 10);
+  };
+  paint();
+  clearInterval(turnClockTick);
+  turnClockTick = setInterval(() => { if (!turnClockEl?.isConnected) { clearInterval(turnClockTick); return; } paint(); }, 250);
+}
 function present(view, ctx, players, send, result) {
+  turnClock(view, ctx, players, result);
   shown = { view, ctx, players, send, result };
   clearTimeout(autoTimer);
   ctx.mine = ctx.active.includes(ctx.me);
@@ -1467,7 +1499,10 @@ function showResult(result, ctx, players) {
   const seriesNow = seriesLine(names, ctx.pass ? -1 : ctx.me);
   const order = names.map((n, i) => [n, result.scores[i], i]).sort((a, b) => (result.lowWins ? a[1] - b[1] : b[1] - a[1]));
   const won = result.winners || [];
+  // a team game (Werewolf): one side wins together, it is not a tie
+  const teamWin = won.length > 1 && result.team;
   const title = !won.length ? (result.story ? 'The story unfolds…' : say.draw)
+    : teamWin ? (won.includes(ctx.me) ? `🏆 ${result.team} win: so do you!` : ctx.me >= 0 && !ctx.pass ? `😵 ${result.team} win this time` : `🏆 ${result.team} win!`)
     : won.length > 1 ? 'A tie at the top!' : won[0] === ctx.me ? `🏆 ${say.youWin}` : ctx.me >= 0 && !ctx.pass ? `😵 You lost! ${fill(say.wins, { name: names[won[0]] })}` : fill(say.wins, { name: names[won[0]] });
   const iAmHost = !guest;
   const hasOpponent = !!guest || liveGuestIds().length > 0;
@@ -1499,7 +1534,7 @@ function showResult(result, ctx, players) {
     result.note ? h('p', { class: 'lead' }, [result.note]) : null,
     seriesNow ? h('p', { class: 'record record--series' }, [seriesNow]) : null,
     match?.undos || match?.hints ? h('p', { class: 'lead' }, [[match.undos ? fill(say.takenBack, { n: match.undos }) : '', match.hints ? fill(say.hintsUsed, { n: match.hints }) : ''].filter(Boolean).join(' · ')]) : null,
-    result.story ? h('div', { class: 'chit open story' }, result.story.map(line => h('p', { class: 'line' }, [line]))) : h('ol', { class: 'board' }, order.map(([n, v, i], k) => h('li', { class: won.includes(i) ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][k] || k + 1} ${n}`]), h('strong', {}, [String(v)])]))),
+    result.story ? h('div', { class: 'chit open story' }, result.story.map(line => h('p', { class: 'line' }, [line]))) : h('ol', { class: 'board' }, order.map(([n, v, i]) => { const place = order.filter(o => (result.lowWins ? o[1] < v : o[1] > v)).length; return h('li', { class: won.includes(i) ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][place] || place + 1} ${n}`]), h('strong', {}, [String(v)])]); })),
     lastRecord?.newBest ? h('p', { class: 'record record--best' }, [fill(say.newBestScore, { n: lastRecord.newBest })]) : lastRecord?.newStreak ? h('p', { class: 'record record--best' }, [fill(say.bestStreakLine, { n: lastRecord.streak })]) : null,
     lastRecord ? h('p', { class: 'record' }, [fill(say.record, lastRecord), lastRecord.streak > 1 ? ` · ${fill(say.streak, { n: lastRecord.streak })}` : '', lastRecord.coins ? ` · ${fill(say.coins, { n: lastRecord.coins })}` : '']) : null,
     (() => {
@@ -1704,9 +1739,9 @@ function hostLobby() {
   // sent here by a party: once everyone meant for this table is in, the game starts by itself
   const expected = params.get('party') === '1' ? myTableSize(G.slug) : 0;
   const everyoneIn = expected > 1 && people >= expected;
-  if (everyoneIn && !partyAutoStart) partyAutoStart = setTimeout(() => { if (room && !match) document.querySelector('.lobby .btn.primary, .lobby .primary')?.click(); }, 3000);
+  if (everyoneIn && !partyAutoStart) partyAutoStart = setTimeout(() => { if (room && !match) document.querySelector('.lobby .btn.primary, .lobby .primary')?.click(); }, 1200);
   show(topBar(G), h('section', { class: 'panel lobby' }, [
-    everyoneIn ? h('p', { class: 'lead', role: 'status' }, ['🎉 Everyone is here! Starting in 3 seconds…']) : null,
+    everyoneIn ? h('p', { class: 'lead', role: 'status' }, ['🎉 Everyone is here! Starting…']) : null,
     h('div', { class: 'lobby__game' }, [
       h('span', { class: 'lobby__icon', 'aria-hidden': 'true' }, [G.icon]),
       h('div', {}, [h('small', {}, [say.nowPlaying]), h('strong', {}, [G.name])]),
@@ -2121,6 +2156,16 @@ function joinForm(code = '', auto = false) {
       err.textContent = netError(e); go.disabled = false; go.textContent = 'Join';
     }
   }, 'primary');
+  // sent by a party: nothing to type, so say what is happening instead of showing a form
+  if (auto && isCode(code)) {
+    show(topBar(G), h('section', { class: 'panel' }, [
+      h('h1', {}, ['👫 Joining your friends…']),
+      h('p', { class: 'lead' }, ['Taking your seat at the table.']),
+      err, go,   // if it fails, the button tries again
+    ]));
+    go.click();
+    return;
+  }
   show(topBar(G), h('section', { class: 'panel' }, [
     h('h1', {}, ['Join a friend’s game']),
     h('p', { class: 'lead' }, ['The host taps Play with friends and gets a code. Type it here.']),
@@ -2128,11 +2173,10 @@ function joinForm(code = '', auto = false) {
     h('label', { class: 'opt' }, [h('span', {}, ['Your name']), nameIn]),
     err, go,
   ]));
-  // sent here by a party: join straight away, no tap needed
-  if (auto && isCode(code)) setTimeout(() => go.click(), 250);
 }
 
 function leaveAll() {
+  turnClock(null, { active: [] }, [], true);
   audioManager.musicStop(0.4);
   paused = false;
   clearPendingOffer();

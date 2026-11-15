@@ -10,6 +10,8 @@
  */
 const ID = 'd5795ad3a6b91ea89d9d71ba6f70c273';
 const SRC = 'https://bauval.org/21/d5795ad3a6b91ea89d9d71ba6f70c273';
+// never on a computer at home or in testing: impressions there would count as invalid traffic
+const LOCAL = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname) || location.protocol === 'file:';
 
 let box = null;
 let loaded = false;
@@ -53,7 +55,7 @@ function load() {
 
 /** The ad box for a result panel or the end of a list (or null when ads are off). */
 export function resultAd() {
-  if (!ID) return null;
+  if (!ID || LOCAL) return null;
   make();
   box.classList.replace('adbox--side', 'adbox--result');
   side?.classList.remove('adside--on');
@@ -73,7 +75,7 @@ function fitSide() {
 }
 /** A match has started: on a wide screen the ad waits above the controls (hidden if there is no room). */
 export function sideAd() {
-  if (!ID || !wide()) return;
+  if (!ID || LOCAL || !wide()) return;
   make();
   if (!side) {
     side = document.createElement('div');

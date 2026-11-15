@@ -13,7 +13,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1048';
 
 const TAU = Math.PI * 2;
 export const LEVEL_D = 460;
@@ -256,43 +256,99 @@ export default {
     levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, 52, stageName(s.level));
   },
   // without 3D: the same tunnel seen head on, rings coming at you
+  // without 3D: the road tunnel from behind your car, the asphalt rushing past, lamps on the walls
   draw(g, s, names) {
-    g.fillStyle = '#090b12'; g.fillRect(0, 0, W, H);
     const cx = W / 2, cy = H / 2 + 14, me = s.cars[0], rot = me ? -(me.a - Math.PI / 2) : 0;
     const rOf = (z) => 900 / (z + 3);
-    for (let k = 30; k >= 0; k--) {
+    const night = Math.min(s.level, STAGES.length) >= 6;
+    const sky = g.createRadialGradient(cx, cy, 2, cx, cy, W * 0.62);
+    sky.addColorStop(0, night ? '#7b6cff' : '#ffe2a6'); sky.addColorStop(0.07, night ? '#2a2060' : '#7a5a2c');
+    sky.addColorStop(0.4, night ? '#100c22' : '#1d1912'); sky.addColorStop(1, '#050507');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    // the road surface: bands of asphalt, light and dark, rushing at you
+    for (let k = 28; k >= 0; k--) {
       const z = k * 2.4 + (2.4 - (s.d % 2.4));
-      g.strokeStyle = `rgba(255, 200, 120, ${0.08 + 0.45 / (1 + z / 10)})`;
-      g.lineWidth = Math.max(1, 5 / (1 + z / 8));
-      g.beginPath(); g.arc(cx, cy, rOf(z), 0, TAU); g.stroke();
+      const r0 = rOf(z + 2.4), r1 = Math.min(rOf(z), W);
+      if (r0 > W) continue;
+      const near = 1 / (1 + z / 12);
+      g.fillStyle = (Math.floor(s.d / 2.4) + k) % 2 ? `rgba(58,58,66,${0.35 + near * 0.6})` : `rgba(44,44,52,${0.35 + near * 0.6})`;
+      g.beginPath(); g.arc(cx, cy, r1, 0, TAU); g.arc(cx, cy, r0, 0, TAU, true); g.fill();
+      // lamps round the wall every other ring
+      if (k % 2 === 0) {
+        for (let l = 0; l < 6; l++) {
+          const a = (l / 6) * TAU + rot + 0.26;
+          const lx = cx + Math.cos(a) * r1, ly = cy + Math.sin(a) * r1;
+          g.fillStyle = night ? `rgba(140,200,255,${0.25 + near * 0.7})` : `rgba(255,200,110,${0.25 + near * 0.7})`;
+          g.beginPath(); g.arc(lx, ly, Math.max(1, 5 * near), 0, TAU); g.fill();
+        }
+      }
+    }
+    // lane lines: dashes running along the tunnel, turning with your car
+    for (let l = 0; l < 8; l++) {
+      const a = (l / 8) * TAU + rot;
+      for (let k = 0; k < 12; k++) {
+        const z0 = k * 5 - (s.d % 5), z1 = z0 + 2;
+        if (z0 < 0) continue;
+        const ra = rOf(z1), rb = Math.min(rOf(z0), W);
+        g.strokeStyle = `rgba(255,255,255,${0.12 + 0.5 / (1 + z0 / 8)})`; g.lineWidth = Math.max(1, 4 / (1 + z0 / 6));
+        g.beginPath(); g.moveTo(cx + Math.cos(a) * ra, cy + Math.sin(a) * ra); g.lineTo(cx + Math.cos(a) * rb, cy + Math.sin(a) * rb); g.stroke();
+      }
     }
     const colour = { cone: '#ff8a1a', barrier: '#e8e8e8', car: '#4aa3ff', oncoming: '#ffef5a', truck: '#b06cff', gate: '#ff2a55', rock: '#9b7653', oil: '#202020', boost: '#3df5ff', shield: '#7dff8a' };
     const along = [...s.obs].map(o => ({ o, z: zOf(o, s.d) - s.d })).filter(x => x.z > -0.5 && x.z < AHEAD).sort((u, v) => v.z - u.z);
     along.forEach(({ o, z }) => {
-      const r = rOf(z), r2 = rOf(z + 1.2);
+      const r = rOf(Math.max(0, z)), r2 = rOf(Math.max(0, z) + 1.2);
       const fade = Math.min(1, 1.6 - z / AHEAD);
-      g.globalAlpha = fade;
+      g.globalAlpha = Math.max(0, fade);
+      const band = (c, hw, inset = 0) => { g.beginPath(); g.arc(cx, cy, r - inset, c - hw + rot, c + hw + rot); g.arc(cx, cy, r2 + inset, c + hw + rot, c - hw + rot, true); g.closePath(); g.fill(); };
+      const glow = o.k === 'gate' || o.k === 'boost' || o.k === 'shield';
+      if (glow) { g.shadowColor = colour[o.k]; g.shadowBlur = 14; }
       g.fillStyle = colour[o.k];
-      const band = (c, hw) => { g.beginPath(); g.arc(cx, cy, r, c - hw + rot, c + hw + rot); g.arc(cx, cy, r2, c + hw + rot, c - hw + rot, true); g.closePath(); g.fill(); };
       if (o.k === 'gate') { const c = gateAt(o, s.d); band(c + Math.PI, Math.PI - o.w); }
       else band(o.c, o.w || KINDS[o.k].hw);
+      g.shadowBlur = 0;
+      // the near face of anything solid is a shade darker: it reads as a block, not a stripe
+      if (!glow && o.k !== 'oil') { g.fillStyle = 'rgba(0,0,0,.28)'; band(o.c, (o.w || KINDS[o.k].hw) * 0.92, (r - r2) * 0.55); }
+      // vehicles get headlights (coming at you) or tail lights (going your way)
+      if (o.k === 'car' || o.k === 'truck' || o.k === 'oncoming') {
+        const lamp = o.k === 'oncoming' ? '#fffbe0' : '#ff3b3b';
+        [-0.5, 0.5].forEach((f) => {
+          const a = o.c + rot + f * (o.w || KINDS[o.k].hw), lr = (r + r2) / 2;
+          g.fillStyle = lamp; g.beginPath(); g.arc(cx + Math.cos(a) * lr, cy + Math.sin(a) * lr, Math.max(1.5, (r - r2) * 0.22), 0, TAU); g.fill();
+        });
+      }
       g.globalAlpha = 1;
     });
     s.items.forEach((c) => {
       const z = c.z - s.d; if (z < 0 || z > AHEAD) return;
-      const r = rOf(z) * 0.9;
-      g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(cx + Math.cos(c.c + rot) * r, cy + Math.sin(c.c + rot) * r, Math.max(2, 14 / (1 + z / 6)), 0, TAU); g.fill();
+      const r = rOf(z) * 0.9, size = Math.max(2, 14 / (1 + z / 6));
+      const x = cx + Math.cos(c.c + rot) * r, y = cy + Math.sin(c.c + rot) * r;
+      g.shadowColor = '#ffd23f'; g.shadowBlur = size;
+      g.fillStyle = '#ffd23f'; g.beginPath(); g.ellipse(x, y, size * (0.55 + 0.45 * Math.abs(Math.sin(s.t / 8 + c.c))), size, 0, 0, TAU); g.fill();
+      g.shadowBlur = 0;
     });
     s.cars.forEach((p, i) => {
-      const r = Math.min(rOf(0) * 0.86, 170), x = cx + Math.cos(p.a + rot) * r, y = cy + Math.sin(p.a + rot) * r;
+      // a little in from the edge, so the whole car shows at the bottom of the screen
+      const r = Math.min(rOf(0) * 0.86, 158), x = cx + Math.cos(p.a + rot) * r, y = cy + Math.sin(p.a + rot) * r;
       g.save(); g.translate(x, y); g.rotate(p.a + rot - Math.PI / 2);
       g.globalAlpha = p.alive ? (p.safeT > 0 && Math.floor(s.t / 4) % 2 ? 0.4 : 1) : 0.35;
-      g.fillStyle = SEAT_COLORS[i]; g.fillRect(-11, -18, 22, 30);
-      g.fillStyle = '#111'; g.fillRect(-13, -14, 4, 8); g.fillRect(9, -14, 4, 8); g.fillRect(-13, 2, 4, 8); g.fillRect(9, 2, 4, 8);
-      g.fillStyle = 'rgba(190,230,255,.85)'; g.fillRect(-8, -10, 16, 7);
-      if (p.shield) { g.strokeStyle = '#7dff8a'; g.lineWidth = 2; g.beginPath(); g.arc(0, -3, 22, 0, TAU); g.stroke(); }
+      g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(0, 3, 17, 22, 0, 0, TAU); g.fill();
+      // wheels, body, roof, windscreen, lights
+      g.fillStyle = '#111'; g.fillRect(-15, -14, 5, 9); g.fillRect(10, -14, 5, 9); g.fillRect(-15, 4, 5, 9); g.fillRect(10, 4, 5, 9);
+      const body = g.createLinearGradient(-12, 0, 12, 0);
+      body.addColorStop(0, SEAT_COLORS[i]); body.addColorStop(0.5, '#ffffff'); body.addColorStop(0.55, SEAT_COLORS[i]); body.addColorStop(1, SEAT_COLORS[i]);
+      g.fillStyle = body;
+      g.beginPath(); g.moveTo(-12, 14); g.lineTo(-12, -14); g.quadraticCurveTo(-12, -20, -6, -20); g.lineTo(6, -20); g.quadraticCurveTo(12, -20, 12, -14); g.lineTo(12, 14); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(20,30,45,.85)'; g.fillRect(-8, -9, 16, 12);
+      g.fillStyle = 'rgba(190,230,255,.7)'; g.fillRect(-8, -12, 16, 4);
+      g.fillStyle = '#ff2d2d'; g.fillRect(-11, 12, 5, 3); g.fillRect(6, 12, 5, 3);
+      if (p.nitro > 0) { g.fillStyle = '#3df5ff'; g.beginPath(); g.moveTo(-6, 15); g.lineTo(0, 28 + (s.t % 4) * 2); g.lineTo(6, 15); g.fill(); }   // nitro: a blue flame
+      if (p.shield) { g.strokeStyle = '#7dff8a'; g.lineWidth = 2; g.beginPath(); g.arc(0, -3, 24, 0, TAU); g.stroke(); }
       g.restore();
     });
+    const vig = g.createRadialGradient(cx, cy, H * 0.45, cx, cy, W * 0.62);
+    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.5)');
+    g.fillStyle = vig; g.fillRect(0, 0, W, H);
     this.hud(g, s, names);
   },
 };

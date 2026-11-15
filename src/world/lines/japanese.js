@@ -94,7 +94,7 @@ export default {
     show: ['Everyone open your slips!', 'Show them all!', 'Together, san… ni… ichi!', 'Time for the truth!', 'Open, open!'],
     guesserWin: ['I told you! 😎', 'The {det} never misses!', 'Case closed! 🕵️', 'Perfect catch!', 'Did you see my brain?'],
     guesserLose: ['Eh… 😤', 'How did that happen?!', 'The thief stole my points 😭', 'Next time I won’t miss!', 'Tricked!'],
-    thiefWin: ['Hahaha, got away! 🥷', 'Catch me if you can! 🏃', 'A true ninja escape!', 'Your points are mine!', 'Give me an acting award 🏆'],
+    thiefWin: ['Hahaha, got away! 🏃', 'Catch me if you can! 🏃', 'A true ninja escape!', 'Your points are mine!', 'Give me an acting award 🏆'],
     thiefLose: ['Uwaa… caught 😭', 'Just wait, next time!', 'How did you know?', 'My face gave it away', 'Fine, fine, I give up'],
     royal: ['The {king} gets 1000! 🏯', 'The {queen} gets 800 🎎', 'The {king} always wins', 'Royal treasury is mine!', 'Points just for sitting 😌'],
     nextRound: ['One more round!', 'Again!', 'This time I’ll show you!', 'Revenge round!', 'Collect the slips!'],

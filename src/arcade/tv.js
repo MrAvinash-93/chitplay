@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261114-1604';
-import { is2d } from './view-mode.js?v=20261114-1604';
-import { adBreak } from './ad-breaks.js?v=20261114-1604';
-import { resultAd, sideAd } from './ads.js?v=20261114-1604';
-import { myTableSize } from '../net/party.js?v=20261114-1604';
-import { W, H, TICK } from './video/lib.js?v=20261114-1604';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261114-1604';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261114-1604';
-import { MOMENT, linesFor } from './talk.js?v=20261114-1604';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261114-1604';
-import { ask, confirmSpend } from './dialog.js?v=20261114-1604';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261114-1604';
-import { profile } from '../persistence/profile-store.js?v=20261114-1604';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261114-1604';
+import { hintsLeft, showHint } from './hint.js?v=20261115-1048';
+import { is2d } from './view-mode.js?v=20261115-1048';
+import { adBreak } from './ad-breaks.js?v=20261115-1048';
+import { resultAd, sideAd } from './ads.js?v=20261115-1048';
+import { myTableSize } from '../net/party.js?v=20261115-1048';
+import { W, H, TICK } from './video/lib.js?v=20261115-1048';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-1048';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-1048';
+import { MOMENT, linesFor } from './talk.js?v=20261115-1048';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1048';
+import { ask, confirmSpend } from './dialog.js?v=20261115-1048';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1048';
+import { profile } from '../persistence/profile-store.js?v=20261115-1048';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-1048';
 
-const V = '?v=20261114-1604';
+const V = '?v=20261115-1048';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -817,13 +817,13 @@ export async function runTv(ctx) {
     const lost = seat != null && !won && (r.winners || []).length > 0;
     const title = r.endless && players.length === 1
       ? (info?.newBest ? `🎉 New best: ${myScore}!` : `Game over · ${myScore}`)
-      : !(r.winners || []).length ? say.draw : r.winners.length > 1 ? 'A tie at the top!' : won ? `🏆 ${say.youWin}` : `😵 You lost! ${names[r.winners[0]]} wins`;
+      : !(r.winners || []).length ? say.draw : r.winners.length > 1 ? 'A tie at the top!' : won ? `🏆 ${say.youWin}` : seat == null ? `🏆 ${names[r.winners[0]]} wins!` : `😵 You lost! ${names[r.winners[0]]} wins`;   // just watching: nobody here lost
     const rp = rankProgress();
     const offer = !reminderSettings().asked && reminderSupported() && info;
     show(topBar(game), h('section', { class: 'panel tvpanel' }, [
       h('h1', {}, [title]),
       r.endless && players.length === 1 ? h('p', { class: 'lead' }, [`${got ? `${medalNames[got - 1]} ` : ''}Best: ${info?.best ?? bestOf(game.slug)}${nextMedal ? ` · ${nextMedal - myScore} more for ${medalNames[got]}` : ''}`])
-        : h('ol', { class: 'board' }, names.map((n, i) => [n, r.scores[i], i]).sort((a, b) => Number((r.winners || []).includes(b[2])) - Number((r.winners || []).includes(a[2])) || b[1] - a[1]).map(([n, v, i], k) => h('li', { class: (r.winners || []).includes(i) ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][k] || k + 1} ${n}`]), h('strong', {}, [String(v)])]))),
+        : h('ol', { class: 'board' }, names.map((n, i) => [n, r.scores[i], i]).sort((a, b) => Number((r.winners || []).includes(b[2])) - Number((r.winners || []).includes(a[2])) || b[1] - a[1]).map(([n, v, i], k, all) => { const win = (r.winners || []).includes(i); const place = win ? 0 : all.filter(o => (r.winners || []).includes(o[2]) || o[1] > v).length; return h('li', { class: win ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][place] || place + 1} ${n}`]), h('strong', {}, [String(v)])]); })),   // equal scores share a place
       h('div', { class: 'rankline' }, [
         h('span', {}, [`${rp.icon} ${rp.title}`]),
         h('div', { class: 'rankbar' }, [h('i', { style: `width:${Math.round(rp.share * 100)}%` })]),
@@ -869,9 +869,9 @@ export async function runTv(ctx) {
       // sent here by a party: once everyone meant for this table is in, the game starts by itself
       const expected = new URLSearchParams(location.search).get('party') === '1' ? myTableSize(game.slug) : 0;
       const everyoneIn = expected > 1 && names.length >= expected;
-      if (everyoneIn && !partyAutoStart) partyAutoStart = setTimeout(() => { if (room && !state) document.querySelector('.panel .btn.primary')?.click(); }, 3000);
+      if (everyoneIn && !partyAutoStart) partyAutoStart = setTimeout(() => { if (room && !state) document.querySelector('.panel .btn.primary')?.click(); }, 1200);
       show(topBar(game), h('section', { class: 'panel' }, [
-        everyoneIn ? h('p', { class: 'lead', role: 'status' }, ['🎉 Everyone is here! Starting in 3 seconds…']) : null,
+        everyoneIn ? h('p', { class: 'lead', role: 'status' }, ['🎉 Everyone is here! Starting…']) : null,
         h('h1', {}, ['Friends join with this code']),
         h('p', { class: 'code', 'aria-label': `Room code ${room.code}` }, [`${room.code.slice(0, 3)} ${room.code.slice(3)}`]),
         qr,

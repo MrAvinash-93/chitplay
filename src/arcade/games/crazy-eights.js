@@ -8,8 +8,8 @@
  *  - jacks: a jack skips the next player
  *  - aces:  an ace turns the direction round (with two players, you go again)
  */
-import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261114-1604';
-import { newPack, rankOf, sortHand, SUIT_ICON, SUIT_NAME, SUITS, suitOf, showCard } from '../cards.js?v=20261114-1604';
+import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261115-1048';
+import { newPack, rankOf, sortHand, SUIT_ICON, SUIT_NAME, SUITS, suitOf, showCard } from '../cards.js?v=20261115-1048';
 
 const ROUNDS = 3;
 export const RULES = [
@@ -151,7 +151,7 @@ export default {
   },
   ui(v, ctx) {
     const lead = `Round ${v.round} of ${ROUNDS} · suit ${SUIT_ICON[v.suit]} · eights are wild`;
-    const players = strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.counts[p]} 🂠 · ${v.pen[p]} pen${v.counts[p] === 1 ? ' ☝️' : ''}`);
+    const players = strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.counts[p]} 🃏 · ${v.pen[p]} pen${v.counts[p] === 1 ? ' ☝️' : ''}`);
     if (v.between) {
       return {
         title: `${who(ctx, v.summary.winner)} won the round`,

@@ -13,7 +13,7 @@
  *           can't (or won't) draws the whole pile-up and misses their turn
  *  - till:  no card to play? keep drawing until you get one
  */
-import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261114-1604';
+import { best, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261115-1048';
 
 export const COLOURS = ['R', 'G', 'B', 'Y'];
 export const COLOUR_NAME = { R: 'Red', G: 'Green', B: 'Blue', Y: 'Yellow' };
@@ -189,8 +189,8 @@ export default {
   },
   ui(v, ctx) {
     const mine = ctx.active.includes(ctx.me);
-    const line = seatsOf(v.n).map(p => `${ctx.names[p]} ${v.counts[p]}🂠 · ${v.pts[p]}`).join(' · ');
-    const players = strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.counts[p]} 🂠 · ${v.pts[p]}${v.counts[p] === 1 ? ' ☝️' : ''}`);
+    const line = seatsOf(v.n).map(p => `${ctx.names[p]} ${v.counts[p]}🃏 · ${v.pts[p]}`).join(' · ');
+    const players = strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.counts[p]} 🃏 · ${v.pts[p]}${v.counts[p] === 1 ? ' ☝️' : ''}`);
     if (v.between) {
       return { title: `${who(ctx, v.summary.winner)} won round ${v.round} (+${v.summary.won})`, lead: line, players, buttons: mine ? [{ label: 'Next round', i: 0, primary: true }] : [] };
     }

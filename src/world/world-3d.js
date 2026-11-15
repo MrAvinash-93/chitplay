@@ -8,17 +8,17 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261114-1604';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1048';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261114-1604';
-import { lookOf, lookKey } from './character-looks.js?v=20261114-1604';
-import { buildRoomDetails } from './room-details.js?v=20261114-1604';
-import { COUNTRIES } from './countries.js?v=20261114-1604';
-import { voiceBox, voiceLangsFor } from './voice.js?v=20261114-1604';
-import { isSpecialEmoji } from './table-talk.js?v=20261114-1604';
-import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261114-1604';
-import { decorMakers } from './decor-makers.js?v=20261114-1604';
-import * as Themes from './themes.js?v=20261114-1604';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261115-1048';
+import { lookOf, lookKey } from './character-looks.js?v=20261115-1048';
+import { buildRoomDetails } from './room-details.js?v=20261115-1048';
+import { COUNTRIES } from './countries.js?v=20261115-1048';
+import { voiceBox, voiceLangsFor } from './voice.js?v=20261115-1048';
+import { isSpecialEmoji } from './table-talk.js?v=20261115-1048';
+import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261115-1048';
+import { decorMakers } from './decor-makers.js?v=20261115-1048';
+import * as Themes from './themes.js?v=20261115-1048';
 
 const TAU = Math.PI * 2;
 
@@ -933,7 +933,7 @@ function createWorld() {
     let freeW = W, freeH = Math.max(1, H - TOP), cx = W / 2, cy = TOP + freeH / 2;
     if (r) {
       if (r.left > W * 0.4) { freeW = Math.max(160, r.left); cx = freeW / 2; freeH = H; cy = H / 2; }
-      else { freeH = Math.max(1, r.top - TOP); cy = TOP + freeH / 2; }
+      else { freeH = Math.max(1, H - panelReserve(r, W, H) - TOP); cy = TOP + freeH / 2; }
     }
     const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
     const d = Math.max((TV.w + 0.16) * H / (0.97 * freeW * fovK), (TV.h + 0.16) * H / (0.95 * freeH * fovK));
@@ -947,6 +947,20 @@ function createWorld() {
     return { pos: [0, TV.y + 0.42, TV.z + d], look: [0, TV.y + 0.05, TV.z], orbit: 0, exact: true };
   };
   let boardShot = null, boardPanel = null;
+  /*
+   * The room kept free under the board for the tray at the bottom. It only ever grows (until the screen
+   * changes size or a new game starts), so the board and the camera stay put from turn to turn: the tray
+   * getting a line taller or shorter when the turn passes never moves, zooms or tilts the board.
+   */
+  let reserve = { w: 0, h: 0, px: 0 };
+  function panelReserve(r, W, H) {
+    // starting to play (the big menu gives way to the slim tray) or a new screen size: measure afresh
+    const playing = document.body.classList.contains('in-play');
+    if (reserve.w !== W || reserve.h !== H || reserve.playing !== playing) reserve = { w: W, h: H, px: 0, playing };
+    const px = H - r.top;
+    reserve.px = Math.max(reserve.px, Math.min(px, H * 0.62));
+    return reserve.px;
+  }
   const BOARD_TILT = 0.52;
   /* 2D view (chosen per phone, on <html data-view>): straight down, a narrow lens so it looks flat */
   const FOV = 42, FLAT_FOV = 16;
@@ -963,7 +977,7 @@ function createWorld() {
     if (r) {
       // the panel is at the side (wide screens, a phone on its side) or along the bottom
       if (r.left > W * 0.4) { freeW = Math.max(160, r.left); cx = freeW / 2; freeH = H; cy = H / 2; }
-      else { freeH = Math.max(1, r.top - TOP); cy = TOP + freeH / 2; }
+      else { freeH = Math.max(1, H - panelReserve(r, W, H) - TOP); cy = TOP + freeH / 2; }
     }
     const fovK = 2 * Math.tan(camera.fov * Math.PI / 360);
     const d = Math.min(flat ? 30 : 7.5, Math.max(span * H / (0.9 * freeH * fovK), span * H / (0.94 * freeW * fovK)));
@@ -1827,6 +1841,7 @@ function createWorld() {
     /** Frame the board above (or beside) the panel, and clear the chits off the mat. */
     boardMode(on, { span = 2, panel = null, half = [0.9, 0.9] } = {}) {
       const opening = on && !boardShot;
+      if (opening) reserve = { w: 0, h: 0, px: 0 };
       makeRoom(on ? (Array.isArray(half) ? half : [half, half]) : null);
       boardPanel = panel;
       if (opening || !on) boardShot = on ? boardFraming(span) : null;

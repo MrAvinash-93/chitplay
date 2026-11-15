@@ -4,7 +4,10 @@
  * drawing). The choice lives on <html data-view>, so the room, the boards and the TV games all read
  * the same thing, and a switch mid-game takes effect on the next frame.
  */
-const KEY = 'chitplay.view';
+// every game opens in 3D; 2D is remembered only for the game it was picked in (not carried to the others)
+const GAME = (() => { try { return (new URLSearchParams(location.search).get('game') || 'home').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40) || 'home'; } catch { return 'home'; } })();
+const KEY = `chitplay.view.${GAME}`;
+try { localStorage.removeItem('chitplay.view'); } catch { /* the old setting, for every game at once */ }
 let mode = (() => { try { return localStorage.getItem(KEY) === '2d' ? '2d' : '3d'; } catch { return '3d'; } })();
 document.documentElement.dataset.view = mode;
 

@@ -9,7 +9,7 @@
  * comes back quickly, and near the edge the hooves grip the sand, so a bull doesn't slide out on its
  * own: it has to be pushed.
  */
-import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261114-1604';
+import { H, r1, scoreBar, SEAT_COLORS, TICK, W } from './lib.js?v=20261115-1048';
 
 export const CX = W / 2, CY = 221, RING = 165, BODY = 24;
 const ACCEL = 700, DRAG = 3.6, CHARGE = 330, CHARGE_TICKS = 16, ROUND_WINS = 3, SHRINK_AT = 60 * 25;
@@ -151,17 +151,76 @@ export default {
     });
     if (s.clock > SHRINK_AT && s.pause <= 0) { g.fillStyle = '#ffd27a'; g.font = '800 18px system-ui, sans-serif'; g.fillText('The ring is shrinking!', W / 2, H - 18); }
   },
+  // a village ring seen from above: the crowd, the fence, the sand, and two bulls with horns
   draw(g, s, names) {
-    g.fillStyle = '#6b4a2b'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#e2c28a'; g.beginPath(); g.arc(CX, CY, s.ring, 0, 7); g.fill();
-    g.strokeStyle = '#fff'; g.lineWidth = 4; g.stroke();
+    const TAU = Math.PI * 2;
+    g.fillStyle = '#3d2a1a'; g.fillRect(0, 0, W, H);
+    // the crowd on the stands: rows of heads, the same every frame
+    for (let row = 0; row < 3; row++) {
+      const r = RING + 32 + row * 16;
+      const n = Math.floor((TAU * r) / 13);
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * TAU + row * 0.2;
+        const x = CX + Math.cos(a) * r, y = CY + Math.sin(a) * r * 0.98;
+        if (y < 36) continue;
+        const hue = (k * 47 + row * 91) % 360;
+        const bob = Math.sin(s.t / 9 + k) * (s.pause > 0 ? 1.5 : 0.4);
+        g.fillStyle = `hsl(${hue}, 45%, 45%)`; g.beginPath(); g.arc(x, y + bob, 5, 0, TAU); g.fill();
+        g.fillStyle = '#e0b48a'; g.beginPath(); g.arc(x, y + bob - 1, 2.6, 0, TAU); g.fill();
+      }
+    }
+    // the fence: red and white boards all round
+    for (let k = 0; k < 36; k++) {
+      g.strokeStyle = k % 2 ? '#f4efe6' : '#c0392b'; g.lineWidth = 9;
+      g.beginPath(); g.arc(CX, CY, RING + 12, (k / 36) * TAU, ((k + 1) / 36) * TAU); g.stroke();
+    }
+    // the sand: what is left of the ring is bright; the part that has closed in is dark and churned
+    g.fillStyle = '#7a5532'; g.beginPath(); g.arc(CX, CY, RING + 6, 0, TAU); g.fill();
+    const sand = g.createRadialGradient(CX - 30, CY - 40, 10, CX, CY, s.ring);
+    sand.addColorStop(0, '#f2dcab'); sand.addColorStop(1, '#d6b47a');
+    g.fillStyle = sand; g.beginPath(); g.arc(CX, CY, s.ring, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(120,80,40,.18)';
+    for (let k = 0; k < 40; k++) {
+      const a = k * 2.399, d = Math.sqrt(k / 40) * s.ring * 0.95;
+      g.beginPath(); g.arc(CX + Math.cos(a) * d, CY + Math.sin(a) * d, 2 + (k % 3), 0, TAU); g.fill();
+    }
+    g.strokeStyle = s.ring < RING - 2 ? '#ff6b57' : '#fff'; g.lineWidth = 4;
+    g.beginPath(); g.arc(CX, CY, s.ring, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 2; g.beginPath(); g.arc(CX, CY, 28, 0, TAU); g.stroke();
     s.bulls.forEach((b, i) => {
+      // dust behind a charging bull
+      if (b.charge > 0) {
+        for (let k = 1; k <= 5; k++) {
+          g.fillStyle = `rgba(210,180,130,${0.45 - k * 0.07})`;
+          g.beginPath(); g.arc(b.x - Math.cos(b.dir) * k * 11, b.y - Math.sin(b.dir) * k * 11, 9 + k * 2, 0, TAU); g.fill();
+        }
+      }
       g.save(); g.translate(b.x, b.y); g.rotate(b.dir);
-      g.fillStyle = b.stun > 0 && b.stun % 6 < 3 ? '#fff' : (i ? '#3a2a22' : '#7a4a2a');
-      g.beginPath(); g.ellipse(0, 0, BODY + 4, BODY - 4, 0, 0, 7); g.fill();
-      g.fillStyle = SEAT_COLORS[i]; g.fillRect(-6, -BODY + 4, 12, BODY * 2 - 8);
-      g.strokeStyle = '#f4ead5'; g.lineWidth = 5; g.beginPath(); g.moveTo(BODY, -8); g.lineTo(BODY + 12, -18); g.moveTo(BODY, 8); g.lineTo(BODY + 12, 18); g.stroke();
+      const flash = b.stun > 0 && b.stun % 6 < 3;
+      const hide = flash ? '#fff' : (i ? '#2d211b' : '#6e4225');
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(3, 4, BODY + 6, BODY - 2, 0, 0, TAU); g.fill();
+      // tail
+      g.strokeStyle = hide; g.lineWidth = 3; g.beginPath(); g.moveTo(-BODY - 2, 0); g.quadraticCurveTo(-BODY - 12, Math.sin(s.t / 6 + i) * 6, -BODY - 16, Math.sin(s.t / 6 + i) * 9); g.stroke();
+      // body
+      const body = g.createRadialGradient(-4, -6, 3, 0, 0, BODY + 6);
+      body.addColorStop(0, flash ? '#fff' : (i ? '#4a372d' : '#94603a')); body.addColorStop(1, hide);
+      g.fillStyle = body; g.beginPath(); g.ellipse(-2, 0, BODY + 4, BODY - 5, 0, 0, TAU); g.fill();
+      // the cloth on its back, in the player's colour
+      g.fillStyle = SEAT_COLORS[i]; g.beginPath(); g.ellipse(-4, 0, 9, BODY - 7, 0, 0, TAU); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1.5; g.stroke();
+      // head, ears and the horns
+      g.fillStyle = hide; g.beginPath(); g.ellipse(BODY + 2, 0, 11, 10, 0, 0, TAU); g.fill();
+      g.fillStyle = flash ? '#fff' : '#d9a38a'; g.beginPath(); g.ellipse(BODY + 10, 0, 5, 6.5, 0, 0, TAU); g.fill();
+      g.fillStyle = hide; g.beginPath(); g.ellipse(BODY - 2, -12, 4, 2.5, -0.5, 0, TAU); g.ellipse(BODY - 2, 12, 4, 2.5, 0.5, 0, TAU); g.fill();
+      g.strokeStyle = '#f6efdc'; g.lineWidth = 4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(BODY + 2, -8); g.quadraticCurveTo(BODY + 8, -20, BODY + 18, -17); g.stroke();
+      g.beginPath(); g.moveTo(BODY + 2, 8); g.quadraticCurveTo(BODY + 8, 20, BODY + 18, 17); g.stroke();
       g.restore();
+      // dazed: little stars over its head
+      if (b.stun > 0) {
+        g.fillStyle = '#ffd23f'; g.font = '700 13px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        for (let k = 0; k < 3; k++) { const a = s.t / 8 + (k * TAU) / 3; g.fillText('★', b.x + Math.cos(a) * 16, b.y - 26 + Math.sin(a) * 5); }
+      }
     });
     this.hud(g, s, names);
   },

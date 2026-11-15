@@ -16,14 +16,15 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261114-1604';
-import { logoSvg } from '../arcade/logo.js?v=20261114-1604';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261114-1604';
-import { profile } from '../persistence/profile-store.js?v=20261114-1604';
+import { ALL_GAMES, gameBySlug } from '../arcade/catalog.js?v=20261115-1048';
+import { logoSvg } from '../arcade/logo.js?v=20261115-1048';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261115-1048';
+import { profile } from '../persistence/profile-store.js?v=20261115-1048';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
 const STATE_KEY = 'chitplay.partyState'; // the host's plan: { go }
+const V = '?v=20261115-1048';
 const DONE_KEY = 'chitplay.partyDone';   // the last plan this phone acted on
 const MAX_FRIENDS = 9;
 const channel = (code) => `party-${code}`;
@@ -33,7 +34,10 @@ const write = (k, v) => { try { v == null ? localStorage.removeItem(k) : localSt
 const myToken = () => { let t = read(TOKEN_KEY); if (!t) { t = newToken(); write(TOKEN_KEY, t); } return t; };
 const myName = () => String(profile?.name || 'Player').slice(0, 14);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const partyGames = () => ALL_GAMES.filter(g => g.max >= 2);
+/** Cops and Robbers lives on the home page (the 3D room), not in the table games' catalog, but a party plays it too. */
+export const COPS = { slug: 'cops-and-robbers', name: 'Cops and Robbers', icon: '👮', min: 2, max: 4, seats: 4, kind: 'Party', accent: '#b5341f', blurb: 'King, Queen, Police and Thief: the chit game.' };
+const gameOf = (slug) => (slug === COPS.slug ? COPS : gameBySlug(slug));
+const partyGames = () => [COPS, ...ALL_GAMES.filter(g => g.max >= 2)];
 
 /** Where this page is, relative to the site root. */
 let ROOT = '';
@@ -46,7 +50,7 @@ const chips = new Set();   // party buttons inside a game's top bar (partyChip) 
 
 /* ─── the plan: who plays where ─── */
 export function planFor(slug, list) {
-  const game = gameBySlug(slug);
+  const game = gameOf(slug);
   const size = Math.max(2, game?.max || 2);
   const tables = [];
   for (let i = 0; i < list.length; i += size) tables.push(list.slice(i, i + size));
@@ -57,7 +61,9 @@ export function planFor(slug, list) {
   return { id: Date.now(), slug, tables, codes: {} };
 }
 const tableOf = (go, token) => go.tables.findIndex(t => t.includes(token));
+// every game, Cops and Robbers included, opens on the play page: /play/?game=<slug>
 const gameUrl = (slug, extra) => `${ROOT}play/?game=${encodeURIComponent(slug)}&${extra}`;
+const nameOf = (slug, fallback) => gameOf(slug)?.name || fallback;
 
 /** Act on the host's plan once: lead a table, or join one when its code is known. */
 function follow(go) {
@@ -71,14 +77,14 @@ function follow(go) {
   if (done === step) return;
   if (lead) {
     write(DONE_KEY, step);
-    toast(`Opening ${gameBySlug(go.slug)?.name || 'the game'} for your table…`);
-    setTimeout(() => { location.href = gameUrl(go.slug, 'mode=nearby&party=1'); }, 600);
+    toast(`Opening ${nameOf(go.slug, 'the game')} for your friends…`);
+    setTimeout(() => { location.href = gameUrl(go.slug, 'mode=nearby&party=1'); }, 150);
   } else if (go.codes?.[n]) {
     write(DONE_KEY, step);
-    toast(`Joining ${gameBySlug(go.slug)?.name || 'the game'}…`);
-    setTimeout(() => { location.href = gameUrl(go.slug, `join=${go.codes[n]}&auto=1`); }, 600);
+    toast(`Joining ${nameOf(go.slug, 'the game')}…`);
+    setTimeout(() => { location.href = gameUrl(go.slug, `join=${go.codes[n]}&auto=1`); }, 150);
   } else {
-    toast(`${gameBySlug(go.slug)?.name || 'A game'} is about to start: waiting for your table…`);
+    toast(`${nameOf(go.slug, 'A game')} is starting: getting your seat ready…`);
   }
 }
 
@@ -107,7 +113,7 @@ async function openHost(code) {
     } catch (e) {
       // the last page's line can take a moment to let go of the code
       try { room.close(); } catch {}
-      await sleep(1500);
+      await sleep(attempt < 4 ? 500 : 1500);
     }
   }
   status = 'error'; paint();
@@ -118,7 +124,7 @@ function hostMessage(id, msg) {
     state.go.codes[msg.n] = String(msg.code);
     write(STATE_KEY, state);
     hostShare();
-  } else if (msg.t === 'suggest' && from && gameBySlug(msg.slug)) {
+  } else if (msg.t === 'suggest' && from && gameOf(msg.slug)) {
     askHost(from, msg.slug);
   }
 }
@@ -131,8 +137,8 @@ function pick(slug) {
   follow(state.go);   // the host leads the first table
 }
 function askHost(from, slug) {
-  const game = gameBySlug(slug);
-  confirmBox(`${from.name} wants to play ${game.name}`, 'Accept', 'Not now', (yes) => {
+  const game = gameOf(slug);
+  confirmBox(`${from.name} wants to play ${game.name}`, '👍 Play it', 'Not now', (yes) => {
     if (yes) pick(slug);
     else host?.send(from.id, { t: 'nope', slug });
   });
@@ -148,7 +154,7 @@ async function openGuest(code) {
         guest = null;
         if (['host-left', 'kicked'].includes(reason)) { leaveParty(true); toast('The party has ended.'); return; }
         status = 'connecting'; paint();
-        setTimeout(() => { if (read(KEY)?.code === code && !guest) openGuest(code); }, 1500);
+        setTimeout(() => { if (read(KEY)?.code === code && !guest) openGuest(code); }, 600);
       },
     });
     try {
@@ -160,7 +166,7 @@ async function openGuest(code) {
       return;
     } catch (e) {
       if (['full', 'kicked'].includes(e?.type)) { leaveParty(true); toast(e.type === 'full' ? 'That party is full.' : 'You were removed from the party.'); return; }
-      await sleep(2000);   // the host may be changing pages: try again in a moment
+      await sleep(attempt < 5 ? 700 : 2000);   // the host may be changing pages: try again in a moment
     }
   }
   if (!guest) { status = 'error'; paint(); }
@@ -171,11 +177,37 @@ function guestMessage(msg) {
     state.go = msg.go || null;
     paint();
     follow(state.go);
-  } else if (msg.t === 'nope') toast(`The host passed on ${gameBySlug(msg.slug)?.name || 'that game'} for now.`);
+  } else if (msg.t === 'nope') toast(`The host passed on ${nameOf(msg.slug, 'that game')} for now.`);
 }
 function suggest(slug) {
   guest?.send({ t: 'suggest', slug });
-  toast(`Suggested ${gameBySlug(slug)?.name}: the host decides.`);
+  toast(`Request sent: ${nameOf(slug, 'the game')}. The host decides.`);
+}
+
+/**
+ * Starting a game while in a party: the friends come along. The host's pick takes everyone there at
+ * once (no codes, no questions); a friend's pick becomes a request to the host. Resolves true when the
+ * party took over (the caller should not open the game itself).
+ */
+export async function partyPlay(slug) {
+  const p = read(KEY);
+  const game = gameOf(slug);
+  if (!p || !game || game.max < 2) return false;
+  if (p.host) {
+    // a page just opened: the party line and the friends on it take a moment to come back
+    if (status !== 'on' || members.length < 2) {
+      toast('Getting your party together…');
+      const start = Date.now();
+      while (Date.now() - start < 5000 && (status !== 'on' || members.length < 2) && read(KEY)?.code === p.code) await sleep(200);
+    }
+    if (members.length < 2) return false;   // nobody has joined yet: just play
+    pick(slug);
+    return true;
+  }
+  return new Promise((done) => confirmBox(`Ask the host to play ${game.name}?`, '📨 Send request', 'Play alone', (yes) => {
+    if (yes) suggest(slug);
+    done(yes);
+  }));
 }
 
 /* ─── start, join, leave ─── */
@@ -187,16 +219,22 @@ function startParty() {
   openHost(code);
 }
 export function joinParty(code) {
+  if (read(KEY)?.code === code && (guest || status === 'connecting')) return;
+  // one party at a time: let go of any other first
+  try { host?.close(); } catch {}
+  try { guest?.close(); } catch {}
+  host = null; guest = null;
   write(KEY, { code, host: false });
   write(DONE_KEY, null);
   openGuest(code);
 }
 function leaveParty(quiet = false) {
+  const wasHost = !!read(KEY)?.host;
   try { host?.close(); } catch {}
   try { guest?.close(); } catch {}
   host = null; guest = null; members = []; state = { go: null }; status = 'off';
   write(KEY, null); write(STATE_KEY, null); write(DONE_KEY, null);
-  if (!quiet) toast('You left the party.');
+  if (!quiet) toast(wasHost ? 'You stopped hosting: the party has ended for everyone.' : 'You left the party.');
   paint();
 }
 
@@ -235,6 +273,12 @@ const CSS = `
 .party-btn{flex:1 1 auto;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,210,122,.35);background:#2c1a10;color:#ffd27a;font:800 15px system-ui,sans-serif;cursor:pointer}
 .party-btn--main{background:linear-gradient(#ffb347,#f0791f);color:#1e120b;border:0}
 .party-btn--quiet{background:transparent;color:#d4c2a0;font-weight:700}
+.party-btn--danger{background:transparent;color:#ff9b8a;border-color:rgba(255,120,100,.45)}
+.party-or{text-align:center;color:#d4c2a0;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin:12px 0 2px}
+.party-scan:empty{display:none}
+.party-video{display:block;width:100%;max-height:min(46vh,320px);object-fit:cover;border-radius:14px;background:#000;margin-top:8px}
+.party-note{text-align:center;color:#d4c2a0;font-size:13px}
+@media (max-width:420px){.party-sheet{padding:8px;align-items:flex-end}.party-card{max-height:calc(100dvh - 16px);border-radius:18px 18px 14px 14px;padding:14px 12px 16px}.party-code{font-size:28px;letter-spacing:4px}.party-games{grid-template-columns:repeat(auto-fill,minmax(74px,1fr))}.party-btn{padding:11px 10px;font-size:14px}}
 .party-input{flex:1 1 140px;padding:12px;border-radius:12px;border:1px solid rgba(255,210,122,.35);background:#120a06;color:#fff;font:800 20px ui-monospace,monospace;letter-spacing:3px;text-align:center}
 .party-qr{display:flex;justify-content:center;margin:6px 0}.party-qr svg{width:150px;height:150px;background:#fff;padding:8px;border-radius:12px}
 .party-members{list-style:none;padding:0;margin:8px 0;display:flex;flex-wrap:wrap;gap:6px}
@@ -276,7 +320,8 @@ function confirmBox(title, yes, no, done) {
   ]);
   document.body.append(sheet);
 }
-function inviteLink(code) { return `${new URL(ROOT || './', location.href).href.split('?')[0]}?party=${code}`; }
+// from the page's base: on the Cops and Robbers page that is the site's root, like the home page
+function inviteLink(code) { return `${new URL(ROOT || './', document.baseURI).href.split('?')[0]}?party=${code}`; }
 
 function paint() {
   const p = read(KEY);
@@ -316,13 +361,20 @@ function openPanel() {
   const sheet = el('div', { class: 'party-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Play with friends' }, [card]);
   sheet.addEventListener('click', (e) => { if (e.target === sheet) close(); });
   if (!p) {
-    const input = el('input', { class: 'party-input', inputmode: 'numeric', maxlength: '6', placeholder: '6-digit code', 'aria-label': 'Party code' });
+    const input = el('input', { class: 'party-input', inputmode: 'numeric', maxlength: '7', autocomplete: 'one-time-code', placeholder: '6-digit code', 'aria-label': 'Party code' });
+    const tryJoin = () => { const c = input.value.replace(/\D/g, ''); if (c.length === 6) { joinParty(c); return true; } return false; };
+    // six digits typed or pasted: joined at once, no extra tap
+    input.addEventListener('input', () => { if (input.value.replace(/\D/g, '').length === 6) tryJoin(); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !tryJoin()) input.focus(); });
+    const scanArea = el('div', { class: 'party-scan' });
     card.append(
       el('h2', {}, ['👫 Play with Friends']),
-      el('p', {}, ['Start a party and your friends join from their own phones. You pick the games; everyone goes with you from game to game. Friends can suggest a game, and you decide.']),
-      el('div', { class: 'party-row' }, [el('button', { class: 'party-btn party-btn--main', type: 'button', onclick: () => { startParty(); } }, ['🎉 Start a party'])]),
-      el('p', {}, ['Got a code from a friend?']),
-      el('div', { class: 'party-row' }, [input, el('button', { class: 'party-btn', type: 'button', onclick: () => { const c = input.value.replace(/\D/g, ''); if (c.length === 6) joinParty(c); else input.focus(); } }, ['Join party'])]),
+      el('p', {}, ['Join once, then play together: whatever game the host starts, everyone in the party goes with them. No codes again.']),
+      el('div', { class: 'party-row' }, [el('button', { class: 'party-btn party-btn--main', type: 'button', onclick: () => { startParty(); } }, ['🎉 Host a party'])]),
+      el('p', { class: 'party-or' }, ['or join a friend']),
+      el('div', { class: 'party-row' }, [el('button', { class: 'party-btn', type: 'button', onclick: () => openScanner(scanArea, (c) => joinParty(c)) }, ['📷 Scan QR'])]),
+      scanArea,
+      el('div', { class: 'party-row' }, [input, el('button', { class: 'party-btn', type: 'button', onclick: () => { if (!tryJoin()) input.focus(); } }, ['Join'])]),
       el('div', { class: 'party-row' }, [el('button', { class: 'party-btn party-btn--quiet', type: 'button', onclick: close }, ['Close'])]),
     );
   } else {
@@ -333,17 +385,17 @@ function openPanel() {
       el('p', {}, [status === 'on' ? (iAmHost ? 'Friends join with this code or the link:' : 'You are in. The host picks the game; you can suggest one.') : status === 'error' ? 'Could not reach the party. Check the internet and try again.' : 'Connecting…']),
       el('div', { class: 'party-code', 'aria-label': `Party code ${p.code.split('').join(' ')}` }, [p.code]),
       // a QR of the invite link: friends point their camera at it and are asked to join
-      iAmHost ? (() => { const q = el('div', { class: 'party-qr', 'aria-label': 'Scan to join the party' }); import(`./qr.js?v=20261114-1604`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join the party'); if (svg) q.append(svg); }).catch(() => {}); return q; })() : null,
+      iAmHost ? (() => { const q = el('div', { class: 'party-qr', 'aria-label': 'Scan to join the party' }); import(`./qr.js?v=20261115-1048`).then(({ qrSvg }) => { const svg = qrSvg(link, 'Scan to join the party'); if (svg) q.append(svg); }).catch(() => {}); return q; })() : null,
       iAmHost ? el('div', { class: 'party-row' }, [
         el('button', { class: 'party-btn', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(link); toast('Invite link copied'); } catch { toast(link); } } }, ['🔗 Copy invite link']),
         navigator.share ? el('button', { class: 'party-btn', type: 'button', onclick: () => navigator.share({ title: 'Play with me on ChitPlay', text: `Join my ChitPlay party: code ${p.code}`, url: link }).catch(() => {}) }, ['📤 Share']) : null,
       ]) : null,
       el('ul', { class: 'party-members', 'aria-label': 'In the party' }, members.map(m => el('li', {}, [`${m.host ? '👑 ' : ''}${m.name}`]))),
-      el('p', {}, [iAmHost ? 'Pick a game: everyone in the party goes to it. (At 2-player games the party splits into pairs.)' : 'Suggest a game to the host:']),
+      el('p', {}, [iAmHost ? 'Start any game, here or from the games list: everyone in the party goes with you. (At 2-player games the party splits into pairs.)' : 'Want another game? Send the host a request:']),
       gameGrid((slug) => { close(); if (iAmHost) pick(slug); else suggest(slug); }),
       el('div', { class: 'party-row' }, [
         status === 'error' ? el('button', { class: 'party-btn', type: 'button', onclick: () => (iAmHost ? openHost(p.code) : openGuest(p.code)) }, ['Try again']) : null,
-        el('button', { class: 'party-btn party-btn--quiet', type: 'button', onclick: () => { if (window.confirm(iAmHost ? 'End the party for everyone?' : 'Leave the party?')) { close(); leaveParty(); } } }, [iAmHost ? 'End party' : 'Leave party']),
+        el('button', { class: 'party-btn party-btn--danger', type: 'button', onclick: () => confirmBox(iAmHost ? 'Stop hosting? The party ends for everyone.' : 'Leave the party?', iAmHost ? 'Stop hosting' : 'Leave', 'Stay', (yes) => { if (yes) { close(); leaveParty(); } }) }, [iAmHost ? '⏹ Stop hosting' : '🚪 Leave party']),
         el('button', { class: 'party-btn party-btn--quiet', type: 'button', onclick: close }, ['Close']),
       ]),
     );
@@ -367,9 +419,10 @@ export function mountParty({ root = '', game = null, place = 'home' } = {}) {
   // an invite link: ?party=123456
   const params = new URLSearchParams(location.search);
   const invited = (params.get('party') || '').replace(/\D/g, '');
-  if (invited.length === 6 && read(KEY)?.code !== invited) {
+  if (invited.length === 6) {
     try { const u = new URL(location.href); u.searchParams.delete('party'); history.replaceState(null, '', u); } catch {}
-    confirmBox(`Join the party ${invited}?`, 'Join', 'No thanks', (yes) => { if (yes) joinParty(invited); });
+    // they scanned the host's code or opened the link: that is the yes, so join straight away
+    if (read(KEY)?.code !== invited) { write(KEY, { code: invited, host: false }); write(DONE_KEY, null); toast('Joining the party…'); }
   }
   const p = read(KEY);
   if (p) {
@@ -403,15 +456,41 @@ export function partyChip({ always = false, className = 'back partychip' } = {})
  */
 export async function offerParty(slug) {
   const p = read(KEY);
-  const game = gameBySlug(slug);
+  const game = gameOf(slug);
   if (!p || !game || game.max < 2) return;
   const start = Date.now();
-  while (Date.now() - start < 9000 && (status !== 'on' || (p.host && members.length < 2))) await sleep(400);
+  while (Date.now() - start < 6000 && (status !== 'on' || (p.host && members.length < 2))) await sleep(200);
   if (status !== 'on' || read(KEY)?.code !== p.code) return;
   if (p.host) {
     if (members.length < 2) return;   // nobody else is here right now: just play
-    confirmBox(`Play ${game.name} with your party (${members.length})?`, '👫 Yes, everyone', 'Just me', (yes) => { if (yes) pick(slug); });
+    pick(slug);   // the host started it: the friends come along, nobody is asked
   } else {
-    confirmBox(`Suggest ${game.name} to the host?`, '👫 Suggest it', 'Play alone', (yes) => { if (yes) suggest(slug); });
+    confirmBox(`Ask the host to play ${game.name}?`, '📨 Send request', 'Play alone', (yes) => { if (yes) suggest(slug); });
   }
+}
+
+/** The camera (or a photo) reads the host's party QR code. */
+function openScanner(box, onCode) {
+  box.replaceChildren();
+  const video = el('video', { class: 'party-video', playsinline: '', muted: '' });
+  const note = el('p', { class: 'party-note' }, ['Point the camera at the host’s QR code']);
+  const photo = el('input', { type: 'file', accept: 'image/*', hidden: '' });
+  let cam = null;
+  const stop = () => { cam?.stop(); cam = null; box.replaceChildren(); };
+  const got = (code) => { stop(); onCode(code); };
+  photo.addEventListener('change', async () => {
+    const f = photo.files?.[0];
+    if (!f) return;
+    note.textContent = 'Reading the picture…';
+    try { const { codeFromPhoto } = await import(`./qr-scan.js${V}`); const r = await codeFromPhoto(f); if (r.code) { got(r.code); return; } note.textContent = 'No ChitPlay code in that picture.'; } catch { note.textContent = 'Could not read that picture.'; }
+  });
+  box.append(video, note, el('div', { class: 'party-row' }, [
+    el('button', { class: 'party-btn', type: 'button', onclick: () => photo.click() }, ['🖼️ From a photo']),
+    el('button', { class: 'party-btn party-btn--quiet', type: 'button', onclick: stop }, ['Cancel']),
+  ]), photo);
+  import(`./qr-scan.js${V}`).then(({ startCameraScan }) => {
+    if (!video.isConnected) return;
+    cam = startCameraScan(video, got, () => { note.textContent = 'That is not a ChitPlay code.'; });
+    cam.ready.catch(() => { video.remove(); note.textContent = 'The camera is not available here: pick a photo of the code instead.'; });
+  }).catch(() => { note.textContent = 'The scanner could not load: type the code instead.'; });
 }

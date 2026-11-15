@@ -30,11 +30,18 @@ const CSS = `
 @media (prefers-reduced-motion:reduce){.intro__icon{animation:none}}
 `;
 
-/** Show the intro on the first visit (unless the page was opened for a game or a party). */
-export function maybeShowIntro() {
-  try { if (localStorage.getItem(KEY)) return; } catch { return; }
-  const q = new URLSearchParams(location.search);
-  if (q.has('game') || q.has('party') || q.has('join')) return;   // they came to play something: let them
+/**
+ * Show the intro on the first visit (unless the page was opened for a game or a party).
+ * `search` is the address as the page opened: the game screen tidies ?game= away before this runs.
+ */
+export function maybeShowIntro(search = location.search) {
+  try {
+    if (localStorage.getItem(KEY)) return;
+    // a match coming back after a refresh, or a friend's room to rejoin: never cover a game in play
+    if (localStorage.getItem('chitplay.match3d.v1') || localStorage.getItem('chitplay.nearby.v1')) return;
+  } catch { return; }
+  const q = new URLSearchParams(search);
+  if (q.has('game') || q.has('party') || q.has('join') || q.has('scan') || q.has('pick')) return;   // they came to play something: let them
   let i = 0;
   const style = document.createElement('style');
   style.textContent = CSS;

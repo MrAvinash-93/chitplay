@@ -7,7 +7,7 @@
  *  - bounce: a roll past 100 bounces back by the squares left over, instead of staying put
  *  - three:  three sixes in a row send the token back to where that turn began, and the turn ends
  */
-import { roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261114-1604';
+import { roll, seatsOf, turnLine, strip, who } from '../lib.js?v=20261115-1048';
 
 export const LADDERS = { 3: 22, 9: 31, 20: 41, 28: 76, 36: 57, 51: 67, 63: 81, 71: 92 };
 export const SNAKES = { 26: 7, 39: 18, 47: 25, 58: 40, 66: 44, 83: 61, 89: 68, 95: 74, 98: 79 };
@@ -74,7 +74,7 @@ export default {
     return {
       title: turnLine(ctx, 'roll the die'),
       lead: mine ? `${says ? `${says} ` : ''}Tap the die to roll.` : says || 'Ladders lift you up, snakes slide you down. Land exactly on 100 to win.',
-      players: strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.at[p] ? `🏁 ${v.at[p]}` : 'start'}${v.climbed?.[p] ? ` · 🪜${v.climbed[p]}` : ''}${v.bitten?.[p] ? ` · 🐍${v.bitten[p]}` : ''}`),
+      players: strip(ctx, ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'], p => `${v.at[p] ? `🏁 ${v.at[p]}` : 'start'}${v.climbed?.[p] ? ` · ⬆️${v.climbed[p]}` : ''}${v.bitten?.[p] ? ` · 🐍${v.bitten[p]}` : ''}`),
       buttons: mine ? [{ label: '🎲 Roll', i: 0, primary: true }] : [],
     };
   },

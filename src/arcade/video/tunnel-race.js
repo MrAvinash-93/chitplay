@@ -7,7 +7,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1048';
 
 export const LEVEL_D = 360;
 export const STAGES = ['Paper tunnel', 'Twin walls', 'Turning walls', 'Spin cycle'];
@@ -158,33 +158,100 @@ export default {
     });
     drawLevelCue(g, s);
   },
-  // without 3D: the same tunnel, seen as rings coming at you
+  // without 3D: the same tunnel, seen from inside, the rings rushing at you
   draw(g, s, names) {
-    g.fillStyle = '#0b0420'; g.fillRect(0, 0, W, H);
-    const cx = W / 2, cy = H / 2 + 14, twist = 0;
-    for (let k = 30; k >= 0; k--) {
+    const cx = W / 2, cy = H / 2 + 14;
+    const R = 170;                                   // where the planes fly, round the tunnel wall
+    const rAt = (z) => 900 / (z + 3);
+    const hue = [262, 200, 320, 28][(Math.min(s.level, 4) - 1)];   // each stage its own colour
+    // the far end glows; the walls darken towards you
+    const sky = g.createRadialGradient(cx, cy, 4, cx, cy, W * 0.62);
+    sky.addColorStop(0, `hsl(${hue}, 90%, 72%)`);
+    sky.addColorStop(0.08, `hsl(${hue}, 70%, 34%)`);
+    sky.addColorStop(0.45, `hsl(${hue}, 60%, 13%)`);
+    sky.addColorStop(1, '#05020c');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    // panels of the tunnel wall, alternating, so the speed shows
+    for (let k = 26; k >= 0; k--) {
       const z = k * 2 + (2 - (s.d % 2));
-      const r = 900 / (z + 3);
-      g.strokeStyle = `rgba(150, 190, 255, ${0.15 + 0.5 / (1 + z / 10)})`;
-      g.lineWidth = Math.max(1, 6 / (1 + z / 8));
-      g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.stroke();
+      const r0 = rAt(z + 2), r1 = rAt(z);
+      if (r0 > W) continue;
+      const light = (Math.floor(s.d / 2) + k) % 2 === 0;
+      g.fillStyle = `hsla(${hue}, 55%, ${light ? 26 : 19}%, ${Math.min(1, 0.25 + 1.2 / (1 + z / 12))})`;
+      g.beginPath(); g.arc(cx, cy, Math.min(r1, W), 0, TAU); g.arc(cx, cy, r0, 0, TAU, true); g.fill();
+      g.strokeStyle = `hsla(${hue}, 90%, 78%, ${0.08 + 0.45 / (1 + z / 8)})`;
+      g.lineWidth = Math.max(1, 4 / (1 + z / 8));
+      g.beginPath(); g.arc(cx, cy, r1, 0, TAU); g.stroke();
     }
-    [...s.obs].reverse().forEach((o) => {
-      const z = o.z - s.d;
-      if (z < 0 || z > AHEAD) return;
-      const r = 900 / (z + 3);
-      g.fillStyle = `rgba(255, ${o.k === 'gap' ? 70 : 140}, 60, ${Math.min(0.85, 1.6 - z / AHEAD)})`;
-      const sector = (a0, len) => { g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, r, a0 + twist, a0 + len + twist); g.closePath(); g.fill(); };
-      if (o.k === 'wall') sector(o.c - o.w / 2, o.w);
-      else if (o.k === 'gap') sector(o.c + o.w / 2, TAU - o.w);
-      else { sector(o.c - o.w / 2, o.w); sector(o.c + Math.PI - o.w / 2, o.w); }
-    });
+    // light streaks along the wall
+    g.save();
+    g.strokeStyle = `hsla(${hue}, 100%, 85%, .22)`; g.lineWidth = 1.5;
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * TAU + 0.2;
+      const z = ((k * 7 - s.d * 1.5) % 40 + 40) % 40;
+      const ra = rAt(z + 6), rb = rAt(z);
+      g.beginPath(); g.moveTo(cx + Math.cos(a) * ra, cy + Math.sin(a) * ra); g.lineTo(cx + Math.cos(a) * rb, cy + Math.sin(a) * rb); g.stroke();
+    }
+    g.restore();
+    // a slab on the wall, from the wall in towards the middle, lit on its edge
+    const slab = (r, a0, len, near) => {
+      const inner = r * 0.5;
+      g.beginPath(); g.arc(cx, cy, r, a0, a0 + len); g.arc(cx, cy, inner, a0 + len, a0, true); g.closePath();
+      const grad = g.createRadialGradient(cx, cy, inner, cx, cy, r);
+      grad.addColorStop(0, `rgba(255, 120, 60, ${0.35 * near})`);
+      grad.addColorStop(1, `rgba(255, 70, 40, ${0.95 * near})`);
+      g.fillStyle = grad; g.fill();
+      g.strokeStyle = `rgba(255, 220, 160, ${0.9 * near})`; g.lineWidth = Math.max(1, r / 60); g.stroke();
+    };
+    const items = [...s.obs.map(o => ({ o, z: o.z - s.d })), ...s.gems.filter(x => !x.got).map(gm => ({ gm, z: gm.z - s.d }))]
+      .filter(x => x.z >= 0 && x.z <= AHEAD).sort((a, b) => b.z - a.z);
+    for (const it of items) {
+      const r = rAt(it.z);
+      const near = Math.max(0.15, Math.min(1, 1.6 - it.z / AHEAD));
+      if (it.o) {
+        const o = it.o;
+        if (o.k === 'wall') slab(r, o.c - o.w / 2, o.w, near);
+        else if (o.k === 'gap') slab(r, o.c + o.w / 2, TAU - o.w, near);
+        else { slab(r, o.c - o.w / 2, o.w, near); slab(r, o.c + Math.PI - o.w / 2, o.w, near); }
+        if (o.sp) {   // a turning wall: little arrows show which way
+          g.fillStyle = `rgba(255, 255, 255, ${0.7 * near})`; g.font = `900 ${Math.max(9, r / 9)}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillText(o.sp > 0 ? '↻' : '↺', cx + Math.cos(o.c) * r * 0.75, cy + Math.sin(o.c) * r * 0.75);
+        }
+      } else {
+        // a gem near the wall, where a plane can fly through it
+        const gr = Math.min(r, R * 1.4) * (r > R ? 1 : 0.92);
+        const x = cx + Math.cos(it.gm.a) * gr, y = cy + Math.sin(it.gm.a) * gr;
+        const size = Math.max(2.5, Math.min(13, r / 14));
+        const spin = 0.6 + 0.4 * Math.sin(s.t / 6 + it.gm.a * 3);
+        g.save(); g.globalAlpha = near;
+        g.shadowColor = '#7dffe3'; g.shadowBlur = size * 1.6;
+        g.fillStyle = '#7dffe3';
+        g.beginPath(); g.moveTo(x, y - size); g.lineTo(x + size * spin, y); g.lineTo(x, y + size); g.lineTo(x - size * spin, y); g.closePath(); g.fill();
+        g.restore();
+      }
+    }
+    // the planes: paper planes round the wall, nose pointing down the tunnel
     s.planes.forEach((p, i) => {
-      const r = 900 / 3 * 0.78;
-      const x = cx + Math.cos(p.a + twist) * Math.min(r, 170), y = cy + Math.sin(p.a + twist) * Math.min(r, 170);
-      g.fillStyle = p.alive ? SEAT_COLORS[i] : '#555';
-      g.beginPath(); g.moveTo(x, y - 14); g.lineTo(x - 12, y + 10); g.lineTo(x + 12, y + 10); g.closePath(); g.fill();
+      const x = cx + Math.cos(p.a) * R, y = cy + Math.sin(p.a) * R;
+      g.save();
+      g.translate(x, y);
+      g.rotate(p.a + Math.PI / 2 + Math.max(-0.5, Math.min(0.5, p.w * 0.12)));
+      const c = p.alive ? SEAT_COLORS[i] : '#666';
+      g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 10; g.shadowOffsetY = 4;
+      g.fillStyle = '#fbf6ea';
+      g.beginPath(); g.moveTo(0, 16); g.lineTo(-17, -12); g.lineTo(0, -5); g.lineTo(17, -12); g.closePath(); g.fill();
+      g.shadowColor = 'transparent';
+      g.fillStyle = 'rgba(0,0,0,.13)';
+      g.beginPath(); g.moveTo(0, 16); g.lineTo(0, -5); g.lineTo(17, -12); g.closePath(); g.fill();
+      g.strokeStyle = c; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(0, 16); g.lineTo(0, -5); g.stroke();
+      g.restore();
+      if (!p.alive) { g.font = '900 18px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText('✕', x, y); }
     });
+    // a soft vignette round the edge of the screen
+    const vig = g.createRadialGradient(cx, cy, H * 0.45, cx, cy, W * 0.62);
+    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.55)');
+    g.fillStyle = vig; g.fillRect(0, 0, W, H);
     this.hud(g, s, names);
   },
 };

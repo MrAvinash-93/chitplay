@@ -39,7 +39,7 @@ export const notice = (opts) => ask({ cancel: '', ok: 'OK', ...opts });
 /** The usual check before spending coins. Resolves true only if the player can and does agree. */
 export async function confirmSpend({ what, price, coins, icon = '🛍️' }) {
   if (coins < price) {
-    await notice({ icon: '🪙', tone: 'warn', title: 'Not enough coins', body: `${what} costs ${price} coins.`, lines: [['You have', String(coins)], ['You need', `${price - coins} more`, 'bad']], ok: 'Play to earn coins' });
+    await notice({ icon: '💰', tone: 'warn', title: 'Not enough coins', body: `${what} costs ${price} coins.`, lines: [['You have', String(coins)], ['You need', `${price - coins} more`, 'bad']], ok: 'Play to earn coins' });
     return false;
   }
   return ask({ icon, title: `Buy ${what}?`, lines: [['Price', `${price} coins`], ['You have', `${coins} coins`], ['Left after', `${coins - price} coins`, 'good']], ok: `Buy for ${price}`, cancel: 'Not now' });

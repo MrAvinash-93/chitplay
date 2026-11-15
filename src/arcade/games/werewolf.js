@@ -5,7 +5,7 @@
  * The village wins when every werewolf is gone; the werewolves win when they are as many as the rest.
  * Nobody is hurt: someone "caught" by the werewolves just sits out, like any party game.
  */
-import { best, seatsOf, shuffle, strip } from '../lib.js?v=20261114-1604';
+import { best, seatsOf, shuffle, strip } from '../lib.js?v=20261115-1048';
 
 export const ROLE = { wolf: { name: 'Werewolf', icon: '🐺' }, seer: { name: 'Seer', icon: '🔮' }, doctor: { name: 'Doctor', icon: '🩺' }, villager: { name: 'Villager', icon: '🏡' } };
 const alive = (s) => seatsOf(s.n).filter(p => s.alive[p]);
@@ -103,7 +103,7 @@ export default {
     if (!s.done) return null;
     const team = (p) => (s.roles[p] === 'wolf' ? 'wolves' : 'village');
     const winners = seatsOf(s.n).filter(p => team(p) === s.done);
-    return { scores: seatsOf(s.n).map(p => (team(p) === s.done ? 1 : 0)), winners, note: s.done === 'village' ? 'The village caught every werewolf!' : 'The werewolves took over the village!', roles: s.roles };
+    return { scores: seatsOf(s.n).map(p => (team(p) === s.done ? 1 : 0)), winners, note: s.done === 'village' ? 'The village caught every werewolf!' : 'The werewolves took over the village!', team: s.done === 'village' ? '🏡 The villagers' : '🐺 The werewolves', roles: s.roles };
   },
   view(s, seat) {
     const me = seat >= 0 ? s.roles[seat] : null;

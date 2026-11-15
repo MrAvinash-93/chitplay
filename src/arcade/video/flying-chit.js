@@ -15,7 +15,7 @@
  *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1048';
 
 export const AHEAD = 70;
 export const LEVEL_D = 320;
@@ -219,24 +219,146 @@ export default {
     g.fillStyle = '#ffd23f'; g.fillRect(W / 2 - 90, H - 5, 180 * into, 4);
     levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 19);
   },
-  // without 3D: the same space, in perspective
+  // without 3D: the same classroom, in perspective, morning light to night
   draw(g, s, names) {
-    const sky = g.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#9fd3ff'); sky.addColorStop(1, '#f4edd8');
-    g.fillStyle = sky; g.fillRect(0, 0, W, H);
     const proj = (x, y, z) => { const k = 3 / (z + 3); return [W / 2 + x * 260 * k, H / 2 + 10 - y * 160 * k, k]; };
-    [...s.objs].reverse().forEach((o) => {
+    // the time of day follows the level: wall, floor and window colours
+    const DAY = [
+      { wall: ['#f6e7c8', '#e9d3a6'], floor: ['#b98a5a', '#8a5f38'], win: '#9fd3ff', light: 1 },
+      { wall: ['#f3e2bd', '#e2c897'], floor: ['#b0804f', '#7f5631'], win: '#7cc4ff', light: 0.95 },
+      { wall: ['#f0d6a8', '#d9b07a'], floor: ['#a5733f', '#734b27'], win: '#ffcf8a', light: 0.85 },
+      { wall: ['#d9b48a', '#b98d63'], floor: ['#8a5c34', '#5d3c1f'], win: '#ff9a6b', light: 0.7 },
+      { wall: ['#3a3657', '#26233d'], floor: ['#3b2a20', '#22170f'], win: '#1b2a5c', light: 0.45 },
+    ][Math.min(s.level, 5) - 1];
+    const quad = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fillStyle = fill; g.fill(); };
+    const RX = 1.35, FY = -1.05, CY = 1.05, NEAR = -2.2, FAR = 46;
+    // walls: the whole screen first, then the floor and ceiling over it
+    const wall = g.createLinearGradient(0, 0, 0, H);
+    wall.addColorStop(0, DAY.wall[0]); wall.addColorStop(1, DAY.wall[1]);
+    g.fillStyle = wall; g.fillRect(0, 0, W, H);
+    const fl = g.createLinearGradient(0, H / 2, 0, H);
+    fl.addColorStop(0, DAY.floor[1]); fl.addColorStop(1, DAY.floor[0]);
+    quad([proj(-RX, FY, NEAR), proj(RX, FY, NEAR), proj(RX, FY, FAR), proj(-RX, FY, FAR)], fl);
+    quad([proj(-RX, CY, NEAR), proj(RX, CY, NEAR), proj(RX, CY, FAR), proj(-RX, CY, FAR)], `rgba(${DAY.light < 0.6 ? '20,18,40,.55' : '255,255,255,.6'})`);
+    // the side walls a shade darker than the far one, so the room has corners
+    for (const side of [-1, 1]) quad([proj(side * RX, FY, NEAR), proj(side * RX, CY, NEAR), proj(side * RX, CY, FAR), proj(side * RX, FY, FAR)], 'rgba(60,35,10,.10)');
+    // floor boards rushing past, and the ceiling's light strips
+    g.save();
+    for (let k = 0; k < 24; k++) {
+      const z = k * 2.2 - (s.d % 2.2);
+      if (z < -1.5) continue;
+      const [x0, y0] = proj(-RX, FY, z), [x1] = proj(RX, FY, z);
+      g.strokeStyle = `rgba(0,0,0,${0.18 / (1 + z / 12)})`; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y0); g.stroke();
+      if (k % 3 === 0) {
+        const [a, b] = proj(-0.3, CY, z), [c, d] = proj(0.3, CY, z + 0.8);
+        g.fillStyle = `rgba(255,255,240,${(0.75 * DAY.light) / (1 + z / 14)})`;
+        g.fillRect(a, b, c - a, Math.max(1, d - b));
+      }
+    }
+    for (const lx of [-1, -0.5, 0, 0.5, 1]) {
+      const [a, b] = proj(lx * RX, FY, NEAR), [c, d] = proj(lx * RX, FY, FAR);
+      g.strokeStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke();
+    }
+    // windows passing on the side walls
+    for (let k = 0; k < 8; k++) {
+      const z = k * 9 + 4 - (s.d % 9);
+      if (z < 0.5) continue;
+      for (const side of [-1, 1]) {
+        const p = [proj(side * RX, 0.6, z), proj(side * RX, 0.6, z + 3.5), proj(side * RX, -0.2, z + 3.5), proj(side * RX, -0.2, z)];
+        quad(p, DAY.win);
+        g.strokeStyle = `rgba(90,60,30,${0.7 / (1 + z / 20)})`; g.lineWidth = Math.max(1, 4 * p[0][2]);
+        g.beginPath(); p.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.stroke();
+      }
+    }
+    g.restore();
+    // the blackboard at the far end
+    const [bx0, by0] = proj(-0.7, 0.55, FAR), [bx1, by1] = proj(0.7, -0.15, FAR);
+    g.fillStyle = '#7a5230'; g.fillRect(bx0 - 2, by0 - 2, bx1 - bx0 + 4, by1 - by0 + 4);
+    g.fillStyle = '#2f4a3a'; g.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
+    // what is coming: far things first
+    const next = s.objs.find(o => o.k === 'hoop' && o.z > s.d);
+    [...s.objs].sort((a, b) => b.z - a.z).forEach((o) => {
       const z = o.z - s.d;
-      if (z < 0) return;
-      const [px, py, k] = proj(o.x, o.y, z);
-      if (o.k === 'hoop') { g.strokeStyle = o.gold ? '#fff36b' : '#e7a800'; g.lineWidth = Math.max(2, (o.gold ? 16 : 10) * k); g.beginPath(); g.arc(px, py, o.r * 260 * k, 0, 7); g.stroke(); }
-      else { g.fillStyle = o.k === 'fan' ? '#555' : '#c0392b'; g.beginPath(); g.arc(px, py, o.r * 230 * k, 0, 7); g.fill(); }
+      if (z < -0.5) return;
+      const [px, py, k] = proj(o.x, o.y, Math.max(0, z));
+      const fade = Math.min(1, (AHEAD - z) / 18);
+      g.save(); g.globalAlpha = Math.max(0, fade);
+      if (o.k === 'hoop') {
+        const r = o.r * 260 * k;
+        const lw = Math.max(2, (o.gold ? 15 : 9) * k);
+        // a soft shadow on the floor under it
+        const [sx, sy] = proj(o.x, FY, Math.max(0, z));
+        g.fillStyle = 'rgba(0,0,0,.14)'; g.beginPath(); g.ellipse(sx, sy, r * 0.8, r * 0.12, 0, 0, Math.PI * 2); g.fill();
+        if (o.gold) { g.shadowColor = '#fff36b'; g.shadowBlur = 18 * k + 6; }
+        g.strokeStyle = o.gold ? '#ffd23f' : (o === next ? '#f0a400' : '#d48f00'); g.lineWidth = lw;
+        g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.stroke();
+        g.shadowBlur = 0;
+        // the shine on top of the bangle
+        g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = Math.max(1, lw * 0.3);
+        g.beginPath(); g.arc(px, py, r, Math.PI * 1.1, Math.PI * 1.6); g.stroke();
+        if (o.gold) { g.fillStyle = 'rgba(255,243,107,.12)'; g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill(); }
+      } else if (o.k === 'fan') {
+        const r = o.r * 230 * k;
+        const spin = s.t * 0.35 + o.z;
+        g.fillStyle = 'rgba(40,40,48,.25)'; g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#4a4f5a';
+        for (let b = 0; b < 3; b++) {
+          const a = spin + (b * Math.PI * 2) / 3;
+          g.save(); g.translate(px, py); g.rotate(a);
+          g.beginPath(); g.ellipse(r * 0.52, 0, r * 0.5, r * 0.14, 0, 0, Math.PI * 2); g.fill();
+          g.restore();
+        }
+        g.fillStyle = '#2b2e35'; g.beginPath(); g.arc(px, py, Math.max(2, r * 0.16), 0, Math.PI * 2); g.fill();
+        // the rod up to the ceiling
+        const [, ty] = proj(o.x, CY, Math.max(0, z));
+        g.strokeStyle = '#2b2e35'; g.lineWidth = Math.max(1, 4 * k); g.beginPath(); g.moveTo(px, py); g.lineTo(px, ty); g.stroke();
+      } else {
+        // a stack of books, three covers of different colours
+        const w = o.r * 230 * k * 1.6, h = w * 0.22;
+        ['#c0392b', '#2e86c1', '#27ae60'].forEach((c, n) => {
+          const y = py + h * (0.5 - n) * 1.05, x = px - w / 2 + (n % 2 ? w * 0.06 : -w * 0.04);
+          g.fillStyle = c; g.fillRect(x, y, w, h);
+          g.fillStyle = '#f6efe0'; g.fillRect(x + w * 0.04, y + h * 0.2, w * 0.92, h * 0.25);
+        });
+      }
+      g.restore();
     });
+    // the chits: folded paper with flapping wings, a shadow on the floor, a ring where they'll meet the next bangle
     s.chits.forEach((c, i) => {
-      const [px, py] = proj(c.x, c.y, 0.4);
-      g.fillStyle = c.alive ? '#fbf3d9' : '#aaa'; g.strokeStyle = SEAT_COLORS[i]; g.lineWidth = 3;
-      g.fillRect(px - 16, py - 10, 32, 20); g.strokeRect(px - 16, py - 10, 32, 20);
+      const [px, py, k] = proj(c.x, c.y, 0.4);
+      if (c.alive && next && i === 0) {
+        const [tx, ty, tk] = proj(c.x, c.y, Math.max(0, next.z - s.d));
+        const on = Math.hypot(c.x - next.x, c.y - next.y) < next.r + GRAZE;
+        g.strokeStyle = on ? 'rgba(80,230,120,.9)' : 'rgba(255,255,255,.55)'; g.lineWidth = 2;
+        g.beginPath(); g.arc(tx, ty, Math.max(3, 0.06 * 260 * tk), 0, Math.PI * 2); g.stroke();
+      }
+      const [sx, sy] = proj(c.x, FY, 0.4);
+      g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(sx, sy, 34 * k, 7 * k, 0, 0, Math.PI * 2); g.fill();
+      g.save();
+      g.translate(px, py);
+      g.scale(1.5, 1.5);   // big enough to follow on a phone
+      g.rotate(Math.max(-0.4, Math.min(0.4, c.vx * 0.15)));
+      if (c.hit > 0 && Math.floor(c.hit / 4) % 2) g.globalAlpha = 0.45;
+      const flap = Math.sin(s.t / 4 + i) * 7 * (c.alive ? 1 : 0.2);
+      g.fillStyle = c.alive ? '#fffaf0' : '#b9b2a4';
+      g.strokeStyle = 'rgba(80,60,40,.45)'; g.lineWidth = 1;
+      // wings
+      g.beginPath(); g.moveTo(-6, -2); g.lineTo(-30, -8 - flap); g.lineTo(-10, 6); g.closePath(); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(6, -2); g.lineTo(30, -8 - flap); g.lineTo(10, 6); g.closePath(); g.fill(); g.stroke();
+      // the folded chit
+      g.fillStyle = c.alive ? '#fbf3d9' : '#aaa';
+      g.fillRect(-14, -9, 28, 18); g.strokeRect(-14, -9, 28, 18);
+      g.strokeStyle = 'rgba(80,60,40,.3)'; g.beginPath(); g.moveTo(-14, 0); g.lineTo(14, 0); g.stroke();
+      g.fillStyle = SEAT_COLORS[i]; g.fillRect(-14, -9, 28, 4);
+      g.restore();
     });
+    // night: the room darkens round the edges
+    if (DAY.light < 0.8) {
+      const v = g.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, W * 0.6);
+      v.addColorStop(0, 'rgba(0,0,20,0)'); v.addColorStop(1, `rgba(0,0,20,${(0.8 - DAY.light) * 0.9})`);
+      g.fillStyle = v; g.fillRect(0, 0, W, H);
+    }
     this.hud(g, s, names);
   },
 };

@@ -1,16 +1,18 @@
-import { createApp } from './lifecycle.js?v=20261114-1604';
-import { GAME_PHASES } from './config.js?v=20261114-1604';
+import { createApp } from './lifecycle.js?v=20261115-1048';
+import { GAME_PHASES } from './config.js?v=20261115-1048';
 import { audioManager } from '../audio/audio-manager.js';
-import { loadWorld } from '../world/world-loader.js?v=20261114-1604';
-import { GameScreen } from '../ui/screens/game-screen.js?v=20261114-1604';
-import { mountParty } from '../net/party.js?v=20261114-1604';
-import { maybeShowIntro } from '../ui/intro.js?v=20261114-1604';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1048';
+import { GameScreen } from '../ui/screens/game-screen.js?v=20261115-1048';
+import { mountParty } from '../net/party.js?v=20261115-1048';
+import { maybeShowIntro } from '../ui/intro.js?v=20261115-1048';
 
 /**
  * ChitPlay is now a single 3D game: one screen (the 3D room) that hosts the
  * start sheet, the country editions and the auto-played match.
  */
 function boot() {
+  // the address as the page opened: the game screen removes ?game= as soon as it starts
+  const openedWith = location.search;
   const root = document.getElementById('app');
   const app = createApp(root);
 
@@ -33,7 +35,7 @@ function boot() {
   // Play with Friends: a party that follows its host from game to game (src/net/party.js)
   try { mountParty({ root: '', place: 'home' }); } catch (e) { console.warn('[party]', e); }
   // the first visit: a few short screens about ChitPlay, skippable (src/ui/intro.js)
-  try { maybeShowIntro(); } catch (e) { console.warn('[intro]', e); }
+  try { maybeShowIntro(openedWith); } catch (e) { console.warn('[intro]', e); }
 
   // Expose for debugging (non-enumerable, dev-only)
   Object.defineProperty(window, '__chitplay', {

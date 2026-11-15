@@ -4,7 +4,7 @@
  * playing (they have no value outside the game), and the best things also need wins, achievements
  * or a rank: a room shows how far you have come as a gamer.
  */
-import { RANKS } from '../persistence/profile-store.js?v=20261114-1604';
+import { RANKS } from '../persistence/profile-store.js?v=20261115-1048';
 
 export const RARITY = {
   common: { name: 'Common', color: '#b9c3cf', points: 1 },
@@ -20,7 +20,7 @@ export const DECOR = [
   { id: 'frames', icon: '🖼️', name: 'Photo frames', price: 100, rarity: 'common', place: 'wall' },
   { id: 'plant', icon: '🌿', name: 'Money plant', price: 120, rarity: 'common' },
   { id: 'poster', icon: '🎮', name: 'Game poster', price: 150, rarity: 'common', place: 'wall' },
-  { id: 'wallshelf', icon: '🪴', name: 'Wall shelf', price: 160, rarity: 'common', place: 'wall' },
+  { id: 'wallshelf', icon: '🌿', name: 'Wall shelf', price: 160, rarity: 'common', place: 'wall' },
   { id: 'books', icon: '📚', name: 'Bookshelf', price: 180, rarity: 'common' },
   { id: 'lamp', icon: '💡', name: 'Floor lamp', price: 200, rarity: 'common' },
   { id: 'fishbowl', icon: '🐠', name: 'Fish bowl', price: 220, rarity: 'common' },
@@ -39,7 +39,7 @@ export const DECOR = [
   { id: 'clock', icon: '🌀', name: 'Neon rings', price: 350, rarity: 'epic', place: 'wall', need: { achievements: 6 } },
   { id: 'ledwall', icon: '🌈', name: 'LED wall', price: 800, rarity: 'epic', place: 'wall', need: { wins: 10 } },
   { id: 'arcade', icon: '🕹️', name: 'Arcade cabinet', price: 900, rarity: 'epic', need: { wins: 25 } },
-  { id: 'discoball', icon: '🪩', name: 'Disco ball', price: 900, rarity: 'epic', place: 'ceiling', need: { achievements: 5 } },
+  { id: 'discoball', icon: '🔮', name: 'Disco ball', price: 900, rarity: 'epic', place: 'ceiling', need: { achievements: 5 } },
   { id: 'telescope', icon: '🔭', name: 'Telescope', price: 950, rarity: 'epic', need: { rank: 2 } },
   { id: 'vending', icon: '🥤', name: 'Vending machine', price: 1100, rarity: 'epic', need: { wins: 12 } },
   { id: 'pinball', icon: '🎰', name: 'Pinball table', price: 1200, rarity: 'epic', need: { wins: 15 } },
@@ -90,7 +90,7 @@ export const spotsFor = (d, size = decorState().size) => SPOTS.filter(s => s.pla
 /** Whole-room looks: floor, mat, walls and light together. */
 export const THEMES = [
   { id: '', icon: '🏠', name: 'Home style', price: 0, rarity: 'common', note: 'Follows the language you play in' },
-  { id: 'cabin', icon: '🪵', name: 'Cozy cabin', price: 500, rarity: 'common', floor: 'wood', mat: 'tartan', wall: ['#c89b6a', '#7a4e2c', '#3b2414'], mood: 'warm' },
+  { id: 'cabin', icon: '🏡', name: 'Cozy cabin', price: 500, rarity: 'common', floor: 'wood', mat: 'tartan', wall: ['#c89b6a', '#7a4e2c', '#3b2414'], mood: 'warm' },
   { id: 'zen', icon: '🎋', name: 'Zen garden', price: 700, rarity: 'rare', need: { wins: 5 }, floor: 'wood', mat: 'tatami', wall: ['#efe6d2', '#8a7a5a', '#4a3c28'], mood: 'cool' },
   { id: 'beach', icon: '🏖️', name: 'Beach hut', price: 900, rarity: 'rare', need: { achievements: 3 }, floor: 'terrazzo', mat: 'bamboo', wall: ['#bfe9f2', '#f2dfb0', '#3aa3c9'], mood: 'sunset' },
   { id: 'garden', icon: '🌻', name: 'Garden room', price: 900, rarity: 'rare', need: { wins: 8 }, floor: 'jangpan', mat: 'dari', wall: ['#d8efc8', '#5f8f4a', '#2f5a24'], mood: 'warm' },

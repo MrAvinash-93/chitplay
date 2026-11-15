@@ -12,7 +12,7 @@ function loadJsQr() {
   if (jsQrLoading) return jsQrLoading;
   jsQrLoading = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/jsqr.min.js?v=20261114-1604.4.0', import.meta.url).href;
+    s.src = new URL('../vendor/jsqr.min.js?v=20261115-1048.4.0', import.meta.url).href;
     s.onload = () => (window.jsQR ? resolve(window.jsQR) : reject(new Error('load')));
     s.onerror = () => { jsQrLoading = null; reject(new Error('load')); };
     document.head.append(s);
@@ -24,7 +24,9 @@ function loadJsQr() {
 export function joinCodeFrom(text) {
   const raw = String(text || '').trim();
   try {
-    const code = new URL(raw).searchParams.get('join');
+    // a game room (?join=) or a whole party (?party=): both are six digits, and joining finds which
+    const u = new URL(raw);
+    const code = u.searchParams.get('join') || u.searchParams.get('party');
     if (/^\d{6}$/.test(code || '')) return code;
   } catch { /* not a link */ }
   const digits = raw.replace(/\s/g, '');

@@ -6,13 +6,13 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { audioManager } from '../audio/audio-manager.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261114-1604';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261114-1604';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261114-1604';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261114-1604';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261114-1604';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261114-1604';
-import { selectedGameCosmetic } from './game-cosmetics.js?v=20261114-1604';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-1048';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-1048';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-1048';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-1048';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-1048';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-1048';
+import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1048';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -345,6 +345,18 @@ function reachOf(obj) {
 function contactShadow(obj) {
   const r = reachOf(obj);
   if (!(r > 0.02 && r < 0.3)) return null;   // big flat things (a chit, a tray) need none
+  // a round blob only suits round, standing pieces: under a long thin stick or a paper-flat square it
+  // reads as a dirty smudge (Dots and Boxes), so those get none
+  let sx = 0, sy = 0, sz = 0;
+  obj.traverse((o) => {
+    if (!o.isMesh || !o.geometry) return;
+    o.geometry.boundingBox || o.geometry.computeBoundingBox();
+    const b = o.geometry.boundingBox;
+    sx = Math.max(sx, (b.max.x - b.min.x) * Math.abs(o.scale.x));
+    sy = Math.max(sy, (b.max.y - b.min.y) * Math.abs(o.scale.y));
+    sz = Math.max(sz, (b.max.z - b.min.z) * Math.abs(o.scale.z));
+  });
+  if (sy < 0.01 || Math.max(sx, sz) / Math.max(1e-4, Math.min(sx, sz)) > 3) return null;
   blobTexture = blobTexture || canvasTexture(64, 64, (g, w) => {
     const grad = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
     grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(0.5, 'rgba(0,0,0,.6)'); grad.addColorStop(1, 'rgba(0,0,0,0)');

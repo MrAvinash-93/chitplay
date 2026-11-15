@@ -8,7 +8,7 @@
  *
  * Screen pixels: the rooms are a row along the top, the corridor runs underneath.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1048';
 
 export const NIGHT = 60 * 150;          // two and a half minutes until sunrise
 export const WAKE = 60 * 15;            // the ghost sleeps for the first fifteen seconds
@@ -182,16 +182,97 @@ export default {
       g.fillText('◀', x0 + 18, H - 15); g.fillText('▶', x0 + w - 18, H - 15);
     });
   },
+  // the hostel at night: lit rooms with a bed, fans and a door each; the corridor; the ghost drifting about
   draw(g, s, names) {
-    g.fillStyle = '#141029'; g.fillRect(0, 0, W, H);
-    s.players.forEach((p, i) => {
-      const w = W / s.rooms, x0 = i * w;
-      g.fillStyle = p.alive ? '#2b2550' : '#3a1630'; g.fillRect(x0 + 6, 84, w - 12, CORRIDOR_Y - 100);
-      g.fillStyle = '#7b5a3a'; g.fillRect(x0 + w / 2 - 22, CORRIDOR_Y - 34, 44, 18);
-      g.font = '28px system-ui'; g.textAlign = 'center'; g.fillText('🛏️', x0 + w / 2, 150);
-      if (p.fan) g.fillText('🌀', x0 + w / 2 - 34, 200);
+    const TAU = Math.PI * 2;
+    const dawn = Math.max(0, (s.t - NIGHT * 0.8) / (NIGHT * 0.2));   // the sky warms as sunrise nears
+    const sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, `rgb(${20 + dawn * 60}, ${16 + dawn * 30}, ${41 + dawn * 20})`); sky.addColorStop(1, '#0b0818');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    // the corridor floor: checked tiles in candlelight
+    for (let y = CORRIDOR_Y - 14; y < H; y += 18) for (let x = 0; x < W; x += 18) {
+      g.fillStyle = ((x + y) / 18) % 2 ? '#211a3b' : '#2a2247'; g.fillRect(x, y, 18, 18);
+    }
+    const lamp = g.createRadialGradient(ALTAR.x, ALTAR.y, 4, ALTAR.x, ALTAR.y, 90);
+    lamp.addColorStop(0, 'rgba(255,190,90,.35)'); lamp.addColorStop(1, 'rgba(255,190,90,0)');
+    g.fillStyle = lamp; g.fillRect(ALTAR.x - 90, ALTAR.y - 90, 180, 180);
+    // the ghost's corner: a little shrine with candles
+    g.fillStyle = '#3b2c22'; g.fillRect(ALTAR.x - 26, ALTAR.y - 4, 52, 10);
+    [-16, 0, 16].forEach((dx, k) => {
+      g.fillStyle = '#f2ead8'; g.fillRect(ALTAR.x + dx - 2, ALTAR.y - 14, 4, 10);
+      g.fillStyle = '#ffcf5a'; g.beginPath(); g.ellipse(ALTAR.x + dx, ALTAR.y - 17 + Math.sin(s.t / 5 + k) * 0.8, 2, 3.5, 0, 0, TAU); g.fill();
     });
-    if (s.ghost.mode !== 'gone') { g.font = '36px system-ui'; g.textAlign = 'center'; g.fillText('👻', s.ghost.x, s.ghost.y); }
+    s.players.forEach((p, i) => {
+      const w = W / s.rooms, x0 = i * w, cx = x0 + w / 2, top = 84, bottom = CORRIDOR_Y - 16;
+      const shake = p.bang > 0 ? Math.sin(p.bang * 2.3) * 2.5 : 0;
+      // the room: warm lamplight while you hold out, cold and red once the ghost got in
+      const wall = g.createLinearGradient(0, top, 0, bottom);
+      wall.addColorStop(0, p.alive ? '#4a3d78' : '#3a1226'); wall.addColorStop(1, p.alive ? '#2e2652' : '#220a17');
+      g.fillStyle = wall; g.fillRect(x0 + 6, top, w - 12, bottom - top);
+      if (p.alive) {
+        const glow = g.createRadialGradient(cx, top + 24, 4, cx, top + 24, w * 0.7);
+        glow.addColorStop(0, 'rgba(255,214,140,.35)'); glow.addColorStop(1, 'rgba(255,214,140,0)');
+        g.fillStyle = glow; g.fillRect(x0 + 6, top, w - 12, bottom - top);
+        g.fillStyle = '#ffe9a8'; g.beginPath(); g.arc(cx, top + 10, 4, 0, TAU); g.fill();
+      }
+      // a window with the moon (or the sunrise) outside
+      g.fillStyle = dawn > 0.3 ? '#f6a75a' : '#16224a'; g.fillRect(x0 + 16, top + 22, 26, 22);
+      g.strokeStyle = '#6b4d33'; g.lineWidth = 2; g.strokeRect(x0 + 16, top + 22, 26, 22);
+      g.beginPath(); g.moveTo(x0 + 29, top + 22); g.lineTo(x0 + 29, top + 44); g.stroke();
+      // the bed: a better bed is wider, with a thicker blanket and a gold frame at the top levels
+      const bw = Math.min(w - 40, 52 + p.bed * 5), by = top + 74;
+      g.fillStyle = p.bed >= 3 ? '#c9a14a' : '#7b5a3a'; g.fillRect(cx - bw / 2 - 3, by - 14, 5, 34); g.fillRect(cx + bw / 2 - 2, by - 6, 5, 26);
+      g.fillStyle = '#f1ece2'; g.fillRect(cx - bw / 2, by, bw, 14);
+      g.fillStyle = SEAT_COLORS[i]; g.fillRect(cx - bw / 2 + 16, by - 3, bw - 16, 12 + Math.min(4, p.bed));
+      g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(cx - bw / 2 + 9, by + 1, 8, 5, 0, 0, TAU); g.fill();
+      if (p.alive) { g.fillStyle = 'rgba(255,255,255,.7)'; g.font = '700 11px system-ui'; g.textAlign = 'left'; g.fillText('z', cx - bw / 2 + 4, by - 10 - (s.t / 10) % 8); }
+      // the fans on the ceiling, one more for every level, turning
+      for (let k = 0; k < Math.min(3, p.fan); k++) {
+        const fx = x0 + w - 24 - k * 20, fy = top + 18;
+        g.save(); g.translate(fx, fy); g.rotate(s.t * 0.4 + k);
+        g.fillStyle = '#9fb3c8';
+        for (let b = 0; b < 3; b++) { g.rotate(TAU / 3); g.beginPath(); g.ellipse(6, 0, 6, 2, 0, 0, TAU); g.fill(); }
+        g.restore();
+      }
+      if (p.fan > 3) { g.fillStyle = '#9fb3c8'; g.font = '700 10px system-ui'; g.textAlign = 'center'; g.fillText(`×${p.fan}`, x0 + w - 24, top + 36); }
+      // the door into the corridor: a stronger door is darker wood with iron bands; cracks as it takes damage
+      const dw = 40, dh = 30, dx = cx - dw / 2 + shake, dy = bottom - dh + 6;
+      g.fillStyle = '#2a1c12'; g.fillRect(dx - 3, dy - 3, dw + 6, dh + 3);
+      g.fillStyle = ['#a77b4f', '#8f643d', '#7a5231', '#674327', '#55361f', '#44291a'][p.door] || '#44291a'; g.fillRect(dx, dy, dw, dh);
+      if (p.door >= 2) { g.fillStyle = '#9aa3ad'; g.fillRect(dx, dy + 6, dw, 3); g.fillRect(dx, dy + dh - 9, dw, 3); }
+      g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(dx + dw - 7, dy + dh / 2, 2, 0, TAU); g.fill();
+      const dmg = 1 - p.hp / DOOR.hp[p.door];
+      if (dmg > 0.25) {
+        g.strokeStyle = 'rgba(15,5,0,.85)'; g.lineWidth = 1.5;
+        for (let k = 0; k < Math.ceil(dmg * 5); k++) {
+          const sx = dx + 6 + ((k * 13) % (dw - 12)), sy = dy + 4 + ((k * 7) % 10);
+          g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + 4, sy + 6); g.lineTo(sx - 1, sy + 11); g.lineTo(sx + 3, sy + 18); g.stroke();
+        }
+      }
+      if (!p.alive) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x0 + 6, top, w - 12, bottom - top); g.font = '900 28px system-ui'; g.textAlign = 'center'; g.fillStyle = '#ff6b8a'; g.fillText('😱', cx, by - 18); }
+    });
+    // the ghost: a sheet with a wavy hem, glowing, see-through while it sleeps
+    const gh = s.ghost;
+    if (gh.mode !== 'gone') {
+      const fl = Math.sin(s.t / 12) * 4, gx = gh.x, gy = gh.y + fl;
+      const size = 16 + Math.min(10, gh.lv * 2);
+      g.save();
+      g.globalAlpha = gh.mode === 'sleep' ? 0.55 : gh.mode === 'heal' ? 0.75 : 1;
+      g.shadowColor = gh.hitFlash > 0 ? '#ffffff' : '#b48cff'; g.shadowBlur = gh.mode === 'attack' ? 24 : 14;
+      g.fillStyle = gh.hitFlash > 0 ? '#e8ddff' : '#f6f2ff';
+      g.beginPath();
+      g.arc(gx, gy - size * 0.3, size, Math.PI, 0);
+      g.lineTo(gx + size, gy + size * 0.9);
+      for (let k = 0; k <= 4; k++) { const x = gx + size - (k * size * 2) / 4; g.quadraticCurveTo(x - size / 4, gy + size * (k % 2 ? 0.6 : 1.15), x - size / 2, gy + size * 0.9); }
+      g.closePath(); g.fill();
+      g.shadowBlur = 0;
+      g.fillStyle = '#251a3f';
+      const eye = gh.mode === 'attack' ? 4 : gh.mode === 'sleep' ? 1.2 : 3;
+      g.beginPath(); g.ellipse(gx - size * 0.35, gy - size * 0.35, 3, eye, 0, 0, TAU); g.ellipse(gx + size * 0.35, gy - size * 0.35, 3, eye, 0, 0, TAU); g.fill();
+      if (gh.mode === 'attack') { g.beginPath(); g.ellipse(gx, gy + size * 0.1, 5, 6, 0, 0, TAU); g.fill(); }
+      g.restore();
+      if (gh.mode === 'sleep') { g.fillStyle = '#d9ccff'; g.font = '800 14px system-ui'; g.textAlign = 'center'; g.fillText('z z', gx + size, gy - size - (s.t / 8) % 10); }
+    }
     this.hud(g, s, names);
   },
 };

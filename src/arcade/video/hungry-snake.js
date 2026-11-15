@@ -5,7 +5,7 @@
  * Every six samosas is a new level: the snakes speed up, a short brick wall goes up somewhere on the
  * field (away from every snake's head), and a golden samosa appears for a few seconds: three points.
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261114-1604';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261115-1048';
 
 export const COLS = 32, ROWS = 18;
 const CELL = 20, TOP = 40;
@@ -132,30 +132,48 @@ export default {
     const scores = s.snakes.map(n => n.score), top = Math.max(...scores);
     return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true };
   },
-  // heads for the food, and turns away from anything right in front of it
+  // heads for the food, but never into a dead end: it counts the room a turn leaves it, and keeps clear
+  // of the square another snake's head could take next (both would crash there)
   bot(s, seat) {
     const n = s.snakes[seat];
     if (!n?.alive) return {};
     const block = new Set();
-    s.snakes.forEach(o => { if (o.alive) o.body.forEach(([x, y]) => block.add(key(x, y))); });
+    s.snakes.forEach(o => { if (o.alive) o.body.forEach(([x, y], k) => { if (k < o.body.length - 1) block.add(key(x, y)); }); });
     s.walls.forEach(([x, y]) => block.add(key(x, y)));
-    const safe = (k) => {
-      const [dx, dy] = DIRS[k];
-      const x = n.body[0][0] + dx, y = n.body[0][1] + dy;
-      return x >= 0 && x < COLS && y >= 0 && y < ROWS && !block.has(key(x, y));
-    };
+    const open = (x, y) => x >= 0 && x < COLS && y >= 0 && y < ROWS && !block.has(key(x, y));
     const [hx, hy] = n.body[0];
     // the golden samosa, if it is close enough to reach in time
     const goGold = s.gold && Math.abs(s.gold.x - hx) + Math.abs(s.gold.y - hy) < 12;
     const [fx, fy] = goGold ? [s.gold.x, s.gold.y] : s.food;
-    const wish = [];
-    if (fx > hx) wish.push('r');
-    if (fx < hx) wish.push('l');
-    if (fy > hy) wish.push('d');
-    if (fy < hy) wish.push('u');
+    const room = (sx, sy, cap) => {   // how many squares can be reached from here (up to cap)
+      const seen = new Set([key(sx, sy)]), todo = [[sx, sy]];
+      while (todo.length && seen.size < cap) {
+        const [x, y] = todo.pop();
+        for (const [dx, dy] of Object.values(DIRS)) {
+          const nx = x + dx, ny = y + dy, k = key(nx, ny);
+          if (!seen.has(k) && open(nx, ny)) { seen.add(k); todo.push([nx, ny]); }
+        }
+      }
+      return seen.size;
+    };
+    const rivals = s.snakes.filter((o, j) => j !== seat && o.alive).map(o => o.body[0]);
     const [cx, cy] = DIRS[n.d];
-    const options = [...wish, n.d, 'u', 'r', 'd', 'l'].filter((k) => { const [dx, dy] = DIRS[k]; return !(dx === -cx && dy === -cy) && safe(k); });
-    return options.length ? { [options[0]]: true } : {};
+    // now and then it only looks one step ahead, like a person in a hurry: it can be beaten
+    const lapse = (s.t + seat * 131) % 900 < 120;
+    const need = lapse ? 2 : n.body.length + 3;
+    let best = null, bestV = -Infinity;
+    for (const k of ['u', 'r', 'd', 'l']) {
+      const [dx, dy] = DIRS[k];
+      if (dx === -cx && dy === -cy) continue;
+      const x = hx + dx, y = hy + dy;
+      if (!open(x, y)) continue;
+      const space = room(x, y, need * 3);
+      const nearHead = rivals.some(([rx, ry]) => Math.abs(rx - x) + Math.abs(ry - y) === 1);
+      const dist = Math.abs(fx - x) + Math.abs(fy - y);
+      const v = (space >= need ? 1000 : space * 20) - (nearHead ? 400 : 0) - dist * 3 + (k === n.d ? 1 : 0);
+      if (v > bestV) { bestV = v; best = k; }
+    }
+    return best ? { [best]: true } : {};
   },
   hud(g, s, names) {
     scoreBar(g, s.snakes.map((n, i) => [names[i] || `P${i + 1}`, n.alive ? n.score : `${n.score} ✕`, SEAT_COLORS[i]]));
@@ -169,7 +187,11 @@ export default {
       const y = 70 - age * 0.5; g.strokeText(`+${n.pop}`, w * (i + 0.5), y); g.fillText(`+${n.pop}`, w * (i + 0.5), y);
       g.restore();
     });
-    levelTag(g, s.level, stageName(s.level), s.t - s.levelAt, H - 14);
+    // the level: announced at the bottom for a few seconds, then a small note in the top corner, so the
+    // tag never sits over the last row of the field (where a samosa or a snake can be)
+    const since = s.t - s.levelAt;
+    if (since >= 0 && since < 240) levelTag(g, s.level, stageName(s.level), since, H - 14);
+    else if (s.n <= 2) { g.font = '800 13px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#ffd23f'; g.fillText(`Lv ${s.level} · ${stageName(s.level)}`, 12, 21); }
   },
   draw(g, s, names) {
     // the field: drawn once and kept (soft chequered grass, tufts and a darker edge)

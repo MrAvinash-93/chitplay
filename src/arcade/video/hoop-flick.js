@@ -9,7 +9,7 @@
  *
  * Side view, in screen pixels: x to the right, y down. Gravity pulls down (+y).
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1048';
 
 export const PER_LEVEL = 5;
 export const STAGES = ['Still hoops', 'Moving hoops', 'Windy court', 'Wind and moving hoops'];
@@ -167,14 +167,81 @@ export default {
       }
     });
   },
+  // an indoor court: a lit back wall, a wooden floor, real hoops with a board and a net
   draw(g, s, names) {
-    g.fillStyle = '#20324a'; g.fillRect(0, 0, W, H);
+    const wall = g.createLinearGradient(0, 0, 0, H);
+    wall.addColorStop(0, '#16263d'); wall.addColorStop(0.62, '#28456b'); wall.addColorStop(0.62, '#b9824a'); wall.addColorStop(1, '#8a5a2e');
+    g.fillStyle = wall; g.fillRect(0, 0, W, H);
+    // ceiling lights and their glow
+    for (let k = 0; k < 5; k++) {
+      const x = (k + 0.5) * (W / 5);
+      const glow = g.createRadialGradient(x, 30, 2, x, 30, 90);
+      glow.addColorStop(0, 'rgba(255,248,220,.45)'); glow.addColorStop(1, 'rgba(255,248,220,0)');
+      g.fillStyle = glow; g.fillRect(x - 90, 0, 180, 120);
+      g.fillStyle = '#fff8dc'; g.fillRect(x - 18, 26, 36, 5);
+    }
+    // the floor: boards and the shine of the lights on them
+    const floorY = H * 0.62;
+    g.strokeStyle = 'rgba(70,40,15,.35)'; g.lineWidth = 1;
+    for (let y = floorY + 10; y < H; y += 14 + (y - floorY) * 0.12) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    g.fillStyle = 'rgba(255,240,200,.12)'; g.fillRect(0, floorY, W, 6);
+    const hoop = (hx, hy, side, faded) => {
+      g.save();
+      g.globalAlpha = faded ? 0.35 : 1;
+      // the board behind the rim, on the outside of the lane
+      const bx = hx + side * (RIM + 10);
+      g.fillStyle = 'rgba(255,255,255,.9)'; g.fillRect(bx - 3, hy - 54, 6, 70);
+      g.fillStyle = '#c62828'; g.fillRect(bx - 3, hy - 30, 6, 22);
+      g.strokeStyle = '#9aa7b5'; g.lineWidth = 3; g.beginPath(); g.moveTo(bx, hy - 2); g.lineTo(hx + side * RIM, hy); g.stroke();
+      // the net: strings from the rim narrowing down
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.5;
+      const bottom = hy + 30, nw = RIM * 0.55;
+      for (let k = 0; k <= 6; k++) {
+        const t = k / 6;
+        g.beginPath(); g.moveTo(hx - RIM + t * RIM * 2, hy); g.lineTo(hx - nw + (1 - t) * nw * 2, bottom); g.stroke();
+      }
+      for (let k = 1; k <= 3; k++) {
+        const y = hy + k * 9, half = RIM - (RIM - nw) * (k / 3.3);
+        g.beginPath(); g.moveTo(hx - half, y); g.lineTo(hx + half, y); g.stroke();
+      }
+      // the rim, seen a little from the front
+      g.strokeStyle = '#ff6d00'; g.lineWidth = 5;
+      g.beginPath(); g.ellipse(hx, hy, RIM, 6, 0, 0, Math.PI * 2); g.stroke();
+      g.restore();
+    };
     s.players.forEach((p, i) => {
-      const { x0 } = laneOf(s, p.i);
-      if (i) { g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(x0, 40, 2, H); }
-      [p.home, p.next].forEach((h, k) => { const hx = k ? hoopX(s, h) : h.x; g.strokeStyle = '#ff7a1a'; g.lineWidth = 5; g.beginPath(); g.moveTo(hx - RIM, h.y); g.lineTo(hx + RIM, h.y); g.stroke(); });
-      if (!p.flying && p.alive) { g.fillStyle = 'rgba(255,255,255,.7)'; for (let k = 1; k < 9; k++) { const t = k * 0.07; g.beginPath(); g.arc(p.ball.x + p.aimX * MAX * t + 0.5 * (p.next.wind || 0) * t * t, p.ball.y - p.aimY * MAX * t + 0.5 * G * t * t, 3, 0, 7); g.fill(); } }
-      g.fillStyle = p.alive ? '#e8742a' : '#777'; g.beginPath(); g.arc(p.ball.x, p.ball.y, BALL, 0, 7); g.fill();
+      const { x0, w } = laneOf(s, p.i);
+      if (i) { g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(x0 - 1, 40, 2, H); }
+      // where the ball rests (the last basket) is faint; the hoop to aim for is bright
+      hoop(p.home.x, p.home.y, p.home.side < 0 ? -1 : 1, true);
+      const nx = hoopX(s, p.next);
+      if (p.next.move) { g.fillStyle = 'rgba(255,210,63,.35)'; g.fillRect(p.next.x - p.next.move - RIM, p.next.y + 40, (p.next.move + RIM) * 2, 3); }
+      hoop(nx, p.next.y, p.next.side < 0 ? -1 : 1, false);
+      // the aim: dots along the path, shrinking and fading
+      if (!p.flying && p.alive) {
+        for (let k = 1; k < 10; k++) {
+          const t = k * 0.07;
+          g.fillStyle = `rgba(255,255,255,${0.85 - k * 0.07})`;
+          g.beginPath(); g.arc(p.ball.x + p.aimX * MAX * t + 0.5 * (p.next.wind || 0) * t * t, p.ball.y - p.aimY * MAX * t + 0.5 * G * t * t, 4 - k * 0.25, 0, Math.PI * 2); g.fill();
+        }
+      }
+      // the ball's shadow on the floor, smaller the higher it is
+      const up = Math.max(0, Math.min(1, (floorY + 40 - p.ball.y) / (floorY + 40)));
+      g.fillStyle = `rgba(0,0,0,${0.25 * (1 - up * 0.7)})`;
+      g.beginPath(); g.ellipse(Math.max(x0 + 10, Math.min(x0 + w - 10, p.ball.x)), H - 18, BALL * (1.3 - up * 0.6), 4, 0, 0, Math.PI * 2); g.fill();
+      // the ball, with its lines, turning as it flies
+      const bx = p.ball.x, by = p.ball.y, spin = p.flying ? s.t * 0.25 : 0;
+      const ball = g.createRadialGradient(bx - 4, by - 5, 2, bx, by, BALL);
+      ball.addColorStop(0, p.alive ? '#ffb168' : '#aaa'); ball.addColorStop(1, p.alive ? '#d4561a' : '#666');
+      g.fillStyle = ball; g.beginPath(); g.arc(bx, by, BALL, 0, Math.PI * 2); g.fill();
+      g.save(); g.translate(bx, by); g.rotate(spin);
+      g.strokeStyle = 'rgba(40,15,0,.75)'; g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(-BALL, 0); g.lineTo(BALL, 0); g.stroke();
+      g.beginPath(); g.moveTo(0, -BALL); g.lineTo(0, BALL); g.stroke();
+      g.beginPath(); g.arc(-BALL * 1.1, 0, BALL * 0.8, -0.9, 0.9); g.stroke();
+      g.beginPath(); g.arc(BALL * 1.1, 0, BALL * 0.8, Math.PI - 0.9, Math.PI + 0.9); g.stroke();
+      g.restore();
+      g.strokeStyle = SEAT_COLORS[i]; g.lineWidth = 2; g.beginPath(); g.arc(bx, by, BALL + 2, 0, Math.PI * 2); g.stroke();
     });
     this.hud(g, s, names);
   },

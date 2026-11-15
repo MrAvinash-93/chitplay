@@ -73,5 +73,6 @@ const nHome = write('index.html', './', [home, room, world]);
 // the play page: the table and everything it imports (the 3D engine included)
 const playEntry = fs.readFileSync(path.join(ROOT, 'play', 'index.html'), 'utf8').match(/<script type="module" src="\.\.\/([^"]+)"/)[1];
 const [playPath] = playEntry.split('?');
-const nPlay = write('play/index.html', '../', [graph(playPath, playEntry)]);
+// the loader picks the arcade (most games) or the 3D room (Cops and Robbers): the arcade is preloaded, as most visits are for it
+const nPlay = write('play/index.html', '../', [graph(playPath, playEntry), dynamicGraph(playPath, 'arcade/table')]);
 console.log(`Preload: ${nHome} modules on the home page, ${nPlay} on the play page`);

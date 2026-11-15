@@ -1,4 +1,4 @@
-import { profile } from '../persistence/profile-store.js?v=20261114-1604';
+import { profile } from '../persistence/profile-store.js?v=20261115-1048';
 
 export const GAME_STYLE_SLOTS = {
   'flying-chit': [
@@ -49,7 +49,7 @@ export const GAME_COSMETICS = [
   { id: 'pen-gel-pen', game: 'pen-fight', slot: 'pen', style: 'gel', name: 'Gel pen', icon: '🖊️', price: 100 },
   { id: 'pen-metal-pen', game: 'pen-fight', slot: 'pen', style: 'metal', name: 'Metal pen', icon: '🖋️', price: 160 },
   { id: 'pen-green-desk', game: 'pen-fight', slot: 'desk', style: 'green', name: 'Green desk', icon: '🟩', price: 120 },
-  { id: 'pen-walnut-desk', game: 'pen-fight', slot: 'desk', style: 'walnut', name: 'Walnut desk', icon: '🪵', price: 160 },
+  { id: 'pen-walnut-desk', game: 'pen-fight', slot: 'desk', style: 'walnut', name: 'Walnut desk', icon: '🌰', price: 160 },
 ];
 
 const KEY = 'chitplay.game-cosmetics.v1';

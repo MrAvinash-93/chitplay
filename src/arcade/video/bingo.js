@@ -6,7 +6,7 @@
  * The caller types the number on the phone keypad. Cards are private: friends' phones are sent only
  * their own card (publicState), so nobody can call numbers just to block someone else's lines.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261114-1604';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1048';
 
 export const SIZE = 5;
 export const NEED = 5;                    // lines for BINGO
@@ -112,7 +112,8 @@ export default {
     own.forEach((seat, k) => {
       const p = s.players[seat], left = 24 + k * (cell * 5 + 18);
       g.textAlign = 'left'; g.fillStyle = SEAT_COLORS[seat]; g.font = '800 14px system-ui, sans-serif';
-      g.fillText(own.length > 1 ? names[seat] || `P${seat + 1}` : 'Your card', left, top - 12);
+      // watching (nobody plays on this screen): the card shown is the first player's, so say whose it is
+      g.fillText(own.length > 1 || !mine.length ? `${names[seat] || `P${seat + 1}`}’s card` : 'Your card', left, top - 12);
       const done = new Set(LINES.filter(l => l.every(i => s.called.includes(p.card[i]))).flat());
       p.card.forEach((num, i) => {
         const x = left + (i % 5) * cell, y = top + Math.floor(i / 5) * cell, hit = s.called.includes(num);

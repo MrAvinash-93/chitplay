@@ -870,7 +870,7 @@ body.room-only #app, body.room-only .myroom, body.room-only .player-tags, body.r
 @media (max-width: 600px) { .world-caption { top: calc(var(--hud-h) + 48px); } }
 
 /* in a match only the ⏸ menu stays in the top bar; profile, sound and chat are inside it */
-.game--playing .game__top-right > :is(.game__scanbtn, .game__profilebtn, .game__toolsbtn, .game__tools) { display: none; }
+.game--playing .game__top-right > :is(.game__scanbtn, .game__profilebtn, .game__toolsbtn, .game__tools, .game__langbtn, .game__viewbtn) { display: none; }
 /* paused: names, speech and emojis from the room wait behind the menu */
 html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-fx, .player-chit) { display: none; }
 /* after a game: liked it? put it in the Hot games */
@@ -975,3 +975,7 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 .game__list-row--searching .partychip__long { display: none; }
 
 .dlg__btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* two settings side by side in the menu (3D/2D + language, sound + voices), as in every game */
+.game__menu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.game__menu-pair > .game__choice { min-width: 0; }

@@ -474,7 +474,7 @@ body.room.in-play .chatrow .chatbtn { width: 34px; height: 34px; font-size: 16px
   body.room.in-play .panel--play, body.room.in-play .tvpanel { max-height: calc(100dvh - 52px); }
 }
 /* 2D: only the board is drawn, so the players' name tags and speech bubbles have nothing to sit on */
-html[data-view="2d"] body.room.in-play .player-tags, html[data-view="2d"] body.room.in-play .player-bubbles { display: none; }
+html[data-view="2d"] body.room .player-tags, html[data-view="2d"] body.room .player-bubbles { display: none; }   /* before, during and after the game */
 /* a TV game played full screen: the picture sits centred in the space between the bar and the tray */
 body.room.in-play.tv-full .tvbig { top: calc(max(6px, env(safe-area-inset-top)) + 42px); bottom: calc(max(25dvh, 168px) + 14px); align-items: center; }
 body.room.in-play.tv-full .tvcanvas { width: 100%; height: auto; max-height: 100%; aspect-ratio: 16 / 10; object-fit: contain; }
@@ -521,5 +521,53 @@ body.room.in-play.tv-keys .tvpanel { max-height: min(64dvh, 480px); }
 .adbox--result { margin: 14px 0 4px; padding: 8px 0 0; border-top: 1px solid rgba(255,210,122,.15); text-align: center; }
 .adbox--result small { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .55; margin-bottom: 4px; }
 
-/* the score chip in a game bar never shrinks to nothing: room for the score and the best beside it */
-body.room.in-play .barstatus { min-width: min(220px, 40vw); }
+/*
+ * The game bar fits every screen: phones upright and on their side, tablets, computers. The buttons keep
+ * their size; the score chip takes what is left, and where that is too little it gets a line of its own
+ * under the buttons (full width, so the score and the best are never cut). Measured on the game's own
+ * column (#party), which is narrow beside the board on a phone on its side.
+ */
+body.room.in-play #party { container: party / inline-size; }
+body.room.in-play .bar { flex-wrap: wrap; row-gap: 6px; }
+body.room.in-play .bar > * { min-width: 0; }
+body.room.in-play .barstatus { flex: 1 1 150px; min-width: 0; }
+/* one line at the top while playing: Menu on the left, the score right beside it taking the rest */
+body.room.in-play .bar { flex-wrap: nowrap; }
+body.room.in-play .barstatus { order: 0; flex: 1 1 0; min-width: 0; }
+@container party (max-width: 300px) {
+  body.room.in-play .bar .back { padding: 0 7px; font-size: 12px; }
+}
+
+/* the turn timer with people online or with friends: a live count of the 30 seconds */
+.turnclock { position: fixed; z-index: 40; left: 50%; transform: translateX(-50%); top: calc(max(8px, env(safe-area-inset-top)) + 54px); display: flex; align-items: center; gap: 8px; max-width: min(92vw, 360px); padding: 6px 12px 8px; border-radius: 999px; background: rgba(28, 16, 10, .92); border: 1.5px solid rgba(255, 210, 122, .45); color: #f6ead2; font: 700 13px/1.2 system-ui, sans-serif; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); pointer-events: none; overflow: hidden; }
+.turnclock__who { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.turnclock b { flex: none; color: #ffd27a; font-variant-numeric: tabular-nums; }
+.turnclock i { position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: #ffd27a; transition: width .25s linear; }
+.turnclock--mine { border-color: #3ddc6a; }
+.turnclock--mine b, .turnclock--mine .turnclock__who { color: #b8f5c8; }
+.turnclock--hurry { border-color: #ff6b57; animation: turnclock-pulse .8s ease-in-out infinite; }
+.turnclock--hurry b { color: #ff9b8a; }
+.turnclock--hurry i { background: #ff6b57; }
+@keyframes turnclock-pulse { 50% { box-shadow: 0 0 0 4px rgba(255, 107, 87, .35); } }
+@media (prefers-reduced-motion: reduce) { .turnclock--hurry { animation: none; } }
+@media (min-width: 900px) { body.room .turnclock { left: calc(50% - min(200px, 22vw)); } }
+
+/* the players' strip in a narrow tray: name over score, so four names still read in full */
+@container party (max-width: 520px) {
+  body.room.in-play .panel--play .strip li { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 2px 6px; line-height: 1.15; }
+  body.room.in-play .panel--play .strip strong { max-width: 100%; font-size: 11.5px; }
+  body.room.in-play .panel--play .strip span { font-size: 11.5px; opacity: .9; }
+}
+
+/* a long hint on a small screen wraps onto two lines instead of running off the edge */
+.hint-hand__text { width: max-content; max-width: min(340px, calc(100vw - 16px)); white-space: normal; text-align: center; line-height: 1.25; border-radius: 16px; }
+
+/*
+ * While playing, the emoji row never sits on top of a control: it is the last thing in the tray, in the
+ * flow (not stuck over the bottom), and an upright phone gives the tray the room its controls need
+ * (a stick and a big button, a hand of cards, a row of bids) before anything has to scroll.
+ */
+body.room.in-play .panel > .chatrow { position: static; }
+@media (orientation: portrait) {
+  body.room.in-play .panel--play, body.room.in-play .tvpanel { max-height: min(50dvh, 430px); }
+}
