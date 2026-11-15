@@ -16,15 +16,15 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, CATEGORIES, gameBySlug, localName, allNames } from '../arcade/catalog.js?v=20261115-1854';
-import { logoSvg } from '../arcade/logo.js?v=20261115-1854';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261115-1854';
-import { profile } from '../persistence/profile-store.js?v=20261115-1854';
+import { ALL_GAMES, CATEGORIES, gameBySlug, localName, allNames } from '../arcade/catalog.js?v=20261115-1946';
+import { logoSvg } from '../arcade/logo.js?v=20261115-1946';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261115-1946';
+import { profile } from '../persistence/profile-store.js?v=20261115-1946';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
 const STATE_KEY = 'chitplay.partyState'; // the host's plan: { go }
-const V = '?v=20261115-1854';
+const V = '?v=20261115-1946';
 const DONE_KEY = 'chitplay.partyDone';   // the last plan this phone acted on
 const MAX_FRIENDS = 9;
 const channel = (code) => `party-${code}`;
@@ -60,7 +60,11 @@ export function planFor(slug, list) {
   // (written without Array.at, which older phones do not have)
   const last = tables[tables.length - 1], before = tables[tables.length - 2];
   if (tables.length > 1 && last.length === 1 && before.length < size) before.push(...tables.pop());
-  return { id: Date.now(), slug, tables, codes: {} };
+  // every table's room code is chosen now, so the lead and the friends head there at the same moment
+  // (the lead's phone opens the room with it; the friends' phones keep knocking until it is up)
+  const codes = {};
+  tables.forEach((t, i) => { codes[i] = randomCode(); });
+  return { id: Date.now(), slug, tables, codes };
 }
 const tableOf = (go, token) => go.tables.findIndex(t => t.includes(token));
 // every game, Cops and Robbers included, opens on the play page: /play/?game=<slug>
@@ -80,11 +84,16 @@ function follow(go) {
   if (lead) {
     write(DONE_KEY, step);
     toast(`Opening ${nameOf(go.slug, 'the game')} for your friends…`);
-    setTimeout(() => { location.href = gameUrl(go.slug, 'mode=nearby&party=1'); }, 150);
+    const room = go.codes?.[n] ? `&room=${go.codes[n]}` : '';
+    setTimeout(() => { location.href = gameUrl(go.slug, `mode=nearby&party=1${room}`); }, 60);
   } else if (go.codes?.[n]) {
-    write(DONE_KEY, step);
+    // the code is part of the step: if the lead's phone had to take another code, go again with that one
+    const joinStep = `${step}:${go.codes[n]}`;
+    if (done === joinStep) return;
+    if (HERE && new URLSearchParams(location.search).get('join') === String(go.codes[n])) { write(DONE_KEY, joinStep); return; }
+    write(DONE_KEY, joinStep);
     toast(`Joining ${nameOf(go.slug, 'the game')}…`);
-    setTimeout(() => { location.href = gameUrl(go.slug, `join=${go.codes[n]}&auto=1`); }, 150);
+    setTimeout(() => { location.href = gameUrl(go.slug, `join=${go.codes[n]}&auto=1`); }, 60);
   } else {
     toast(`${nameOf(go.slug, 'A game')} is starting: getting your seat ready…`);
   }

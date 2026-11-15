@@ -10,44 +10,44 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1854';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1854';
-import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-1854';
-import { loadWorld } from '../world/world-loader.js?v=20261115-1854';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1854';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1854';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1854';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1854';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1854';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1946';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1946';
+import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-1946';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1946';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1946';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1946';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1946';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1946';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1946';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-1854';
-import { faceHtml } from './photo.js?v=20261115-1854';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1854';
+import { iconSvg } from '../ui/icons.js?v=20261115-1946';
+import { faceHtml } from './photo.js?v=20261115-1946';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1946';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1854';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1946';
 
-import { fill, shellText } from './shell-text.js?v=20261115-1854';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1854';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1854';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1854';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1854';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1854';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1854';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1854';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1854';
-import { startReminder } from './reminder.js?v=20261115-1854';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1854';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1854';
-import { roomLevel } from './decor.js?v=20261115-1854';
+import { fill, shellText } from './shell-text.js?v=20261115-1946';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1946';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1946';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1946';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1946';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1946';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1946';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1946';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1946';
+import { startReminder } from './reminder.js?v=20261115-1946';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1946';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1946';
+import { roomLevel } from './decor.js?v=20261115-1946';
 
-import { is2d, setView } from './view-mode.js?v=20261115-1854';
-import { adBreak } from './ad-breaks.js?v=20261115-1854';
-import { resultAd, sideAd } from './ads.js?v=20261115-1854';
-import { gameStrip } from './game-strip.js?v=20261115-1854';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1854';
-const V = '?v=20261115-1854';
+import { is2d, setView } from './view-mode.js?v=20261115-1946';
+import { adBreak } from './ad-breaks.js?v=20261115-1946';
+import { resultAd, sideAd } from './ads.js?v=20261115-1946';
+import { gameStrip } from './game-strip.js?v=20261115-1946';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1946';
+const V = '?v=20261115-1946';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -1821,7 +1821,7 @@ const ERRORS = {
   errOther: 'Something went wrong. Try again.',
 };
 const netError = (e) => ERRORS[nearbyError(e)];
-function openRoom(code, handlers) {
+function openRoom(code, handlers, soft = false) {
   room = new NearbyHost({
     onChange: () => { welcome(); handlers.onChange?.(); },
     onMessage: (id, msg) => hostMessage(id, msg),
@@ -1840,7 +1840,7 @@ function openRoom(code, handlers) {
   if (G.slug === 'chess') room.level = myChessLevel();
   room.lv = myLevel();   // strangers looking for a table are matched by level (online)
   // a party's table lead reports the code, so the rest of the table can join it (src/net/party.js)
-  return room.open(code).then((c) => { if (c) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code: c, slug: G.slug } })); return c; });
+  return room.open(code, soft).then((c) => { if (c) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code: c, slug: G.slug } })); return c; });
 }
 const welcomed = new Set();
 function welcome() {
@@ -1898,7 +1898,9 @@ async function nearby(size) {
   show(topBar(G), h('section', { class: 'panel' }, [h('h1', {}, ['Opening a room…']), h('p', { class: 'lead' }, ['Getting a code for your friends.'])]));
   wanted = size;
   try {
-    await openRoom(null, { onChange: () => { if (!match) hostLobby(); } });
+    // a party chose this table's code already, and the friends are on their way to it
+    const partyRoom = params.get('party') === '1' && /^\d{6}$/.test(params.get('room') || '') ? params.get('room') : null;
+    await openRoom(partyRoom, { onChange: () => { if (!match) hostLobby(); } }, true);
     hostLobby();
   } catch (e) {
     room?.close();
@@ -2332,6 +2334,7 @@ function joinForm(code = '', auto = false) {
   const codeIn = h('input', { value: code, inputmode: 'numeric', maxlength: '7', autocomplete: 'off', 'aria-label': 'Room code', placeholder: '6-digit code' });
   const nameIn = h('input', { value: myName(), maxlength: '14', 'aria-label': 'Your name', placeholder: 'Your name' });
   const err = h('p', { class: 'err', role: 'alert' });
+  const started = Date.now();
   const go = btn('Join', async () => {
     const c = codeIn.value.replace(/\D/g, '');
     const n = cleanName(nameIn.value);
@@ -2339,6 +2342,12 @@ function joinForm(code = '', auto = false) {
     if (!n) { err.textContent = 'Type your name.'; return; }
     go.disabled = true; go.textContent = 'Joining…'; err.textContent = '';
     try { await joinGame(c, n); } catch (e) {
+      // sent by a party: the host's phone may still be opening this room, so keep knocking for a while
+      if (auto && c === code && Date.now() - started < 30000 && !['full', 'started', 'other'].includes(e?.type)) {
+        go.disabled = false; go.textContent = 'Join';
+        setTimeout(() => go.isConnected && go.click(), 600);
+        return;
+      }
       // no table with that code: it may be a party's code, so join the party instead
       try { const [t] = await peekTables([`party-${c}`], 3000); if (t) { joinParty(c); location.href = '../'; return; } } catch {}
       err.textContent = netError(e); go.disabled = false; go.textContent = 'Join';

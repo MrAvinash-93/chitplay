@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261115-1854';
-import { is2d } from './view-mode.js?v=20261115-1854';
-import { adBreak } from './ad-breaks.js?v=20261115-1854';
-import { resultAd, sideAd } from './ads.js?v=20261115-1854';
-import { myTableSize } from '../net/party.js?v=20261115-1854';
-import { W, H, TICK } from './video/lib.js?v=20261115-1854';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-1854';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-1854';
-import { MOMENT, linesFor } from './talk.js?v=20261115-1854';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1854';
-import { ask, confirmSpend } from './dialog.js?v=20261115-1854';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1854';
-import { profile } from '../persistence/profile-store.js?v=20261115-1854';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-1854';
+import { hintsLeft, showHint } from './hint.js?v=20261115-1946';
+import { is2d } from './view-mode.js?v=20261115-1946';
+import { adBreak } from './ad-breaks.js?v=20261115-1946';
+import { resultAd, sideAd } from './ads.js?v=20261115-1946';
+import { myTableSize } from '../net/party.js?v=20261115-1946';
+import { W, H, TICK } from './video/lib.js?v=20261115-1946';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-1946';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-1946';
+import { MOMENT, linesFor } from './talk.js?v=20261115-1946';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1946';
+import { ask, confirmSpend } from './dialog.js?v=20261115-1946';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1946';
+import { profile } from '../persistence/profile-store.js?v=20261115-1946';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-1946';
 
-const V = '?v=20261115-1854';
+const V = '?v=20261115-1946';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -891,7 +891,10 @@ export async function runTv(ctx) {
       ]));
     };
     room = makeRoom(paint2);
-    room.open(null).then((c) => { if (c) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code: c, slug: game.slug } })); return paint2(c); }).catch((e) => {
+    // a party chose this table's code already, and the friends are on their way to it
+    const q = new URLSearchParams(location.search);
+    const partyRoom = q.get('party') === '1' && /^\d{6}$/.test(q.get('room') || '') ? q.get('room') : null;
+    room.open(partyRoom, true).then((c) => { if (c) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code: c, slug: game.slug } })); return paint2(c); }).catch((e) => {
       const key = nearbyError(e);
       show(topBar(game), h('section', { class: 'panel' }, [h('h1', {}, ['Couldn’t open a room']), h('p', { class: 'lead' }, [key === 'errNetwork' ? 'Check your internet connection and try again.' : 'Something went wrong. Try again.']), btn(say.playAgain, () => nearbyLobby(size), 'primary')]));
     });

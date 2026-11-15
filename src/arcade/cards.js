@@ -1,5 +1,5 @@
 /** A standard 52-card pack. A card is rank + suit: 'AS', '10H', 'KD'. No betting anywhere. */
-import { shuffle } from './lib.js?v=20261115-1854';
+import { shuffle } from './lib.js?v=20261115-1946';
 
 export const SUITS = ['S', 'H', 'D', 'C'];
 export const SUIT_ICON = { S: '♠', H: '♥', D: '♦', C: '♣' };

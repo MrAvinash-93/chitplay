@@ -1,4 +1,4 @@
-import { profile } from '../persistence/profile-store.js?v=20261115-1854';
+import { profile } from '../persistence/profile-store.js?v=20261115-1946';
 
 export const GAME_STYLE_SLOTS = {
   'flying-chit': [

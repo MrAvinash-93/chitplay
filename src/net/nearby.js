@@ -8,8 +8,8 @@
  *
  * PeerJS (MIT, vendored in src/vendor) is loaded only when Nearby Play is opened.
  */
-import { cleanName, politeName } from '../world/names.js?v=20261115-1854';
-import { cleanLook } from '../world/character-looks.js?v=20261115-1854';
+import { cleanName, politeName } from '../world/names.js?v=20261115-1946';
+import { cleanLook } from '../world/character-looks.js?v=20261115-1946';
 
 const PREFIX = 'chitplay-v1-';
 const MAX_GUESTS = 3;
@@ -25,7 +25,7 @@ export function loadPeer() {
   if (peerLib) return peerLib;
   peerLib = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = new URL('../vendor/peerjs.min.js?v=20261115-1854.5.4', import.meta.url).href;
+    s.src = new URL('../vendor/peerjs.min.js?v=20261115-1946.5.4', import.meta.url).href;
     s.async = true;
     s.onload = () => (window.Peer ? resolve(window.Peer) : reject(new Error('load')));
     s.onerror = () => { peerLib = null; reject(new Error('load')); };
@@ -165,14 +165,19 @@ export class NearbyHost {
    * With a fixed code (a public table) there is one try: if the name is taken it fails with
    * type 'unavailable-id', which means somebody already hosts that table.
    */
-  async open(fixedCode = null) {
+  async open(fixedCode = null, soft = false) {
     const Peer = await loadPeer();
     if (fixedCode) {
-      const p = await openPeer(Peer, PREFIX + fixedCode);
-      if (this.closed) { p.destroy(); return null; }
-      this.peer = p;
-      this.code = fixedCode;
-      this.isPublic = isPublicCode(fixedCode);
+      // soft: the code was only a wish (a party picks it ahead, so friends can head there at once);
+      // if another room already has it, roll a new one like any room
+      let p = null;
+      try { p = await openPeer(Peer, PREFIX + fixedCode); } catch (e) { if (!soft) throw e; }
+      if (p && this.closed) { p.destroy(); return null; }
+      if (p) {
+        this.peer = p;
+        this.code = fixedCode;
+        this.isPublic = isPublicCode(fixedCode);
+      }
     }
     for (let attempt = 0; attempt < 5 && !this.peer; attempt++) {
       const code = randomCode();
