@@ -10,43 +10,43 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug } from './catalog.js?v=20261115-1340';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1340';
-import { loadWorld } from '../world/world-loader.js?v=20261115-1340';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1340';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1340';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1340';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1340';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1340';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1433';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1433';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1433';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1433';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1433';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1433';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1433';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1433';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-1340';
-import { faceHtml } from './photo.js?v=20261115-1340';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1340';
+import { iconSvg } from '../ui/icons.js?v=20261115-1433';
+import { faceHtml } from './photo.js?v=20261115-1433';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1433';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1340';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1433';
 
-import { fill, shellText } from './shell-text.js?v=20261115-1340';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1340';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1340';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1340';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1340';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1340';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1340';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1340';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1340';
-import { startReminder } from './reminder.js?v=20261115-1340';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1340';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1340';
-import { roomLevel } from './decor.js?v=20261115-1340';
+import { fill, shellText } from './shell-text.js?v=20261115-1433';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1433';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1433';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1433';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1433';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1433';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1433';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1433';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1433';
+import { startReminder } from './reminder.js?v=20261115-1433';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1433';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1433';
+import { roomLevel } from './decor.js?v=20261115-1433';
 
-import { is2d, setView } from './view-mode.js?v=20261115-1340';
-import { adBreak } from './ad-breaks.js?v=20261115-1340';
-import { resultAd, sideAd } from './ads.js?v=20261115-1340';
-import { gameStrip } from './game-strip.js?v=20261115-1340';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1340';
-const V = '?v=20261115-1340';
+import { is2d, setView } from './view-mode.js?v=20261115-1433';
+import { adBreak } from './ad-breaks.js?v=20261115-1433';
+import { resultAd, sideAd } from './ads.js?v=20261115-1433';
+import { gameStrip } from './game-strip.js?v=20261115-1433';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1433';
+const V = '?v=20261115-1433';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -2267,6 +2267,8 @@ async function main() {
   const join = (params.get('join') || '').replace(/\D/g, '');
   const game = gameBySlug(slug);
   if (!game && !isCode(join)) { location.replace('../'); return; }
+  // the playground games go by the name people know in their language (Pakda Pakdi, Fangen, Onigokko…)
+  if (game) game.name = gameNameIn(game.slug, LANG);
   G = game;
   applyTheme(game);
   // the party button: a party follows its host from game to game
@@ -2296,8 +2298,9 @@ async function main() {
   if (game.video) {
     G = game;
     document.title = `${game.name}: Play Free | ChitPlay`;
-    const n = Math.min(game.max, Math.max(game.min, Number(params.get('n')) || game.seats));
     const tvMode = params.get('mode') || 'play';
+    // Flying Chit as a guest: just your own chit in the air, no computer chits racing you
+    const n = game.slug === 'flying-chit' && tvMode === 'play' ? 1 : Math.min(game.max, Math.max(game.min, Number(params.get('n')) || game.seats));
     // a party is waiting at this table: its lead opens the room at once (the rules stay in the menu)
     if (tvMode !== 'watch' && params.get('party') !== '1') await howToFirstTime(game);
     await startTv(game, { mode: tvMode, size: n });

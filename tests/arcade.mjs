@@ -257,7 +257,7 @@ const place = (fen) => fen.replace(/\s/g, '').split('');
   const r = ludo.init({ n: 2, opts: { style: 'score' } });
   const rng = seeded(9);
   for (let k = 0; k < 40 && !ludo.result(r); k++) { const seat = ludo.active(r)[0]; ludo.apply(r, seat, ludo.bot(r, seat, rng, ludo.moves(r, seat)), rng); }
-  ok(r.limitMs === 600000, 'ludo score: a 10-minute clock');
+  ok(r.limitMs === 300000, 'ludo score: a 5-minute clock');
   if (!ludo.result(r)) ludo.timeUp(r);
   const rr = ludo.result(r);
   ok(rr && rr.winners.every(p => r.points[p] === Math.max(...r.points)) && ludo.active(r).length === 0, 'ludo score: when the time is up the game ends, most points wins');

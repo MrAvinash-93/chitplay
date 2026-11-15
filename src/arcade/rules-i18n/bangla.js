@@ -81,7 +81,7 @@ export default {
     scoring: 'Protipokkher kolom table theke phele, jor dhakkay ulte, ba beshikkhon tike round jeto. Match jete je age tin round jete.',
   },
   'lapa-chupi': {
-    steps: ['Proti match-e khonjar lok bodlay. Se chokh bondho kore deyaler kache opekkha kore, ar bakira panch second-e lukay.', 'Joystick ba arrow key diye 3D khelar mathe ghoro. Jore dourate Sprint chepe rakho, kintu mote ek second-er moto, tarpor hanpiye jabe.', 'Jhop, bench ba dolnar pashe theme chupchap thakle lukano jay. Norle ba khonjar lok-ke kache aste dile dhora porbe.', 'Khonjar lok sobaike khunje pele jete. Somoy sheshe jara lukiye thake tara ekshonge jete.', 'Online room-e lukano kheloyarder jayga onyoder pathano hoy na.'],
+    steps: ['Proti match-e khonjar lok bodlay. Se chokh bondho kore deyaler kache opekkha kore, ar bakira panch second-e lukay.', 'Joystick ba arrow key diye 3D khelar mathe ghoro. Jore dourate Sprint chepe rakho, kintu mote ek second-er moto, tarpor hanpiye jabe.', 'Khat, sofa, table ba porda-r pashe theme chupchap thakle lukano jay. Norle ba khonjar lok-ke kache aste dile dhora porbe.', 'Khonjar lok sobaike khunje pele jete. Somoy sheshe jara lukiye thake tara ekshonge jete.', 'Online room-e lukano kheloyarder jayga onyoder pathano hoy na.'],
     win: 'Computer kheloyarder songe, bondhuder songe ek screen-e, kachhe ba online-e khelo. Khali jayga bot bhoray.',
     scoring: 'Khonjar lok prottek-ke khunje pele ek point pay ar sobaike pele jete. Somoy shesh porjonto jara lukiye thake tara ekshonge jete ar jekono songkhok khonjar cheye beshi point pay.',
   },
@@ -117,7 +117,7 @@ export default {
   },
   ludo: {
     steps: ['Nijer dane Roll chapo. Ghunti ghor theke shurur ghore ante chhokka lage.', 'Jholjhole ghunti ba tar button chapo, chhokkay joto poreche toto egobe. Ektai ghunti cholte parleo tumi nijei chapbe; konota na chole dan shesh.', 'Protipokkher ghuntite namle seta ghore phere. Shurur ghor ar tarar ghor nirapod: sekhane keu kata pore na.', 'Board ghure ghunti tomar ghore pherar sarite dhoke. Ghore pouchate thik songkha lage.', 'Chhokka, ghunti kata ar ghunti ghore pouchano, protitay arekta dan. Porpor tin chhokkay dan jay.'],
-    win: 'Normal mode: je age charta ghunti ghore ane se jete. Score mode: 10 minit sesh hole, ba keu charta ghunti ghore anle, sobcheye beshi point jar se jete.',
+    win: 'Normal mode: je age charta ghunti ghore ane se jete. Score mode: 5 minit sesh hole, ba keu charta ghunti ghore anle, sobcheye beshi point jar se jete.',
     scoring: 'Khelar age mode beche nao. Normal mode-e point nei: phalaphole dekhay ke kota ghunti ghore enechhe. Score mode-e protita ghor 1, ghunti kata 20, ghunti ghore 30, ar sobar age charta shesh korle bonus 50.',
     house: [['Atok', 'Ek-i ronger duto ghunti pother ek-i ghore thakle atok toiri hoy. Ar keu seta perote ba sekhane namte pare na, ar oi ghuntigulo kata jay na.'], ['Katle tobei ghor', 'Kheloyar ontoto ekta protipokkho ghunti na kata porjonto ghunti ghore pherar sarite dhukte pare na. Totokkhon se arek pak ghore.'], ['Druto shuru', 'Sobai ekta ghunti age thekei shurur ghore niye shuru kore, jate khela shonge shonge chole.'], ['Sthaner jonno khela chole', 'Tin ba charjone bijoyi paoar poro khela thame na: bakira dwitiyo ar tritiyo sthaner jonno khele, ar sheshe krom dekhano hoy.']],
   },

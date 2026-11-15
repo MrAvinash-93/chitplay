@@ -581,3 +581,7 @@ body.room.in-play .panel > .chatrow { position: static; }
 body.has-gameclock .turnclock { top: calc(max(8px, env(safe-area-inset-top)) + 88px); }
 @media (min-width: 900px) { body.room .gameclock { left: calc(50% - min(200px, 22vw)); } }
 @media (prefers-reduced-motion: reduce) { .gameclock--hurry { animation: none; } }
+
+/* the house and hall games: their own screen, not a picture on the TV in the room */
+body.tv-roomgame.tv-full .tvbig { background: #140b07; align-items: center; }
+body.tv-roomgame .tvcanvas { border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }

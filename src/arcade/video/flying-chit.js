@@ -15,19 +15,19 @@
  *
  * x and y go from -1 to 1 across the space in front of you; z is distance ahead.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1340';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1433';
 
 export const AHEAD = 70;
 export const LEVEL_D = 320;
 export const STAGES = ['Morning class', 'Fans on', 'Swinging bangles', 'Paper storm', 'Night class'];
 export const levelOf = (d) => 1 + Math.floor(d / LEVEL_D);
 export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
-export const speedAt = (d) => Math.min(25, 10 + d * 0.008);
+export const speedAt = (d) => Math.min(27, 11.5 + d * 0.009);   // a little quicker from the start
 const STEER = 2.1;                 // how fast the chit moves across, in screen widths a second
-const hoopSize = (d) => Math.max(0.2, 0.36 - d * 0.00006);
+const hoopSize = (d) => Math.max(0.19, 0.32 - d * 0.00006);   // smaller bangles: a real test of aim
 export const GRAZE = 0.05;         // a bangle counts if the chit is this close to inside it
 export const HITBOX = 0.8;         // fans and books hit only within this share of their size
-const PULL = 0.05;                 // how strongly the next bangle draws a chit that is close to it
+const PULL = 0.035;                // how strongly the next bangle draws a chit that is close to it
 const r2 = (v) => Math.round(v * 100) / 100;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /** Where a moving thing is at tick t: bangles and books swing across, fans bob up and down. */
@@ -95,7 +95,7 @@ export default {
     s.objs.forEach((o) => { if (o.sw || o.bob) { const p = placeAt(o, s.t); o.x = r2(p.x); o.y = r2(p.y); } });
     while (s.at < s.d + AHEAD) spawn(s);
     s.objs = s.objs.filter(o => o.z > s.d - 2);
-    const drain = 0.04 + Math.min(0.12, s.d * 0.000025);
+    const drain = 0.05 + Math.min(0.13, s.d * 0.00003);   // lift runs out a little faster: keep threading bangles
     const next = s.objs.find(o => o.k === 'hoop' && o.z > s.d);
     s.chits.forEach((c, i) => {
       if (!c.alive) { c.y = r2(Math.max(-1.2, c.y - 0.02)); return; }
@@ -187,10 +187,13 @@ export default {
       // the combo, hotter the longer it goes
       if (c.combo > 1) {
         const k = Math.min(5, c.combo), fresh = s.t - c.popAt < 10 ? 1.15 : 1;
-        g.font = `900 ${Math.round((20 + k * 2) * fresh)}px system-ui, sans-serif`; g.textAlign = 'center';
+        // with several players each combo fits its own score card, so they never run into each other
+        const base = s.n > 1 ? Math.min(20 + k * 2, cellWidth / 6.2) : 20 + k * 2;
+        g.font = `900 ${Math.round(base * fresh)}px system-ui, sans-serif`; g.textAlign = 'center';
         g.fillStyle = ['#fff', '#fff', '#fff36b', '#ffc23f', '#ff8a3d', '#ff5a4f'][k];
         g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 4;
-        g.strokeText(`COMBO ×${k}`, cx, 66); g.fillText(`COMBO ×${k}`, cx, 66);
+        const word = s.n > 2 ? `×${k}` : `COMBO ×${k}`;
+        g.strokeText(word, cx, 66); g.fillText(word, cx, 66);
       }
       // the points a bangle just gave, rising and fading
       const age = s.t - c.popAt;

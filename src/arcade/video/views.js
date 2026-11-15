@@ -4,21 +4,21 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, TICK } from './lib.js?v=20261115-1340';
-import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261115-1340';
-import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261115-1340';
-import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261115-1340';
-import { speedOf as roadSpeed } from './road-dash.js?v=20261115-1340';
-import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261115-1340';
-import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261115-1340';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261115-1340';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261115-1340';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261115-1340';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261115-1340';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261115-1340';
-import { selectedGameCosmetic } from '../game-cosmetics.js?v=20261115-1340';
-import { TAG_COVER } from './tag-game-core.js?v=20261115-1340';
-import { turboView } from './turbo-view.js?v=20261115-1340';
+import { SEAT_COLORS, TICK } from './lib.js?v=20261115-1433';
+import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261115-1433';
+import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261115-1433';
+import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261115-1433';
+import { speedOf as roadSpeed } from './road-dash.js?v=20261115-1433';
+import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261115-1433';
+import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261115-1433';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261115-1433';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261115-1433';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261115-1433';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261115-1433';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261115-1433';
+import { selectedGameCosmetic } from '../game-cosmetics.js?v=20261115-1433';
+import { TAG_COVER, FURNITURE } from './tag-game-core.js?v=20261115-1433';
+import { turboView } from './turbo-view.js?v=20261115-1433';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });
@@ -193,6 +193,10 @@ function tunnelView() {
   const arc = (a0, len, mat) => { const t = new THREE.Mesh(new THREE.TorusGeometry(PR, 0.05, 6, 32, len), mat); t.rotation.z = a0; return t; };
   const gemMat = std('#7dffe3', { emissive: '#1b8f7a', metalness: 0.4, roughness: 0.2 });
   const gems = pool(scene, () => new THREE.Mesh(new THREE.OctahedronGeometry(0.2), gemMat));
+  // power-ups: a blue shield orb and a red-gold magnet, each with its own glow
+  const shieldOrb = pool(scene, () => new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), std('#5aa9ff', { emissive: '#1d4f9a', metalness: 0.3, roughness: 0.15 })));
+  const magnetOrb = pool(scene, () => { const g = new THREE.Group(); const u = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.07, 8, 16, Math.PI), std('#ff4d3d', { emissive: '#7a1208' })); const t1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.12), std('#e8e8e8', { metalness: 0.6 })); const t2 = t1.clone(); t1.position.set(-0.18, -0.04, 0); t2.position.set(0.18, -0.04, 0); g.add(u, t1, t2); return g; });
+  const bubbles = pool(scene, () => new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 12), basic('#5aa9ff', { transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })));
   const gemGlow = pool(scene, () => new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), basic('#7dffe3', { transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })));
   const spark = pool(scene, () => new THREE.Mesh(new THREE.OctahedronGeometry(0.05), basic('#bfffee', { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })));
   const sparks = [];
@@ -274,13 +278,19 @@ function tunnelView() {
         u.safe.opacity = o === next ? 0.65 + Math.sin(tNow * 0.3) * 0.3 : 0.35;
       });
       walls.forEach((m, key) => { if (!seen.has(key)) { scene.remove(m); m.traverse((x) => { x.geometry?.dispose(); }); walls.delete(key); } });
-      gems.begin(); gemGlow.begin();
+      gems.begin(); gemGlow.begin(); shieldOrb.begin(); magnetOrb.begin();
       s.gems.forEach((g) => {
+        if (g.got) return;
         const p = [Math.cos(g.a) * PR, Math.sin(g.a) * PR, -(g.z - d) + PZ];
+        if (g.p === 'shield') { const m = shieldOrb.next(); m.position.set(...p); m.scale.setScalar(1 + Math.sin(tNow * 0.25) * 0.12); return; }
+        if (g.p === 'magnet') { const m = magnetOrb.next(); m.position.set(...p); m.rotation.z = Math.sin(tNow * 0.2) * 0.4; m.rotation.y = tNow * 0.06; return; }
         const m = gems.next(); m.position.set(...p); m.rotation.y = tNow * 0.08; m.rotation.x = tNow * 0.05;
         const gl = gemGlow.next(); gl.position.set(...p); gl.scale.setScalar(1 + Math.sin(tNow * 0.2 + g.z) * 0.15);
       });
-      gems.end(); gemGlow.end();
+      gems.end(); gemGlow.end(); shieldOrb.end(); magnetOrb.end();
+      bubbles.begin();
+      s.planes.forEach((p) => { if (p.alive && (p.shield || p.safeT > 0)) { const b = bubbles.next(); b.position.set(Math.cos(p.a) * PR, Math.sin(p.a) * PR, PZ); b.material.opacity = p.safeT > 0 && Math.floor(tNow / 4) % 2 ? 0.08 : 0.24; } });
+      bubbles.end();
       // the planes: smoothed, banking into the turn, a trail of light behind
       s.planes.forEach((p, i) => {
         if (!planes[i]) { planes[i] = craftStyle === 'winged-chit' ? wingedChit(SEAT_COLORS[i]) : paperPlane(SEAT_COLORS[i]); scene.add(planes[i]); shown[i] = { a: p.a, gems: p.gems, trail: [] }; }
@@ -345,8 +355,8 @@ const FLY_MOODS = [
 function flyingView() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(FLY_MOODS[0].sky);
-  scene.fog = new THREE.Fog(FLY_MOODS[0].fog, 26, 66);
-  const camera = new THREE.PerspectiveCamera(62, 1.6, 0.1, 120);
+  scene.fog = new THREE.Fog(FLY_MOODS[0].fog, 18, 58);
+  const camera = new THREE.PerspectiveCamera(66, 1.6, 0.1, 120);   // a wider lens: the corridor walls stream past like a tunnel
   const hemi = new THREE.HemisphereLight('#ffffff', '#c9a46b', 1.35);
   const sun = new THREE.DirectionalLight('#fff4dd', 1.5);
   sun.position.set(-4, 6, 3);
@@ -360,7 +370,7 @@ function flyingView() {
     g.strokeStyle = 'rgba(40,20,5,.45)'; g.lineWidth = 2;
     for (let y = 0; y < h; y += 64) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
   }, [6, 30]);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, LEN), std('#ffffff', { map: floorTex, roughness: 0.9 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(9, LEN), std('#ffffff', { map: floorTex, roughness: 0.9 }));
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, -Y - 0.8, -LEN / 2 + 6);
   // the walls: windows, then a blackboard with chalk on it, again and again
@@ -389,7 +399,8 @@ function flyingView() {
   const walls = [-1, 1].map((side) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(LEN, 6.4), side < 0 ? wallMat : wallMatR);
     m.rotation.y = -side * Math.PI / 2;
-    m.position.set(side * 6.5, 0.2, -LEN / 2 + 6);
+    // a school corridor narrow as a tunnel: the walls rush past just outside the flying space
+    m.position.set(side * 4.4, 0.2, -LEN / 2 + 6);
     return m;
   });
   // the ceiling, with tube lights going by
@@ -398,9 +409,9 @@ function flyingView() {
     g.strokeStyle = 'rgba(120,110,95,.35)'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2);
   }, [7, LEN / 2]);
   const ceilMat = std('#ffffff', { map: ceilTex, roughness: 1 });
-  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(14, LEN), ceilMat);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(9, LEN), ceilMat);
   ceil.rotation.x = Math.PI / 2;
-  ceil.position.set(0, Y + 1.4, -LEN / 2 + 6);
+  ceil.position.set(0, Y + 1.0, -LEN / 2 + 6);
   scene.add(floor, ceil, ...walls);
   const tubeMat = basic('#fffbe8');
   const tubes = pool(scene, () => box(0.18, 0.06, 2.2, tubeMat));
@@ -511,12 +522,12 @@ function flyingView() {
       wallTexR.offset.x = -(d * 0.9 / 12) % 1;
       ceilTex.offset.y = -(d * 0.9 / 2) % 1;
       tubes.begin();
-      for (let i = 0; i < 9; i++) { const z = i * 7 - (d % 7); [-1.6, 1.6].forEach((x) => { tubes.next().position.set(x, Y + 1.36, Z(z) + 3); }); }
+      for (let i = 0; i < 9; i++) { const z = i * 7 - (d % 7); [-1.6, 1.6].forEach((x) => { tubes.next().position.set(x, Y + 0.96, Z(z) + 3); }); }
       tubes.end();
       desks.begin();
       for (let i = 0; i < 12; i++) {
         const z = (i * 9 - (d % 9));
-        [-1, 1].forEach((side) => { const m = desks.next(); m.position.set(side * 5.2, -Y - 0.8, Z(z)); m.rotation.y = side > 0 ? Math.PI : 0; });
+        [-1, 1].forEach((side) => { const m = desks.next(); m.position.set(side * 3.75, -Y - 0.8, Z(z)); m.rotation.y = side > 0 ? Math.PI : 0; });
       }
       desks.end();
       // what's coming
@@ -2526,55 +2537,132 @@ function penFightView() {
   };
 }
 
-/* ─── Playground tag games: a clear, compact 3D yard shared by three rule sets ─── */
+/*
+ * The tag games in 3D: hide and seek in a big house (rooms with their own floors, low walls with wide
+ * doorways, furniture to hide behind), the two chase games in a hall (polished stone, a long carpet,
+ * pillars). Same places as the rules: every hiding spot is a piece of furniture or a pillar.
+ */
+function floorTexture(kind) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const g = c.getContext('2d');
+  if (kind === 'wood') {
+    g.fillStyle = '#b98a5a'; g.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 32) {
+      g.fillStyle = (y / 32) % 2 ? '#b07f4f' : '#c19463'; g.fillRect(0, y, 256, 31);
+      g.fillStyle = 'rgba(60,35,12,.35)'; g.fillRect(0, y + 31, 256, 1); g.fillRect(((y * 7) % 200) + 20, y, 1, 32);
+    }
+  } else if (kind === 'tile') {
+    for (let y = 0; y < 256; y += 64) for (let x = 0; x < 256; x += 64) { g.fillStyle = ((x + y) / 64) % 2 ? '#ece4d2' : '#ddd2bb'; g.fillRect(x, y, 64, 64); }
+    g.strokeStyle = 'rgba(120,105,80,.45)'; g.lineWidth = 2;
+    for (let k = 0; k <= 256; k += 64) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, 256); g.moveTo(0, k); g.lineTo(256, k); g.stroke(); }
+  } else if (kind === 'carpet') {
+    g.fillStyle = '#8a3b3b'; g.fillRect(0, 0, 256, 256);
+    g.strokeStyle = '#e2b35d'; g.lineWidth = 8; g.strokeRect(20, 20, 216, 216); g.lineWidth = 3; g.strokeRect(38, 38, 180, 180);
+    g.fillStyle = '#e2b35d'; g.beginPath(); g.arc(128, 128, 30, 0, Math.PI * 2); g.fill();
+  } else {
+    const ice = kind === 'ice';
+    for (let y = 0; y < 256; y += 64) for (let x = 0; x < 256; x += 64) { g.fillStyle = ((x + y) / 64) % 2 ? (ice ? '#e8f4f8' : '#efe2c8') : (ice ? '#cfe4ee' : '#dfcca8'); g.fillRect(x, y, 64, 64); }
+    g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1;
+    for (let k = 0; k <= 256; k += 64) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, 256); g.moveTo(0, k); g.lineTo(256, k); g.stroke(); }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
 function tagGameView(mode) {
   const scene = new THREE.Scene();
   const icy = mode === 'baraf-pani';
-  const wood = mode === 'pakda-padi';
-  scene.background = new THREE.Color(icy ? '#bce6f2' : wood ? '#b8d28a' : '#c5d6a2');
-  const camera = new THREE.PerspectiveCamera(42, 1.6, 0.1, 50);
-  camera.position.set(0, 7.1, 5.3); camera.lookAt(0, 0, 0.1);
-  lights(scene, { sky: icy ? '#edffff' : '#fff9e6', ground: '#405030', sun: 1.8 });
-  const grass = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 4), std(icy ? '#b7e5ed' : wood ? '#76a94e' : '#6fa856', { roughness: 0.92 }));
-  grass.rotation.x = -Math.PI / 2; grass.position.y = -0.1; scene.add(grass);
-  const yard = new THREE.Mesh(new THREE.PlaneGeometry(5.72, 3.28), std(icy ? '#d9f3f5' : wood ? '#91bd61' : '#85b969', { roughness: 0.88 }));
-  yard.rotation.x = -Math.PI / 2; yard.position.y = -0.07; scene.add(yard);
-  const edgeMat = basic(icy ? '#efffff' : '#f7f0d7');
-  const bounds = new THREE.Group(), halfX = 2.86, halfZ = 1.64;
-  bounds.add(
-    box(halfX * 2, 0.012, 0.025, edgeMat),
-    box(halfX * 2, 0.012, 0.025, edgeMat),
-    box(0.025, 0.012, halfZ * 2, edgeMat),
-    box(0.025, 0.012, halfZ * 2, edgeMat),
-  );
-  bounds.children[0].position.z = -halfZ; bounds.children[1].position.z = halfZ;
-  bounds.children[2].position.x = -halfX; bounds.children[3].position.x = halfX;
-  bounds.position.y = -0.055; scene.add(bounds);
-  for (let i = 0; i < 7; i++) {
-    const line = box(5.62, 0.006, 0.012, basic(icy ? '#a3dce8' : '#b2cf86', { transparent: true, opacity: 0.42 }));
-    line.position.set(0, -0.052, -1.42 + i * 0.48); scene.add(line);
+  const house = mode === 'lapa-chupi';
+  scene.background = new THREE.Color(house ? '#2c211a' : icy ? '#1d2a33' : '#2a2018');
+  const camera = new THREE.PerspectiveCamera(38, 1.6, 0.1, 50);
+  // close enough that the house (or the hall) fills the picture
+  camera.position.set(0, 6.3, 4.5); camera.lookAt(0, 0, 0.25);
+  lights(scene, { sky: icy ? '#eef8ff' : '#fff4e0', ground: '#3a2c20', sun: 1.7 });
+  const halfX = 2.96, halfZ = 1.79, midZ = 0.18;
+  const plane = (w, d, mat, x, z, y = -0.07) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); scene.add(m); return m; };
+  const texMat = (kind, rx, ry) => { const t = floorTexture(kind); t.repeat.set(rx, ry); return std('#ffffff', { map: t, roughness: kind === 'carpet' ? 0.95 : 0.45 }); };
+  const wallMat = std('#efe6d6', { roughness: 0.8 });
+  const wall = (w, h, d, x, z) => { const m = box(w, h, d, wallMat); m.position.set(x, h / 2 - 0.07, z); scene.add(m); return m; };
+  if (house) {
+    // four rooms: two bedrooms at the back, the kitchen and the living room at the front
+    plane(halfX, midZ + halfZ, texMat('wood', 3, 2), -halfX / 2, (midZ - halfZ) / 2);
+    plane(halfX, midZ + halfZ, texMat('wood', 3, 2), halfX / 2, (midZ - halfZ) / 2);
+    plane(halfX, halfZ - midZ, texMat('tile', 4, 2), -halfX / 2, (halfZ + midZ) / 2);
+    plane(halfX, halfZ - midZ, texMat('carpet', 1, 1), halfX / 2, (halfZ + midZ) / 2);
+    // the outer walls (the front is left open, like a doll's house, so the camera sees in)
+    wall(halfX * 2 + 0.1, 0.5, 0.08, 0, -halfZ - 0.04);
+    wall(0.08, 0.5, halfZ * 2, -halfX - 0.04, 0);
+    wall(0.08, 0.5, halfZ * 2, halfX + 0.04, 0);
+    // windows on the back wall
+    [-1.6, 1.4].forEach((wx) => { const win = box(0.62, 0.22, 0.02, std('#9fd3ff', { emissive: '#4a7fa8', emissiveIntensity: 0.4 })); win.position.set(wx, 0.24, -halfZ + 0.01); scene.add(win); });
+    // low inside walls with wide doorways
+    const gap = 0.7, h = 0.24;
+    wall(0.06, h, (midZ + halfZ) / 2 - gap / 2, 0, -halfZ + ((midZ + halfZ) / 2 - gap / 2) / 2);
+    wall(0.06, h, (midZ + halfZ) / 2 - gap / 2, 0, midZ - ((midZ + halfZ) / 2 - gap / 2) / 2);
+    wall(halfX * 0.44, h, 0.06, -halfX + halfX * 0.22, midZ);
+    wall(halfX * 0.64 - gap, h, 0.06, -halfX * 0.56 + gap + (halfX * 0.64 - gap) / 2, midZ);
+    wall(halfX * 0.72 - gap, h, 0.06, halfX * 0.28 + (halfX * 0.72 - gap) / 2, midZ);
+    // a ceiling lamp's warm glow in each room
+    [[-1.5, -0.8], [1.5, -0.8], [-1.5, 1], [1.5, 1]].forEach(([lx, lz]) => { const l = new THREE.PointLight('#ffd9a0', 0.6, 3.2); l.position.set(lx, 1.4, lz); scene.add(l); });
+  } else {
+    plane(halfX * 2, halfZ * 2, texMat(icy ? 'ice' : 'stone', 9, 5.5), 0, 0);
+    const runner = plane(halfX * 1.2, halfZ * 0.48, std(icy ? '#5d93b8' : '#9a3a36', { roughness: 0.95 }), 0, 0, -0.065);
+    const trim = plane(halfX * 1.2 - 0.12, halfZ * 0.48 - 0.12, std(icy ? '#e8f6ff' : '#e2b35d', { roughness: 0.6 }), 0, 0, -0.064);
+    trim.scale.set(1, 1, 1); runner.renderOrder = 0;
+    const inner = plane(halfX * 1.2 - 0.2, halfZ * 0.48 - 0.2, std(icy ? '#5d93b8' : '#9a3a36', { roughness: 0.95 }), 0, 0, -0.063); inner.renderOrder = 1;
+    wall(halfX * 2 + 0.1, 0.6, 0.08, 0, -halfZ - 0.04);
+    wall(0.08, 0.6, halfZ * 2, -halfX - 0.04, 0);
+    wall(0.08, 0.6, halfZ * 2, halfX + 0.04, 0);
+    // tall windows down the back wall and a chandelier's light over the middle
+    for (let k = 0; k < 5; k++) { const win = box(0.42, 0.34, 0.02, std(icy ? '#cfefff' : '#ffe2a6', { emissive: icy ? '#5aa0c8' : '#b8833a', emissiveIntensity: 0.35 })); win.position.set(-2.2 + k * 1.1, 0.3, -halfZ + 0.01); scene.add(win); }
+    const chand = new THREE.PointLight(icy ? '#e6f6ff' : '#ffe2b0', 1.1, 6); chand.position.set(0, 2.2, 0); scene.add(chand);
   }
+  const wood = (c) => std(c, { roughness: 0.7 });
   const covers = TAG_COVER.map(([px, py], i) => {
     const x = (px - HOOP_W / 2) / 100, z = (py - HOOP_H / 2) / 100;
     const g = new THREE.Group();
-    if (mode === 'lapa-chupi') {
-      const leaf = std(['#326a3c', '#487d3c', '#3c733b'][i % 3], { roughness: 0.92 });
-      for (let k = 0; k < 5; k++) {
-        const bush = new THREE.Mesh(new THREE.SphereGeometry(0.23 + (k % 2) * 0.04, 10, 8), leaf);
-        bush.position.set((k - 2) * 0.15, 0.18 + (k % 2) * 0.08, (k % 2 ? 0.08 : -0.08)); g.add(bush);
+    const add = (m, mx, my, mz) => { m.position.set(mx, my, mz); g.add(m); return m; };
+    if (house) {
+      const kind = FURNITURE[i % FURNITURE.length];
+      if (kind === 'bed' || kind === 'bed2') {
+        add(box(0.62, 0.16, 0.46, wood('#5a3a22')), 0, 0.08, 0);
+        add(box(0.58, 0.08, 0.42, std('#f4efe4', { roughness: 0.9 })), 0, 0.2, 0);
+        add(box(0.58, 0.04, 0.24, std(kind === 'bed' ? '#3f7fbf' : '#c0563f', { roughness: 0.9 })), 0, 0.25, 0.09);
+        add(box(0.2, 0.06, 0.12, std('#ffffff')), -0.14, 0.27, -0.13); add(box(0.2, 0.06, 0.12, std('#ffffff')), 0.14, 0.27, -0.13);
+        add(box(0.62, 0.3, 0.04, wood('#4a2f1b')), 0, 0.23, -0.23);
+      } else if (kind === 'table') {
+        add(box(0.62, 0.04, 0.4, wood('#8a5a32')), 0, 0.3, 0);
+        [[-0.27, -0.16], [0.27, -0.16], [-0.27, 0.16], [0.27, 0.16]].forEach(([lx, lz]) => add(box(0.04, 0.3, 0.04, wood('#6b4524')), lx, 0.15, lz));
+        [[-0.42, 0], [0.42, 0]].forEach(([cx]) => { add(box(0.16, 0.03, 0.16, wood('#7a4b2a')), cx, 0.18, 0); add(box(0.16, 0.18, 0.03, wood('#7a4b2a')), cx + Math.sign(cx) * 0.07, 0.27, 0); });
+      } else if (kind === 'tv') {
+        add(box(0.7, 0.22, 0.24, wood('#3b2a1e')), 0, 0.11, 0);
+        add(box(0.56, 0.32, 0.03, std('#111111', { roughness: 0.3 })), 0, 0.4, -0.04);
+        add(box(0.5, 0.26, 0.01, basic('#4ab3ff')), 0, 0.4, -0.02);
+      } else if (kind === 'sofa') {
+        add(box(0.7, 0.16, 0.36, std('#6b3fa0', { roughness: 0.9 })), 0, 0.12, 0.02);
+        add(box(0.7, 0.26, 0.1, std('#5a3489', { roughness: 0.9 })), 0, 0.25, -0.15);
+        add(box(0.1, 0.22, 0.36, std('#5a3489', { roughness: 0.9 })), -0.34, 0.17, 0.02); add(box(0.1, 0.22, 0.36, std('#5a3489', { roughness: 0.9 })), 0.34, 0.17, 0.02);
+      } else if (kind === 'plant') {
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.2, 14), std('#b0643a')), 0, 0.1, 0);
+        [[0, 0.36, 0, 0.2], [-0.12, 0.3, 0.05, 0.14], [0.12, 0.32, -0.04, 0.15], [0, 0.5, 0, 0.13]].forEach(([lx, ly, lz, r]) => add(new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), std('#3f8f3a', { roughness: 0.9 })), lx, ly, lz));
+      } else if (kind === 'curtain') {
+        for (let k = 0; k < 5; k++) add(box(0.07, 0.62, 0.05, std(k % 2 ? '#d98c3a' : '#c2752a', { roughness: 0.95 })), 0, 0.31, -0.18 + k * 0.09);
+        add(box(0.04, 0.03, 0.5, wood('#7a4b25')), 0, 0.63, 0.0);
+      } else {
+        add(box(0.34, 0.66, 0.3, std('#e9eef2', { roughness: 0.35 })), 0, 0.33, 0);
+        add(box(0.35, 0.01, 0.31, std('#b8c3cc')), 0, 0.46, 0);
+        add(box(0.02, 0.12, 0.02, std('#8a96a0', { metalness: 0.6 })), 0.12, 0.55, 0.16);
       }
-      const shadow = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.08, 16), std('#554332'));
-      shadow.position.y = 0.03; g.add(shadow);
-    } else if (icy) {
-      const block = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.52), std('#8bd6e5', { roughness: 0.22, metalness: 0.15, transparent: true, opacity: 0.92 }));
-      block.position.y = 0.2; g.add(block);
-      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.05, 0.54), basic('#f2ffff')); cap.position.y = 0.42; g.add(cap);
     } else {
-      const seat = box(0.72, 0.08, 0.2, std('#70492e', { roughness: 0.72 })); seat.position.y = 0.31;
-      const legs = [-0.28, 0.28].map((lx) => { const l = box(0.06, 0.32, 0.06, std('#4d3928')); l.position.set(lx, 0.14, 0); return l; });
-      g.add(seat, ...legs);
+      // a stone pillar (frosted for freeze tag), with a base and a capital
+      const stone = std(icy ? '#e6f4fb' : '#efe2c8', { roughness: icy ? 0.25 : 0.5, metalness: icy ? 0.1 : 0 });
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.08, 18), stone), 0, 0.04, 0);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.6, 18), stone), 0, 0.38, 0);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 0.08, 18), stone), 0, 0.72, 0);
     }
-    g.position.set(x, 0, z); scene.add(g); return g;
+    g.position.set(x, -0.07, z); scene.add(g); return g;
   });
   const makePlayer = (seat) => {
     const g = new THREE.Group();
@@ -2597,7 +2685,6 @@ function tagGameView(mode) {
   return {
     scene, camera,
     update(s, dt) {
-      covers.forEach((g, i) => { if (mode === 'lapa-chupi') g.rotation.y = Math.sin(s.t * 0.004 + i) * 0.025; });
       s.players.forEach((p, i) => {
         const m = people[i], u = m.userData;
         const concealed = (mode === 'lapa-chupi' && p.hidden) || !p.alive

@@ -397,7 +397,9 @@ function waysToPlay(g) {
 function partyPage(g) {
   const url = `${SITE}/games/${g.slug}/`;
   const plain = g.name.replace('?', '');
-  const title = `ChitPlay: ${plain} Game – Play Free Online${g.video ? ' in 3D' : ''}`;
+  // the playground games also carry the name they go by in India, which is what many people search
+  const desi = { 'lapa-chupi': 'Lapa Chupi', 'pakda-padi': 'Pakda Pakdi', 'baraf-pani': 'Baraf Pani' }[g.slug];
+  const title = desi ? `${plain} (${desi}) Game – Play Free Online | ChitPlay` : `ChitPlay: ${plain} Game – Play Free Online${g.video ? ' in 3D' : ''}`;
   const img = `${SITE}/assets/${imageFor(g.slug, false, 'jpg')}`;
   const imgSq = `${SITE}/assets/${imageFor(g.slug, true, 'jpg')}`;
   const art = imageFor(g.slug);
@@ -449,7 +451,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261115-1340">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261115-1433">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -559,7 +561,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1340">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1433">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -637,7 +639,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1340">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261115-1433">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>

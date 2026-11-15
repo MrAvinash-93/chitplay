@@ -5,9 +5,14 @@
  * The tunnel comes in levels: first plain walls and gaps, then twin walls on both sides, then walls
  * that turn as they come at you. Every new level opens with a ring of gems all the way round.
  *
+ * What makes a run worth chasing: gems in a row build a combo (each gem is worth 10 × the combo, up to
+ * ×5; a gem that flies past you breaks it), slipping by a wall with almost no room is a close call
+ * (+5), and now and then a power-up floats in the tunnel: a shield that takes one crash for you, or a
+ * magnet that pulls in every gem near your side of the tunnel for ten seconds.
+ *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1340';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1433';
 
 export const LEVEL_D = 360;
 export const STAGES = ['Paper tunnel', 'Twin walls', 'Turning walls', 'Spin cycle'];
@@ -17,6 +22,9 @@ export const stageName = (level) => STAGES[Math.min(level, STAGES.length) - 1];
 export const AHEAD = 60;
 const TAU = Math.PI * 2;
 const PLANE = 0.16;                       // half the plane's width, as an angle
+const CLOSE = 0.14;                       // a wall passed with less room than this is a close call
+const MAGNET_TICKS = 60 * 10;
+export const POWERUPS = ['shield', 'magnet'];
 export const speedAt = (d) => Math.min(30, 12 + d * 0.006);
 const angDiff = (a, b) => { let x = (a - b) % TAU; if (x > Math.PI) x -= TAU; if (x < -Math.PI) x += TAU; return x; };
 const r3 = (v) => Math.round(v * 1000) / 1000;
@@ -69,9 +77,10 @@ function spawn(s) {
   if (level >= 3 && rnd(s) < Math.min(0.6, 0.3 + (level - 3) * 0.1)) o.sp = r3((rnd(s) < 0.5 ? -1 : 1) * Math.min(1.2, 0.45 + (level - 3) * 0.15));
   s.obs.push(o);
   if (!o.sp && rnd(s) < 0.5) {
-    // a gem sits where the plane can get through
+    // a gem sits where the plane can get through; now and then it is a power-up instead
     const open = o.k === 'gap' ? o.c : o.k === 'wall' ? o.c + Math.PI : o.c + Math.PI / 2;
-    s.gems.push({ z: r1(o.z + 4), a: r3(open) });
+    const roll = rnd(s);
+    s.gems.push(roll < 0.07 ? { z: r1(o.z + 4), a: r3(open), p: POWERUPS[roll < 0.035 ? 0 : 1] } : { z: r1(o.z + 4), a: r3(open) });
   }
   s.at += Math.max(7, 13 - lvl * 5);
 }
@@ -82,7 +91,7 @@ export default {
   analog: 'x',
   init({ n, seed }) {
     const s = { n, seed, t: 0, d: 0, at: 26, obs: [], gems: [], ev: [], level: 1, levelAt: -999, ring: false,
-      planes: seats(n).map(i => ({ a: r3(Math.PI * 1.5 + (i - (n - 1) / 2) * 0.55), w: 0, alive: true, score: 0, gems: 0, popAt: -999 })) };
+      planes: seats(n).map(i => ({ a: r3(Math.PI * 1.5 + (i - (n - 1) / 2) * 0.55), w: 0, alive: true, score: 0, gems: 0, popAt: -999, pop: 10, combo: 0, bonus: 0, shield: false, magnet: 0, safeT: 0, closeAt: -999 })) };
     while (s.at < AHEAD) spawn(s);
     return s;
   },
@@ -106,18 +115,37 @@ export default {
       const x = Number.isFinite(inp.x) ? Math.max(-1, Math.min(1, inp.x)) : (inp.r || inp.u ? 1 : 0) - (inp.l || inp.d ? 1 : 0);
       p.w += (x * 3.4 - p.w) * 0.2;
       p.a = r3(((p.a + p.w * TICK) % TAU + TAU) % TAU);
+      if (p.safeT > 0) p.safeT -= 1;
       for (const o of s.obs) {
-        if (o.z > from && o.z <= s.d && blocks(o, p.a)) { p.alive = false; s.ev.push({ k: 'crash', seat: i }); return; }
-        if (o.z > from && o.z <= s.d) s.ev.push({ k: 'pass', seat: i });
+        if (!(o.z > from && o.z <= s.d)) continue;
+        if (blocks(o, p.a)) {
+          if (p.safeT > 0) continue;
+          // the shield takes the hit: a moment to get clear, then it's gone
+          if (p.shield) { p.shield = false; p.safeT = 50; s.ev.push({ k: 'hit', seat: i, victim: i }); continue; }
+          p.alive = false; s.ev.push({ k: 'crash', seat: i }); return;
+        }
+        s.ev.push({ k: 'pass', seat: i });
+        // how much room was left: almost none is a close call
+        const room = o.k === 'gap' ? o.w / 2 - PLANE - Math.abs(angDiff(p.a, o.c))
+          : o.k === 'wall' ? Math.abs(angDiff(p.a, o.c)) - o.w / 2 - PLANE
+            : Math.min(Math.abs(angDiff(p.a, o.c)), Math.abs(angDiff(p.a, o.c + Math.PI))) - o.w / 2 - PLANE;
+        if (room >= 0 && room < CLOSE) { p.bonus = (p.bonus || 0) + 5; p.closeAt = s.t; s.ev.push({ k: 'star', seat: i, combo: 2 }); }
       }
+      const reach = p.magnet > s.t ? 1.1 : 0.42;
       for (const g of s.gems) {
-        if (!g.got && g.z > from && g.z <= s.d && Math.abs(angDiff(p.a, g.a)) < 0.42) { g.got = true; p.gems += 1; p.popAt = s.t; s.ev.push({ k: 'star', seat: i }); }
+        if (g.got || !(g.z > from && g.z <= s.d)) continue;
+        if (Math.abs(angDiff(p.a, g.a)) < reach) {
+          g.got = true; p.popAt = s.t;
+          if (g.p === 'shield') { p.shield = true; p.pop = 0; s.ev.push({ k: 'star', seat: i, combo: 3 }); }
+          else if (g.p === 'magnet') { p.magnet = s.t + MAGNET_TICKS; p.pop = 0; s.ev.push({ k: 'star', seat: i, combo: 3 }); }
+          else { p.gems += 1; p.combo = Math.min(5, (p.combo || 0) + 1); p.pop = 10 * p.combo; p.bonus = (p.bonus || 0) + p.pop; s.ev.push({ k: 'star', seat: i, combo: p.combo }); }
+        } else if (!g.p && Math.abs(angDiff(p.a, g.a)) < 1.2) p.combo = 0;   // a gem that went by on your side breaks the combo
       }
-      p.score = Math.floor(s.d / 6) + p.gems * 10;
+      p.score = Math.floor(s.d / 6) + (p.bonus || 0);
     });
   },
   revive(s, seat) {
-    Object.assign(s.planes[seat], { alive: true, w: 0 });
+    Object.assign(s.planes[seat], { alive: true, w: 0, combo: 0, safeT: 60 });
     s.obs = s.obs.filter(o => o.z > s.d + 16);
   },
   over(s) {
@@ -147,13 +175,19 @@ export default {
     // a gem just taken: +10 rising over that player's score
     const w = W / s.n;
     s.planes.forEach((p, i) => {
+      const cx = w * (i + 0.5);
+      g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5;
       const age = s.t - p.popAt;
-      if (age < 0 || age >= 40) return;
-      g.save(); g.globalAlpha = 1 - age / 40;
-      g.font = '900 26px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5; g.fillStyle = '#7dffe3';
-      const y = 74 - age * 0.6;
-      g.strokeText('+10', w * (i + 0.5), y); g.fillText('+10', w * (i + 0.5), y);
+      if (age >= 0 && age < 40 && p.pop > 0) {
+        g.globalAlpha = 1 - age / 40; g.font = `900 ${p.combo > 1 ? 28 : 24}px system-ui, sans-serif`; g.fillStyle = p.combo > 2 ? '#ffd23f' : '#7dffe3';
+        const y = 74 - age * 0.6, text = `+${p.pop}${p.combo > 1 ? ` ×${p.combo}` : ''}`;
+        g.strokeText(text, cx, y); g.fillText(text, cx, y);
+      }
+      const close = s.t - p.closeAt;
+      if (close >= 0 && close < 45) { g.globalAlpha = 1 - close / 45; g.font = '900 18px system-ui, sans-serif'; g.fillStyle = '#ff9a5a'; g.strokeText('CLOSE CALL +5', cx, 100 - close * 0.3); g.fillText('CLOSE CALL +5', cx, 100 - close * 0.3); }
+      g.globalAlpha = 1; g.font = '800 14px system-ui, sans-serif'; g.lineWidth = 4;
+      const held = [p.shield ? '🛡️' : '', p.magnet > s.t ? `🧲${Math.ceil((p.magnet - s.t) / 60)}s` : '', p.combo > 1 ? `💎×${p.combo}` : ''].filter(Boolean).join('  ');
+      if (held && p.alive) { g.strokeText(held, cx, 50); g.fillStyle = '#fff'; g.fillText(held, cx, 50); }
       g.restore();
     });
     drawLevelCue(g, s);
@@ -224,8 +258,9 @@ export default {
         const size = Math.max(2.5, Math.min(13, r / 14));
         const spin = 0.6 + 0.4 * Math.sin(s.t / 6 + it.gm.a * 3);
         g.save(); g.globalAlpha = near;
-        g.shadowColor = '#7dffe3'; g.shadowBlur = size * 1.6;
-        g.fillStyle = '#7dffe3';
+        const col = it.gm.p === 'shield' ? '#5aa9ff' : it.gm.p === 'magnet' ? '#ff6b57' : '#7dffe3';
+        g.shadowColor = col; g.shadowBlur = size * 1.6;
+        g.fillStyle = col;
         g.beginPath(); g.moveTo(x, y - size); g.lineTo(x + size * spin, y); g.lineTo(x, y + size); g.lineTo(x - size * spin, y); g.closePath(); g.fill();
         g.restore();
       }
@@ -247,6 +282,7 @@ export default {
       g.beginPath(); g.moveTo(0, 16); g.lineTo(0, -5); g.stroke();
       g.restore();
       if (!p.alive) { g.font = '900 18px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText('✕', x, y); }
+      if (p.alive && (p.shield || p.safeT > 0)) { g.strokeStyle = p.safeT > 0 && Math.floor(s.t / 4) % 2 ? 'rgba(90,169,255,.3)' : 'rgba(90,169,255,.85)'; g.lineWidth = 3; g.beginPath(); g.arc(x, y, 24, 0, TAU); g.stroke(); }
     });
     // a soft vignette round the edge of the screen
     const vig = g.createRadialGradient(cx, cy, H * 0.45, cx, cy, W * 0.62);

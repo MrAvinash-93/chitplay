@@ -81,7 +81,7 @@ export default {
     scoring: 'Ba duifang de bi tan xia zhuozi, yong meng zhuang ba ta zhuang dao, huo bi ta jianchi geng jiu, jiu ying yi huihe. Xian ying san huihe de yi fang yingde bisai.',
   },
   'lapa-chupi': {
-    steps: ['Mei ju you butong de wanjia lai zhao. Zhao de ren bizhe yan zai qiang bian deng, qita ren you wu miao zhong duo qilai.', 'Yong yaogan huo fangxiangjian zai 3D caochang li zoudong. Anzhu chongci keyi pao de geng kuai, dan dayue yi miao hou jiu hui chuan bu guo qi.', 'Zai guanmu, changyi huo youle sheshi pang tingxia bing baochi bu dong jiu neng duo qilai. Luan dong huo rang zhao de ren kaojin jiu hui baolu.', 'Zhao de ren zhaodao suoyou ren jiu ying. Shijian jieshu shi hai duozhe de ren yiqi huosheng.', 'Zai zaixian fangjian li, duo qilai de wanjia weizhi bu hui fasong gei qita wanjia.'],
+    steps: ['Mei ju you butong de wanjia lai zhao. Zhao de ren bizhe yan zai qiang bian deng, qita ren you wu miao zhong duo qilai.', 'Yong yaogan huo fangxiangjian zai 3D fangzi li zoudong. Anzhu chongci keyi pao de geng kuai, dan dayue yi miao hou jiu hui chuan bu guo qi.', 'Zai chuang, shafa, zhuozi huo chuanglian pang tingxia bing baochi bu dong jiu neng duo qilai. Luan dong huo rang zhao de ren kaojin jiu hui baolu.', 'Zhao de ren zhaodao suoyou ren jiu ying. Shijian jieshu shi hai duozhe de ren yiqi huosheng.', 'Zai zaixian fangjian li, duo qilai de wanjia weizhi bu hui fasong gei qita wanjia.'],
     win: 'Keyi he diannao wanjia, he pengyou zai tong yi pingmu, fujin huo zaixian wan. Kongwei you diannao bu shang.',
     scoring: 'Zhao de ren mei zhaodao yi ren de 1 fen, quanbu zhaodao jiu ying. Shijian jieshu shi hai duozhe de ren yiqi huosheng, defen bi renhe zhaodao renshu dou duo.',
   },
@@ -91,7 +91,7 @@ export default {
     scoring: 'An duiwu huosheng: zhua ren de dong zhu suoyou ren jiu ying, taopao de jianchi dao shijian jieshu hai you yi ren ziyou jiu ying. Huosheng fang ge de 1 fen.',
   },
   'pakda-padi': {
-    steps: ['Yong yaogan huo fangxiangjian zai caochang li yidong. Anzhu chongci keyi jiasu; dayue yi miao hou jiu hui chuan bu guo qi, yao zou yihuir.', 'Biaozhe IT de wanjia shu dao san, ranhou qu zhui qita ren. Kao de gou jin jiu neng ba "gui" chuan chuqu.', 'Bei zhua dao hou, zhuanshen qu zhui bieren. Bu neng mashang zhua huiqu: liang miao nei bu neng zhua ganggang zhua ni de ren.', 'Shijian jieshu shi, dang IT shijian zuiduan de ren huosheng. Ye keneng pingju.'],
+    steps: ['Yong yaogan huo fangxiangjian zai dating li yidong. Anzhu chongci keyi jiasu; dayue yi miao hou jiu hui chuan bu guo qi, yao zou yihuir.', 'Biaozhe IT de wanjia shu dao san, ranhou qu zhui qita ren. Kao de gou jin jiu neng ba "gui" chuan chuqu.', 'Bei zhua dao hou, zhuanshen qu zhui bieren. Bu neng mashang zhua huiqu: liang miao nei bu neng zhua ganggang zhua ni de ren.', 'Shijian jieshu shi, dang IT shijian zuiduan de ren huosheng. Ye keneng pingju.'],
     win: 'Keyi he diannao wanjia, he pengyou zai tong yi pingmu, fujin huo zaixian wan. Kongwei you diannao bu shang.',
     scoring: 'Dang IT shijian zuiduan de ren huosheng. Zhua ren de cishu hui xianshi zai jifenban shang.',
   },
@@ -117,7 +117,7 @@ export default {
   },
   ludo: {
     steps: ['Lun dao ni shi dian "zhi tou". Yao zhi chu liu dian cai neng ba qizi cong jia li fang dao qidian ge.', 'Dianji faguang de qizi huo ta de anniu, an zhi chu de dianshu qianjin. Jishi zhiyou yi mei qizi neng zou, ye yao ni ziji dian; meiyou qizi neng zou, zhe yi lun jiu jieshu.', 'Ting zai duishou qizi de gezi shang, ta jiu hui jia. Qidian ge he xingxing ge shi anquan ge, zai nali bu hui bei chi.', 'Rao qipan yi quan hou, qizi hui guai jin ni ziji de zhongdian lu. Daoda zhongdian xuyao zhenghao de dianshu.', 'Zhi chu liu dian, chi diao qizi, qizi daoda zhongdian, dou neng zai zhi yi ci. Lianxu san ge liu dian hui shiqu zhe yi lun.'],
-    win: 'Putong moshi: zuixian rang si mei qizi quanbu dao jia de ren huosheng. Jifen moshi: 10 fenzhong dao huo you ren rang si mei qizi quanbu dao jia shi, fenshu zuiduo de ren huosheng.',
+    win: 'Putong moshi: zuixian rang si mei qizi quanbu dao jia de ren huosheng. Jifen moshi: 5 fenzhong dao huo you ren rang si mei qizi quanbu dao jia shi, fenshu zuiduo de ren huosheng.',
     scoring: 'Kaishi qian xuanze moshi. Putong moshi bu jifen: jieguo biao xianshi mei ren song hui jia de qizi. Jifen moshi zhong mei zou yi ge 1 fen, chi diao yi mei 20 fen, yi mei dao jia 30 fen, zuixian si mei quanbu dao jia jiangli 50 fen.',
     house: [['Luzhang', 'Tong se liang mei qizi zai luxian de tong yi ge shang hui xingcheng luzhang. Bieren ji bu neng chuanguo ye bu neng ting zai nali, zhe liang mei qizi ye bu hui bei chi.'], ['Chi zi cai neng hui jia', 'Zhiyou chi diao zhishao yi mei duishou qizi hou, qizi cai neng guai jin zhongdian lu. Zai na zhiqian ta hui zai rao yi quan.'], ['Kuaisu kaiju', 'Mei ren kaishi shi jiu you yi mei qizi zai qidian ge shang, youxi mashang jiu neng dong qilai.'], ['Jixu zheng mingci', 'San ren huo si ren shi, chuxian guanjun hou youxi bu hui ting: qiyu ren jixu zheng di er, di san ming, zuihou xianshi wansai shunxu.']],
   },

@@ -5,7 +5,7 @@
  * Every six samosas is a new level: the snakes speed up, a short brick wall goes up somewhere on the
  * field (away from every snake's head), and a golden samosa appears for a few seconds: three points.
  */
-import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261115-1340';
+import { H, levelTag, rnd, scoreBar, SEAT_COLORS, seats, W } from './lib.js?v=20261115-1433';
 
 export const COLS = 32, ROWS = 18;
 const CELL = 20, TOP = 40;
@@ -80,6 +80,8 @@ export default {
       });
     });
     if (s.gold && --s.gold.ttl <= 0) s.gold = null;
+    // nobody has eaten for twenty seconds: the samosa moves somewhere else, so the game keeps moving
+    if (s.t - (s.lastEatAt || 0) > 60 * 20) { s.lastEatAt = s.t; placeFood(s); }
     if (++s.wait < Math.max(4, 10 - (s.level - 1))) return;
     s.wait = 0;
     const heads = s.snakes.map((n) => {
@@ -102,6 +104,7 @@ export default {
       }
       n.body.unshift(h);
       if (h[0] === s.food[0] && h[1] === s.food[1]) {
+        s.lastEatAt = s.t;
         n.score += 1;
         n.pop = 1; n.popAt = s.t;
         s.eaten += 1;
@@ -156,10 +159,13 @@ export default {
       }
       return seen.size;
     };
-    const rivals = s.snakes.filter((o, j) => j !== seat && o.alive).map(o => o.body[0]);
+    // hungry for a while: it stops being careful about the other snake's head and goes for the food
+    const hungry = s.t - (s.lastEatAt || 0) > 60 * 15;
+    const rivals = hungry ? [] : s.snakes.filter((o, j) => j !== seat && o.alive).map(o => o.body[0]);
     const [cx, cy] = DIRS[n.d];
     // now and then it only looks one step ahead, like a person in a hurry: it can be beaten
-    const lapse = (s.t + seat * 131) % 900 < 120;
+    // and the longer the game goes on, the more often (so a game always ends, and a person can win)
+    const lapse = (s.t + seat * 131) % 900 < 120 + Math.min(620, s.t / 18);
     const need = lapse ? 2 : n.body.length + 3;
     let best = null, bestV = -Infinity;
     for (const k of ['u', 'r', 'd', 'l']) {

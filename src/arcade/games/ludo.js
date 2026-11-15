@@ -11,7 +11,7 @@
  *  - quick:   everyone starts with one token already out
  *  - places:  with three or four players the game goes on after the winner, for second and third place
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-1340';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-1433';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];
@@ -58,7 +58,7 @@ function legal(s, seat) {
   return s.t[seat].map((_, t) => (destination(s, seat, t) == null ? null : { t })).filter(Boolean);
 }
 /** Score mode: how the points work, and how long a game lasts (a clock: most points when it runs out). */
-export const SCORE = { step: 1, capture: 20, home: 30, finish: 50, rounds: 15, minutes: 10 };
+export const SCORE = { step: 1, capture: 20, home: 30, finish: 50, rounds: 15, minutes: 5 };
 /** With people: a turn left alone is played by the computer; the third time, that player is out (offline). */
 export const LIFELINES = 3;
 const finished = (s, seat) => !!s.order?.includes(seat) || !!s.out?.includes(seat);

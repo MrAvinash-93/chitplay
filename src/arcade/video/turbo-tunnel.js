@@ -13,7 +13,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1340';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1433';
 
 const TAU = Math.PI * 2;
 export const LEVEL_D = 460;
@@ -169,7 +169,13 @@ export default {
           // just past it, and only just: a close call is worth a little
           if (k.lethal && o.z > from && o.z <= s.d) {
             const clear = o.k === 'gate' ? (o.w - CAR) - Math.abs(turnTo(p.a, gateAt(o, s.d))) : Math.abs(turnTo(p.a, o.c)) - ((o.w || k.hw) + CAR);
-            if (clear >= 0 && clear < 0.1) { p.bonus += 5; p.popAt = s.t; p.pop = 5; s.ev.push({ k: 'pass', seat: i, near: true }); }
+            if (clear >= 0 && clear < 0.1) {
+              // close calls in a row (within three seconds) are worth more each time: 5, 10, 15…
+              p.chain = s.t - (p.closeAt ?? -999) < 180 ? Math.min(5, (p.chain || 0) + 1) : 1;
+              p.closeAt = s.t;
+              p.bonus += 5 * p.chain; p.popAt = s.t; p.pop = 5 * p.chain; p.popKind = 'close';
+              s.ev.push({ k: 'pass', seat: i, near: true });
+            }
           }
           continue;
         }
@@ -190,7 +196,13 @@ export default {
       }
       if (!p.alive) return;
       for (const c of s.items) {
-        if (!c.got && Math.abs(c.z - s.d) < 0.9 && Math.abs(turnTo(p.a, c.c)) < 0.3) { c.got = true; p.coins += 1; p.popAt = s.t; p.pop = 10; s.ev.push({ k: 'star', seat: i }); }
+        if (c.got) continue;
+        if (Math.abs(c.z - s.d) < 0.9 && Math.abs(turnTo(p.a, c.c)) < 0.3) {
+          // coins in a row build a streak: each one is worth 10 × the streak, up to ×5
+          c.got = true; p.coins += 1; p.streak = Math.min(5, (p.streak || 0) + 1);
+          p.bonus += 10 * (p.streak - 1); p.popAt = s.t; p.pop = 10 * p.streak; p.popKind = 'coin';
+          s.ev.push({ k: 'star', seat: i, combo: p.streak });
+        } else if (c.z < s.d - 0.9 && !c.passed?.[i] && Math.abs(turnTo(p.a, c.c)) < 1.0) { (c.passed ||= {})[i] = true; p.streak = 0; }   // one missed on your side ends it
       }
       p.score = Math.floor(p.pts) + p.coins * 10 + p.bonus;
     });
@@ -241,8 +253,8 @@ export default {
       if (age >= 0 && age < 40) {
         g.save(); g.globalAlpha = 1 - age / 40;
         g.font = '900 24px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5; g.fillStyle = p.pop === 5 ? '#ff9f43' : '#ffd23f';
-        const y = 74 - age * 0.6, text = p.pop === 5 ? 'Close call +5' : '+10';
+        g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 5; g.fillStyle = p.popKind === 'close' ? '#ff9f43' : '#ffd23f';
+        const y = 74 - age * 0.6, text = p.popKind === 'close' ? `Close call +${p.pop}${p.chain > 1 ? ` ×${p.chain}` : ''}` : `+${p.pop}${p.streak > 1 ? ` ×${p.streak}` : ''}`;
         g.strokeText(text, w * (i + 0.5), y); g.fillText(text, w * (i + 0.5), y);
         g.restore();
       }

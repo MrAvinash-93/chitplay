@@ -14,7 +14,7 @@ export const GUIDES = {
     desc: 'Ludo strategy that works: when to bring tokens out, how to stay safe, when to chase a capture, and how to finish first. Tips for Normal and Score mode.',
     intro: [
       'Ludo looks like a game of pure luck: you roll, you move. But watch two players with the same rolls and the better one finishes first almost every time. The dice decide how far you can go; you decide which token goes there, and that choice, made forty or fifty times a game, is where Ludo is won.',
-      'These tips start with the habits that matter most and end with the finer points. They work on a cardboard board at home and in ChitPlay, in Normal mode (first to bring all four tokens home) and in Score mode (most points when the ten-minute clock runs out).',
+      'These tips start with the habits that matter most and end with the finer points. They work on a cardboard board at home and in ChitPlay, in Normal mode (first to bring all four tokens home) and in Score mode (most points when the five-minute clock runs out).',
     ],
     sections: [
       ['1. Get two tokens out early', 'One token on the track gives you no choice: every roll has to move it, even into danger. With two out, you can always pick the safer move. Use your first sixes to bring tokens out until you have two in play; after that, a six is often better spent moving a token that is already running.'],

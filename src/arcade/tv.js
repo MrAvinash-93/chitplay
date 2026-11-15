@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261115-1340';
-import { is2d } from './view-mode.js?v=20261115-1340';
-import { adBreak } from './ad-breaks.js?v=20261115-1340';
-import { resultAd, sideAd } from './ads.js?v=20261115-1340';
-import { myTableSize } from '../net/party.js?v=20261115-1340';
-import { W, H, TICK } from './video/lib.js?v=20261115-1340';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-1340';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-1340';
-import { MOMENT, linesFor } from './talk.js?v=20261115-1340';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1340';
-import { ask, confirmSpend } from './dialog.js?v=20261115-1340';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1340';
-import { profile } from '../persistence/profile-store.js?v=20261115-1340';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-1340';
+import { hintsLeft, showHint } from './hint.js?v=20261115-1433';
+import { is2d } from './view-mode.js?v=20261115-1433';
+import { adBreak } from './ad-breaks.js?v=20261115-1433';
+import { resultAd, sideAd } from './ads.js?v=20261115-1433';
+import { myTableSize } from '../net/party.js?v=20261115-1433';
+import { W, H, TICK } from './video/lib.js?v=20261115-1433';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-1433';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-1433';
+import { MOMENT, linesFor } from './talk.js?v=20261115-1433';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1433';
+import { ask, confirmSpend } from './dialog.js?v=20261115-1433';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1433';
+import { profile } from '../persistence/profile-store.js?v=20261115-1433';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-1433';
 
-const V = '?v=20261115-1340';
+const V = '?v=20261115-1433';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -67,8 +67,11 @@ export async function runTv(ctx) {
   const bigBox = h('div', { class: 'tvbig', hidden: true });
   document.body.append(bigBox);
   // big on a computer, and on a phone held sideways, where the TV in the room would be too small to play
-  let big = !story || matchMedia('(pointer: fine) and (min-width: 900px)').matches || matchMedia('(orientation: landscape) and (max-height: 560px)').matches;
+  // the house and hall games fill the screen: you play in the house, not on the TV in the room
+  const roomGame = ['lapa-chupi', 'baraf-pani', 'pakda-padi'].includes(game?.slug);
+  let big = !story || roomGame || matchMedia('(pointer: fine) and (min-width: 900px)').matches || matchMedia('(orientation: landscape) and (max-height: 560px)').matches;
   if (big) document.body.classList.add('tv-full');
+  document.body.classList.toggle('tv-roomgame', roomGame);
   const setBig = (on) => {
     big = on;
     document.body.classList.toggle('tv-full', on);
@@ -548,7 +551,7 @@ export async function runTv(ctx) {
     story.emojiPop(e, target != null ? `${players[seat]?.name || ''} → ${players[target].name}` : players[seat]?.name || '');
   }
   function bigToggle() {
-    if (!story) return null;
+    if (!story || roomGame) return null;   // the house and hall games are always full screen
     return h('button', { type: 'button', class: 'btn bigbtn', onclick: () => {
       setBig(!big);
       if (!big) story.tvCanvasBack(canvas);
@@ -1013,6 +1016,7 @@ export async function runTv(ctx) {
     swipeCanvasCleanup();
     dragCleanup();
     removeEventListener('chitplay:view', onView);
+    document.body.classList.remove('tv-roomgame');
     bigBox.remove();
     holdPopups(false);
     room?.close();

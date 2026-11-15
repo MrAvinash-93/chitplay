@@ -1,4 +1,4 @@
-import { H, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1340';
+import { H, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1433';
 
 const LEFT = 38, RIGHT = W - 38, TOP = 48, BOTTOM = H - 24;
 const DURATION = 60 * 75, HIDE_TICKS = 60 * 5, TAG_DISTANCE = 28;
@@ -51,7 +51,7 @@ function seekerSignal(s) {
   if (!Number.isFinite(closest)) return { level: 0, label: 'NO HIDERS IN COVER' };
   if (closest <= 150) return { level: 3, label: 'HOT · CHECK NEARBY COVER' };
   if (closest <= 280) return { level: 2, label: 'WARM · CLOSING IN' };
-  return { level: 1, label: 'COLD · SWEEP THE YARD' };
+  return { level: 1, label: 'COLD · SEARCH THE HOUSE' };
 }
 
 function drawSeekerSignal(g, signal) {
@@ -185,12 +185,16 @@ function rulesResult(s, timeUp = false) {
   return values.map((value, i) => value === best ? i : -1).filter(i => i >= 0);
 }
 
-/* ─── the flat (2D) picture: a schoolyard seen from above ─── */
+/* ─── the flat (2D) picture: a house (hide and seek) or a hall (the chase games), seen from above ─── */
 const yards = new Map();
 const SKINS = ['#8d5524', '#c68642', '#e0ac69', '#f1c27d'];
 const HAIR = ['#1c1410', '#3b2414', '#1c1410', '#5a3a1e'];
 const rounded = (g, x, y, w, h, r) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); };
-/** The ground, drawn once per game and kept: mown grass, or a frosty yard for freeze tag. */
+/**
+ * The ground, drawn once per game and kept. Hide and seek is played in a big house seen from above:
+ * rooms with their own floors (a carpeted living room, a tiled kitchen, wooden bedrooms), outer walls
+ * and windows. The two chase games are played in a hall: polished stone, a long carpet, pillars.
+ */
 function yardPicture(mode) {
   if (yards.has(mode)) return yards.get(mode);
   if (typeof document === 'undefined') return null;
@@ -198,55 +202,118 @@ function yardPicture(mode) {
   c.width = W * 2; c.height = H * 2;
   const g = c.getContext('2d');
   g.scale(2, 2);
-  const ice = mode === 'baraf-pani';
   let seed = mode.length * 97;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  g.fillStyle = ice ? '#8cc6db' : '#5f8f43'; g.fillRect(0, 0, W, H);
-  // the yard: stripes like a freshly mown field, or packed snow with a blue sheen
   const x0 = LEFT - 14, y0 = TOP - 16, w = RIGHT - LEFT + 28, h = BOTTOM - TOP + 30;
-  for (let i = 0; i < 12; i++) {
-    g.fillStyle = ice ? (i % 2 ? '#e4f6fb' : '#d8f0f7') : (i % 2 ? '#7fb85a' : '#74ad50');
-    g.fillRect(x0 + (w / 12) * i, y0, w / 12 + 1, h);
+  if (mode === 'lapa-chupi') {
+    g.fillStyle = '#5b4636'; g.fillRect(0, 0, W, H);
+    const midX = x0 + w * 0.5, midY = y0 + h * 0.52;
+    const rooms = [
+      [x0, y0, w * 0.5, h * 0.52, 'wood', '#b98a5a'],
+      [midX, y0, w * 0.5, h * 0.52, 'wood', '#a7784b'],
+      [x0, midY, w * 0.5, h * 0.48, 'tile', '#e9e1cf'],
+      [midX, midY, w * 0.5, h * 0.48, 'carpet', '#8a3b3b'],
+    ];
+    rooms.forEach(([rx, ry, rw, rh, kind, col]) => {
+      g.fillStyle = col; g.fillRect(rx, ry, rw, rh);
+      if (kind === 'wood') {
+        g.strokeStyle = 'rgba(70,40,15,.25)'; g.lineWidth = 1;
+        for (let y = ry + 9; y < ry + rh; y += 9) { g.beginPath(); g.moveTo(rx, y); g.lineTo(rx + rw, y); g.stroke(); }
+        for (let k = 0; k < 30; k++) { const y = ry + Math.floor(rnd() * rh / 9) * 9; const x = rx + rnd() * rw; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 9); g.stroke(); }
+      }
+      if (kind === 'tile') {
+        g.strokeStyle = 'rgba(120,105,80,.35)'; g.lineWidth = 1;
+        for (let x = rx; x < rx + rw; x += 18) { g.beginPath(); g.moveTo(x, ry); g.lineTo(x, ry + rh); g.stroke(); }
+        for (let y = ry; y < ry + rh; y += 18) { g.beginPath(); g.moveTo(rx, y); g.lineTo(rx + rw, y); g.stroke(); }
+      }
+      if (kind === 'carpet') {
+        g.fillStyle = '#a44a43'; g.fillRect(rx + 14, ry + 12, rw - 28, rh - 24);
+        g.strokeStyle = '#e2b35d'; g.lineWidth = 3; g.strokeRect(rx + 20, ry + 18, rw - 40, rh - 36);
+        g.lineWidth = 1; g.strokeRect(rx + 27, ry + 25, rw - 54, rh - 50);
+      }
+    });
+    // inside walls with wide doorways, so everyone can run through
+    g.fillStyle = '#efe6d6';
+    const gap = 70;
+    g.fillRect(midX - 3, y0, 6, (midY - y0) / 2 - gap / 2);
+    g.fillRect(midX - 3, y0 + (midY - y0) / 2 + gap / 2, 6, (midY - y0) / 2 - gap / 2);
+    g.fillRect(x0, midY - 3, w * 0.22, 6);
+    g.fillRect(x0 + w * 0.22 + gap, midY - 3, w * 0.32 - gap, 6);
+    g.fillRect(midX + w * 0.14, midY - 3, w * 0.36 - gap, 6);
+    // outer walls and windows
+    g.strokeStyle = '#efe6d6'; g.lineWidth = 8; g.strokeRect(x0 - 2, y0 - 2, w + 4, h + 4);
+    g.fillStyle = '#9fd3ff'; [[x0 + w * 0.15, y0 - 6], [x0 + w * 0.7, y0 - 6]].forEach(([wx, wy]) => g.fillRect(wx, wy, 60, 5));
+  } else {
+    // the hall: polished stone in big squares, a long carpet down the middle
+    const ice = mode === 'baraf-pani';
+    g.fillStyle = '#4b3a2c'; g.fillRect(0, 0, W, H);
+    for (let y = y0; y < y0 + h; y += 32) for (let x = x0; x < x0 + w; x += 32) {
+      const k = (Math.round((x - x0) / 32) + Math.round((y - y0) / 32)) % 2;
+      g.fillStyle = ice ? (k ? '#e8f4f8' : '#d3e7ef') : (k ? '#efe2c8' : '#e2d1b0');
+      g.fillRect(x, y, 32, 32);
+    }
+    for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(255,255,255,${0.15 + rnd() * 0.25})`; g.fillRect(x0 + rnd() * w, y0 + rnd() * h, 2, 1); }
+    g.fillStyle = ice ? 'rgba(70,140,190,.35)' : 'rgba(150,40,40,.45)';
+    g.fillRect(x0 + w * 0.2, y0 + h * 0.38, w * 0.6, h * 0.24);
+    g.strokeStyle = ice ? 'rgba(255,255,255,.7)' : 'rgba(230,180,90,.8)'; g.lineWidth = 2;
+    g.strokeRect(x0 + w * 0.2 + 5, y0 + h * 0.38 + 5, w * 0.6 - 10, h * 0.24 - 10);
+    g.strokeStyle = '#efe6d6'; g.lineWidth = 8; g.strokeRect(x0 - 2, y0 - 2, w + 4, h + 4);
   }
-  for (let i = 0; i < 420; i++) {
-    const x = x0 + rnd() * w, y = y0 + rnd() * h;
-    if (ice) { g.fillStyle = `rgba(255,255,255,${0.4 + rnd() * 0.5})`; g.fillRect(x, y, 1.5, 1.5); }
-    else { g.strokeStyle = `rgba(${rnd() < 0.5 ? '40,90,30' : '170,215,120'},${0.35 + rnd() * 0.3})`; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, y - 3 - rnd() * 3); g.stroke(); }
-  }
-  // the chalk line round the yard and the circle in the middle, a bit smudged like the real thing
-  g.strokeStyle = ice ? 'rgba(80,140,170,.55)' : 'rgba(255,250,225,.85)'; g.lineWidth = 3; g.setLineDash([14, 3]);
-  rounded(g, LEFT - 6, TOP - 6, RIGHT - LEFT + 12, BOTTOM - TOP + 12, 14); g.stroke();
-  g.setLineDash([]);
-  g.beginPath(); g.arc(W / 2, (TOP + BOTTOM) / 2, 34, 0, Math.PI * 2); g.stroke();
   const shade = g.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.62);
-  shade.addColorStop(0, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,.28)');
+  shade.addColorStop(0, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,.25)');
   g.fillStyle = shade; g.fillRect(0, 0, W, H);
   yards.set(mode, c);
   return c;
 }
-/** A hiding place: a bush, a block of ice, or a bench, each with its shadow. */
+/**
+ * A hiding place. In the house, real furniture, each place its own piece: two beds, the dining table,
+ * the TV cabinet, a sofa, a big plant, curtains, the fridge. In the hall, a stone pillar (frosty for
+ * freeze tag).
+ */
+export const FURNITURE = ['bed', 'bed2', 'table', 'tv', 'sofa', 'plant', 'curtain', 'fridge'];
 function drawCover(g, mode, x, y, i) {
   g.save();
-  g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(x + 5, y + 8, 28, 15, 0, 0, Math.PI * 2); g.fill();
-  if (mode === 'baraf-pani') {
-    const grad = g.createLinearGradient(x - 24, y - 18, x + 24, y + 18);
-    grad.addColorStop(0, '#f4fdff'); grad.addColorStop(1, '#8fd0e6');
-    g.fillStyle = grad; g.strokeStyle = 'rgba(70,140,170,.8)'; g.lineWidth = 2;
-    rounded(g, x - 24, y - 17, 48, 34, 7); g.fill(); g.stroke();
-    g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 16, y - 10); g.lineTo(x - 2, y - 10); g.stroke();
-  } else if (mode === 'lapa-chupi' || i % 2 === 0) {
-    // a round bush: three overlapping clumps, darker underneath, a light catch on top
-    [[-12, 4, 15], [12, 3, 15], [0, -6, 17]].forEach(([dx, dy, r]) => {
-      const leaf = g.createRadialGradient(x + dx - 5, y + dy - 6, 2, x + dx, y + dy, r);
-      leaf.addColorStop(0, mode === 'lapa-chupi' ? '#7cc35e' : '#6fb956'); leaf.addColorStop(1, '#2f6a2c');
-      g.fillStyle = leaf; g.beginPath(); g.arc(x + dx, y + dy, r, 0, Math.PI * 2); g.fill();
-    });
-    g.fillStyle = 'rgba(255,255,255,.25)'; [[-6, -12], [8, -4], [-14, 0]].forEach(([dx, dy]) => { g.beginPath(); g.arc(x + dx, y + dy, 2.2, 0, Math.PI * 2); g.fill(); });
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 5, y + 8, 28, 15, 0, 0, Math.PI * 2); g.fill();
+  if (mode !== 'lapa-chupi') {
+    const ice = mode === 'baraf-pani';
+    const grad = g.createRadialGradient(x - 6, y - 8, 2, x, y, 22);
+    grad.addColorStop(0, ice ? '#ffffff' : '#fff6e2'); grad.addColorStop(1, ice ? '#9fcbe0' : '#c9b48c');
+    g.fillStyle = grad; g.beginPath(); g.arc(x, y, 20, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = ice ? 'rgba(80,140,180,.9)' : 'rgba(120,95,60,.9)'; g.lineWidth = 3; g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 13, Math.PI * 1.1, Math.PI * 1.6); g.stroke();
+    g.restore();
+    return;
+  }
+  const kind = FURNITURE[i % FURNITURE.length];
+  const box = (bx, by, bw, bh, fill, r = 4) => { g.fillStyle = fill; rounded(g, bx, by, bw, bh, r); g.fill(); };
+  if (kind === 'bed' || kind === 'bed2') {
+    box(x - 26, y - 20, 52, 40, '#5a3a22', 5);
+    box(x - 23, y - 17, 46, 34, '#f4efe4', 4);
+    box(x - 23, y - 2, 46, 19, kind === 'bed' ? '#3f7fbf' : '#c0563f', 3);
+    box(x - 19, y - 15, 16, 10, '#ffffff', 4); box(x + 3, y - 15, 16, 10, '#ffffff', 4);
+  } else if (kind === 'table') {
+    box(x - 26, y - 16, 52, 32, '#8a5a32', 5);
+    g.fillStyle = 'rgba(255,240,210,.3)'; g.fillRect(x - 24, y - 14, 48, 3);
+    [[-30, -8], [26, -8], [-30, 6], [26, 6]].forEach(([dx, dy]) => box(x + dx, y + dy, 6, 6, '#6b4524', 2));
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 8, y, 5, 0, Math.PI * 2); g.arc(x + 9, y + 2, 5, 0, Math.PI * 2); g.fill();
+  } else if (kind === 'tv') {
+    box(x - 28, y - 8, 56, 18, '#3b2a1e', 3);
+    box(x - 22, y - 16, 44, 9, '#111', 2);
+    g.fillStyle = '#4ab3ff'; g.fillRect(x - 20, y - 14, 40, 5);
+  } else if (kind === 'sofa') {
+    box(x - 28, y - 16, 56, 32, '#6b3fa0', 8);
+    box(x - 24, y - 4, 48, 16, '#8a5bc2', 6);
+    box(x - 30, y - 16, 8, 30, '#5a3489', 4); box(x + 22, y - 16, 8, 30, '#5a3489', 4);
+  } else if (kind === 'plant') {
+    box(x - 10, y - 2, 20, 16, '#b0643a', 5);
+    [[-10, -8, 11], [9, -9, 11], [0, -16, 12], [0, -4, 10]].forEach(([dx, dy, r]) => { g.fillStyle = '#3f8f3a'; g.beginPath(); g.arc(x + dx, y + dy, r, 0, Math.PI * 2); g.fill(); });
+  } else if (kind === 'curtain') {
+    for (let k = 0; k < 6; k++) box(x - 15 + k * 5, y - 24, 6, 48, k % 2 ? '#d98c3a' : '#c2752a', 3);
+    g.fillStyle = '#7a4b25'; g.fillRect(x - 18, y - 27, 36, 4);
   } else {
-    // a school bench: two planks on dark legs
-    g.fillStyle = '#4a2f1b'; [[-20, -12], [16, -12], [-20, 8], [16, 8]].forEach(([dx, dy]) => g.fillRect(x + dx, y + dy, 5, 5));
-    g.fillStyle = '#a8703f'; g.fillRect(x - 25, y - 10, 50, 9); g.fillRect(x - 25, y + 2, 50, 9);
-    g.fillStyle = 'rgba(255,230,190,.35)'; g.fillRect(x - 25, y - 10, 50, 2); g.fillRect(x - 25, y + 2, 50, 2);
+    box(x - 16, y - 22, 32, 44, '#e9eef2', 4);
+    g.fillStyle = '#b8c3cc'; g.fillRect(x - 16, y - 6, 32, 2);
+    g.fillStyle = '#8a96a0'; g.fillRect(x + 10, y - 18, 2, 9); g.fillRect(x + 10, y - 1, 2, 12);
   }
   g.restore();
 }
@@ -412,7 +479,14 @@ export function makeTagGame(mode) {
       const p = s.players[seat];
       if (!p?.alive || (p.frozen && s.mode !== 'baraf-pani')) return {};
       if (s.mode === 'lapa-chupi' && s.phase === 'hide' && seat === s.it) return {};
-      return botMove(s, seat);
+      const m = botMove(s, seat);
+      // computer players are a little easier than people: now and then they stop to look round for a
+      // moment, and they sprint less, so a guest can win by playing well (they never stop when hiding)
+      // (only the one chasing slows down: a guest running away gets a fair chance, and a computer
+      // runner still runs properly)
+      if (seat === s.it && (s.t + seat * 37) % 150 < 24) return {};
+      if (seat === s.it && m.a && (s.t + seat * 13) % 4) m.a = false;
+      return m;
     },
     publicState(s, viewerSeat) {
       if (s.mode !== 'lapa-chupi') return s;
@@ -452,7 +526,7 @@ export function makeTagGame(mode) {
       const isSeeker = s.isSeeker ?? true;
       const sub = s.mode === 'lapa-chupi' ? s.phase === 'hide'
         ? 'Stop near cover and stay still to hide'
-        : isSeeker ? 'Search the yard · the signal gets warmer as you get closer'
+        : isSeeker ? 'Search the house · the signal gets warmer as you get closer'
           : 'Stay hidden by cover · avoid the seeker'
         : s.mode === 'baraf-pani' ? 'Tag frozen friends to free them'
           : 'Avoid the player marked IT';
