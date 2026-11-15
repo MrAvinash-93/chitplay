@@ -1,4 +1,4 @@
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-2019';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-2259';
 
 /**
  * Web Audio API sound manager. All sounds are synthesized — no external files.
@@ -361,6 +361,11 @@ class AudioManager {
       /* ─── things on the table ─── */
       case 'piece':
         this.#knock(v);
+        break;
+      case 'tok':
+        // a Ludo token tapping down on a wooden board, square by square
+        this.#tone({ freq: 720 * v, to: 520 * v, dur: 0.045, type: 'sine', gain: 0.16, attack: 0.002, release: 0.05 });
+        this.#noise({ dur: 0.02, gain: 0.09, freq: 2400 * v, q: 5 });
         break;
       case 'step':
         this.#knock(v * 1.15, { gain: 0.45 });

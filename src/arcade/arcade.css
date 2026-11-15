@@ -586,3 +586,8 @@ body.has-gameclock .turnclock { top: calc(max(8px, env(safe-area-inset-top)) + 8
 /* the house and hall games: their own screen, not a picture on the TV in the room */
 body.tv-roomgame.tv-full .tvbig { background: #140b07; align-items: center; }
 body.tv-roomgame .tvcanvas { border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
+/* Ludo: your three lifelines, green until the computer has to play a turn for you, then red */
+.lives { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 2px 0 4px; font-size: 11px; font-weight: 700; color: var(--cream-2, #f3e4c8); opacity: .95; }
+.lives span { margin-right: 2px; letter-spacing: .02em; }
+.lives i { width: 13px; height: 13px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 7px rgba(46, 204, 113, .65), inset 0 -2px 0 rgba(0, 0, 0, .18); }
+.lives i.lost { background: #e5484d; box-shadow: 0 0 7px rgba(229, 72, 77, .6), inset 0 -2px 0 rgba(0, 0, 0, .2); }

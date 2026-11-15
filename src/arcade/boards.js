@@ -6,13 +6,13 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { audioManager } from '../audio/audio-manager.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-2019';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-2019';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-2019';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-2019';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-2019';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-2019';
-import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2019';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-2259';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-2259';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-2259';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-2259';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-2259';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-2259';
+import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2259';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -327,7 +327,7 @@ function disposeOwn(obj) {
 }
 
 const DIE_SIZE = 0.115;
-export const STEP_SECONDS = 0.13;   // a Ludo token, one square
+export const STEP_SECONDS = 0.19;   // a Ludo token, one square: slow enough to count, tok by tok
 
 /*
  * A soft dark patch right under each piece, where the light can't reach. With it a piece sits on the
@@ -536,7 +536,7 @@ class Stage {
         p.routeT += dt / STEP_SECONDS;
         const at = Math.floor(p.routeT);
         if (at >= p.route.length) { const [x, z] = p.route[p.route.length - 1]; p.obj.position.set(x, p.routeY, z); p.route = null; if (p.landing) { p.landing = false; this.ripple(x, z); audioManager.play('piece'); } continue; }
-        if (at !== p.stepAt) { if (p.stepAt != null) audioManager.play('step'); p.stepAt = at; }
+        if (at !== p.stepAt) { if (p.stepAt != null) audioManager.play(p.spec?.stepSound || 'step'); p.stepAt = at; }
         const [fx, fz] = at ? p.route[at - 1] : p.routeFrom;
         const [tx, tz] = p.route[at];
         const k = p.routeT - at;
@@ -551,6 +551,8 @@ class Stage {
         if (k <= 0) { this.world.remove(p.obj); disposeOwn(p.obj); if (p.shadow) { this.world.remove(p.shadow); p.shadow.material.dispose(); } p.gone = true; dead = true; }
         continue;
       }
+      // a piece you can move hovers a little, bobbing, so it stands out from the rest
+      if (p.t >= 1 && p.spec?.float && !p.route && !reduced) { p.obj.position.y = p.to[1] + Math.sin(this.clock * 4.5 + p.to[0] * 9) * 0.012; continue; }
       if (p.t >= 1) continue;
       p.t = Math.min(1, p.t + dt / p.dur);
       if (p.t >= 1 && p.landing && !p.route) { p.landing = false; this.ripple(p.to[0], p.to[2]); }
@@ -984,7 +986,7 @@ const BOARDS = {
         return ring;
       });
       st.glows.push(...st.ludoGlow);
-      // the turn's 5 seconds: a light runs round the edge of the player's corner and goes out as time runs down
+      // the turn's 20 seconds: a light runs round the edge of the player's corner and goes out as time runs down
       const span = (SIZE / 15) * 2.8, lift = TOP_Y + 0.014;
       const lightMat = new THREE.MeshBasicMaterial({ color: LIGHT_FULL.clone(), transparent: true, opacity: 0.95, depthWrite: false });
       st.ludoLight = [0, 1, 2, 3].map((q) => {
@@ -1064,17 +1066,15 @@ const BOARDS = {
         }
         // captured: a high arc all the way back to the yard
         const sentHome = was >= 0 && pos < 0;
-        st.put(`t${seat}.${t}`, () => glossyPawn(st.ludoTokenColors[q], 0.82, st.ludoTokenStyle), x, TOP_Y, z, mine ? { pick: move, hop: 0.12, route } : { hop: sentHome ? 0.7 : 0.12, route });
+        // a token that can move rises off the board and bobs; the others stand still
+        st.put(`t${seat}.${t}`, () => glossyPawn(st.ludoTokenColors[q], 0.82, st.ludoTokenStyle), x, mine ? TOP_Y + 0.06 : TOP_Y, z, mine ? { pick: move, hop: 0.06, route, float: true, stepSound: 'tok' } : { hop: sentHome ? 0.7 : 0.12, route, stepSound: 'tok' });
         // where this move would land: a ring on the board
         if (mine) {
           const to = ludoDestination(v, seat, t);
           if (to != null) { const [lx, lz] = this.tokenAt(v, seat, t, to); st.mark(lx, lz, move, { r: 0.05, y: TOP_Y + 0.003, color: '#ffffff', pulse: true }); }
         }
-        if (mine) st.mark(x, z, move, { r: 0.07, y: TOP_Y + 0.002, pulse: true });
+        if (mine) { st.mark(x, z, move, { r: 0.075, y: TOP_Y + 0.002, pulse: true }); st.mark(x, z, move, { r: 0.045, y: TOP_Y + 0.003, color: '#ffffff', pulse: true }); }
         // a number to match its button, once it's on the board
-        if (mine && pos >= 0) {
-          st.put(`no${t}`, () => textSprite(t + 1, { size: 0.085 }), x, TOP_Y + 0.2, z, { noDrop: true, hop: 0 });
-        }
       }));
       const [dx, dz] = st.dieAt || [0, 0];
       const rolling = ctx.mine && v.die == null;

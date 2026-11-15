@@ -11,7 +11,7 @@
  *  - quick:   everyone starts with one token already out
  *  - places:  with three or four players the game goes on after the winner, for second and third place
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-2019';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-2259';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];
@@ -118,14 +118,14 @@ function describe(v, seat, t) {
   const pos = v.t[seat][t];
   const to = destination(v, seat, t);
   if (pos < 0) return { text: 'Bring a token out', tag: '' };
-  if (to === HOME) return { text: `Token ${t + 1}: reaches home! 🏠`, tag: '' };
+  if (to === HOME) return { text: 'Reaches home! 🏠', tag: '' };
   const sq = square(v, seat, to);
-  if (victims(v, seat, sq).length) return { text: `Token ${t + 1}: captures a rival ⚔️`, tag: '' };
-  if (to > 50) return { text: `Token ${t + 1}: up the home path`, tag: 'safe' };
-  if (to < pos) return { text: `Token ${t + 1}: goes round again`, tag: threat(v, seat, sq) ? 'risky' : '' };
-  if (SAFE.includes(sq)) return { text: `Token ${t + 1}: safe square ⭐`, tag: 'safe' };
-  if (rule(v, 'block') && v.t[seat].some((p, k) => k !== t && square(v, seat, p) === sq)) return { text: `Token ${t + 1}: makes a blockade 🧱`, tag: 'safe' };
-  return { text: `Token ${t + 1}: move ${v.die}`, tag: threat(v, seat, sq) ? 'risky' : '' };
+  if (victims(v, seat, sq).length) return { text: 'Captures a rival ⚔️', tag: '' };
+  if (to > 50) return { text: 'Up the home path', tag: 'safe' };
+  if (to < pos) return { text: 'Goes round again', tag: threat(v, seat, sq) ? 'risky' : '' };
+  if (SAFE.includes(sq)) return { text: 'To a safe square ⭐', tag: 'safe' };
+  if (rule(v, 'block') && v.t[seat].some((p, k) => k !== t && square(v, seat, p) === sq)) return { text: 'Makes a blockade 🧱', tag: 'safe' };
+  return { text: `Move ${v.die} squares`, tag: threat(v, seat, sq) ? 'risky' : '' };
 }
 
 export default {
@@ -148,6 +148,20 @@ export default {
     };
   },
   /** The clock ran out (Score mode): the game ends, most points wins. */
+  /**
+   * Playing the computer, the only person at the table used up their three lifelines: the game is over
+   * and they lose. The computer player furthest ahead takes it.
+   */
+  concede(s, seat) {
+    s.conceded = seat;
+    if (s.won >= 0 || s.ended) return [];
+    const left = seatsOf(s.n).filter(p => p !== seat && !(s.out || []).includes(p));
+    const ahead = (p) => s.t[p].reduce((a, x) => a + (x === HOME ? 60 : x < 0 ? 0 : x + 1), 0) + (counts(s) ? s.points[p] * 1000 : 0);
+    s.won = left.length ? left.reduce((a, b) => (ahead(b) > ahead(a) ? b : a)) : -1;
+    if (counts(s)) s.ended = true;
+    s.conceded = seat; s.die = null;
+    return [{ k: 'offline', seat }];
+  },
   timeUp(s) {
     if (s.style !== 'score' || s.ended || s.won >= 0) return [];
     s.ended = true; s.timeUp = true; s.die = null;
@@ -245,7 +259,8 @@ export default {
   result(s) {
     if (s.won < 0 && !s.ended) return null;
     const gone = (s.out || []).map(p => s.names?.[p] || `Player ${p + 1}`);
-    const offline = gone.length ? ` ${gone.join(', ')} went offline and left the game.` : '';
+    const offline = gone.length ? (Number.isInteger(s.conceded) ? ` ${gone.join(', ')} missed three turns and lost.` : ` ${gone.join(', ')} went offline and left the game.`) : '';
+    if (Number.isInteger(s.conceded) && s.won >= 0 && !counts(s)) return { scores: seatsOf(s.n).map(p => (p === s.won ? 1 : 0)), winners: [s.won], note: `${s.names?.[s.conceded] || 'You'} missed three turns and lost.` };
     if (counts(s)) {
       // players who went offline can't win; among the rest, most points
       const live = seatsOf(s.n).filter(p => !(s.out || []).includes(p));
@@ -302,7 +317,10 @@ export default {
     const myLeft = ctx.me >= 0 ? Math.max(0, MOVES - (v.used?.[ctx.me] || 0)) : MOVES;
     const round = v.style === 'moves' ? (ctx.me >= 0 && !ctx.pass ? `${myLeft} of your ${MOVES} moves left · most points wins` : `${MOVES} moves each · most points wins`) : v.style === 'score' ? (v.limitMs ? `Most points in ${Math.round(v.limitMs / 60000)} minutes wins` : `Round ${Math.min(v.round, SCORE.rounds)} of ${SCORE.rounds}`) : '';
     const lock = rule(v, 'capture') && ctx.me >= 0 && !v.caps[ctx.me] ? 'Capture a token to open your home path 🔒' : '';
-    const panel = { title, die: v.die ?? v.shown, players, lead: says || round || lock, compact: true, buttons: [] };
+    // your three lifelines: green, and red for each turn the computer had to play for you
+    const livesOf = ctx.pass ? who : ctx.me;
+    const lives = livesOf >= 0 && !gone(livesOf) ? { lost: Math.min(LIFELINES, v.strikes?.[livesOf] || 0), of: LIFELINES } : null;
+    const panel = { title, die: v.die ?? v.shown, players, lead: says || round || lock, compact: true, buttons: [], lives };
     if (!mine) return panel;
     if (rolling) {
       panel.lead = `${says ? `${says} ` : ''}Tap the die to roll.${v.style === 'moves' ? ` ${myLeft === 1 ? 'Your last move!' : `${myLeft} moves left.`}` : ''}`;
@@ -317,7 +335,7 @@ export default {
       return { label: `${d.text}${d.tag === 'risky' ? ' · ⚠️ risky' : ''}`, i, wide: true };
     });
     // you move your own token, even when only one can go: the game never plays your turn for you
-    panel.lead = says || (seen.size === 1 ? 'Only one token can move: tap it.' : 'Tap a glowing token. The ring shows where it lands.');
+    panel.lead = says || (seen.size === 1 ? 'Only one token can move: tap it.' : 'Tap a raised token. The ring shows where it lands.');
     if (counts(v)) panel.buttons = panel.buttons.map((b) => {
       const pos = v.t[ctx.me][ctx.legal[b.i].t];
       const to = destination(v, ctx.me, ctx.legal[b.i].t);
