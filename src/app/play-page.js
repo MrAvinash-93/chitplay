@@ -5,8 +5,8 @@
  *    plays in the 3D room (src/app/bootstrap.js), the same game that used to open on the home page.
  * The home page keeps the list of every game, search, scan and the profile.
  */
-import { gameBySlug } from '../arcade/catalog.js?v=20261115-1433';
-import { GAME_SLUGS } from '../world/countries.js?v=20261115-1433';
+import { gameBySlug } from '../arcade/catalog.js?v=20261115-1459';
+import { GAME_SLUGS } from '../world/countries.js?v=20261115-1459';
 
 const q = new URLSearchParams(location.search);
 const slug = (q.get('game') || '').trim().toLowerCase();
@@ -24,7 +24,7 @@ if (isCops) {
   for (const f of ['base.css', 'layout.css']) {
     const l = document.createElement('link');
     l.rel = 'stylesheet';
-    l.href = new URL(`../styles/${f}?v=20261115-1433`, import.meta.url).href;
+    l.href = new URL(`../styles/${f}?v=20261115-1459`, import.meta.url).href;
     document.head.append(l);
   }
   document.title = 'Cops and Robbers (Raja Rani Chor Police): Play Free in 3D | ChitPlay';
@@ -33,7 +33,7 @@ if (isCops) {
   app.setAttribute('role', 'application');
   app.setAttribute('aria-label', 'Cops and Robbers');
   document.getElementById('party')?.replaceWith(app);
-  await import('./bootstrap.js?v=20261115-1433');
+  await import('./bootstrap.js?v=20261115-1459');
 } else {
-  await import('../arcade/table.js?v=20261115-1433');
+  await import('../arcade/table.js?v=20261115-1459');
 }

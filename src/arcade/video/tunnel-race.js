@@ -12,7 +12,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1433';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1459';
 
 export const LEVEL_D = 360;
 export const STAGES = ['Paper tunnel', 'Twin walls', 'Turning walls', 'Spin cycle'];

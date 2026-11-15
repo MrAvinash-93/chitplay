@@ -4,6 +4,7 @@
  * `seats` is how many sit down by default when bots fill the table. All names are traditional or
  * plain descriptions, and every board and piece is drawn by us.
  */
+import { LOCAL_NAMES } from './local-names.js?v=20261115-1459';
 export const VIDEO_GAMES = [
   { slug: 'flying-chit', video: true, hot: true, aka: 'flappy chit wings endless udti bangle', name: 'Flying Chit', icon: '📨', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#e8a317', medals: [50, 200, 500, 1000], blurb: 'Steer a winged chit through classroom bangles, chain combos and earn coins for new 3D chit styles.' },
   { slug: 'tunnel-race', video: true, hot: true, aka: 'paper plane tunnel 3d endless race hawai jahaz', name: 'Tunnel Race', icon: '✈️', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#7b3fe4', medals: [50, 150, 300, 600], blurb: 'A paper plane in an endless tunnel. Steer round the walls and grab the gems.' },
@@ -76,9 +77,11 @@ export const CATEGORIES = ['Arcade', 'Board', 'Cards', 'Dice', 'Party', 'Puzzle'
  * The playground games have their own name in every language (the name people grew up with); the
  * catalog name is the English one. localName() gives the name to show in the chosen language.
  */
-const LOCAL_NAMES = {
+const PLAYGROUND_NAMES = {
   'lapa-chupi': { hindi: 'लपा छुपी', hinglish: 'Lapa Chupi', urdu: 'Lapa Chupi', nepali: 'Lukamari', bangla: 'Lukochuri', spanish: 'Escondite', portuguese: 'Esconde-esconde', french: 'Cache-cache', german: 'Verstecken', indonesian: 'Petak Umpet', turkish: 'Saklambaç', italian: 'Nascondino', romaji: 'Kakurenbo', korean_roman: 'Sumbakkokjil', pinyin: 'Zhuo Micang', russian_latin: 'Pryatki' },
   'pakda-padi': { hindi: 'पकड़ा पकड़ी', hinglish: 'Pakda Pakdi', urdu: 'Pakda Pakdi', nepali: 'Pakdapakdi', bangla: 'Chhoyachhuyi', spanish: 'Pilla-pilla', portuguese: 'Pega-pega', french: 'Jeu du chat', german: 'Fangen', indonesian: 'Kejar-kejaran', turkish: 'Ebelemece', italian: 'Acchiapparella', romaji: 'Onigokko', korean_roman: 'Sullaejapgi', pinyin: 'Zhuaren Youxi', russian_latin: 'Salki' },
   'baraf-pani': { hindi: 'बर्फ पानी', hinglish: 'Baraf Pani', urdu: 'Baraf Pani', nepali: 'Baraf Pani', bangla: 'Borof Pani', spanish: 'Pilla congelado', portuguese: 'Pega-gelo', french: 'Chat glacé', german: 'Einfrier-Fangen', indonesian: 'Tag Beku', turkish: 'Don-Ebelemece', italian: 'Acchiapparella congelata', romaji: 'Koori-oni', korean_roman: 'Eoreum-ttaeng', pinyin: 'Bingdong Ren', russian_latin: 'Zamri-otomri' },
 };
-export const localName = (slug, lang) => LOCAL_NAMES[slug]?.[lang] || gameBySlug(slug)?.name || slug;
+export const localName = (slug, lang) => PLAYGROUND_NAMES[slug]?.[lang] || LOCAL_NAMES[slug]?.[lang] || gameBySlug(slug)?.name || slug;
+/** Every name a game goes by, in every language, for search. */
+export const allNames = (slug) => [...new Set([...Object.values(LOCAL_NAMES[slug] || {}), ...Object.values(PLAYGROUND_NAMES[slug] || {})])].join(' ');

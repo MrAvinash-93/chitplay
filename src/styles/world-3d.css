@@ -1000,3 +1000,9 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 
 /* whatever the party lock hides stays hidden, whatever its own display rule says */
 .game__home-go [hidden] { display: none !important; }
+
+/* the site links (rules, about, contact, privacy, terms) always sit at the very bottom of the list,
+   even when a category or a search shows only a few games */
+.game__list-scroll > .game__legal { margin-top: auto; padding-top: 14px; }
+.game__list-scroll > .adbox { margin-top: auto; }
+.game__list-scroll > .adbox + .game__legal { margin-top: 0; }

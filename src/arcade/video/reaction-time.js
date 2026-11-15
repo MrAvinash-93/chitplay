@@ -8,7 +8,7 @@
  *
  * Rounds 3 and 4 may flash blue first: a fake signal. Tapping on blue is a false start too.
  */
-import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1433';
+import { H, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-1459';
 
 export const ROUNDS = 5;
 export const MIN_HUMAN = 100;        // ms: quicker than this is a guess
@@ -133,7 +133,9 @@ export default {
       g.fillText(s.phase === 'done' ? 'Final scores' : 'Round result', W / 2, 100);
       rows.forEach(({ i, v }, k) => {
         const y = 150 + k * 52;
-        const label = typeof v === 'number' ? `${v} ms` : v === 'early' ? 'Too soon!' : 'No tap';
+        // a word for the time, so a number means something: under 200 ms is lightning
+        const rate = (ms) => (ms < 200 ? ' ⚡ Lightning' : ms < 250 ? ' 🔥 Super fast' : ms < 300 ? ' 👍 Fast' : ms < 400 ? ' 🙂 Good' : ' 🐢 Slow');
+        const label = typeof v === 'number' ? `${v} ms${rate(v)}` : v === 'early' ? 'Too soon!' : 'No tap';
         const width = typeof v === 'number' ? Math.max(20, 360 * (1 - Math.min(v, 800) / 900)) : 20;
         g.fillStyle = 'rgba(255,255,255,.08)'; g.fillRect(120, y - 18, 400, 36);
         g.fillStyle = SEAT_COLORS[i]; g.fillRect(120, y - 18, width, 36);

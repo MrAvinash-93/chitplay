@@ -10,43 +10,43 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1433';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1433';
-import { loadWorld } from '../world/world-loader.js?v=20261115-1433';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1433';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1433';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1433';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1433';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1433';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1459';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1459';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1459';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1459';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1459';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1459';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1459';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1459';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-1433';
-import { faceHtml } from './photo.js?v=20261115-1433';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1433';
+import { iconSvg } from '../ui/icons.js?v=20261115-1459';
+import { faceHtml } from './photo.js?v=20261115-1459';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1459';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1433';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1459';
 
-import { fill, shellText } from './shell-text.js?v=20261115-1433';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1433';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1433';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1433';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1433';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1433';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1433';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1433';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1433';
-import { startReminder } from './reminder.js?v=20261115-1433';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1433';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1433';
-import { roomLevel } from './decor.js?v=20261115-1433';
+import { fill, shellText } from './shell-text.js?v=20261115-1459';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1459';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1459';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1459';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1459';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1459';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1459';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1459';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1459';
+import { startReminder } from './reminder.js?v=20261115-1459';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1459';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1459';
+import { roomLevel } from './decor.js?v=20261115-1459';
 
-import { is2d, setView } from './view-mode.js?v=20261115-1433';
-import { adBreak } from './ad-breaks.js?v=20261115-1433';
-import { resultAd, sideAd } from './ads.js?v=20261115-1433';
-import { gameStrip } from './game-strip.js?v=20261115-1433';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1433';
-const V = '?v=20261115-1433';
+import { is2d, setView } from './view-mode.js?v=20261115-1459';
+import { adBreak } from './ad-breaks.js?v=20261115-1459';
+import { resultAd, sideAd } from './ads.js?v=20261115-1459';
+import { gameStrip } from './game-strip.js?v=20261115-1459';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1459';
+const V = '?v=20261115-1459';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -617,8 +617,31 @@ function cheerTable(winners, players) {
 /** Is this seat the person holding this phone? */
 const isMe = (seat) => (match ? match.players[seat]?.kind === 'me' : guest && shown?.ctx?.me === seat);
 /** What the people in the room do when something happens in the game. */
+/*
+ * Streaks: boxes closed one after another (Dots and Boxes), pairs found in a row (Memory Match), tricks
+ * won in a row (Call Break). The table cheers a run, louder the longer it goes.
+ */
+let hotRun = { seat: -1, n: 0 };
+const STREAKS = { 'dots-and-boxes': ['capture', 3, 'boxes'], 'memory-match': ['capture', 2, 'pairs'], 'call-break': ['trick', 3, 'tricks'] };
+function streaks(events, players) {
+  const rule = STREAKS[G?.slug];
+  if (!rule) return;
+  const [kind, need, word] = rule;
+  // a turn that scored nothing ends the run (a line drawn without a box, two cards that don't match)
+  if ((G.slug === 'dots-and-boxes' && events.some(e => e?.k === 'place') && !events.some(e => e?.k === 'capture')) || events.some(e => e?.k === 'miss')) { hotRun = { seat: -1, n: 0 }; return; }
+  for (const ev of events) {
+    if (ev?.k !== kind || !Number.isInteger(ev.seat) || !players[ev.seat]) continue;
+    hotRun = hotRun.seat === ev.seat ? { seat: ev.seat, n: hotRun.n + 1 } : { seat: ev.seat, n: 1 };
+    if (hotRun.n < need) continue;
+    const fire = hotRun.n >= need + 3 ? '🔥🔥🔥' : hotRun.n >= need + 1 ? '🔥🔥' : '🔥';
+    world?.story?.emojiPop(fire, `${isMe(ev.seat) ? 'You' : players[ev.seat].name}: ${hotRun.n} ${word} in a row!`);
+    if (isMe(ev.seat)) { buzz('turn'); audioManager.play('reveal'); }
+    if (seatOf(ev.seat) >= 0) act(ev.seat, 'cheer', null, 1200);
+  }
+}
 function react(events, players) {
   if (!Array.isArray(events)) return;
+  streaks(events, players);
   for (const ev of events) {
     const seat = Number.isInteger(ev?.seat) && players[ev.seat] ? ev.seat : -1;
     switch (ev?.k) {
@@ -1126,6 +1149,7 @@ function startMatch(players, opts = {}, resumeState = null) {
   wasMine = false;
   clearMatchTimers();
   const n = players.length;
+  hotRun = { seat: -1, n: 0 };
   match = { players, opts, s: resumeState || Logic.init({ n, rng: Math.random, opts, names: players.map(p => p.name) }), timers: new Map(), events: [], lastShown: -1, busyUntil: 0, handoff: false };
   // a game against the clock (Ludo's Score mode): it starts now, or carries on with the time that was left
   if (match.s.limitMs && Logic.timeUp) match.s.deadline = Date.now() + Math.max(15000, resumeState ? (match.s.leftMs ?? match.s.limitMs) : match.s.limitMs);
