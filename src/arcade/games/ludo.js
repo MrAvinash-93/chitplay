@@ -24,8 +24,9 @@ export const RULES = [
   ['quick', 'Quick start', 'Everyone starts with one token already out.'],
   ['places', 'Play on for places', 'After the winner, the others play on for second and third place.'],
 ];
-// with two players they sit opposite each other
-export const quarter = (s, seat) => (s.n === 2 ? seat * 2 : seat);
+// which corner each player has. The first player (you, on your own phone) gets the corner nearest
+// you, bottom left (Blue); the rest follow round the board clockwise. With two, they sit opposite.
+export const quarter = (s, seat) => (s.n === 2 ? [3, 1][seat] : (seat + 3) % 4);
 export const square = (s, seat, pos) => (pos < 0 || pos > 50 ? -1 : (STARTS[quarter(s, seat)] + pos) % 52);
 const rule = (s, k) => !!s.rules?.[k];
 const mayGoHome = (s, seat) => !rule(s, 'capture') || s.caps[seat] > 0;
@@ -122,9 +123,8 @@ function describe(v, seat, t) {
 
 export default {
   rounds: SCORE.rounds,   // in Score mode only
-  // with two players they sit opposite each other, next to their own corners
-  // each player sits by their own coloured corner: with two, in opposite corners
-  places: (n) => (n === 2 ? [0, -1, 1, -1] : [0, 1, 2, 3].map(k => (k < n ? k : -1))),
+  // each player sits by their own coloured corner: corner k is place k in the room
+  places: (n) => [0, 1, 2, 3].map(k => seatsOf(n).find(seat => quarter({ n }, seat) === k) ?? -1),
   init({ n, opts, names }) {
     const rules = Object.fromEntries(RULES.map(([k]) => [k, !!opts?.rules?.[k]]));
     return {
@@ -243,7 +243,7 @@ export default {
     if (s.won >= 0 && (s.out || []).length && !(s.order || []).length) return { scores: seatsOf(s.n).map(p => (p === s.won ? 1 : 0)), winners: [s.won], note: `Last player left in the game.${offline}` };
     if (s.order?.length >= s.n) {
       const places = ['1st', '2nd', '3rd', '4th'];
-      return { scores: seatsOf(s.n).map(p => s.n - s.order.indexOf(p)), winners: [s.order[0]], note: `Finishing order: ${s.order.map((p, i) => `${places[i]} ${s.names?.[p] || `Player ${p + 1}`}`).join(', ')}.` };
+      return { scores: seatsOf(s.n).map(p => s.n - s.order.indexOf(p)), winners: [s.order[0]], note: `Finishing order: ${s.order.map((p, i) => `${places[i]} ${s.names?.[p] || `Player ${p + 1}`}`).join(', ')}.${offline}` };
     }
     return { scores: seatsOf(s.n).map(p => home(s, p)), winners: [s.won], note: 'Scores are tokens brought home.' };
   },
@@ -260,8 +260,8 @@ export default {
       if (pos < 0) v += 30;
       if (to > 50) v += 14;
       if (sq >= 0 && SAFE.includes(sq)) v += 12;
-      v -= threat(s, seat, sq) * 16;                                     // walking into danger
-      if (pos >= 0 && pos <= 50) v += threat(s, seat, square(s, seat, pos)) * 13; // getting out of it
+      v -= threat(s, seat, sq) * 16;
+      if (pos >= 0 && pos <= 50) v += threat(s, seat, square(s, seat, pos)) * 13;
       if (rule(s, 'block') && to <= 50 && s.t[seat].some((p, k) => k !== m.t && p === to)) v += 18;
       return v + rng() * 2;
     }, rng);
@@ -273,9 +273,8 @@ export default {
     const colorOf = (p) => COLOR_NAMES[quarter(v, p)];
     const nameOf = (p) => (p === ctx.me && !ctx.pass ? 'You' : ctx.names[p]);
     const gone = (p) => (v.out || []).includes(p);
-    // lifelines (with people): a hollow heart for each turn the computer had to play
     const hearts = (p) => (v.strikes?.[p] ? ` ${'❤️'.repeat(Math.max(0, LIFELINES - v.strikes[p]))}${'🤍'.repeat(Math.min(LIFELINES, v.strikes[p]))}` : '');
-    const players = seatsOf(v.n).map(p => ({ name: nameOf(p), color: COLORS[quarter(v, p)], text: gone(p) ? '📴 offline' : `${v.style === 'score' ? `${v.points[p]} pts` : `${home(v, p)}/4 🏠${rule(v, 'capture') ? (v.caps[p] ? ' ⚔️' : ' 🔒') : ''}`}${hearts(p)}`, on: p === who }));
+    const players = seatsOf(v.n).map(p => ({ name: nameOf(p), color: COLORS[quarter(v, p)], text: gone(p) ? '📴 offline' : `${v.style === 'score' ? `${v.points[p]} pts` : `${home(v, p)}/4 🏠`}${v.caps?.[p] ? ` · ${v.caps[p]} cap` : ''}${hearts(p)}`, on: p === who }));
     let title;
     if (mine) title = `${ctx.pass ? `${ctx.names[who]} (${colorOf(who)})` : `You are ${colorOf(who)}`}: ${rolling ? 'roll the die' : `you rolled ${v.die}`}`;
     else title = `${ctx.names[who]} (${colorOf(who)}) ${rolling ? 'is rolling…' : `rolled ${v.die}`}`;
@@ -283,9 +282,9 @@ export default {
     const says = !n ? '' : n.kind === 'stuck' ? `${nameOf(n.seat)} rolled ${n.n}: no token can move. ${v.t[n.seat].every(x => x < 0) ? 'A 6 brings a token out.' : ''}`
       : n.kind === 'forfeit' ? `${nameOf(n.seat)} rolled three sixes: turn lost.`
         : n.kind === 'offline' ? `${nameOf(n.seat)} missed three turns: offline, out of the game.`
-        : n.kind === 'capture' ? `${nameOf(n.seat)} sent ${nameOf(n.victim)}’s token back! Roll again.`
-          : n.kind === 'place' ? `${nameOf(n.seat)} finished ${['first 🥇', 'second 🥈', 'third 🥉'][n.place - 1] || ''}! The others play on.`
-            : `${nameOf(n.seat)} brought a token home! Roll again.`;
+          : n.kind === 'capture' ? `${nameOf(n.seat)} sent ${nameOf(n.victim)}’s token back! Roll again.`
+            : n.kind === 'place' ? `${nameOf(n.seat)} finished ${['first 🥇', 'second 🥈', 'third 🥉'][n.place - 1] || ''}! The others play on.`
+              : `${nameOf(n.seat)} brought a token home! Roll again.`;
     const round = v.style === 'score' ? (v.limitMs ? `Most points in ${Math.round(v.limitMs / 60000)} minutes wins` : `Round ${Math.min(v.round, SCORE.rounds)} of ${SCORE.rounds}`) : '';
     const lock = rule(v, 'capture') && ctx.me >= 0 && !v.caps[ctx.me] ? 'Capture a token to open your home path 🔒' : '';
     const panel = { title, die: v.die ?? v.shown, players, lead: says || round || lock, compact: true, buttons: [] };
