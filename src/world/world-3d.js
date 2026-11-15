@@ -8,17 +8,17 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1048';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1055';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261115-1048';
-import { lookOf, lookKey } from './character-looks.js?v=20261115-1048';
-import { buildRoomDetails } from './room-details.js?v=20261115-1048';
-import { COUNTRIES } from './countries.js?v=20261115-1048';
-import { voiceBox, voiceLangsFor } from './voice.js?v=20261115-1048';
-import { isSpecialEmoji } from './table-talk.js?v=20261115-1048';
-import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261115-1048';
-import { decorMakers } from './decor-makers.js?v=20261115-1048';
-import * as Themes from './themes.js?v=20261115-1048';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261115-1055';
+import { lookOf, lookKey } from './character-looks.js?v=20261115-1055';
+import { buildRoomDetails } from './room-details.js?v=20261115-1055';
+import { COUNTRIES } from './countries.js?v=20261115-1055';
+import { voiceBox, voiceLangsFor } from './voice.js?v=20261115-1055';
+import { isSpecialEmoji } from './table-talk.js?v=20261115-1055';
+import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261115-1055';
+import { decorMakers } from './decor-makers.js?v=20261115-1055';
+import * as Themes from './themes.js?v=20261115-1055';
 
 const TAU = Math.PI * 2;
 
@@ -946,7 +946,7 @@ function createWorld() {
     camera.setViewOffset(W, H, viewOffset.x, viewOffset.y, W, H);
     return { pos: [0, TV.y + 0.42, TV.z + d], look: [0, TV.y + 0.05, TV.z], orbit: 0, exact: true };
   };
-  let boardShot = null, boardPanel = null;
+  let boardShot = null, boardPanel = null, boardHalf = null;
   /*
    * The room kept free under the board for the tray at the bottom. It only ever grows (until the screen
    * changes size or a new game starts), so the board and the camera stay put from turn to turn: the tray
@@ -1521,6 +1521,23 @@ function createWorld() {
       const spot = placeLabel(tag, '', false);
       if (spot) spots.push(spot);
     });
+    // a name never sits on the board (Mancala's long board reaches the players at its ends): it moves
+    // just past the board's nearest top or bottom edge, so no pit, piece or number is covered
+    if (boardHalf && boardHalf[0] / boardHalf[1] > 1.8 && boardShot && boardShot !== tvFraming) {   // long boards only
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      const W = window.innerWidth, H = window.innerHeight;
+      for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        proj.set(sx * boardHalf[0], 0.02, sz * boardHalf[1]).applyMatrix4(boardRoot.matrixWorld).project(camera);
+        const px = (proj.x + 1) / 2 * W, py = (1 - proj.y) / 2 * H;
+        x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+      }
+      spots.forEach((p) => {
+        if (p.x + p.w / 2 < x0 || p.x - p.w / 2 > x1 || p.y + 12 < y0 || p.y - 12 > y1) return;
+        const up = y0 - 16, down = y1 + 16;
+        const canUp = up > topBarBottom() + 14;
+        p.y = canUp && (p.y - y0 < y1 - p.y || down > H - 20) ? up : down;
+      });
+    }
     // two names that land on each other: the lower one moves down a line, so both stay readable
     spots.sort((p, q) => p.y - q.y);
     const done = [];
@@ -1842,6 +1859,7 @@ function createWorld() {
     boardMode(on, { span = 2, panel = null, half = [0.9, 0.9] } = {}) {
       const opening = on && !boardShot;
       if (opening) reserve = { w: 0, h: 0, px: 0 };
+      boardHalf = on ? (Array.isArray(half) ? half : [half, half]) : null;
       makeRoom(on ? (Array.isArray(half) ? half : [half, half]) : null);
       boardPanel = panel;
       if (opening || !on) boardShot = on ? boardFraming(span) : null;

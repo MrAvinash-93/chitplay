@@ -1,7 +1,7 @@
 import { describe, it, expect } from './harness.js';
 import { storage } from '../src/persistence/storage-manager.js';
 import { STORAGE_KEYS, STORAGE_VERSION } from '../src/app/config.js';
-import { settingsStore } from '../src/persistence/settings-store.js?v=20261115-1048';
+import { settingsStore } from '../src/persistence/settings-store.js?v=20261115-1055';
 
 describe('Storage Manager', () => {
   it('writes and reads back a value', () => {
