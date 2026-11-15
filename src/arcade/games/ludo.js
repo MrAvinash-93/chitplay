@@ -11,7 +11,7 @@
  *  - quick:   everyone starts with one token already out
  *  - places:  with three or four players the game goes on after the winner, for second and third place
  */
-import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-1528';
+import { best, leaders, roll, seatsOf, turnLine } from '../lib.js?v=20261115-1821';
 
 export const HOME = 56;
 export const STARTS = [0, 13, 26, 39];
@@ -24,8 +24,9 @@ export const RULES = [
   ['quick', 'Quick start', 'Everyone starts with one token already out.'],
   ['places', 'Play on for places', 'After the winner, the others play on for second and third place.'],
 ];
-// with two players they sit opposite each other
-export const quarter = (s, seat) => (s.n === 2 ? seat * 2 : seat);
+// which corner each player has. The first player (you, on your own phone) gets the corner nearest
+// you, bottom left (Blue); the rest follow round the board clockwise. With two, they sit opposite.
+export const quarter = (s, seat) => (s.n === 2 ? [3, 1][seat] : (seat + 3) % 4);
 export const square = (s, seat, pos) => (pos < 0 || pos > 50 ? -1 : (STARTS[quarter(s, seat)] + pos) % 52);
 const rule = (s, k) => !!s.rules?.[k];
 const mayGoHome = (s, seat) => !rule(s, 'capture') || s.caps[seat] > 0;
@@ -124,7 +125,8 @@ export default {
   rounds: SCORE.rounds,   // in Score mode only
   // with two players they sit opposite each other, next to their own corners
   // each player sits by their own coloured corner: with two, in opposite corners
-  places: (n) => (n === 2 ? [0, -1, 1, -1] : [0, 1, 2, 3].map(k => (k < n ? k : -1))),
+  // each player sits by their own corner: corner k is place k in the room
+  places: (n) => [0, 1, 2, 3].map(k => seatsOf(n).find(seat => quarter({ n }, seat) === k) ?? -1),
   init({ n, opts, names }) {
     const rules = Object.fromEntries(RULES.map(([k]) => [k, !!opts?.rules?.[k]]));
     return {
