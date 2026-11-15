@@ -10,43 +10,43 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1509';
-import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1509';
-import { loadWorld } from '../world/world-loader.js?v=20261115-1509';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1509';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1509';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1509';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1509';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1509';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-1522';
+import { createBoard, STEP_SECONDS } from './boards.js?v=20261115-1522';
+import { loadWorld } from '../world/world-loader.js?v=20261115-1522';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-1522';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-1522';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-1522';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-1522';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-1522';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-1509';
-import { faceHtml } from './photo.js?v=20261115-1509';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1509';
+import { iconSvg } from '../ui/icons.js?v=20261115-1522';
+import { faceHtml } from './photo.js?v=20261115-1522';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-1522';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-1509';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-1522';
 
-import { fill, shellText } from './shell-text.js?v=20261115-1509';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1509';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1509';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1509';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1509';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1509';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1509';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1509';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1509';
-import { startReminder } from './reminder.js?v=20261115-1509';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1509';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1509';
-import { roomLevel } from './decor.js?v=20261115-1509';
+import { fill, shellText } from './shell-text.js?v=20261115-1522';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-1522';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-1522';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-1522';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-1522';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-1522';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-1522';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-1522';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-1522';
+import { startReminder } from './reminder.js?v=20261115-1522';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-1522';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-1522';
+import { roomLevel } from './decor.js?v=20261115-1522';
 
-import { is2d, setView } from './view-mode.js?v=20261115-1509';
-import { adBreak } from './ad-breaks.js?v=20261115-1509';
-import { resultAd, sideAd } from './ads.js?v=20261115-1509';
-import { gameStrip } from './game-strip.js?v=20261115-1509';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1509';
-const V = '?v=20261115-1509';
+import { is2d, setView } from './view-mode.js?v=20261115-1522';
+import { adBreak } from './ad-breaks.js?v=20261115-1522';
+import { resultAd, sideAd } from './ads.js?v=20261115-1522';
+import { gameStrip } from './game-strip.js?v=20261115-1522';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-1522';
+const V = '?v=20261115-1522';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -644,6 +644,7 @@ function streaks(events, players) {
  * a bust in Pig, a long ladder or a long slide in Snakes and Ladders, a corner or a big flip in Reversi.
  */
 let lastView = null;
+let quiz = { at: -1, snap: null, run: [] };   // Riddle Chits and Majority Vote: right answers in a row
 function moments(events, players, view) {
   const prev = lastView;
   lastView = view ? JSON.parse(JSON.stringify(view)) : null;
@@ -669,6 +670,26 @@ function moments(events, players, view) {
     const l = ev('ladder'), sn = ev('snake');
     if (l) { const up = view.at[l.seat] - prev.at[l.seat]; if (up >= 15) pop('⬆️', `${name(l.seat)}: up ${up} squares!`, l.seat); }
     if (sn) { const down = prev.at[sn.seat] - view.at[sn.seat]; if (down >= 15) pop('🐍', `${name(sn.seat)}: down ${down} squares`, sn.seat); }
+  }
+  if ((G.slug === 'riddle-chits' || G.slug === 'majority-vote') && Array.isArray(view.scores)) {
+    // each new question: who scored on the last one keeps their run going, the rest start again
+    if (quiz.snap && view.at !== quiz.at) {
+      view.scores.forEach((v, p) => {
+        quiz.run[p] = v > (quiz.snap[p] ?? 0) ? (quiz.run[p] || 0) + 1 : 0;
+        if (isMe(p) && quiz.run[p] >= 3) pop(G.slug === 'riddle-chits' ? '🧠' : '👥', G.slug === 'riddle-chits' ? `${quiz.run[p]} riddles right in a row!` : `${quiz.run[p]} in a row with the majority!`, p);
+      });
+    }
+    if (view.at !== quiz.at) quiz = { ...quiz, at: view.at, snap: view.scores.slice() };
+  }
+  if (G.slug === 'call-break' && Array.isArray(view.bids) && Array.isArray(view.won)) {
+    // the hand is over (the game waits between rounds, or the match ends): did you make your call?
+    const over = (view.between && !prev.between) || (view.done && !prev.done);
+    if (over) view.bids.forEach((b, p) => {
+      if (!isMe(p) || b == null) return;
+      const got = view.won[p];
+      if (got >= b) pop('✅', `You made your call: ${got} of ${b} tricks`, p);
+      else pop('❌', `Missed the call: ${got} of ${b} tricks`, p);
+    });
   }
   if (G.slug === 'chess' && Array.isArray(view.b) && Array.isArray(prev.b)) {
     const count = (b, c) => b.filter(x => x === c).length;
@@ -1208,7 +1229,7 @@ function startMatch(players, opts = {}, resumeState = null) {
   wasMine = false;
   clearMatchTimers();
   const n = players.length;
-  hotRun = { seat: -1, n: 0 }; lastView = null;
+  hotRun = { seat: -1, n: 0 }; lastView = null; quiz = { at: -1, snap: null, run: [] };
   match = { players, opts, s: resumeState || Logic.init({ n, rng: Math.random, opts, names: players.map(p => p.name) }), timers: new Map(), events: [], lastShown: -1, busyUntil: 0, handoff: false };
   // a game against the clock (Ludo's Score mode): it starts now, or carries on with the time that was left
   if (match.s.limitMs && Logic.timeUp) match.s.deadline = Date.now() + Math.max(15000, resumeState ? (match.s.leftMs ?? match.s.limitMs) : match.s.limitMs);
