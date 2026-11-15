@@ -12,7 +12,7 @@
  *
  * Angles are in radians round the tunnel; distance is in tunnel units.
  */
-import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261115-2343';
+import { H, levelTag, r1, rnd, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261116-0000';
 
 export const LEVEL_D = 360;
 export const STAGES = ['Paper tunnel', 'Twin walls', 'Turning walls', 'Spin cycle'];
@@ -150,10 +150,12 @@ export default {
   },
   over(s) {
     const alive = s.planes.map((p, i) => p.alive ? i : -1).filter(i => i >= 0);
-    if (s.n > 1 && alive.length === 1) return { scores: s.planes.map(p => p.score), winners: alive, endless: true };
+    // stars for how deep into the tunnel the run went: level 2, 3 and 4 (the Spin cycle) each add one
+    const stars = { got: Math.max(0, Math.min(3, (s.level || 1) - 1)), of: 3, level: s.level || 1, name: stageName(s.level || 1) };
+    if (s.n > 1 && alive.length === 1) return { scores: s.planes.map(p => p.score), winners: alive, endless: true, stars };
     if (alive.length) return null;
     const scores = s.planes.map(p => p.score), top = Math.max(...scores);
-    return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true };
+    return { scores, winners: s.n > 1 ? seats(s.n).filter(i => scores[i] === top) : (top > 0 ? [0] : []), endless: true, stars };
   },
   // steers for the open side of whatever is next, but reacts late: at speed it can't save every one
   bot(s, seat) {

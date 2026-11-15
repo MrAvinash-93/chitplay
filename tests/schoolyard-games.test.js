@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import spinDuel, { LAUNCH_TICKS as SPIN_LAUNCH_TICKS } from '../src/arcade/video/spin-duel.js?v=20261115-2343';
-import penFight, { LAUNCH_TICKS as PEN_LAUNCH_TICKS } from '../src/arcade/video/pen-fight.js?v=20261115-2343';
-import lapaChupi from '../src/arcade/video/lapa-chupi.js?v=20261115-2343';
+import spinDuel, { LAUNCH_TICKS as SPIN_LAUNCH_TICKS } from '../src/arcade/video/spin-duel.js?v=20261116-0000';
+import penFight, { LAUNCH_TICKS as PEN_LAUNCH_TICKS } from '../src/arcade/video/pen-fight.js?v=20261116-0000';
+import lapaChupi from '../src/arcade/video/lapa-chupi.js?v=20261116-0000';
 
 function hudText(state) {
   const text = [];
@@ -20,7 +20,6 @@ function hudText(state) {
 
 for (const [name, game, directionKey, launchTicks] of [
   ['Spin Duel', spinDuel, 'tops', SPIN_LAUNCH_TICKS],
-  ['Pen Fight', penFight, 'pens', PEN_LAUNCH_TICKS],
 ]) {
   test(`${name}: swipe launches once with its direction and power`, () => {
     const state = game.init({ n: 2, seed: 7 });
@@ -41,6 +40,45 @@ for (const [name, game, directionKey, launchTicks] of [
     assert.equal(state.notice?.seat, 0);
   });
 }
+
+// Pen Fight takes turns: one flick each, only on your own turn
+test('Pen Fight: only the player whose turn it is can flick, once', () => {
+  const state = penFight.init({ n: 2, seed: 7 });
+  const turn = state.turn, other = 1 - turn;
+  const inputs = (i, swipe) => { const list = [{}, {}]; list[i] = { swipe }; return list; };
+  penFight.step(state, inputs(other, { x: 1, y: 0, power: 0.9 }));
+  assert.equal(state.phase, 'launch', 'a flick out of turn does nothing');
+  assert.equal(state.pens[other].vx, 0);
+  assert.equal(state.notice?.seat, other);
+  penFight.step(state, inputs(turn, { x: turn ? -1 : 1, y: 0, power: 0.9 }));
+  assert.equal(state.phase, 'flick');
+  assert.equal(state.pens[turn].power, 0.9);
+  assert.equal(state.flicks, 1);
+  const vx = state.pens[turn].vx;
+  penFight.step(state, inputs(turn, { x: turn ? 1 : -1, y: 0, power: 0.2 }));
+  assert.equal(Math.sign(state.pens[turn].vx), Math.sign(vx), 'a second swipe cannot flick again in the same turn');
+});
+
+test('Pen Fight: a turn left alone passes to the other player', () => {
+  const state = penFight.init({ n: 2, seed: 11 });
+  const turn = state.turn;
+  for (let i = 0; i < PEN_LAUNCH_TICKS; i++) penFight.step(state, [{}, {}]);
+  assert.equal(state.phase, 'launch');
+  assert.equal(state.turn, 1 - turn);
+  assert.equal(state.notice?.seat, turn);
+});
+
+test('Pen Fight: flicking your own pen off the desk loses the round', () => {
+  const state = penFight.init({ n: 2, seed: 3 });
+  const turn = state.turn;
+  // straight away from the other pen, as hard as possible
+  const list = [{}, {}]; list[turn] = { swipe: { x: turn ? 1 : -1, y: 0, power: 1 } };
+  penFight.step(state, list);
+  for (let i = 0; i < 400 && state.phase !== 'result'; i++) penFight.step(state, [{}, {}]);
+  assert.equal(state.phase, 'result');
+  assert.equal(state.lastRound.winner, 1 - turn);
+  assert.equal(state.lastRound.reason, 'self-out');
+});
 
 test('Lapa Chupi: hidden coordinates are masked for other online players only', () => {
   const state = lapaChupi.init({ n: 2, seed: 13 });

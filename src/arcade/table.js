@@ -10,44 +10,44 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-2343';
-import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261115-2343';
-import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-2343';
-import { loadWorld } from '../world/world-loader.js?v=20261115-2343';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-2343';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-2343';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-2343';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-2343';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-2343';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261116-0000';
+import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261116-0000';
+import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261116-0000';
+import { loadWorld } from '../world/world-loader.js?v=20261116-0000';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261116-0000';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261116-0000';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261116-0000';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261116-0000';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261116-0000';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-2343';
-import { faceHtml } from './photo.js?v=20261115-2343';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-2343';
+import { iconSvg } from '../ui/icons.js?v=20261116-0000';
+import { faceHtml } from './photo.js?v=20261116-0000';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261116-0000';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-2343';
+import { settingsStore } from '../persistence/settings-store.js?v=20261116-0000';
 
-import { fill, shellText } from './shell-text.js?v=20261115-2343';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-2343';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-2343';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-2343';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-2343';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-2343';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-2343';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-2343';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2343';
-import { startReminder } from './reminder.js?v=20261115-2343';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-2343';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-2343';
-import { roomLevel } from './decor.js?v=20261115-2343';
+import { fill, shellText } from './shell-text.js?v=20261116-0000';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261116-0000';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261116-0000';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261116-0000';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-0000';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261116-0000';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-0000';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261116-0000';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261116-0000';
+import { startReminder } from './reminder.js?v=20261116-0000';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261116-0000';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261116-0000';
+import { roomLevel } from './decor.js?v=20261116-0000';
 
-import { is2d, setView } from './view-mode.js?v=20261115-2343';
-import { adBreak } from './ad-breaks.js?v=20261115-2343';
-import { resultAd, sideAd } from './ads.js?v=20261115-2343';
-import { gameStrip } from './game-strip.js?v=20261115-2343';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-2343';
-const V = '?v=20261115-2343';
+import { is2d, setView } from './view-mode.js?v=20261116-0000';
+import { adBreak } from './ad-breaks.js?v=20261116-0000';
+import { resultAd, sideAd } from './ads.js?v=20261116-0000';
+import { gameStrip } from './game-strip.js?v=20261116-0000';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261116-0000';
+const V = '?v=20261116-0000';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);

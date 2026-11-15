@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261115-2343';
-import { is2d } from './view-mode.js?v=20261115-2343';
-import { adBreak } from './ad-breaks.js?v=20261115-2343';
-import { resultAd, sideAd } from './ads.js?v=20261115-2343';
-import { myTableSize } from '../net/party.js?v=20261115-2343';
-import { W, H, TICK } from './video/lib.js?v=20261115-2343';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261115-2343';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261115-2343';
-import { MOMENT, linesFor } from './talk.js?v=20261115-2343';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-2343';
-import { ask, confirmSpend } from './dialog.js?v=20261115-2343';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-2343';
-import { profile } from '../persistence/profile-store.js?v=20261115-2343';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261115-2343';
+import { hintsLeft, showHint } from './hint.js?v=20261116-0000';
+import { is2d } from './view-mode.js?v=20261116-0000';
+import { adBreak } from './ad-breaks.js?v=20261116-0000';
+import { resultAd, sideAd } from './ads.js?v=20261116-0000';
+import { myTableSize } from '../net/party.js?v=20261116-0000';
+import { W, H, TICK } from './video/lib.js?v=20261116-0000';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-0000';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-0000';
+import { MOMENT, linesFor } from './talk.js?v=20261116-0000';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-0000';
+import { ask, confirmSpend } from './dialog.js?v=20261116-0000';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-0000';
+import { profile } from '../persistence/profile-store.js?v=20261116-0000';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-0000';
 
-const V = '?v=20261115-2343';
+const V = '?v=20261116-0000';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -827,6 +827,7 @@ export async function runTv(ctx) {
     const offer = !reminderSettings().asked && reminderSupported() && info;
     show(topBar(game), h('section', { class: 'panel tvpanel' }, [
       h('h1', {}, [title]),
+      r.stars ? h('p', { class: 'tvstars', 'aria-label': `${r.stars.got} of ${r.stars.of} stars` }, [h('span', {}, ['★'.repeat(r.stars.got)]), h('span', { class: 'tvstars__off' }, ['★'.repeat(Math.max(0, r.stars.of - r.stars.got))]), h('small', {}, [`Level ${r.stars.level} · ${r.stars.name}${r.stars.got < r.stars.of ? ` · reach level ${r.stars.got + 2} for the next star` : ''}`])]) : null,
       r.endless && players.length === 1 ? h('p', { class: 'lead' }, [`${got ? `${medalNames[got - 1]} ` : ''}Best: ${info?.best ?? bestOf(game.slug)}${nextMedal ? ` · ${nextMedal - myScore} more for ${medalNames[got]}` : ''}`])
         : h('ol', { class: 'board' }, names.map((n, i) => [n, r.scores[i], i]).sort((a, b) => Number((r.winners || []).includes(b[2])) - Number((r.winners || []).includes(a[2])) || b[1] - a[1]).map(([n, v, i], k, all) => { const win = (r.winners || []).includes(i); const place = win ? 0 : all.filter(o => (r.winners || []).includes(o[2]) || o[1] > v).length; return h('li', { class: win ? 'first' : '' }, [h('span', {}, [`${['🥇', '🥈', '🥉'][place] || place + 1} ${n}`]), h('strong', {}, [String(v)])]); })),   // equal scores share a place
       h('div', { class: 'rankline' }, [

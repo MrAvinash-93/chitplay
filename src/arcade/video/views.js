@@ -4,21 +4,21 @@
  * Light on purpose: no shadows, few lights, shared materials, simple shapes.
  */
 import * as THREE from '../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, TICK } from './lib.js?v=20261115-2343';
-import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261115-2343';
-import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261115-2343';
-import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261115-2343';
-import { speedOf as roadSpeed } from './road-dash.js?v=20261115-2343';
-import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261115-2343';
-import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261115-2343';
-import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261115-2343';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261115-2343';
-import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261115-2343';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261115-2343';
-import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261115-2343';
-import { selectedGameCosmetic } from '../game-cosmetics.js?v=20261115-2343';
-import { TAG_COVER, FURNITURE } from './tag-game-core.js?v=20261115-2343';
-import { turboView } from './turbo-view.js?v=20261115-2343';
+import { SEAT_COLORS, TICK } from './lib.js?v=20261116-0000';
+import { GRAZE as FLY_GRAZE, placeAt, speedAt } from './flying-chit.js?v=20261116-0000';
+import { FLY as PIN_FLY, GAP as PIN_GAP, isBigBoard as isPinBig, LEVEL_TICKS as PIN_LEVEL_TICKS, spinAt as pinSpinAt } from './pin-spin.js?v=20261116-0000';
+import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from './ship-fight.js?v=20261116-0000';
+import { speedOf as roadSpeed } from './road-dash.js?v=20261116-0000';
+import { TOP as RALLY_TOP, WIN as RALLY_WIN } from './backyard-rally.js?v=20261116-0000';
+import { AHEAD as TUNNEL_AHEAD, blocks as tunnelBlocks, speedAt as tunnelSpeed } from './tunnel-race.js?v=20261116-0000';
+import { CX as BULL_CX, CY as BULL_CY } from './bull-fight.js?v=20261116-0000';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from './hungry-snake.js?v=20261116-0000';
+import { G as HOOP_G, MAX as HOOP_MAX } from './hoop-flick.js?v=20261116-0000';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from './ghost-hostel.js?v=20261116-0000';
+import { W as HOOP_W, H as HOOP_H } from './lib.js?v=20261116-0000';
+import { selectedGameCosmetic } from '../game-cosmetics.js?v=20261116-0000';
+import { TAG_COVER, FURNITURE } from './tag-game-core.js?v=20261116-0000';
+import { turboView } from './turbo-view.js?v=20261116-0000';
 
 const TAU = Math.PI * 2;
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...extra });
@@ -2506,6 +2506,9 @@ function penFightView() {
     return group;
   };
   const pens = [makePen(0), makePen(1)];
+  // whose flick it is: a glowing ring on the desk round that pen
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.02, 6, 40), basic('#ffffff', { transparent: true, opacity: 0.7 }));
+  halo.rotation.x = Math.PI / 2; scene.add(halo);
   const selectedPen = () => selectedGameCosmetic('pen-fight', 'pen')?.style || 'classic';
   const selectedDesk = () => selectedGameCosmetic('pen-fight', 'desk')?.style || 'classic';
   let penStyle = '', deskStyle = '';
@@ -2528,11 +2531,21 @@ function penFightView() {
       }
       s.pens.forEach((p, i) => {
         const m = pens[i];
-        m.position.set((p.x - HOOP_W / 2) / 100, p.alive ? 0.055 + (p.balance < 0.55 ? Math.sin(s.t * 0.7 + i) * 0.018 : 0) : -0.08, (p.y - HOOP_H / 2) / 100);
+        // off the edge: it tips over and drops to the floor
+        const fall = p.alive ? 0 : Math.min(1, (p.fell || 0) / 28);
+        m.position.set((p.x - HOOP_W / 2) / 100, 0.055 - fall * fall * 0.9, (p.y - HOOP_H / 2) / 100);
         m.rotation.y = -p.angle;
-        m.rotation.z = p.alive && p.balance < 0.55 ? Math.sin(s.t * 0.5 + i) * (0.25 - p.balance * 0.3) : 0;
-        m.visible = p.alive || s.phase === 'result';
+        m.rotation.z = fall * 1.4;
+        m.visible = p.alive || fall < 1;
       });
+      const turnPen = s.phase === 'launch' ? s.pens[s.turn] : null;
+      halo.visible = !!turnPen?.alive;
+      if (halo.visible) {
+        halo.position.set((turnPen.x - HOOP_W / 2) / 100, 0.012, (turnPen.y - HOOP_H / 2) / 100);
+        halo.material.color.set(SEAT_COLORS[s.turn]);
+        halo.material.opacity = 0.45 + 0.35 * Math.sin(s.t * 0.15);
+        halo.scale.setScalar(1 + 0.06 * Math.sin(s.t * 0.15));
+      }
     },
   };
 }
@@ -2682,9 +2695,30 @@ function tagGameView(mode) {
     return g;
   };
   const people = Array.from({ length: 4 }, (_, i) => makePlayer(i));
+  // the camera rides behind and above your own player, so you move through the house (or the hall)
+  // instead of watching a map: closer in, following smoothly, still wide enough to see who is near
+  const cam = { x: 0, z: 0.25, ready: false };
   return {
     scene, camera,
-    update(s, dt) {
+    update(s, dt, _alpha, mine = 0) {
+      const me = s.players[mine] || s.players[0];
+      const tx = me && Number.isFinite(me.x) ? (me.x - HOOP_W / 2) / 100 * 0.78 : 0;
+      const tz = me && Number.isFinite(me.y) ? (me.y - HOOP_H / 2) / 100 * 0.78 : 0.25;
+      const k = cam.ready ? 1 - Math.exp(-(Number(dt) || 0.016) * 3.2) : 1;
+      cam.x += (tx - cam.x) * k; cam.z += (tz - cam.z) * k; cam.ready = true;
+      camera.position.set(cam.x, 4.3, cam.z + 3.3);
+      camera.lookAt(cam.x, 0, cam.z - 0.15);
+      // a hiding place rustles when the seeker gets close to whoever is inside it
+      const seeker = s.players[s.it];
+      covers.forEach((c) => { c.rotation.z = 0; });
+      if (house && seeker && s.phase === 'seek') s.players.forEach((p, i) => {
+        if (i === s.it || !p.hidden || !p.alive) return;
+        const near = Math.hypot(seeker.x - p.x, seeker.y - p.y);
+        if (near > 170) return;
+        let best = null, bd = Infinity;
+        TAG_COVER.forEach(([cx, cy], j) => { const d = Math.hypot(cx - p.x, cy - p.y); if (d < bd) { bd = d; best = j; } });
+        if (best != null) covers[best].rotation.z = Math.sin(s.t * 0.9 + i) * (near < 100 ? 0.05 : 0.025);
+      });
       s.players.forEach((p, i) => {
         const m = people[i], u = m.userData;
         const concealed = (mode === 'lapa-chupi' && p.hidden) || !p.alive

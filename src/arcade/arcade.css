@@ -594,3 +594,7 @@ body.tv-roomgame .tvcanvas { border-radius: 12px; box-shadow: 0 10px 30px rgba(0
 /* joining a friend's game: the camera reading the host's QR code */
 .scanvideo { display: block; width: 100%; max-width: 360px; aspect-ratio: 1; margin: 8px auto; border-radius: 16px; object-fit: cover; background: #000; border: 2px solid rgba(255, 210, 122, .6); }
 .scanvideo[hidden] { display: none; }
+/* stars for how far a tunnel run went */
+.tvstars { margin: 2px 0 8px; text-align: center; font-size: 30px; line-height: 1.1; color: #ffd23f; text-shadow: 0 2px 10px rgba(255, 210, 63, .45); }
+.tvstars .tvstars__off { color: rgba(255, 255, 255, .22); text-shadow: none; }
+.tvstars small { display: block; margin-top: 4px; font-size: 12px; color: var(--cream-2, #f3e4c8); text-shadow: none; }
