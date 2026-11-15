@@ -16,15 +16,15 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, CATEGORIES, gameBySlug, localName, allNames } from '../arcade/catalog.js?v=20261115-2259';
-import { logoSvg } from '../arcade/logo.js?v=20261115-2259';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261115-2259';
-import { profile } from '../persistence/profile-store.js?v=20261115-2259';
+import { ALL_GAMES, CATEGORIES, gameBySlug, localName, allNames } from '../arcade/catalog.js?v=20261115-2343';
+import { logoSvg } from '../arcade/logo.js?v=20261115-2343';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261115-2343';
+import { profile } from '../persistence/profile-store.js?v=20261115-2343';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
 const STATE_KEY = 'chitplay.partyState'; // the host's plan: { go }
-const V = '?v=20261115-2259';
+const V = '?v=20261115-2343';
 const DONE_KEY = 'chitplay.partyDone';   // the last plan this phone acted on
 const MAX_FRIENDS = 9;
 const channel = (code) => `party-${code}`;
@@ -35,6 +35,11 @@ const myToken = () => { let t = read(TOKEN_KEY); if (!t) { t = newToken(); write
 const myName = () => String(profile?.name || 'Player').slice(0, 14);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 /** Cops and Robbers lives on the home page (the 3D room), not in the table games' catalog, but a party plays it too. */
+/**
+ * The site-wide party (one lobby for every game) is switched off: friends play together from inside each
+ * game, with that game's own room code, the way Cops and Robbers works. A party saved from before is let go.
+ */
+const PARTIES_ON = false;
 export const COPS = { slug: 'cops-and-robbers', name: 'Cops and Robbers', icon: '👮', min: 2, max: 4, seats: 4, kind: 'Party', accent: '#b5341f', blurb: 'King, Queen, Police and Thief: the chit game.' };
 const gameOf = (slug) => (slug === COPS.slug ? COPS : gameBySlug(slug));
 // a game's name in the app's language (the chit game keeps its own English name here)
@@ -260,6 +265,7 @@ function answer(yes) {
  * party took over (the caller should not open the game itself).
  */
 export async function partyPlay(slug) {   // resolves true when the party takes over
+  if (!PARTIES_ON) return false;
   const p = read(KEY);
   const game = gameOf(slug);
   if (!p || !game || game.max < 2) return false;
@@ -295,6 +301,7 @@ function startParty() {
   openHost(code);
 }
 export function joinParty(code) {
+  if (!PARTIES_ON) return;
   setTimeout(() => dispatchEvent(new CustomEvent('chitplay:party-changed')), 0);
   if (read(KEY)?.code === code && (guest || status === 'connecting')) return;
   // one party at a time: let go of any other first
@@ -585,6 +592,7 @@ function openPanel() {
  */
 export function mountParty({ root = '', game = null, place = 'home' } = {}) {
   if (ui) return;
+  if (!PARTIES_ON) { try { write(KEY, null); write(STATE_KEY, null); write(DONE_KEY, null); } catch {} return; }
   ROOT = root; HERE = game;
   const style = el('style', {}, [CSS]);
   document.head.append(style);
@@ -609,7 +617,7 @@ export function mountParty({ root = '', game = null, place = 'home' } = {}) {
   }
   paint();
 }
-export const inParty = () => !!read(KEY);
+export const inParty = () => PARTIES_ON && !!read(KEY);
 /** On a table this phone leads for the party: how many of the party are meant to sit at it (else 0). */
 export function myTableSize(slug) {
   const go = (read(STATE_KEY) || state)?.go;
@@ -620,6 +628,7 @@ export function myTableSize(slug) {
 
 /** A party button for a game's top bar: it sits with the other buttons, so it never covers the game. */
 export function partyChip({ always = false, className = 'back partychip' } = {}) {
+  if (!PARTIES_ON) return el('span', { hidden: '', 'aria-hidden': 'true' });
   const c = el('button', { type: 'button', class: className, title: 'Play with friends', onclick: () => openPanel() });
   if (always) c.dataset.always = '1';
   chips.add(c);

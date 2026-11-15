@@ -1007,3 +1007,5 @@ html:has(.pausemenu) :is(.player-tags, .player-bubbles, .world-caption, .emoji-f
 .game__list-scroll > .game__legal { margin-top: auto; padding-top: 14px; }
 .game__list-scroll > .adbox { margin-top: auto; }
 .game__list-scroll > .adbox + .game__legal { margin-top: 0; }
+/* the home page's search takes the full width of the row */
+.game__list-row--wide .allgames__search { flex: 1 1 auto; width: 100%; min-height: 48px; font-size: 16px; }

@@ -10,44 +10,44 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-2259';
-import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261115-2259';
-import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-2259';
-import { loadWorld } from '../world/world-loader.js?v=20261115-2259';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-2259';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-2259';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-2259';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-2259';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261115-2259';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261115-2343';
+import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261115-2343';
+import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261115-2343';
+import { loadWorld } from '../world/world-loader.js?v=20261115-2343';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261115-2343';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261115-2343';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261115-2343';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261115-2343';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261115-2343';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261115-2259';
-import { faceHtml } from './photo.js?v=20261115-2259';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-2259';
+import { iconSvg } from '../ui/icons.js?v=20261115-2343';
+import { faceHtml } from './photo.js?v=20261115-2343';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261115-2343';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261115-2259';
+import { settingsStore } from '../persistence/settings-store.js?v=20261115-2343';
 
-import { fill, shellText } from './shell-text.js?v=20261115-2259';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-2259';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-2259';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-2259';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-2259';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-2259';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-2259';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261115-2259';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2259';
-import { startReminder } from './reminder.js?v=20261115-2259';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-2259';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-2259';
-import { roomLevel } from './decor.js?v=20261115-2259';
+import { fill, shellText } from './shell-text.js?v=20261115-2343';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261115-2343';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261115-2343';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261115-2343';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261115-2343';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261115-2343';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261115-2343';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261115-2343';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2343';
+import { startReminder } from './reminder.js?v=20261115-2343';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261115-2343';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261115-2343';
+import { roomLevel } from './decor.js?v=20261115-2343';
 
-import { is2d, setView } from './view-mode.js?v=20261115-2259';
-import { adBreak } from './ad-breaks.js?v=20261115-2259';
-import { resultAd, sideAd } from './ads.js?v=20261115-2259';
-import { gameStrip } from './game-strip.js?v=20261115-2259';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-2259';
-const V = '?v=20261115-2259';
+import { is2d, setView } from './view-mode.js?v=20261115-2343';
+import { adBreak } from './ad-breaks.js?v=20261115-2343';
+import { resultAd, sideAd } from './ads.js?v=20261115-2343';
+import { gameStrip } from './game-strip.js?v=20261115-2343';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261115-2343';
+const V = '?v=20261115-2343';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -418,6 +418,11 @@ function openPauseMenu() {
     } }),
     solo && match ? row(say.restart, () => { if (!window.confirm('Restart this match from the beginning?')) return; leaveAll(); clearSaved(G.slug); location.reload(); }, 'restart') : null,
     G ? row(say.howTo, async () => { leave(); await openRules(G); if (solo) setPaused(false); }, 'book') : null,
+    // friends on their own phones, for this game: open a room with a code and QR, or join one
+    solo && G && G.max >= 2 ? h('div', { class: 'game__menu-pair' }, [
+      row('👫 Play with friends', () => { if (match && !Logic?.result?.(match.s) && !window.confirm('Leave this game and open a room for your friends?')) return; leaveAll(); location.href = `?game=${G.slug}&mode=nearby`; }, null),
+      row('🔗 Join a friend', () => { if (match && !Logic?.result?.(match.s) && !window.confirm('Leave this game to join a friend?')) return; leaveAll(); location.href = `?game=${G.slug}&mode=join`; }, null),
+    ]) : null,
     // how it looks, and in which language: here, out of the way of the game
     h('div', { class: 'game__menu-pair' }, [
       G ? row(is2d() ? '🗺️ View: 2D' : '🧊 View: 3D', () => { setView(is2d() ? '3d' : '2d'); menu(); }, null) : null,
@@ -2426,7 +2431,6 @@ function joinForm(code = '', auto = false) {
         return;
       }
       // no table with that code: it may be a party's code, so join the party instead
-      try { const [t] = await peekTables([`party-${c}`], 3000); if (t) { joinParty(c); location.href = '../'; return; } } catch {}
       err.textContent = netError(e); go.disabled = false; go.textContent = 'Join';
     }
   }, 'primary');
@@ -2440,9 +2444,32 @@ function joinForm(code = '', auto = false) {
     go.click();
     return;
   }
+  // or point the camera at the QR on the host's phone (a photo of it works too), like Cops and Robbers
+  const video = h('video', { class: 'scanvideo', playsinline: '', muted: '', hidden: '' });
+  const photo = h('input', { type: 'file', accept: 'image/*', hidden: '' });
+  let camera = null;
+  const found = (c) => { camera?.stop(); camera = null; video.hidden = true; codeIn.value = c; audioManager.play('correct'); go.click(); };
+  photo.addEventListener('change', async () => {
+    const f = photo.files?.[0]; if (!f) return;
+    try { const { codeFromPhoto } = await import(`../net/qr-scan.js${V}`); const r = await codeFromPhoto(f); if (r?.code) found(r.code); else err.textContent = r?.other ? 'That is not a ChitPlay code.' : 'No code found in that picture. Try again, closer.'; } catch { err.textContent = 'Couldn’t read that picture.'; }
+  });
+  const scan = btn('📷 Scan the host’s QR code', async () => {
+    err.textContent = '';
+    if (camera) { camera.stop(); camera = null; video.hidden = true; scan.textContent = '📷 Scan the host’s QR code'; return; }
+    const live = !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
+    if (!live) { photo.click(); return; }
+    try {
+      const { startCameraScan } = await import(`../net/qr-scan.js${V}`);
+      video.hidden = false; scan.textContent = '✕ Stop the camera';
+      camera = startCameraScan(video, found, () => { err.textContent = 'That is not a ChitPlay code.'; });
+      await camera.ready;
+    } catch { camera?.stop(); camera = null; video.hidden = true; scan.textContent = '📷 Scan the host’s QR code'; photo.click(); }
+  });
+  addEventListener('pagehide', () => camera?.stop(), { once: true });
   show(topBar(G), h('section', { class: 'panel' }, [
     h('h1', {}, ['Join a friend’s game']),
-    h('p', { class: 'lead' }, ['The host taps Play with friends and gets a code. Type it here.']),
+    h('p', { class: 'lead' }, ['The host taps Play with friends and gets a code. Scan its QR code, or type the code here.']),
+    scan, video, photo,
     h('label', { class: 'opt' }, [h('span', {}, ['Code']), codeIn]),
     h('label', { class: 'opt' }, [h('span', {}, ['Your name']), nameIn]),
     err, go,
@@ -2515,6 +2542,8 @@ async function main() {
     addEventListener('resize', fitBoard);
   }
   if (isCode(join)) { joinForm(join, params.get('auto') === '1'); return; }
+  // the menu's Join a friend's code: the form for this game
+  if (params.get('mode') === 'join' && game) { G = game; applyTheme(game); joinForm(); return; }
   onPopup((k) => audioManager.play(k || 'reveal'));
   startReminder(LANG);
   if (game.video) {

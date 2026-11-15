@@ -6,13 +6,13 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { audioManager } from '../audio/audio-manager.js';
-import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-2259';
-import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-2259';
-import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-2259';
-import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-2259';
-import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-2259';
-import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-2259';
-import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2259';
+import { COLS as FOUR_COLS, ROWS as FOUR_ROWS } from './games/four-in-a-row.js?v=20261115-2343';
+import { destination as ludoDestination, COLORS as LUDO_COLORS, HOME as LUDO_HOME, SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarter } from './games/ludo.js?v=20261115-2343';
+import { LADDERS, SNAKES } from './games/snakes-and-ladders.js?v=20261115-2343';
+import { N as DOTS_N } from './games/dots-and-boxes.js?v=20261115-2343';
+import { BASE_Y as CARROM_BASE, R as COIN_R, STRIKER_R, POCKETS, POCKET_R } from './games/carrom.js?v=20261115-2343';
+import { isRed, rankOf, suitOf, SUIT_ICON } from './cards.js?v=20261115-2343';
+import { selectedGameCosmetic } from './game-cosmetics.js?v=20261115-2343';
 
 export const PLAYER_COLORS = ['#d32f2f', '#2e7dd1', '#f2b705', '#2e9e4f'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1008,6 +1008,22 @@ const BOARDS = {
         return bars;
       });
       st.ludoLightQ = -1;
+      // and the seconds left, as a number in the middle of that corner (between the yard's four spots)
+      const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+      const secTex = new THREE.CanvasTexture(cv);
+      const secs = new THREE.Sprite(new THREE.SpriteMaterial({ map: secTex, depthTest: false, transparent: true }));
+      secs.scale.set(0.12, 0.12, 1); secs.renderOrder = 6; secs.visible = false;
+      st.add(secs);
+      let secShown = '';
+      const paintSecs = (n, color) => {
+        const g = cv.getContext('2d');
+        g.clearRect(0, 0, 128, 128);
+        g.fillStyle = 'rgba(20,10,5,.82)'; g.beginPath(); g.arc(64, 64, 56, 0, Math.PI * 2); g.fill();
+        g.lineWidth = 9; g.strokeStyle = color; g.beginPath(); g.arc(64, 64, 52, 0, Math.PI * 2); g.stroke();
+        g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '800 62px system-ui, sans-serif';
+        g.fillText(String(n), 64, 68);
+        secTex.needsUpdate = true;
+      };
       st.turnLightTick = () => {
         const q = st.ludoLightQ;
         const f = turnLight && q >= 0 ? Math.max(0, Math.min(1, (turnLight.deadline - Date.now()) / turnLight.ms)) : 0;
@@ -1021,6 +1037,15 @@ const BOARDS = {
           else lightMat.color.copy(LIGHT_END).lerp(LIGHT_MID, f * 2);
           // the last second blinks
           lightMat.opacity = f < 0.2 && !reduced ? 0.55 + 0.4 * Math.abs(Math.sin(st.clock * 10)) : 0.95;
+        }
+        const left = turnLight && q >= 0 ? Math.max(0, Math.ceil((turnLight.deadline - Date.now()) / 1000)) : -1;
+        secs.visible = left >= 0;
+        if (left >= 0) {
+          const [cx, cz] = cell(yards[q][0] + 2.5, yards[q][1] + 2.5, 15);
+          secs.position.set(cx, TOP_Y + 0.07, cz);
+          // redrawn once a second, in the light's colour at that moment
+          const key = `${q}|${left}`;
+          if (key !== secShown) { secShown = key; paintSecs(left, '#' + lightMat.color.getHexString()); }
         }
       };
     },
