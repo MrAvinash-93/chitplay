@@ -97,7 +97,7 @@ export const COUNTRIES = {
     id: 'KR', flag: '🇰🇷', name: 'South Korea', game: '마피아 게임', lang: 'korean',
     roles: {
       king:      { name: '시민', emoji: '🧑', acc: null,     color: '#5a5a5a', points: 600 },
-      queen:     { name: '의사',  emoji: '🩺', acc: 'doctor', color: '#1f7a6b', points: 800 },
+      queen:     { name: '의사',  emoji: '⚕️', acc: 'doctor', color: '#1f7a6b', points: 800 },
       detective: { name: '경찰',  emoji: '👮', acc: 'cap',    color: '#23617a', points: 500 },
       thief:     { name: '마피아',   emoji: '🕶️', acc: 'mask',   color: '#9b2435', points: 0 },
     },
@@ -189,7 +189,7 @@ export const COUNTRIES = {
     id: 'RU', flag: '🇷🇺', name: 'Russia', game: 'Мафия (Mafia)', lang: 'russian',
     roles: {
       king:      { name: 'Мирный',   emoji: '🧑', acc: 'ushanka', color: '#5a5a5a', points: 600 },
-      queen:     { name: 'Доктор',   emoji: '🩺', acc: 'doctor',  color: '#1f7a6b', points: 800 },
+      queen:     { name: 'Доктор',   emoji: '⚕️', acc: 'doctor',  color: '#1f7a6b', points: 800 },
       detective: { name: 'Комиссар', emoji: '🕵️', acc: 'cap',     color: '#23617a', points: 500 },
       thief:     { name: 'Мафия',    emoji: '🕶️', acc: 'mask',    color: '#9b2435', points: 0 },
     },

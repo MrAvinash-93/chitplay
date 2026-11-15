@@ -55,9 +55,9 @@ export default {
       'Oh no, {name} got hit last night!',
     ],
     saved: [
-      'But the Doctor saved {name}! 🩺',
+      'But the Doctor saved {name}! ⚕️',
       'Phew! The Doctor protected {name}!',
-      '{name} is okay, the Doctor came! 🩺',
+      '{name} is okay, the Doctor came! ⚕️',
       'Daebak! Doctor saved {name} just in time!',
     ],
     notSaved: [
@@ -113,7 +113,7 @@ export default {
     guesserLose: ['Aish… 😤', 'How did that happen?!', 'The Mafia fooled me 😭', 'Next time I won’t miss!', 'Tricked!'],
     thiefWin: ['Hahaha, the Mafia wins! 🕶️', 'Catch me if you can! 🏃', 'Nobody saw it coming!', 'Your points are mine!', 'Give me an acting award 🏆'],
     thiefLose: ['Aigoo… caught 😭', 'Just wait, next time!', 'How did you know?', 'My face gave it away', 'Okay, okay, I give up'],
-    royal: ['Citizens get 600 too 🧑', 'The {queen} gets 800 🩺', 'Peaceful citizen life 😌', 'Points for staying alive!', 'Easy points, gamsahamnida'],
+    royal: ['Citizens get 600 too 🧑', 'The {queen} gets 800 ⚕️', 'Peaceful citizen life 😌', 'Points for staying alive!', 'Easy points, gamsahamnida'],
     nextRound: ['One more round!', 'Again!', 'This time I’ll show you!', 'Revenge round!', 'Collect the slips!'],
     winner: ['I won! 🏆', 'Who’s the champion? Me! 🏆', 'Beat everyone! 😎', 'Daebak, I’m the best', 'Banana milk is on me! 🍌'],
     loser: ['Let’s play again tomorrow!', 'Revenge tomorrow 😤', 'That was fun!', 'Next time for sure', 'Gwaenchana, gwaenchana'],

@@ -24,7 +24,7 @@ export default {
     guesserLose: ['Ekh… 😤', 'Kak tak vyshlo?!', 'Mafiya menya obmanula 😭', 'V sleduyushchiy raz ne promakhnus!', 'Obveli vokrug paltsa!'],
     thiefWin: ['Ha-ha, Mafiya pobedila! 🕶️', 'Poymay menya, esli smozhesh! 🏃', 'Nikto ne dogadalsya!', 'Tvoi ochki teper moi!', 'Dayte mne Oskar 🏆'],
     thiefLose: ['Ekh… popalsya 😭', 'Nu pogodite, v sleduyushchiy raz!', 'Kak ty dogadalsya?', 'Litso menya vydalo', 'Ladno, ladno, sdayus'],
-    royal: ['{king}u tozhe shestsot', '{queen}u vosemsot 🩺', 'Mirnaya zhizn — krasota 😌', 'Ochki za to, chto vyzhil!', 'Lyogkie ochki, spasibo'],
+    royal: ['{king}u tozhe shestsot', '{queen}u vosemsot ⚕️', 'Mirnaya zhizn — krasota 😌', 'Ochki za to, chto vyzhil!', 'Lyogkie ochki, spasibo'],
     nextRound: ['Eshchyo raund!', 'Eshchyo razok!', 'Seychas ya vam pokazhu!', 'Revansh!', 'Sobirayte bumazhki!'],
     winner: ['Ya vyigral! 🏆', 'Kto chempion? Ya! 🏆', 'Vsekh obygral! 😎', 'Segodnya ya luchshiy', 'Morozhenoe za moy schyot! 🍦'],
     loser: ['Zavtra eshchyo sygraem!', 'Zavtra revansh 😤', 'Bylo veselo!', 'V sleduyushchiy raz tochno ya', 'Nichego strashnogo'],

@@ -1,4 +1,4 @@
-import { profile } from '../persistence/profile-store.js?v=20261115-1459';
+import { profile } from '../persistence/profile-store.js?v=20261115-1509';
 
 export const GAME_STYLE_SLOTS = {
   'flying-chit': [
@@ -31,7 +31,7 @@ export const GAME_COSMETICS = [
   { id: 'flying-golden', game: 'flying-chit', slot: 'chit', style: 'golden', name: 'Golden origami', icon: '🌟', price: 160 },
   { id: 'flying-neon', game: 'flying-chit', slot: 'chit', style: 'neon', name: 'Neon comet', icon: '💠', price: 220 },
   { id: 'flying-rose', game: 'flying-chit', slot: 'chit', style: 'rose', name: 'Rose kite', icon: '🌸', price: 140 },
-  { id: 'tunnel-winged-chit', game: 'tunnel-race', slot: 'craft', style: 'winged-chit', name: 'Winged Chit', icon: '🪁', price: 120 },
+  { id: 'tunnel-winged-chit', game: 'tunnel-race', slot: 'craft', style: 'winged-chit', name: 'Winged Chit', icon: '🎈', price: 120 },
   { id: 'tunnel-cosmic', game: 'tunnel-race', slot: 'tunnel', style: 'cosmic', name: 'Cosmic tunnel', icon: '🌌', price: 140 },
   { id: 'tunnel-sunset', game: 'tunnel-race', slot: 'tunnel', style: 'sunset', name: 'Sunset tunnel', icon: '🌅', price: 180 },
   { id: 'chess-jade-board', game: 'chess', slot: 'board', style: 'jade', name: 'Jade board', icon: '🟩', price: 120 },

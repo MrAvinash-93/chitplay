@@ -5,9 +5,9 @@
  * The village wins when every werewolf is gone; the werewolves win when they are as many as the rest.
  * Nobody is hurt: someone "caught" by the werewolves just sits out, like any party game.
  */
-import { best, seatsOf, shuffle, strip } from '../lib.js?v=20261115-1459';
+import { best, seatsOf, shuffle, strip } from '../lib.js?v=20261115-1509';
 
-export const ROLE = { wolf: { name: 'Werewolf', icon: '🐺' }, seer: { name: 'Seer', icon: '🔮' }, doctor: { name: 'Doctor', icon: '🩺' }, villager: { name: 'Villager', icon: '🏡' } };
+export const ROLE = { wolf: { name: 'Werewolf', icon: '🐺' }, seer: { name: 'Seer', icon: '🔮' }, doctor: { name: 'Doctor', icon: '⚕️' }, villager: { name: 'Villager', icon: '🏡' } };
 const alive = (s) => seatsOf(s.n).filter(p => s.alive[p]);
 const wolvesLeft = (s) => alive(s).filter(p => s.roles[p] === 'wolf').length;
 function winner(s) {
@@ -154,7 +154,7 @@ export default {
     }
     if (v.phase === 'dawn') {
       const s2 = v.story;
-      const line = s2.victim < 0 ? 'A quiet night: nobody was caught.' : s2.saved ? `The Doctor saved ${N[s2.victim]}! 🩺` : `${N[s2.victim]} was caught in the night.`;
+      const line = s2.victim < 0 ? 'A quiet night: nobody was caught.' : s2.saved ? `The Doctor saved ${N[s2.victim]}! ⚕️` : `${N[s2.victim]} was caught in the night.`;
       return { title: `☀️ Day ${v.day}`, lead: `${line} ${alive} still in the village.`, players, list: players ? undefined : list, buttons: mine ? [{ label: 'Start the vote', i: 0, primary: true }] : [] };
     }
     if (v.phase === 'vote') return { title: mine ? '🗳️ Who is a werewolf?' : 'The village is voting…', lead: meDead ? 'You are out: you can’t vote.' : youAre, players, list: players ? undefined : list, buttons: mine ? ctx.legal.map((m, i) => ({ label: m.vote >= 0 ? N[m.vote] : 'Skip the vote', i })) : [] };

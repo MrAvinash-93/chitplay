@@ -2,9 +2,9 @@
  * Memory Match: turn over two tiles. A pair is yours and you go again; otherwise they turn back and
  * the next player goes. Most pairs wins. Bots remember only some of what they have seen.
  */
-import { best, pick, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261115-1459';
+import { best, pick, seatsOf, shuffle, turnLine, strip, who } from '../lib.js?v=20261115-1509';
 
-export const FACES = ['🍎', '🌙', '⭐', '🐟', '🌵', '🎈', '🔔', '🍀', '🎸', '⚓', '🪁', '🧭'];
+export const FACES = ['🍎', '🌙', '⭐', '🐟', '🌵', '🎈', '🔔', '🍀', '🎸', '⚓', '🎁', '🧭'];
 export const TILES = 24;
 
 export default {

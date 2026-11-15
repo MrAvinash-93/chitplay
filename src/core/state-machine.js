@@ -1,4 +1,4 @@
-import { GAME_PHASES, STATE_TRANSITIONS } from '../app/config.js?v=20261115-1459';
+import { GAME_PHASES, STATE_TRANSITIONS } from '../app/config.js?v=20261115-1509';
 import { StateTransitionError } from '../utils/errors.js';
 
 /**
