@@ -57,8 +57,9 @@ AdSense → **Privacy & messaging → European regulations → Create message**.
 ### 6. Where ads may go (after approval)
 In AdSense → **Ads → By site → chitplay.com**:
 - Turn on **Auto ads**.
-- Under **Page exclusions**, exclude `https://www.chitplay.com/` (the game page) and `/404.html`. The game fills the screen and its buttons sit at the bottom. An anchor or in-page ad over them could cause accidental clicks, and Google penalizes those even when unintended.
-- Allow ads on `/games/…`, `/how-to-play/`, `/strategy/`, `/indoor-games/` and `/school-games/`: the content pages.
+- Under **Page exclusions**, exclude every page under `https://www.chitplay.com/play/` (where all 47 games are played) and `/404.html`. A game fills the screen and its buttons sit at the bottom. An anchor or in-page ad over them could cause accidental clicks, and Google penalizes those even when unintended. (Until 2026-11-15 the home page itself was a game; it is now the list of games, so it no longer needs excluding.)
+- Allow ads on the home page (the games list), `/games/…`, `/how-to-play/`, `/strategy/`, `/indoor-games/`, `/school-games/`, `/articles/…` and the language pages: the content pages.
+- Adsterra fills one native box (end of the list, result screens, beside the game on big computer screens). It never pops up or redirects; the Privacy policy names it.
 - Keep **Vignette ads** on. They appear only when a visitor leaves for another page, never during play.
 
 Never:

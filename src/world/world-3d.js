@@ -8,17 +8,17 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261116-1239';
+import { settingsStore } from '../persistence/settings-store.js?v=20261116-1309';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261116-1239';
-import { lookOf, lookKey } from './character-looks.js?v=20261116-1239';
-import { buildRoomDetails } from './room-details.js?v=20261116-1239';
-import { COUNTRIES } from './countries.js?v=20261116-1239';
-import { voiceBox, voiceLangsFor } from './voice.js?v=20261116-1239';
-import { isSpecialEmoji } from './table-talk.js?v=20261116-1239';
-import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261116-1239';
-import { decorMakers } from './decor-makers.js?v=20261116-1239';
-import * as Themes from './themes.js?v=20261116-1239';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261116-1309';
+import { lookOf, lookKey } from './character-looks.js?v=20261116-1309';
+import { buildRoomDetails } from './room-details.js?v=20261116-1309';
+import { COUNTRIES } from './countries.js?v=20261116-1309';
+import { voiceBox, voiceLangsFor } from './voice.js?v=20261116-1309';
+import { isSpecialEmoji } from './table-talk.js?v=20261116-1309';
+import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261116-1309';
+import { decorMakers } from './decor-makers.js?v=20261116-1309';
+import * as Themes from './themes.js?v=20261116-1309';
 
 const TAU = Math.PI * 2;
 

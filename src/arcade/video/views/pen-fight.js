@@ -1,8 +1,8 @@
 /** The 3D picture of pen-fight on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { basic, box, canvasTex, lights, std } from './common.js?v=20261116-1239';
-import { H as HOOP_H, SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261116-1239';
-import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1239';
+import { basic, box, canvasTex, lights, std } from './common.js?v=20261116-1309';
+import { H as HOOP_H, SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261116-1309';
+import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1309';
 
 /* ─── Pen Fight: animated pens sliding across a polished classroom desk ─── */
 function penFightView() {

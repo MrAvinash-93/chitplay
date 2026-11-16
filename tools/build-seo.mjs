@@ -455,7 +455,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261116-1239">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261116-1309">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -565,7 +565,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-1239">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-1309">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -643,7 +643,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-1239">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-1309">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -1418,6 +1418,9 @@ ${[...new Set(PARTY.map(g => g.kind))].map(kind => `<li><strong>${esc({ Arcade: 
 <h2>Advertising and cookies</h2>
 <p>ChitPlay may show advertising to keep the game free. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads to users based on their visits to this site and/or other sites on the Internet. You can opt out of personalised advertising by visiting <a href="https://www.google.com/settings/ads" rel="nofollow noopener">Google Ads Settings</a> or <a href="https://www.aboutads.info/choices/" rel="nofollow noopener">www.aboutads.info</a>.</p>
 <p>Read <a href="https://policies.google.com/technologies/partner-sites" rel="nofollow noopener">how Google uses information from sites that use its services</a>. A cookie is a small file a website stores in your browser; you can block or delete cookies in your browser settings, and the game will still work.</p>
+<p>Some ad spaces (at the end of the games list, on a match's result screen, and beside the game on a large computer screen) are filled by Adsterra, another advertising network. Adsterra and its partners may use cookies and similar technologies, and receive your IP address, browser and device type, to show and measure those ads. Read <a href="https://adsterra.com/privacy-policy/" rel="nofollow noopener">Adsterra's privacy policy</a>. Ads never cover a board, a game or its buttons while you play.</p>
+<h2>Visitors in the United States</h2>
+<p>Under the privacy laws of some US states, including California, sharing information with advertising partners for personalised ads can count as a "sale" or "sharing" of personal information. We don't sell personal information for money. You can opt out of personalised advertising with the links above, by turning on Global Privacy Control in your browser, or with the US state privacy message shown on the page where it applies; you may also ask us to access or delete data by email.</p>
 <h2>Visitors in the EEA, UK and Switzerland</h2>
 <p>For visitors from these regions, analytics and advertising cookies are off by default and are used only if you give consent. When ads are shown, the consent message comes from Google's certified consent management platform; you can change or withdraw your choice at any time from the privacy settings link it adds to the page. You may have rights under local law to access, correct or delete personal data, or to object to its use. Email us to make a request; we hold almost nothing that identifies you, and data held by Google can be managed through the links above.</p>
 <h2>Play with Friends</h2>
