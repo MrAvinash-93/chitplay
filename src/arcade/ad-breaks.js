@@ -44,6 +44,11 @@ function load() {
  * an ad shows. Always resolves; never rejects, never waits more than a few seconds for nothing.
  */
 export async function adBreak(name, { pause = () => {}, resume = () => {} } = {}) {
+  // the Android app: AdMob's interstitial, with the same spacing (src/app/native-ads.js)
+  if (window.Capacitor?.isNativePlatform?.()) {
+    try { const { appBreak } = await import('../app/native-ads.js?v=20261116-1359'); await appBreak({ pause, resume }); } catch {}
+    return false;
+  }
   if (!ENABLED) return false;
   const now = Date.now();
   if (now - startedAt < FIRST_AFTER_MS || now - lastBreak < MIN_GAP_MS) return false;

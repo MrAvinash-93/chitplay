@@ -5,8 +5,8 @@
  *    plays in the 3D room (src/app/bootstrap.js), the same game that used to open on the home page.
  * The home page keeps the list of every game, search, scan and the profile.
  */
-import { gameBySlug } from '../arcade/catalog.js?v=20261116-1309';
-import { GAME_SLUGS } from '../world/countries.js?v=20261116-1309';
+import { gameBySlug } from '../arcade/catalog.js?v=20261116-1359';
+import { GAME_SLUGS } from '../world/countries.js?v=20261116-1359';
 
 const q = new URLSearchParams(location.search);
 const slug = (q.get('game') || '').trim().toLowerCase();
@@ -17,8 +17,8 @@ const isCops = !!slug && !gameBySlug(slug) && (Object.values(GAME_SLUGS).include
 const game = !isCops && gameBySlug(slug);
 if (game) {
   const files = game.video
-    ? ['../arcade/tv.js?v=20261116-1309', `../arcade/video/${game.slug}.js?v=20261116-1309`, '../arcade/video/views.js?v=20261116-1309']
-    : ['../arcade/boards.js?v=20261116-1309', `../arcade/games/${game.slug}.js?v=20261116-1309`];
+    ? ['../arcade/tv.js?v=20261116-1359', `../arcade/video/${game.slug}.js?v=20261116-1359`, '../arcade/video/views.js?v=20261116-1359']
+    : ['../arcade/boards.js?v=20261116-1359', `../arcade/games/${game.slug}.js?v=20261116-1359`];
   for (const f of files) {
     const l = document.createElement('link');
     l.rel = 'modulepreload';
@@ -26,6 +26,8 @@ if (game) {
     document.head.append(l);
   }
 }
+// the Android app: the list's banner goes away while a game is played (src/app/native-ads.js)
+if (window.Capacitor?.isNativePlatform?.()) import('./native-ads.js?v=20261116-1359').then(m => m.listBanner(false)).catch(() => {});
 // the browser keeps the files it has fetched, so the next game (or the next visit) starts at once
 if ('serviceWorker' in navigator && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0|192\.168\.|10\.)/.test(location.hostname)) {
   addEventListener('load', () => navigator.serviceWorker.register('../sw.js').catch(() => {}), { once: true });
@@ -43,7 +45,7 @@ if (isCops) {
   for (const f of ['base.css', 'layout.css']) {
     const l = document.createElement('link');
     l.rel = 'stylesheet';
-    l.href = new URL(`../styles/${f}?v=20261116-1309`, import.meta.url).href;
+    l.href = new URL(`../styles/${f}?v=20261116-1359`, import.meta.url).href;
     document.head.append(l);
   }
   document.title = 'Cops and Robbers (Raja Rani Chor Police): Play Free in 3D | ChitPlay';
@@ -52,7 +54,7 @@ if (isCops) {
   app.setAttribute('role', 'application');
   app.setAttribute('aria-label', 'Cops and Robbers');
   document.getElementById('party')?.replaceWith(app);
-  await import('./bootstrap.js?v=20261116-1309');
+  await import('./bootstrap.js?v=20261116-1359');
 } else {
-  await import('../arcade/table.js?v=20261116-1309');
+  await import('../arcade/table.js?v=20261116-1359');
 }

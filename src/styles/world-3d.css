@@ -18,7 +18,7 @@
   --tile-line: rgba(255, 230, 176, .24);
   --hot: linear-gradient(180deg, #c94c14, #a03a0c);
   --safe-t: env(safe-area-inset-top, 0px);
-  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-b: calc(env(safe-area-inset-bottom, 0px) + var(--app-banner, 0px));   /* the Android app's banner under the list */
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
   --btn: 38px;

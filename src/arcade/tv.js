@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261116-1309';
-import { is2d } from './view-mode.js?v=20261116-1309';
-import { adBreak } from './ad-breaks.js?v=20261116-1309';
-import { resultAd, sideAd } from './ads.js?v=20261116-1309';
-import { myTableSize } from '../net/party.js?v=20261116-1309';
-import { W, H, TICK } from './video/lib.js?v=20261116-1309';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-1309';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-1309';
-import { MOMENT, linesFor } from './talk.js?v=20261116-1309';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-1309';
-import { ask, confirmSpend } from './dialog.js?v=20261116-1309';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-1309';
-import { profile } from '../persistence/profile-store.js?v=20261116-1309';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-1309';
+import { hintsLeft, showHint } from './hint.js?v=20261116-1359';
+import { is2d } from './view-mode.js?v=20261116-1359';
+import { adBreak } from './ad-breaks.js?v=20261116-1359';
+import { resultAd, sideAd } from './ads.js?v=20261116-1359';
+import { myTableSize } from '../net/party.js?v=20261116-1359';
+import { W, H, TICK } from './video/lib.js?v=20261116-1359';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-1359';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-1359';
+import { MOMENT, linesFor } from './talk.js?v=20261116-1359';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-1359';
+import { ask, confirmSpend } from './dialog.js?v=20261116-1359';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-1359';
+import { profile } from '../persistence/profile-store.js?v=20261116-1359';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-1359';
 
-const V = '?v=20261116-1309';
+const V = '?v=20261116-1359';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -812,11 +812,32 @@ export async function runTv(ctx) {
       audio('confirm');
       playPanel();
     };
+    const carryOn = () => {
+      revives += 1;
+      logic.revive(state, seat);
+      result = null;
+      countdown = 90;
+      audio('confirm');
+      playPanel();
+    };
+    // the Android app: a short ad the player chooses to watch, in place of the coins (src/app/native-ads.js)
+    const watch = async (e) => {
+      clearInterval(timer);
+      if (e?.currentTarget) e.currentTarget.disabled = true;
+      let earned = false;
+      try {
+        const ads = await import('../app/native-ads.js?v=20261116-1359');
+        earned = await ads.appReward({ pause: () => music(false), resume: () => {} });
+      } catch { earned = false; }
+      if (earned) carryOn(); else end();
+    };
+    const appAds = !!window.Capacitor?.isNativePlatform?.();
     const count = h('small', { class: 'revive__count' }, [`${left}`]);
     show(topBar(game), h('section', { class: 'panel tvpanel revive' }, [
       h('h1', {}, ['😵 You crashed!']),
       h('p', { class: 'lead' }, [`Score ${liveScore(seat) ?? 0}. Carry on from here?`]),
-      btn(`💖 Continue for ${cost} coins (you have ${profile.coins})`, go, 'primary'),
+      appAds ? btn('📺 Watch a short ad to carry on, free', watch, 'primary') : null,
+      btn(`💖 Continue for ${cost} coins (you have ${profile.coins})`, go, appAds ? '' : 'primary'),
       btn('No thanks, see my score', end),
       count,
     ]));

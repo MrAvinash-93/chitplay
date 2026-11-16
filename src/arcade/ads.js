@@ -11,7 +11,8 @@
 const ID = 'd5795ad3a6b91ea89d9d71ba6f70c273';
 const SRC = 'https://bauval.org/21/d5795ad3a6b91ea89d9d71ba6f70c273';
 // never on a computer at home or in testing: impressions there would count as invalid traffic
-const LOCAL = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname) || location.protocol === 'file:';
+// and never in the Android app, which shows AdMob instead (src/app/native-ads.js)
+const LOCAL = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname) || location.protocol === 'file:' || !!window.Capacitor?.isNativePlatform?.();
 
 let box = null;
 let loaded = false;
