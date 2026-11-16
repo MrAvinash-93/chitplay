@@ -363,6 +363,7 @@ const imageFor = (slug, square = false, extension = 'webp') => {
   const file = `${slug}${square ? '-square' : ''}.${extension}`;
   return existsSync(join(ROOT, 'assets', 'games', file)) ? `games/${file}` : `chitplay-game.${extension}`;
 };
+const ALL_COUNT = PARTY.length + 1;   // every game, Cops and Robbers included
 const gameplayImageFor = (slug) => `gameplay/${slug}.jpg`;
 // the page shows a light WebP (800 px wide on phones, 1200 on big screens); the JPG stays for old browsers,
 // the share preview and the sitemap, so no image address ever changes
@@ -454,7 +455,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261116-0000">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261116-0815">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -564,7 +565,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-0000">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-0815">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -642,7 +643,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-0000">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261116-0815">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -1028,7 +1029,7 @@ ${ANALYTICS}
 <meta property="og:image" content="${SITE}/assets/home.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ChitPlay: Raja Rani Chor Police, Ludo, Carrom, Chess and more free indoor games">
+<meta property="og:image:alt" content="ChitPlay: Ludo, Chess, Carrom, Call Break and more free games">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
@@ -1160,6 +1161,8 @@ function redirectPage(id) {
 <head>
 <meta charset="UTF-8">
 <title>${esc(GAME_NAME_EN[id])} is Cops and Robbers | ChitPlay</title>
+<meta name="description" content="${esc(GAME_NAME_EN[id])} is the paper chit game known as Cops and Robbers. Play it free on ChitPlay.">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/assets/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="canonical" href="${MAIN_URL}">
 <meta name="robots" content="noindex, follow">
 <meta http-equiv="refresh" content="0; url=../${MAIN_SLUG}/">
@@ -1359,7 +1362,7 @@ ${bodyHtml}
 }
 const gameList = COUNTRY_ORDER.map(id => `<li><a href="../games/${GAME_SLUGS[id]}/">${esc(GAME_NAME_EN[id])}</a></li>`).join('');
 const INFO = {
-  about: ['About ChitPlay', 'ChitPlay is a free 3D room of 45+ indoor games: Raja Rani Chor Police, Ludo, Carrom, Chess, card, arcade and party games. Who makes it and how.', `
+  about: ['About ChitPlay', `ChitPlay is a free 3D room of ${ALL_COUNT} games: Ludo, Chess, Carrom, Call Break, card, arcade and party games. Who makes it and how.`, `
 <p>ChitPlay is a free 3D living room full of indoor games that you play in your browser. It started with one game, the four-player paper chit game known as Raja Rani Chor Police, and it now has more than forty-five: board games, card games, party games and arcade games, all at one table, for players of every age.</p>
 <p>You can play every game as a guest with no sign-up: against computer players, with people online, with friends on their own phones nearby (one shares a code, the others join), or on one phone handed round the table.</p>
 <h2>Who makes ChitPlay</h2>
@@ -1596,7 +1599,7 @@ writeFileSync(join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /arc
 writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
   name: 'CHITPLAY',
   short_name: 'CHITPLAY',
-  description: 'Raja Rani Chor Police, Ludo, Carrom, Chess and 45+ free indoor games in 3D. Play the computer, online or with friends.',
+  description: `Ludo, Chess, Carrom, Call Break and ${ALL_COUNT} free games in 3D. Play the computer, online or with friends.`,
   start_url: './?source=pwa',
   scope: './',
   display: 'fullscreen',
@@ -1613,7 +1616,6 @@ writeFileSync(join(ROOT, 'manifest.webmanifest'), JSON.stringify({
 }, null, 2));
 
 // ── refresh the SEO blocks inside index.html ────────────────
-const mainNames = [...new Set(COUNTRY_ORDER.flatMap(id => [GAME_NAME_EN[id], ...GAME_AKA[id].slice(0, 4)]))];
 // ChitPlay is the name people should see; the title carries the names the game is searched by in each country
 // every game is equal on the home page: the title names a few that people search for, not one game
 const homeTitle = `ChitPlay: ${PARTY.length + 1} Free Games – Ludo, Chess, Carrom, Call Break & More`;
@@ -1626,13 +1628,16 @@ const homeLd = [
     email: CONTACT_EMAIL, founder: DEVELOPER_LD,
     contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: CONTACT_EMAIL, url: `${SITE}/contact/` },
   },
+  // the home page is a list of games, all equal: each game's own names live on its own page
+  // (the home page once described one game, so search engines took the home page for that game)
   {
-    '@context': 'https://schema.org', '@type': 'VideoGame', name: 'ChitPlay',
-    alternateName: mainNames, url: `${SITE}/`, description: homeDesc, author: DEVELOPER_LD,
-    genre: ['Board game', 'Card game', 'Party game', 'Arcade game', 'Puzzle game', 'Indoor game'], audience: { '@type': 'PeopleAudience', suggestedMinAge: 6 }, gamePlatform: 'Web browser',
-    applicationCategory: 'Game', operatingSystem: 'Any', image: [`${SITE}/assets/chitplay-game.jpg`, `${SITE}/assets/home.jpg`],
-    numberOfPlayers: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 10 },
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    '@context': 'https://schema.org', '@type': 'CollectionPage', name: homeTitle, url: `${SITE}/`, description: homeDesc,
+    image: `${SITE}/assets/home.jpg`, inLanguage: 'en', isPartOf: { '@type': 'WebSite', name: 'ChitPlay', url: `${SITE}/` },
+    mainEntity: {
+      '@type': 'ItemList', numberOfItems: PARTY.length + 1,
+      itemListElement: [...PARTY.map(g => [g.name, g.slug]).slice(0, 4), ['Cops and Robbers', 'cops-and-robbers'], ...PARTY.map(g => [g.name, g.slug]).slice(4)]
+        .map(([name, slug], i) => ({ '@type': 'ListItem', position: i + 1, name, url: `${SITE}/games/${slug}/` })),
+    },
   },
 ];
 const head = `<!-- seo:head -->
@@ -1648,7 +1653,7 @@ const head = `<!-- seo:head -->
   <meta property="og:image" content="${SITE}/assets/home.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="ChitPlay: Raja Rani Chor Police, Ludo, Carrom, Chess and more free indoor games" />
+  <meta property="og:image:alt" content="ChitPlay: Ludo, Chess, Carrom, Call Break and more free games" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(homeTitle)}" />
   <meta name="twitter:description" content="${esc(homeDesc)}" />

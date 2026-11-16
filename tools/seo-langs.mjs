@@ -11,7 +11,7 @@ export const LANG_PAGES = [
   {
     code: 'hi', dir: 'hi', game: 'hindi', label: 'हिन्दी',
     title: "ChitPlay: लूडो, शतरंज, कैरम, कॉल ब्रेक और 47 मुफ़्त गेम",
-    desc: "राजा रानी चोर पुलिस, लूडो, कैरम, शतरंज और 45+ इनडोर गेम 3D में मुफ़्त खेलें। बिना साइन-अप: कंप्यूटर, ऑनलाइन या दोस्तों के साथ पास में।",
+    desc: "लूडो, शतरंज, कैरम, कॉल ब्रेक, राजा रानी चोर पुलिस और 47 गेम 3D में मुफ़्त खेलें। बिना साइन-अप: कंप्यूटर, ऑनलाइन या दोस्तों के साथ।",
     h1: "ChitPlay: दोस्तों के साथ खेलने के लिए 45+ मुफ़्त इनडोर गेम",
     intro: [
       "ChitPlay एक 3D कमरा है जिसमें 45 से ज़्यादा इनडोर गेम हैं, और सब आपके ब्राउज़र में मुफ़्त चलते हैं। यहाँ बचपन का कागज़ की चिट वाला खेल राजा रानी चोर पुलिस है, और साथ में लूडो, कैरम, शतरंज, साँप सीढ़ी, कॉल ब्रेक जैसे कार्ड गेम, पार्टी गेम और TV पर चलने वाले आर्केड गेम भी।",
@@ -88,7 +88,7 @@ export const LANG_PAGES = [
   {
     code: 'hi-Latn', dir: 'hinglish', game: 'hinglish', label: 'Hinglish',
     title: "ChitPlay: Ludo, Chess, Carrom, Call Break aur 47 Free Games",
-    desc: "Raja Rani Chor Police, Ludo, Carrom, Chess aur 45+ indoor games 3D mein free khelo. Bina sign-up: computer, online ya dosto ke saath nearby.",
+    desc: "Ludo, Chess, Carrom, Call Break, Raja Rani Chor Police aur 47 games 3D mein free khelo. Bina sign-up: computer, online ya dosto ke saath.",
     h1: "ChitPlay: dosto ke saath khelne wale 45+ free indoor games",
     intro: [
       "ChitPlay ek 3D kamra hai jismein 45 se zyada indoor games hain, aur sab aapke browser mein free chalte hain. Yahan bachpan wala kaagaz ki chit ka game Raja Rani Chor Police hai, aur saath mein Ludo, Carrom, Chess, Saanp Seedhi, Call Break jaise card games, party games aur TV par chalne wale arcade games bhi.",
@@ -165,7 +165,7 @@ export const LANG_PAGES = [
   {
     code: 'es', dir: 'es', game: 'spanish', label: 'Español',
     title: "ChitPlay: Ludo, ajedrez, carrom y 47 juegos gratis",
-    desc: "Juega gratis en 3D a Policías y Ladrones, Ludo, Carrom, Ajedrez y más de 45 juegos de mesa. Sin registro: contra la computadora, online o con amigos.",
+    desc: "Juega gratis en 3D a Ludo, Ajedrez, Carrom, Policías y Ladrones y 47 juegos. Sin registro: contra la computadora, online o con amigos.",
     h1: "ChitPlay: más de 45 juegos gratis para jugar con amigos",
     intro: [
       "ChitPlay es una sala en 3D con más de 45 juegos de mesa, cartas y fiesta que se juegan gratis en el navegador. Está el clásico juego de papelitos Policías y Ladrones (Raja Rani Chor Police en la India), y también Ludo, Carrom, Ajedrez, Serpientes y escaleras, juegos de cartas como Call Break, juegos de fiesta y juegos arcade en la tele de la sala.",
@@ -242,7 +242,7 @@ export const LANG_PAGES = [
   {
     code: 'pt', dir: 'pt', game: 'portuguese', label: 'Português',
     title: "ChitPlay: Ludo, xadrez, carrom e 47 jogos grátis",
-    desc: "Jogue grátis em 3D Polícia e Ladrão, Ludo, Carrom, Xadrez e mais de 45 jogos. Sem cadastro: contra o computador, online ou com amigos por perto.",
+    desc: "Jogue grátis em 3D Ludo, Xadrez, Carrom, Polícia e Ladrão e 47 jogos. Sem cadastro: contra o computador, online ou com amigos por perto.",
     h1: "ChitPlay: mais de 45 jogos grátis para jogar com amigos",
     intro: [
       "ChitPlay é uma sala em 3D com mais de 45 jogos de tabuleiro, cartas e festa, todos grátis no navegador. Tem o clássico jogo de papeizinhos Polícia e Ladrão (Raja Rani Chor Police na Índia), e também Ludo, Carrom, Xadrez, Cobras e Escadas, jogos de cartas como Call Break, jogos de festa e jogos arcade na TV da sala.",
@@ -319,7 +319,7 @@ export const LANG_PAGES = [
   {
     code: 'fr', dir: 'fr', game: 'french', label: 'Français',
     title: "ChitPlay : Ludo, échecs, carrom et 47 jeux gratuits",
-    desc: "Jouez gratuitement en 3D à Gendarmes et Voleurs, Ludo, Carrom, Échecs et plus de 45 jeux. Sans inscription : contre l'ordinateur, en ligne ou entre amis.",
+    desc: "Jouez gratuitement en 3D au Ludo, aux Échecs, au Carrom, à Gendarmes et Voleurs et à 47 jeux. Sans inscription : contre l'ordinateur, en ligne ou entre amis.",
     h1: "ChitPlay : plus de 45 jeux gratuits à jouer entre amis",
     intro: [
       "ChitPlay est un salon en 3D avec plus de 45 jeux de société, de cartes et d'ambiance, gratuits dans le navigateur. On y trouve le jeu de petits papiers Gendarmes et Voleurs (Raja Rani Chor Police en Inde), mais aussi Ludo, Carrom, Échecs, Serpents et échelles, des jeux de cartes comme Call Break, des jeux d'ambiance et des jeux d'arcade sur la télé du salon.",
@@ -396,7 +396,7 @@ export const LANG_PAGES = [
   {
     code: 'de', dir: 'de', game: 'german', label: 'Deutsch',
     title: "ChitPlay: Ludo, Schach, Carrom und 47 Spiele gratis",
-    desc: "Spiele gratis in 3D Räuber und Gendarm, Ludo, Carrom, Schach und über 45 Spiele. Ohne Anmeldung: gegen den Computer, online oder mit Freunden.",
+    desc: "Spiele gratis in 3D Ludo, Schach, Carrom, Räuber und Gendarm und 47 Spiele. Ohne Anmeldung: gegen den Computer, online oder mit Freunden.",
     h1: "ChitPlay: über 45 kostenlose Spiele für dich und deine Freunde",
     intro: [
       "ChitPlay ist ein Wohnzimmer in 3D mit über 45 Brett-, Karten- und Partyspielen, die kostenlos im Browser laufen. Dabei ist das Zettelspiel Räuber und Gendarm (in Indien Raja Rani Chor Police), aber auch Ludo, Carrom, Schach, Schlangen und Leitern, Kartenspiele wie Call Break, Partyspiele und Arcade-Spiele auf dem Fernseher im Zimmer.",
@@ -473,7 +473,7 @@ export const LANG_PAGES = [
   {
     code: 'id', dir: 'id', game: 'indonesian', label: 'Bahasa Indonesia',
     title: "ChitPlay: Ludo, catur, carrom dan 47 game gratis",
-    desc: "Main gratis dalam 3D: Polisi dan Maling, Ludo, Karambol, Catur dan 45+ game lain. Tanpa daftar: lawan komputer, online, atau bareng teman.",
+    desc: "Main gratis dalam 3D: Ludo, Catur, Karambol, Polisi dan Maling, dan 47 game. Tanpa daftar: lawan komputer, online, atau bareng teman.",
     h1: "ChitPlay: 45+ game gratis untuk dimainkan bareng teman",
     intro: [
       "ChitPlay adalah ruang tamu 3D berisi lebih dari 45 game papan, kartu, dan pesta yang bisa dimainkan gratis di browser. Ada permainan kertas lipat klasik Polisi dan Maling (di India disebut Raja Rani Chor Police), juga Ludo, Karambol, Catur, Ular Tangga, game kartu seperti Call Break, game pesta, dan game arkade di TV ruangan.",
@@ -550,7 +550,7 @@ export const LANG_PAGES = [
   {
     code: 'tr', dir: 'tr', game: 'turkish', label: 'Türkçe',
     title: "ChitPlay: Ludo, satranç, carrom ve 47 ücretsiz oyun",
-    desc: "Polis ve Hırsız, Ludo, Carrom, Satranç ve 45+ oyunu 3D ücretsiz oyna. Üyelik yok: bilgisayara karşı, online veya yakındaki arkadaşlarınla.",
+    desc: "Ludo, Satranç, Carrom, Polis ve Hırsız ve 47 oyunu 3D ücretsiz oyna. Üyelik yok: bilgisayara karşı, online veya yakındaki arkadaşlarınla.",
     h1: "ChitPlay: arkadaşlarınla oynayabileceğin 45+ ücretsiz oyun",
     intro: [
       "ChitPlay, tarayıcıda ücretsiz oynanan 45'dan fazla kutu, kart ve parti oyunu olan 3D bir oturma odasıdır. Klasik kâğıt oyunu Polis ve Hırsız (Hindistan'da Raja Rani Chor Police) burada; yanında Ludo, Carrom, Satranç, Yılan Merdiven, Call Break gibi kart oyunları, parti oyunları ve odadaki televizyonda arcade oyunları da var.",
@@ -627,7 +627,7 @@ export const LANG_PAGES = [
   {
     code: 'it', dir: 'it', game: 'italian', label: 'Italiano',
     title: "ChitPlay: Ludo, scacchi, carrom e 47 giochi gratis",
-    desc: "Gioca gratis in 3D a Guardie e Ladri, Ludo, Carrom, Scacchi e oltre 45 giochi. Senza registrazione: contro il computer, online o con gli amici.",
+    desc: "Gioca gratis in 3D a Ludo, Scacchi, Carrom, Guardie e Ladri e 47 giochi. Senza registrazione: contro il computer, online o con gli amici.",
     h1: "ChitPlay: oltre 45 giochi gratis da fare con gli amici",
     intro: [
       "ChitPlay è un salotto in 3D con oltre 45 giochi da tavolo, di carte e di società, gratis nel browser. C'è il classico gioco dei bigliettini Guardie e Ladri (in India Raja Rani Chor Police), e poi Ludo, Carrom, Scacchi, Scale e serpenti, giochi di carte come Call Break, giochi di gruppo e giochi arcade sulla TV del salotto.",

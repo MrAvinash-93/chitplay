@@ -3,7 +3,7 @@
  * Knock the other pen off the desk to win the round; send your own pen off and you lose it. Too soft
  * and nothing happens, too hard and your own pen sails off the edge: power against aim. First to three.
  */
-import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261116-0000';
+import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261116-0815';
 
 export const LAUNCH_TICKS = 360;          // six seconds to aim and flick on your turn
 export const ROUND_WINS = 3;

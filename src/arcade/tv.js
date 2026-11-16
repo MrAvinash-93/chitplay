@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261116-0000';
-import { is2d } from './view-mode.js?v=20261116-0000';
-import { adBreak } from './ad-breaks.js?v=20261116-0000';
-import { resultAd, sideAd } from './ads.js?v=20261116-0000';
-import { myTableSize } from '../net/party.js?v=20261116-0000';
-import { W, H, TICK } from './video/lib.js?v=20261116-0000';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-0000';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-0000';
-import { MOMENT, linesFor } from './talk.js?v=20261116-0000';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-0000';
-import { ask, confirmSpend } from './dialog.js?v=20261116-0000';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-0000';
-import { profile } from '../persistence/profile-store.js?v=20261116-0000';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-0000';
+import { hintsLeft, showHint } from './hint.js?v=20261116-0815';
+import { is2d } from './view-mode.js?v=20261116-0815';
+import { adBreak } from './ad-breaks.js?v=20261116-0815';
+import { resultAd, sideAd } from './ads.js?v=20261116-0815';
+import { myTableSize } from '../net/party.js?v=20261116-0815';
+import { W, H, TICK } from './video/lib.js?v=20261116-0815';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-0815';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-0815';
+import { MOMENT, linesFor } from './talk.js?v=20261116-0815';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-0815';
+import { ask, confirmSpend } from './dialog.js?v=20261116-0815';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-0815';
+import { profile } from '../persistence/profile-store.js?v=20261116-0815';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-0815';
 
-const V = '?v=20261116-0000';
+const V = '?v=20261116-0815';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
