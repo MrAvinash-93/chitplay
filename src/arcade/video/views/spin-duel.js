@@ -1,8 +1,8 @@
 /** The 3D picture of spin-duel on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, lights, std } from './common.js?v=20261116-1137';
-import { H as HOOP_H, SEAT_COLORS, TICK, W as HOOP_W } from '../lib.js?v=20261116-1137';
-import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1137';
+import { TAU, basic, box, lights, std } from './common.js?v=20261116-1213';
+import { H as HOOP_H, SEAT_COLORS, TICK, W as HOOP_W } from '../lib.js?v=20261116-1213';
+import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1213';
 
 /* ─── Spin Duel: two custom tops battling in a small schoolyard arena ─── */
 function spinDuelView() {

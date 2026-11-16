@@ -1,9 +1,9 @@
 /** The 3D picture of tunnel-race on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, canvasTex, pool, std, turnTo, wingedChit, wrapAngle } from './common.js?v=20261116-1137';
-import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1137';
-import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1137';
-import { blocks as tunnelBlocks, speedAt as tunnelSpeed } from '../tunnel-race.js?v=20261116-1137';
+import { TAU, basic, box, canvasTex, pool, std, turnTo, wingedChit, wrapAngle } from './common.js?v=20261116-1213';
+import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1213';
+import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1213';
+import { blocks as tunnelBlocks, speedAt as tunnelSpeed } from '../tunnel-race.js?v=20261116-1213';
 
 function paperPlane(color) {
   const g = new THREE.BufferGeometry();

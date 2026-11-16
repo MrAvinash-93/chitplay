@@ -1,36 +1,36 @@
 import { el, clear } from '../../utils/dom.js';
-import { GAME_PHASES } from '../../app/config.js?v=20261116-1137';
-import { settingsStore } from '../../persistence/settings-store.js?v=20261116-1137';
-import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261116-1137';
+import { GAME_PHASES } from '../../app/config.js?v=20261116-1213';
+import { settingsStore } from '../../persistence/settings-store.js?v=20261116-1213';
+import { profile, BADGES, RANKS, FLAIRS, DAILY_BONUS } from '../../persistence/profile-store.js?v=20261116-1213';
 import { audioManager } from '../../audio/audio-manager.js';
-import { viewButton, setView, is2d } from '../../arcade/view-mode.js?v=20261116-1137';
-import { loadWorld } from '../../world/world-loader.js?v=20261116-1137';
-import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261116-1137';
-import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261116-1137';
-import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261116-1137';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261116-1137';
-import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261116-1137';
+import { viewButton, setView, is2d } from '../../arcade/view-mode.js?v=20261116-1213';
+import { loadWorld } from '../../world/world-loader.js?v=20261116-1213';
+import { COUNTRIES, COUNTRY_ORDER, detectCountryInfo, localize, GAME_SLUGS, GAME_AKA, GAME_NAME_EN, GAME_ICON, ROLE_LATIN, asOneGame, editionFor, HOUSE_RULES } from '../../world/countries.js?v=20261116-1213';
+import { Dialogue, loadPack } from '../../world/dialogue.js?v=20261116-1213';
+import { Match, CHEAT_PENALTY } from '../../world/match.js?v=20261116-1213';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, publicCode, isPublicCode, peekTables } from '../../net/nearby.js?v=20261116-1213';
+import { cleanName, detectNameRegion, NAME_REGION_FOR, pickOpponents as pickAny, politeName } from '../../world/names.js?v=20261116-1213';
 import {
   PRESETS, AGES, HAIR_STYLES, OUTFITS, HEADWEAR, GLASSES, FACIAL, SKIN_TONES, HAIR_COLORS, EYE_COLORS, CLOTH_COLORS, PANTS_COLORS,
   lookOf, cleanLook, randomLook, portraitSvg, FANCY_HATS, PREMIUM_COLORS,
-} from '../../world/character-looks.js?v=20261116-1137';
-import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261116-1137';
-import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261116-1137';
-import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261116-1137';
-import { iconSvg } from '../icons.js?v=20261116-1137';
-import { shellText, fill } from '../../arcade/shell-text.js?v=20261116-1137';
-import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, levelOf, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261116-1137';
-import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261116-1137';
-import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261116-1137';
-import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261116-1137';
-import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261116-1137';
-import { savedList } from '../../arcade/resume.js?v=20261116-1137';
-import { logoSvg } from '../../arcade/logo.js?v=20261116-1137';
-import { gameStrip } from '../../arcade/game-strip.js?v=20261116-1137';
-import { resultAd } from '../../arcade/ads.js?v=20261116-1137';
-import { partyChip, partyPlay, inParty, joinParty, myTableSize, COPS } from '../../net/party.js?v=20261116-1137';
-import { hotPrompt } from '../../arcade/share.js?v=20261116-1137';
-import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug, localName, allNames } from '../../arcade/catalog.js?v=20261116-1137';
+} from '../../world/character-looks.js?v=20261116-1213';
+import { nextCaughtScene, nextCloseCall } from '../../world/cheat-lines.js?v=20261116-1213';
+import { TALK_EMOJIS, TALK_LINE_COUNT, talkLine, isTalkEmoji, SPECIAL_EMOJIS, ALL_EMOJIS } from '../../world/table-talk.js?v=20261116-1213';
+import { LANGUAGES, isLanguage, useLanguage, languageId, strings, forfeits, lookName, rankTitle, badgeText } from '../../i18n/index.js?v=20261116-1213';
+import { iconSvg } from '../icons.js?v=20261116-1213';
+import { shellText, fill } from '../../arcade/shell-text.js?v=20261116-1213';
+import { ACHIEVEMENTS, TIERS, achievementList, bestOf, playStats, checkUnlocks, levelOf, onPopup, rankProgress } from '../../arcade/achievements.js?v=20261116-1213';
+import { reminderSettings, reminderSupported, setReminder, startReminder } from '../../arcade/reminder.js?v=20261116-1213';
+import { confirmSpend, notice } from '../../arcade/dialog.js?v=20261116-1213';
+import { clearPhoto, faceHtml, cropPhotoFromFile } from '../../arcade/photo.js?v=20261116-1213';
+import { DECOR, RARITY, ROOM_SIZES, THEMES, decorOf, decorState, lockedBy, roomLevel, saveDecor, spotsFor } from '../../arcade/decor.js?v=20261116-1213';
+import { savedList } from '../../arcade/resume.js?v=20261116-1213';
+import { logoSvg } from '../../arcade/logo.js?v=20261116-1213';
+import { gameStrip } from '../../arcade/game-strip.js?v=20261116-1213';
+import { resultAd } from '../../arcade/ads.js?v=20261116-1213';
+import { partyChip, partyPlay, inParty, joinParty, myTableSize, COPS } from '../../net/party.js?v=20261116-1213';
+import { hotPrompt } from '../../arcade/share.js?v=20261116-1213';
+import { ALL_GAMES as TABLE_GAMES, CATEGORIES, HOT_DEFAULT, gameBySlug, localName, allNames } from '../../arcade/catalog.js?v=20261116-1213';
 
 /**
  * CHITPLAY: the whole game. Pick a game, then four people play a full match:
@@ -313,8 +313,8 @@ export function GameScreen({ transition }) {
     if (match && !window.confirm(`${ui.scanJoin}?`)) return;
     location.href = './?scan=1';
   }, 'game__scanbtn');
-  // Share: chitplay.com's link and a line about it, so a friend can open the site and play (the scanner
-  // lives inside Play with Friends, where joining happens)
+  // Share: chitplay.com's link and a line about it, so a friend can open the site and play; Scan sits next
+  // to it on the home page: scan a friend's QR or type their code, and you're in their game, whichever it is
   const shareBtn = iconBtn('share', async () => {
     audioManager.unlock(); sfx.play('select');
     const url = new URL('./', document.baseURI).href;
@@ -464,7 +464,7 @@ export function GameScreen({ transition }) {
   const topBar = el('div', { className: 'game__top' }, [
     exitBtn, roundPill, scoreRow,
     // the party (when this phone is in one): top right, with Leave on it, on every screen
-    el('div', { className: 'game__top-right' }, [partyChip({ className: 'game__exit game__partychip partychip' }), shareBtn, viewBtn, langBtn, toolsBox, toolsBtn, profileBtn]),
+    el('div', { className: 'game__top-right' }, [partyChip({ className: 'game__exit game__partychip partychip' }), COPS_PAGE ? null : scanBtn, shareBtn, viewBtn, langBtn, toolsBox, toolsBtn, profileBtn]),
   ]);
   // the prompt, the chips and the rotate pill stack at the bottom, so they can never overlap
   const dock = el('div', { className: 'game__dock' }, [prompt, sheet, rotatePill]);
@@ -1870,7 +1870,7 @@ export function GameScreen({ transition }) {
       /** The room's QR code, filling the screen, so friends can scan it from across the table. */
       function showBigQr(code) {
         screen.querySelector('.game__qrbig')?.remove();
-        import('../../net/qr.js?v=20261116-1137').then(({ qrSvg }) => {
+        import('../../net/qr.js?v=20261116-1213').then(({ qrSvg }) => {
           const svg = qrSvg(inviteUrl(code), ui.qrLabel);
           if (!svg) return;
           const box = el('button', { className: 'game__qrbig', type: 'button', onClick: () => box.remove() }, [
@@ -2096,7 +2096,7 @@ export function GameScreen({ transition }) {
           // a party's table: tell the party the room's code, so the friends sit down by themselves
           if (partyHost) dispatchEvent(new CustomEvent('chitplay:room-open', { detail: { code, slug: COPS.slug } }));
           keepAwake(true);
-          import('../../net/qr.js?v=20261116-1137').then(({ qrSvg }) => {
+          import('../../net/qr.js?v=20261116-1213').then(({ qrSvg }) => {
             const svg = qrSvg(inviteUrl(code), ui.qrLabel);
             if (svg) qrBox.append(svg);
           }).catch(() => {});   // no QR: the link and the code still work
@@ -2286,7 +2286,10 @@ export function GameScreen({ transition }) {
             const lobby = await room.join(code, name, token, joinExtras());
             if (net?.room !== room) return;
             // that code belongs to one of the other games: its page takes over
-            if (lobby.arcade) { room.close(); net = null; location.href = `play/?join=${code}`; return; }
+            if (lobby.arcade) { room.close(); net = null; location.href = `play/?join=${code}&auto=1`; return; }   // already scanned or typed: no second tap
+            // the home page plays nothing itself: a Cops and Robbers room is joined on that game's own page
+            // (same seat: the page picks the join up as a rejoin with this phone's token)
+            if (!COPS_PAGE) { saveRejoin({ code, token, name }); room.close(); net = null; location.href = copsUrl('cops-and-robbers', `&join=${code}`); return; }
             saveRejoin({ code, token, name });
             clearUrlJoin();
             if (!lobby.rejoin) waitingPaint(lobby);
@@ -2310,7 +2313,7 @@ export function GameScreen({ transition }) {
         /* Scan the host's QR code: live camera where the browser allows it, a photo or screenshot everywhere */
         const liveCamera = () => !!navigator.mediaDevices?.getUserMedia && window.isSecureContext !== false;
         // loaded now, because phones only open the photo picker straight after a tap
-        const scanner = import('../../net/qr-scan.js?v=20261116-1137');
+        const scanner = import('../../net/qr-scan.js?v=20261116-1213');
         let scanMod = null;
         scanner.then(m => { scanMod = m; }).catch(() => {});
         const scanBox = el('div', { className: 'game__scan' });

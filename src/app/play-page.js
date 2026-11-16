@@ -5,8 +5,8 @@
  *    plays in the 3D room (src/app/bootstrap.js), the same game that used to open on the home page.
  * The home page keeps the list of every game, search, scan and the profile.
  */
-import { gameBySlug } from '../arcade/catalog.js?v=20261116-1137';
-import { GAME_SLUGS } from '../world/countries.js?v=20261116-1137';
+import { gameBySlug } from '../arcade/catalog.js?v=20261116-1213';
+import { GAME_SLUGS } from '../world/countries.js?v=20261116-1213';
 
 const q = new URLSearchParams(location.search);
 const slug = (q.get('game') || '').trim().toLowerCase();
@@ -17,8 +17,8 @@ const isCops = !!slug && !gameBySlug(slug) && (Object.values(GAME_SLUGS).include
 const game = !isCops && gameBySlug(slug);
 if (game) {
   const files = game.video
-    ? ['../arcade/tv.js?v=20261116-1137', `../arcade/video/${game.slug}.js?v=20261116-1137`, '../arcade/video/views.js?v=20261116-1137']
-    : ['../arcade/boards.js?v=20261116-1137', `../arcade/games/${game.slug}.js?v=20261116-1137`];
+    ? ['../arcade/tv.js?v=20261116-1213', `../arcade/video/${game.slug}.js?v=20261116-1213`, '../arcade/video/views.js?v=20261116-1213']
+    : ['../arcade/boards.js?v=20261116-1213', `../arcade/games/${game.slug}.js?v=20261116-1213`];
   for (const f of files) {
     const l = document.createElement('link');
     l.rel = 'modulepreload';
@@ -43,7 +43,7 @@ if (isCops) {
   for (const f of ['base.css', 'layout.css']) {
     const l = document.createElement('link');
     l.rel = 'stylesheet';
-    l.href = new URL(`../styles/${f}?v=20261116-1137`, import.meta.url).href;
+    l.href = new URL(`../styles/${f}?v=20261116-1213`, import.meta.url).href;
     document.head.append(l);
   }
   document.title = 'Cops and Robbers (Raja Rani Chor Police): Play Free in 3D | ChitPlay';
@@ -52,7 +52,7 @@ if (isCops) {
   app.setAttribute('role', 'application');
   app.setAttribute('aria-label', 'Cops and Robbers');
   document.getElementById('party')?.replaceWith(app);
-  await import('./bootstrap.js?v=20261116-1137');
+  await import('./bootstrap.js?v=20261116-1213');
 } else {
-  await import('../arcade/table.js?v=20261116-1137');
+  await import('../arcade/table.js?v=20261116-1213');
 }
