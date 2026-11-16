@@ -1,8 +1,8 @@
 /** The 3D picture of bull-fight on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, canvasTex, ease, pool, std, toX, toZ, turnTo, wrapAngle } from './common.js?v=20261116-1213';
-import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1213';
-import { CX as BULL_CX, CY as BULL_CY } from '../bull-fight.js?v=20261116-1213';
+import { TAU, basic, box, canvasTex, ease, pool, std, toX, toZ, turnTo, wrapAngle } from './common.js?v=20261116-1239';
+import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1239';
+import { CX as BULL_CX, CY as BULL_CY } from '../bull-fight.js?v=20261116-1239';
 
 /* ─── Bull Fight: a village arena at dusk, with a crowd all round ─── */
 function bullView() {

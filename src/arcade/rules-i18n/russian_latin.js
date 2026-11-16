@@ -164,14 +164,14 @@ export default {
  },
  "pen-fight": {
   "steps": [
-   "Za tri sekundy provedi paltsem v storonu sopernika. Knopka Shchelchok — dostupnaya alternativa.",
-   "Chem bystree dvizhenie, tem silnee letit ruchka; napravlenie zadaet ee put.",
-   "Ruchki sami skolzyat i stalkivayutsya. Ruchka, upavshaya so stola ili oprokinutaya udarom, proigryvaet raund.",
-   "Esli obe ruchki ostalis na stole, pobezhdaet ta, chto zanyala luchshee polozhenie; ochen ravnye raundy — nichya.",
-   "Kto pervym vyigraet tri raunda, tot vyigryvaet match. Tri raunda, gde promakhnulis oba, zakanchivayutsya nichei."
+   "Khodite po ocheredi, po odnomu shchelchku. V svoi khod potyanite palets otkuda ugodno v storonu ruchki sopernika; knopka \"Shchelchok\" bet pryamo v nee.",
+   "Chem dlinnee tyanete, tem silnee shchelchok. Poka vy tyanete, punktir pokazyvaet, gde ostanovitsya vasha ruchka: zolotoi znachit popadanie, krasnyi — vasha ruchka sletit so stola.",
+   "Otpustite palets, chtoby shchelknut. Ruchki skolzyat i stalkivayutsya; ruchka, pokinuvshaya stol, proigryvaet raund, tak chto sbeite chuzhuyu i uderzhite svoyu.",
+   "Esli posle desyati shchelchkov obe ruchki na stole, raund vyigryvaet ta, chto blizhe k seredine.",
+   "Kto pervym vyigraet tri raunda, tot vyigral match."
   ],
   "win": "Igrai odin protiv bota, s drugom na odnom ekrane, ryadom ili onlain. Otkryvai oblik ruchek i stolov za zarabotannye monety; stili — tolko dlya krasoty.",
-  "scoring": "Raund vyigryvaet tot, kto sbrosit ruchku sopernika so stola, oprokinet ee silnym udarom ili proderzhitsya dolshe. Match — do trekh vyigrannykh raundov."
+  "scoring": "Sbeite ruchku sopernika so stola — raund vash; uronite svoyu — raund proigran. Posle desyati shchelchkov pobezhdaet ruchka blizhe k seredine. Kto pervym vozmet tri raunda, vyigryvaet match."
  },
  "lapa-chupi": {
   "steps": [
@@ -253,7 +253,7 @@ export default {
    "Oboidya dosku, fishka svorachivaet na tvoyu finishnuyu dorozhku. Chtoby doiti do finisha, nuzhno tochnoe chislo.",
    "Shesterka, vzyatie i fishka na finishe dayut eshche odin brosok. Tri shesterki podryad — i khod poteryan."
   ],
-  "win": "Obychnyi rezhim: pobezhdaet tot, kto pervym privedet domoi vse chetyre fishki. Rezhim ochkov: pobezhdaet bolshe vsekh ochkov, kogda proidut 5 minut ili kto-to privedet vse chetyre fishki.",
+  "win": "Obychnyi rezhim: pobezhdaet tot, kto pervym privedet domoi vse chetyre fishki. Rezhim ochkov: pobezhdaet bolshe vsekh ochkov, kogda proidut 15 raundov ili kto-to privedet vse chetyre fishki.",
   "scoring": "Vyberi rezhim pered igroi. V obychnom rezhime ochkov net: v tablitse itogov vidno, skolko fishek privel kazhdyi. V rezhime ochkov kazhdaya proidennaya kletka — 1, vzyatie — 20, fishka na finishe — 30, a kto pervym privedet vse chetyre — bonus 50.",
   "house": [
    [

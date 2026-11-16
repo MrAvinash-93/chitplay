@@ -1,8 +1,8 @@
 /** The 3D picture of pin-spin on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, canvasTex, ease, pool, std } from './common.js?v=20261116-1213';
-import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1213';
-import { FLY as PIN_FLY, GAP as PIN_GAP, LEVEL_TICKS as PIN_LEVEL_TICKS, isBigBoard as isPinBig, spinAt as pinSpinAt } from '../pin-spin.js?v=20261116-1213';
+import { TAU, basic, canvasTex, ease, pool, std } from './common.js?v=20261116-1239';
+import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1239';
+import { FLY as PIN_FLY, GAP as PIN_GAP, LEVEL_TICKS as PIN_LEVEL_TICKS, isBigBoard as isPinBig, spinAt as pinSpinAt } from '../pin-spin.js?v=20261116-1239';
 
 /* ─── Pin Spin: round corkboards spinning on a classroom wall ─── */
 // the classroom's light at each level: morning green board, afternoon, evening, and the big-board spotlight

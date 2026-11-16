@@ -1,8 +1,8 @@
 /** The 3D picture of pen-fight on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { basic, box, canvasTex, lights, std } from './common.js?v=20261116-1213';
-import { H as HOOP_H, SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261116-1213';
-import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1213';
+import { basic, box, canvasTex, lights, std } from './common.js?v=20261116-1239';
+import { H as HOOP_H, SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261116-1239';
+import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261116-1239';
 
 /* ─── Pen Fight: animated pens sliding across a polished classroom desk ─── */
 function penFightView() {
@@ -66,8 +66,30 @@ function penFightView() {
   const selectedPen = () => selectedGameCosmetic('pen-fight', 'pen')?.style || 'classic';
   const selectedDesk = () => selectedGameCosmetic('pen-fight', 'desk')?.style || 'classic';
   let penStyle = '', deskStyle = '';
+  // the aim while dragging: dots along the slide and a ring where it stops (red: off the desk, gold: a hit)
+  const aimDotGeo = new THREE.CircleGeometry(0.035, 12);
+  const aimMat = basic('#ffffff', { transparent: true, opacity: 0.9, depthWrite: false });
+  const aimDots = Array.from({ length: 48 }, () => { const d = new THREE.Mesh(aimDotGeo, aimMat); d.rotation.x = -Math.PI / 2; d.visible = false; scene.add(d); return d; });
+  const aimRing = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.018, 6, 32), aimMat);
+  aimRing.rotation.x = Math.PI / 2; aimRing.visible = false; scene.add(aimRing);
+  const at = (x, y) => [(x - HOOP_W / 2) / 100, (y - HOOP_H / 2) / 100];
   return {
     scene, camera,
+    setAim(a) {
+      aimDots.forEach(d => { d.visible = false; });
+      aimRing.visible = !!a;
+      if (!a) return;
+      aimMat.color.set(a.end === 'off' ? '#ff4d4d' : a.end === 'hit' ? '#ffd23f' : '#ffffff');
+      const step = Math.max(1, Math.ceil(a.path.length / aimDots.length));
+      for (let k = 1, j = 0; k < a.path.length && j < aimDots.length; k += step, j++) {
+        const [x, z] = at(a.path[k][0], a.path[k][1]);
+        aimDots[j].position.set(x, 0.015, z);
+        aimDots[j].visible = true;
+      }
+      const [x, z] = at(a.x1, a.y1);
+      aimRing.position.set(x, 0.02, z);
+      aimRing.scale.setScalar(a.end === 'hit' ? 1.3 : 1);
+    },
     update(s) {
       const nextPen = selectedPen(), nextDesk = selectedDesk();
       if (nextPen !== penStyle) {

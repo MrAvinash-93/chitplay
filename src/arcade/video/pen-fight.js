@@ -3,9 +3,9 @@
  * Knock the other pen off the desk to win the round; send your own pen off and you lose it. Too soft
  * and nothing happens, too hard and your own pen sails off the edge: power against aim. First to three.
  */
-import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261116-1213';
+import { H, r1, scoreBar, SEAT_COLORS, seats, TICK, W } from './lib.js?v=20261116-1239';
 
-export const LAUNCH_TICKS = 360;          // six seconds to aim and flick on your turn
+export const LAUNCH_TICKS = 480;          // eight seconds to aim and flick on your turn
 export const ROUND_WINS = 3;
 const RESULT_TICKS = 100, SIM_TICKS = 300, PEN_RADIUS = 24, PEN_HALF = 38, MAX_FLICKS = 10;
 const LEFT = 58, RIGHT = W - 58, TOP = 68, BOTTOM = H - 36;
@@ -104,12 +104,53 @@ function settle(s) {
   finishRound(s, Math.abs(a - b) < 6 ? -1 : a < b ? 0 : 1, 'centre');
 }
 const moving = (p) => p.alive && Math.hypot(p.vx, p.vy) > 6;
+
+/**
+ * Where a flick would send your pen, worked out with the same sliding as the real thing: the line the
+ * player sees while dragging. Stops at the other pen (a hit) or at the desk's edge (your pen falls off).
+ */
+export function aimPreview(s, seat, aim) {
+  const p = s.pens?.[seat], foe = s.pens?.[1 - seat];
+  if (!p?.alive || s.phase !== 'launch' || s.turn !== seat || !aim) return null;
+  const len = Math.hypot(aim.x, aim.y);
+  if (len < 0.01) return null;
+  const dx = aim.x / len, dy = aim.y / len;
+  const power = clamp(aim.power, 0.12, 1);
+  let v = 140 + power * 520, x = p.x, y = p.y;
+  const path = [[x, y]];
+  let end = 'stop';
+  for (let t = 0; t < SIM_TICKS && v > 6; t++) {
+    x += dx * v * TICK; y += dy * v * TICK;
+    v *= 1 - FRICTION * TICK;
+    if (t % 3 === 0) path.push([x, y]);
+    if (foe?.alive && Math.hypot(foe.x - x, foe.y - y) < PEN_RADIUS * 2) { end = 'hit'; break; }
+    if (!onDesk({ x, y })) { end = 'off'; break; }
+  }
+  path.push([x, y]);
+  return { x0: p.x, y0: p.y, x1: x, y1: y, path, end, power, seat };
+}
+/** The aim line on the flat picture: dots along the slide, a ring where it ends. */
+export function drawAim(g, a) {
+  if (!a) return;
+  const color = a.end === 'off' ? '#ff4d4d' : a.end === 'hit' ? '#ffd23f' : '#ffffff';
+  g.save();
+  g.fillStyle = color;
+  a.path.forEach(([x, y], k) => { if (k % 2) return; g.globalAlpha = 0.35 + 0.65 * (k / a.path.length); g.beginPath(); g.arc(x, y, 3.2, 0, Math.PI * 2); g.fill(); });
+  g.globalAlpha = 1; g.strokeStyle = color; g.lineWidth = 3;
+  g.beginPath(); g.arc(a.x1, a.y1, a.end === 'hit' ? 16 : 12, 0, Math.PI * 2); g.stroke();
+  g.restore();
+}
 const centreDistance = (p) => Math.hypot(p.x - CX, (p.y - CY) * 1.6);
 
 export default {
-  hint: 'Your turn: pull back from your pen and let go to flick it. Knock the other pen off the desk, but keep yours on!',
+  hint: 'Your turn: drag toward the other pen. The dotted line shows where yours will slide; let go to flick. Knock the other pen off the desk, but keep yours on!',
   swipe: true,
-  swipeHint: 'Swipe toward your rival',
+  // power comes from how far you drag, not how fast, and the line shows the slide before you let go
+  aim: true,
+  aimPreview,
+  drawAim,
+  swipeHint: 'Drag toward your rival, let go to flick',
+  swipeSub: 'Longer drag = more power · the line shows where it stops',
   pad: [['a', 'Flick']],
   init({ n, seed }) {
     const s = { n, seed, t: 0, ev: [], wins: seats(n).map(() => 0), round: 0, emptyRounds: 0, done: false, nextStarter: null };
@@ -199,7 +240,7 @@ export default {
     g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,.7)'; g.lineWidth = 5;
     let text = '';
-    const who = (i) => names[i] || `P${i + 1}`;
+    const who = (i) => String(names[i] || `P${i + 1}`).toUpperCase();   // the banner is in capitals, the name too
     if (s.notice && s.t <= s.notice.until) text = s.notice.text;
     else if (s.phase === 'launch') text = `${who(s.turn)}'S FLICK · ${Math.ceil(s.launchLeft / 60)}s`;
     else if (s.phase === 'flick') text = 'FLICK!';

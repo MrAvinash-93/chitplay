@@ -6,7 +6,7 @@ let pending = null;
 
 export function loadWorld(app) {
   if (!pending) {
-    pending = import('./world-3d.js?v=20261116-1213')
+    pending = import('./world-3d.js?v=20261116-1239')
       .then(m => m.initWorld3D(app))
       .catch(e => { console.warn('[World3D] disabled:', e); return null; });
   }

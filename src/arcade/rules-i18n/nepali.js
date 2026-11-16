@@ -164,14 +164,14 @@ export default {
  },
  "pen-fight": {
   "steps": [
-   "tin sekendabhitra pratidwandwitir swaaip garnuhos. phlik batan pani sajilo wikalpa ho.",
-   "chhito swaaipale kalam baliyosag jaanchha; dishaale tyasako baato tay garchha.",
-   "kalamaharu aaphai chiplinchhan ra thokkinchhan. tebalabaat khaseko waa thakkarale paltieko kalamale raaunda haarchha.",
-   "duwai tebalamai rahe antyamaa raamro thaaumaa bhaeko jitchha; dherai najikakaa raaunda baraabari hunchhan.",
-   "pahile tin raaunda jitne khel jitchha. duwaile chukekaa tin raaundale khel baraabarimaa sakinchha."
+   "paalaipaalo khelnuhos, harek paalomaa ek phlik. aaphno paalomaa jahaabaat pani wipakshiko kalamatarpha aulaa taannuhos; phlik batanale sidhai tyasatarpha haanchha.",
+   "jati laamo taannuhunchha, uti baliyo phlik. taandaa thoplaa bhaeko rekhaale tapaainko kalam kahaa rokinchha dekhaauchh: sunaulo bhaneko thokkinchha, raato bhaneko tapaainko kalam deskabaat khaschha.",
+   "aulaa chhodnuhos, kalam chalchha. kalamaharu chiplinchhan ra thokkinchhan; deskabaat niskeko kalamale raaunda haarchha, tyasaile unako khasaalnuhos ra aaphno jogaaunuhos.",
+   "das phlikapachhi pani duwai kalam deskamaa bhae bichako najik bhaeko kalamale raaunda jitchha.",
+   "pahile tin raaunda jitne khelaadile myaach jitchha."
   ],
   "win": "batawiruddha eklai, saathisag eutai skrinamaa, najikai waa analaain khelnuhos. kamaaekaa sikkaale kalam ra tebalakaa rup kholnuhos; shaili dekhaawati maatra hun.",
-  "scoring": "arko kalamalaai tebalabaat khasaaler, baliyo thakkarale paltaaer waa badhi ber tiker raaunda jitnuhos. pahile tin raaunda jitne khel jitchha."
+  "scoring": "wipakshiko kalam deskabaat khasaalnuhos ra raaunda jitnuhos; aaphnai khasaale raaunda haarnuhunchha. das phlikapachhi bichako najikako kalamale jitchha. pahile tin raaunda jitnele myaach jitchha."
  },
  "lapa-chupi": {
   "steps": [
@@ -253,7 +253,7 @@ export default {
    "borda ghumepachhi goti tapaainko gharako pangktitir modinchha. ghar pugna thyaakkai sangkhyaa chaahinchha.",
    "chhakkaa, goti kaatnu ra goti ghar puryaaunu, harekamaa arko paalo. lagaataar tin chhakkaa aae paalo jaanchha."
   ],
-  "win": "saamaanya mod: pahile chaarai goti ghar lyaaune jitchha. skor mod: 5 minet sakiepachhi, waa kasaile chaarai goti ghar lyaaudaa, sabaibhandaa dherai angka hune jitchha.",
+  "win": "saamaanya mod: pahile chaarai goti ghar lyaaune jitchha. skor mod: 15 raaundapachhi, waa kasaile chaarai goti ghar lyaaudaa, sabaibhandaa dherai angka hune jitchha.",
   "scoring": "khelaaghi mod chhaannuhos. saamaanya modamaa angka hudain: natijaamaa kasale kati goti ghar puryaayo dekhinchha. skor modamaa harek kothaa 1, goti kaate 20, goti ghar puge 30, ra sabaibhandaa pahile chaarai sake bonas 50.",
   "house": [
    [

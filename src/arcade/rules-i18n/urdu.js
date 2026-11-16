@@ -76,9 +76,9 @@ export default {
     scoring: 'Doosre lattu ko bahar maaro ya usse zyada der ghoomo, round tumhara. Match teen round jeetne tak.',
   },
   'pen-fight': {
-    steps: ['Teen second ke andar rival ki taraf swipe karo. Flick button bhi hai agar swipe mushkil ho.', 'Tez swipe pen ko zor se bhejta hai; disha tum chuno.', 'Pen apne aap fisalte aur takraate hain. Jo pen kinare se gira ya takkar se palat gaya, woh round haara.', 'Dono pen desk pe rahe to jiski jagah behtar, woh jeeta; bahut kareeb ho to barabar.', 'Jo pehle teen round jeete, match uska. Teen round dono chooke to barabar.'],
+    steps: ['Baari baari khelo, har baari ek flick. Apni baari par kahin se bhi muqabil ke pen ki taraf ungli khencho; Flick button seedha us ki taraf maarta hai.', 'Jitna lamba khenchoge, utna zor. Khenchte waqt nuqton wali lakeer dikhati hai ke aap ka pen kahan rukega: sunehri yani takkar, laal yani aap ka pen desk se gir jayega.', 'Ungli chhoro aur pen chal padega. Pen phisalte aur takraate hain; jo pen desk se gira woh round haara, to un ka girao aur apna bachao.', 'Das flick ke baad bhi dono pen desk par hon to jo pen beech ke zyada qareeb hai woh round jeeta.', 'Jo pehle teen round jeete, woh match jeeta.'],
     win: 'Bot ke saath akele, dost ke saath ek screen pe, paas mein ya online khelo. Kamaaye sikkon se pen aur desk ke look kholo; style sirf dikhaawe ke liye hain.',
-    scoring: 'Rival ka pen desk se girao, zor ki takkar se palto ya usse zyada tik ke round jeeto. Match teen round jeetne tak.',
+    scoring: 'Muqabil ka pen desk se girao to round aap ka; apna gira diya to round gaya. Das flick ke baad beech ke qareeb wala pen jeetta hai. Teen round pehle jeeto, match aap ka.',
   },
   'lapa-chupi': {
     steps: ['Har match mein alag player dhoondhne wala banta hai. Woh deewar ke paas aankhein band karke rukta hai aur baaki sabko chhupne ke liye paanch second milte hain.', 'Joystick ya arrow keys se 3D ghar mein ghoomo. Sprint dabake tez bhaago, par second bhar mein saans phool jaati hai.', 'Palang, sofa, mez ya parde ke paas ruk ke hilna band karo, tab chhupoge. Hilna, ya dhoondhne wale ko paas aane dena, tumhe pakdwa dega.', 'Sabko dhoondh liya to dhoondhne wala jeeta. Time khatam hone tak jo chhupe rahe, woh saath mein jeete.', 'Online room mein chhupe players ki jagah doosron se chhupaayi jaati hai.'],

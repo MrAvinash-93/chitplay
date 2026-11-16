@@ -1,8 +1,8 @@
 /** The 3D picture of ship-fight on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, canvasTex, ease, pool, std, tableCamera, toX, toZ } from './common.js?v=20261116-1213';
-import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1213';
-import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from '../ship-fight.js?v=20261116-1213';
+import { TAU, basic, box, canvasTex, ease, pool, std, tableCamera, toX, toZ } from './common.js?v=20261116-1239';
+import { SEAT_COLORS, TICK } from '../lib.js?v=20261116-1239';
+import { COOL as SHIP_COOL, STORM_AT as SHIP_STORM } from '../ship-fight.js?v=20261116-1239';
 
 function shipView() {
   const scene = new THREE.Scene();

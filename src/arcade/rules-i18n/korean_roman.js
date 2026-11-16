@@ -164,14 +164,14 @@ export default {
  },
  "pen-fight": {
   "steps": [
-   "3cho ane sangdae jjogeuro mireoyo. twinggigi beoteundo sseul su isseoyo.",
-   "ppareuge milsurok peni sege nagago, banghyangi gal gireul jeonghaeyo.",
-   "pendeureun jeojeollo mikkeureojigo budithyeoyo. chaeksangeseo tteoreojigeona budithyeo neomeojin peni geu raundeueseo jyeoyo.",
-   "dul da chaeksange nameumyeon majimak jariga deo joeun jjogi igigo, aju aseuraseulhamyeon bigyeoyo.",
-   "meonjeo se raundeureul igin jjogi gyeonggieseo igyeoyo. dul da silpaehan raundeuga se beonimyeon museungburo kkeutnayo."
+   "charyedaero han beonssik twinggyeoyo. nae charyega doemyeon amu goseseona sangdae pen jjogeuro songarageul kkeureoyo. twinggigi beoteuneun sangdaereul hyanghae gotjang twinggyeoyo.",
+   "gilge kkeulsurok sege twinggyeoyo. kkeuneun dongan jeomseoni nae peni meomchul goseul boyeo jwoyo. geumsaegeun mathindaneun tteusigo, ppalgansaegeun nae peni chaeksangeseo tteoreojindaneun tteusieyo.",
+   "soneul ttemyeon twinggyeoyo. peneun mikkeureojigo seoro budithyeoyo. chaeksangeul beoseonan peneun geu paneul jyeoyo. sangdae peneun tteoreotteurigo nae peneun jikyeoyo.",
+   "yeol beon twinggin dwiedo du peni modu chaeksange isseumyeon gaundee deo gakkaun peni geu paneul igyeoyo.",
+   "meonjeo se paneul igin sarami gyeonggireul igyeoyo."
   ],
   "win": "botgwa honja, chinguwa han hwamyeoneseo, gakkaieseo, ttoneun onraineuro hal su isseoyo. moeun koineuro pengwa chaeksang moyangeul yeol su isseoyo. seutaireun geotmoseupppunieyo.",
-  "scoring": "sangdae peneul chaeksangeseo tteoreotteurigeona, sege budithyeo neomeotteurigeona, deo orae beotimyeon raundeureul igyeoyo. meonjeo se raundeureul igin jjogi gyeonggieseo igyeoyo."
+  "scoring": "sangdae peneul chaeksangeseo tteoreotteurimyeon geu paneul igigo, nae peneul tteoreotteurimyeon jyeoyo. yeol beon dwieneun gaundee gakkaun peni igyeoyo. meonjeo se paneul igimyeon gyeonggireul igyeoyo."
  },
  "lapa-chupi": {
   "steps": [

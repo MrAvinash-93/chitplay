@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261116-1213';
-import { is2d } from './view-mode.js?v=20261116-1213';
-import { adBreak } from './ad-breaks.js?v=20261116-1213';
-import { resultAd, sideAd } from './ads.js?v=20261116-1213';
-import { myTableSize } from '../net/party.js?v=20261116-1213';
-import { W, H, TICK } from './video/lib.js?v=20261116-1213';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-1213';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-1213';
-import { MOMENT, linesFor } from './talk.js?v=20261116-1213';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-1213';
-import { ask, confirmSpend } from './dialog.js?v=20261116-1213';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-1213';
-import { profile } from '../persistence/profile-store.js?v=20261116-1213';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-1213';
+import { hintsLeft, showHint } from './hint.js?v=20261116-1239';
+import { is2d } from './view-mode.js?v=20261116-1239';
+import { adBreak } from './ad-breaks.js?v=20261116-1239';
+import { resultAd, sideAd } from './ads.js?v=20261116-1239';
+import { myTableSize } from '../net/party.js?v=20261116-1239';
+import { W, H, TICK } from './video/lib.js?v=20261116-1239';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-1239';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-1239';
+import { MOMENT, linesFor } from './talk.js?v=20261116-1239';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-1239';
+import { ask, confirmSpend } from './dialog.js?v=20261116-1239';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-1239';
+import { profile } from '../persistence/profile-store.js?v=20261116-1239';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-1239';
 
-const V = '?v=20261116-1213';
+const V = '?v=20261116-1239';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -313,6 +313,15 @@ export async function runTv(ctx) {
     });
   }
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  // games that aim (logic.aim): the power is how far you drag (this many screen pixels is full power),
+  // and while the finger is down the game shows where the flick would go
+  const AIM_FULL = 140;
+  let liveAim = null;
+  const aimFrom = (dx, dy, seat) => {
+    const distance = Math.hypot(dx, dy);
+    if (distance < 18) return null;
+    return { seat, x: Math.round(dx / distance * 1000) / 1000, y: Math.round(dy / distance * 1000) / 1000, power: Math.round(clamp(distance / AIM_FULL, 0.12, 1) * 1000) / 1000 };
+  };
   function bindSwipe(element, seatFor) {
     if (!logic.swipe) return () => {};
     let pointerId = null, start = null;
@@ -324,19 +333,26 @@ export async function runTv(ctx) {
       element.setPointerCapture?.(pointerId);
       element.classList.add('swipe--on');
     };
+    const move = (e) => {
+      if (e.pointerId !== pointerId || !logic.aim || !start) return;
+      const seat = seatFor();
+      liveAim = Number.isInteger(seat) && seat >= 0 ? aimFrom(e.clientX - start.x, e.clientY - start.y, seat) : null;
+    };
     const finish = (e) => {
       if (e.pointerId !== pointerId) return;
       const from = start, dx = e.clientX - from.x, dy = e.clientY - from.y;
       const distance = Math.hypot(dx, dy), elapsed = performance.now() - from.at;
-      pointerId = null; start = null;
+      pointerId = null; start = null; liveAim = null;
       element.classList.remove('swipe--on');
-      if (!from.eligible || countdown > 0 || result || elapsed > 3000 || distance < 18) return;
+      // aiming takes as long as it takes (the turn's own clock still runs); a quick swipe has three seconds
+      if (!from.eligible || countdown > 0 || result || (!logic.aim && elapsed > 3000) || distance < 18) return;
       const speed = distance / Math.max(1, elapsed);
-      const swipe = {
+      const swipe = logic.aim ? aimFrom(dx, dy, 0) : {
         x: Math.round(dx / distance * 1000) / 1000,
         y: Math.round(dy / distance * 1000) / 1000,
         power: Math.round(clamp(speed / 1.25, 0.12, 1) * 1000) / 1000,
       };
+      if (logic.aim) delete swipe.seat;
       const seat = seatFor();
       if (!Number.isInteger(seat) || seat < 0) return;
       if (guestLink) {
@@ -350,14 +366,16 @@ export async function runTv(ctx) {
     };
     const cancel = (e) => {
       if (e.pointerId !== pointerId) return;
-      pointerId = null; start = null;
+      pointerId = null; start = null; liveAim = null;
       element.classList.remove('swipe--on');
     };
     element.addEventListener('pointerdown', down);
+    element.addEventListener('pointermove', move);
     element.addEventListener('pointerup', finish);
     element.addEventListener('pointercancel', cancel);
     return () => {
       element.removeEventListener('pointerdown', down);
+      element.removeEventListener('pointermove', move);
       element.removeEventListener('pointerup', finish);
       element.removeEventListener('pointercancel', cancel);
     };
@@ -487,7 +505,7 @@ export async function runTv(ctx) {
       logic.swipe ? (() => {
         const zone = h('div', { class: 'swipe-zone', role: 'application', 'aria-label': logic.swipeHint || 'Swipe quickly to launch' }, [
           h('strong', {}, [logic.swipeHint || 'Swipe quickly to launch']),
-          h('small', {}, ['Fast swipe = more power']),
+          h('small', {}, [logic.swipeSub || 'Fast swipe = more power']),
         ]);
         bindSwipe(zone, () => seat);
         return zone;
@@ -703,11 +721,15 @@ export async function runTv(ctx) {
     lastPaint = now;
     g.setTransform(SCALE, 0, 0, SCALE, 0, 0);
     let flat = true;
+    // a game that aims: where this flick would go, while the finger is still down
+    let aimed = null;
+    if (liveAim && logic.aimPreview && !countdown && !result) { try { aimed = logic.aimPreview(state, liveAim.seat, liveAim); } catch { aimed = null; } }
     if (view && r3 && !is2d()) {
       try {
         // the camera follows this phone's own player: on a friend's phone that is their seat, not the host's
         const mine = guestLink ? guestSeat : players.findIndex(p => p.kind === 'me');
         view.update(state, dt, Math.min(1, acc / TICK), mine >= 0 ? mine : 0);
+        view.setAim?.(aimed);
         if (r3.shadowMap.enabled && (shadeTick++ % 30 === 0)) shadeScene(view.scene);
         r3.render(view.scene, view.camera);
         g.drawImage(r3.domElement, 0, 0, W, H);
@@ -716,7 +738,8 @@ export async function runTv(ctx) {
       } catch (e) { console.warn('[tv] 3D frame failed, using the flat picture', e); view = null; }
     }
     // the seats played on this screen, for games with private things to show (a Bingo card)
-    if (flat) logic.draw(g, state, namesNow(), guestLink ? [guestSeat] : localSeats());
+    if (flat) { logic.draw(g, state, namesNow(), guestLink ? [guestSeat] : localSeats()); if (aimed) logic.drawAim?.(g, aimed); }
+    if (aimed) aimBar(aimed);
     reflexSeen();
     // our name, small, in the corner of every TV game: a recording or a copy still says where it's from
     g.save();
@@ -727,6 +750,20 @@ export async function runTv(ctx) {
     if (waitingFirst) banner(oneButton ? 'Tap to fly!' : 'Press to start');
     else if (countdown > 0) banner(String(Math.ceil(countdown / 50)));
     story?.tvRefresh();
+  }
+  /** How hard, as a bar at the bottom of the picture, and what the line says will happen. */
+  function aimBar(a) {
+    const w = 220, x = (W - w) / 2, y = H - 30;
+    g.save();
+    g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(x - 6, y - 20, w + 12, 30);
+    const grad = g.createLinearGradient(x, 0, x + w, 0);
+    grad.addColorStop(0, '#3ddc84'); grad.addColorStop(0.6, '#ffd23f'); grad.addColorStop(1, '#ff4d4d');
+    g.fillStyle = 'rgba(255,255,255,.15)'; g.fillRect(x, y, w, 7);
+    g.fillStyle = grad; g.fillRect(x, y, w * a.power, 7);
+    g.font = '800 12px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.fillStyle = a.end === 'off' ? '#ff8a8a' : a.end === 'hit' ? '#ffe28a' : '#fff';
+    g.fillText(`POWER ${Math.round(a.power * 100)}%${a.end === 'off' ? ' · TOO HARD: YOUR PEN FALLS' : a.end === 'hit' ? ' · HIT!' : ''}`, W / 2, y - 6);
+    g.restore();
   }
   function banner(text) {
     g.fillStyle = 'rgba(0, 0, 0, .45)';

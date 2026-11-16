@@ -76,9 +76,9 @@ export default {
     scoring: 'Protipokkher latim chhitke diye ba tar cheye beshikkhon ghure round jeto. Match jete je age tin round jete.',
   },
   'pen-fight': {
-    steps: ['Tin second-er moddhe protipokkher dike swipe koro. Toka button-o ekta sohoj bikolpo.', 'Druto swipe-e kolom jore jay; dik thik kore se kon pothe jabe.', 'Kolomgulo nijerai pichlay ar dhakka khay. Table theke pore jawa ba dhakkay ulte jawa kolom round hare.', 'Duto-i table-e thakle sheshe jar obosthan bhalo se jete; khub kachakachi hole draw.', 'Je age tin round jete se match jete. Dujonei phoskano tin round hole match draw.'],
+    steps: ['Pala kore khela, protibar ekta toka. Tomar pala ele je kono jayga theke protipokkher kolomer dike angul tano; Toka button sojasuji or dike toka mare.', 'Joto lomba tanbe, toto jore toka. Tanar somoy bindur rekha dekhay tomar kolom kothay thambe: sonali mane dhakka, lal mane tomar nijer kolom table theke pore jabe.', 'Angul chharo, kolom chhutbe. Kolomgulo pichlay ar dhakka khay; je kolom table theke pore, se round hare, tai oder ta phelo ar nijer ta rakho.', 'Dosh toka-r poreo dutoi table-e thakle, majher kachhe thaka kolom round jete.', 'Je age tin round jete, se match jete.'],
     win: 'Bot-er biruddhe eka, bondhur songe ek screen-e, kachhe ba online-e khelo. Kamano coin-e kolom ar table-er chehara kholo; style shudhu dekhar jonno.',
-    scoring: 'Protipokkher kolom table theke phele, jor dhakkay ulte, ba beshikkhon tike round jeto. Match jete je age tin round jete.',
+    scoring: 'Protipokkher kolom table theke phelle round tomar; nijer ta phelle round gelo. Dosh toka-r pore majher kachher kolom jete. Age tin round jitle match tomar.',
   },
   'lapa-chupi': {
     steps: ['Proti match-e khonjar lok bodlay. Se chokh bondho kore deyaler kache opekkha kore, ar bakira panch second-e lukay.', 'Joystick ba arrow key diye 3D khelar mathe ghoro. Jore dourate Sprint chepe rakho, kintu mote ek second-er moto, tarpor hanpiye jabe.', 'Khat, sofa, table ba porda-r pashe theme chupchap thakle lukano jay. Norle ba khonjar lok-ke kache aste dile dhora porbe.', 'Khonjar lok sobaike khunje pele jete. Somoy sheshe jara lukiye thake tara ekshonge jete.', 'Online room-e lukano kheloyarder jayga onyoder pathano hoy na.'],

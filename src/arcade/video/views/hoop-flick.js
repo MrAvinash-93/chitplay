@@ -1,8 +1,8 @@
 /** The 3D picture of hoop-flick on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, canvasTex, ease, lights, pool, std } from './common.js?v=20261116-1213';
-import { H as HOOP_H, SEAT_COLORS, TICK, W as HOOP_W } from '../lib.js?v=20261116-1213';
-import { G as HOOP_G, MAX as HOOP_MAX } from '../hoop-flick.js?v=20261116-1213';
+import { TAU, basic, box, canvasTex, ease, lights, pool, std } from './common.js?v=20261116-1239';
+import { H as HOOP_H, SEAT_COLORS, TICK, W as HOOP_W } from '../lib.js?v=20261116-1239';
+import { G as HOOP_G, MAX as HOOP_MAX } from '../hoop-flick.js?v=20261116-1239';
 
 /* ─── Hoop Flick: an indoor court under the lights, with a crowd ─── */
 // the light in the hall at each level: day practice, evening match, windy night, the final under spotlights
