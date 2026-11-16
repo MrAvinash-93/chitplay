@@ -82,6 +82,8 @@ for (const name of ['.nojekyll', 'CNAME', 'index.html', '404.html', 'sw.js', 'ma
 
 // the home and play pages name every module up front, with the stamps just written (tools/make-preload.mjs)
 await import('./make-preload.mjs');
+// each game's How to play sheet in its own small file (tools/make-howto.mjs)
+await import('./make-howto.mjs');
 
 /* ─── 3. Sizes ───────────────────────────────────────────── */
 const everything = walk(ROOT).filter(f => !f.includes(`${path.sep}.git${path.sep}`));

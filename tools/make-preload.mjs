@@ -74,5 +74,11 @@ const nHome = write('index.html', './', [home, room, world]);
 const playEntry = fs.readFileSync(path.join(ROOT, 'play', 'index.html'), 'utf8').match(/<script type="module" src="\.\.\/([^"]+)"/)[1];
 const [playPath] = playEntry.split('?');
 // the loader picks the arcade (most games) or the 3D room (Cops and Robbers): the arcade is preloaded, as most visits are for it
-const nPlay = write('play/index.html', '../', [graph(playPath, playEntry), dynamicGraph(playPath, 'arcade/table')]);
+// then the 3D room every game is played in (fetched alongside, not discovered one import at a time).
+// A game's own files (its rules, its board or its TV picture) are not listed: play-page.js asks for
+// just the one game being opened, so nobody downloads the other games.
+const playGraph = graph(playPath, playEntry);
+const tableGraph = dynamicGraph(playPath, 'arcade/table');
+const playWorld = (() => { const loader = [...tableGraph.values()].find(p => p.endsWith('world-loader.js')); return loader ? dynamicGraph(loader, 'world-3d') : new Map(); })();
+const nPlay = write('play/index.html', '../', [playGraph, tableGraph, playWorld]);
 console.log(`Preload: ${nHome} modules on the home page, ${nPlay} on the play page`);

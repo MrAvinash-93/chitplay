@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261116-0815';
-import { is2d } from './view-mode.js?v=20261116-0815';
-import { adBreak } from './ad-breaks.js?v=20261116-0815';
-import { resultAd, sideAd } from './ads.js?v=20261116-0815';
-import { myTableSize } from '../net/party.js?v=20261116-0815';
-import { W, H, TICK } from './video/lib.js?v=20261116-0815';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-0815';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-0815';
-import { MOMENT, linesFor } from './talk.js?v=20261116-0815';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-0815';
-import { ask, confirmSpend } from './dialog.js?v=20261116-0815';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-0815';
-import { profile } from '../persistence/profile-store.js?v=20261116-0815';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-0815';
+import { hintsLeft, showHint } from './hint.js?v=20261116-1137';
+import { is2d } from './view-mode.js?v=20261116-1137';
+import { adBreak } from './ad-breaks.js?v=20261116-1137';
+import { resultAd, sideAd } from './ads.js?v=20261116-1137';
+import { myTableSize } from '../net/party.js?v=20261116-1137';
+import { W, H, TICK } from './video/lib.js?v=20261116-1137';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-1137';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-1137';
+import { MOMENT, linesFor } from './talk.js?v=20261116-1137';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-1137';
+import { ask, confirmSpend } from './dialog.js?v=20261116-1137';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-1137';
+import { profile } from '../persistence/profile-store.js?v=20261116-1137';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-1137';
 
-const V = '?v=20261116-0815';
+const V = '?v=20261116-1137';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -37,6 +37,9 @@ export async function runTv(ctx) {
   /** A fanfare if someone on this phone won, a shrug if they all lost. */
   const music = ctx.music || (() => {});
   const endSound = (res, seats) => { music(false); const w = res?.winners || []; audio(w.length && seats.length && !seats.some(x => w.includes(x)) ? 'lose' : 'victory'); haptic(w.length && seats.length && !seats.some(x => w.includes(x)) ? 'lose' : 'win'); };
+  // the game's rules and its 3D picture come down together: only this game's, never the other TV games'
+  const viewing = import(`./video/views.js${V}`).then(m => m.createView(game.slug));
+  viewing.catch(() => {});
   const logic = (await import(`./video/${game.slug}.js${V}`)).default;
   // games answered on a keypad or with answer buttons need room under the TV for every key (arcade.css)
   document.body.classList.toggle('tv-keys', !!(logic.keypad || logic.choices));
@@ -51,8 +54,7 @@ export async function runTv(ctx) {
   let r3 = null, view = null;
   try {
     const THREE = await import('../vendor/three.chitplay.min.js');
-    const { createView } = await import(`./video/views.js${V}`);
-    view = createView(game.slug);
+    view = await viewing;
     if (view) {
       r3 = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       r3.setPixelRatio(1);
@@ -78,6 +80,8 @@ export async function runTv(ctx) {
     bigBox.hidden = !on;
     if (on) bigBox.append(canvas);
     story?.tvShow?.(!on);
+    // the TV fills the screen: the room behind it only needs a few pictures a second (smoother game, cooler phone)
+    story?.setCalm?.(on, roomGame || is2d() ? 6 : 20);
   };
   // 2D: the flat picture, full screen, with no room behind it; back in 3D it goes where it was
   let bigIn3d = big;

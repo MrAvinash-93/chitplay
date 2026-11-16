@@ -10,44 +10,49 @@
  * Modes: play (you and bots), online (strangers at a public table, bots fill up), nearby (friends
  * with a code or QR), pass (one phone handed round), watch (bots only).
  */
-import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261116-0815';
-import { createBoard, STEP_SECONDS, setTurnLight } from './boards.js?v=20261116-0815';
-import { SAFE as LUDO_SAFE, STARTS as LUDO_STARTS, quarter as ludoQuarterOf } from './games/ludo.js?v=20261116-0815';
-import { loadWorld } from '../world/world-loader.js?v=20261116-0815';
-import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261116-0815';
-import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261116-0815';
-import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261116-0815';
-import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261116-0815';
-import { COINS, profile } from '../persistence/profile-store.js?v=20261116-0815';
+import { ALL_GAMES, gameBySlug, localName as gameNameIn } from './catalog.js?v=20261116-1137';
+// the 3D boards and a game's own rules load with the game (loadGame): a TV game never fetches them,
+// and Ludo's corners are read from Ludo's own file once it is here
+let Boards = null, GameMod = null;
+const createBoard = (...a) => (Boards ? Boards.createBoard(...a) : null);
+const setTurnLight = (t) => Boards?.setTurnLight(t);
+const stepSeconds = () => Boards?.STEP_SECONDS ?? 0.19;
+const ludoQuarterOf = (s, seat) => GameMod.quarter(s, seat);
+import { loadWorld } from '../world/world-loader.js?v=20261116-1137';
+import { PRESETS, lookOf, portraitSvg, randomLook } from '../world/character-looks.js?v=20261116-1137';
+import { asOneGame, COUNTRIES, detectCountryInfo, editionFor, EDITION_FOR } from '../world/countries.js?v=20261116-1137';
+import { detectNameRegion, NAME_REGION_FOR, pickOpponents } from '../world/names.js?v=20261116-1137';
+import { isLanguage, LANGUAGES } from '../i18n/index.js?v=20261116-1137';
+import { COINS, profile } from '../persistence/profile-store.js?v=20261116-1137';
 import { audioManager } from '../audio/audio-manager.js';
 /** Vibrate only for what happens to the person holding this phone. */
 const buzz = (kind) => audioManager.haptic(kind);
-import { iconSvg } from '../ui/icons.js?v=20261116-0815';
-import { faceHtml } from './photo.js?v=20261116-0815';
-import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261116-0815';
+import { iconSvg } from '../ui/icons.js?v=20261116-1137';
+import { faceHtml } from './photo.js?v=20261116-1137';
+import { NearbyHost, NearbyGuest, nearbyError, isCode, newToken, PUBLIC_TABLES, tableCode, peekTables } from '../net/nearby.js?v=20261116-1137';
 
-import { settingsStore } from '../persistence/settings-store.js?v=20261116-0815';
+import { settingsStore } from '../persistence/settings-store.js?v=20261116-1137';
 
-import { fill, shellText } from './shell-text.js?v=20261116-0815';
-import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261116-0815';
-import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261116-0815';
-import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261116-0815';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-0815';
-import { hideHint, hintsLeft, showHint } from './hint.js?v=20261116-0815';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-0815';
-import { ask, confirmSpend, notice } from './dialog.js?v=20261116-0815';
-import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261116-0815';
-import { startReminder } from './reminder.js?v=20261116-0815';
-import { lineCount, linesFor, MOMENT } from './talk.js?v=20261116-0815';
-import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261116-0815';
-import { roomLevel } from './decor.js?v=20261116-0815';
+import { fill, shellText } from './shell-text.js?v=20261116-1137';
+import { MORE, RULE_WORDS, RULES_IN } from './shell-text-more.js?v=20261116-1137';
+import { bestOf, bump, gameFinished, holdPopups, myLevel, onPopup, playStats, popup, rankProgress } from './achievements.js?v=20261116-1137';
+import { SPECIAL_EMOJIS } from '../world/table-talk.js?v=20261116-1137';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-1137';
+import { hideHint, hintsLeft, showHint } from './hint.js?v=20261116-1137';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-1137';
+import { ask, confirmSpend, notice } from './dialog.js?v=20261116-1137';
+import { buyGameCosmetic, equipGameCosmetic, gameCosmeticOwned, gameCosmeticsFor, gameStyleSlots, selectedGameCosmetic } from './game-cosmetics.js?v=20261116-1137';
+import { startReminder } from './reminder.js?v=20261116-1137';
+import { lineCount, linesFor, MOMENT } from './talk.js?v=20261116-1137';
+import { applyOfferReply, normalizeOfferRequest } from './postgame-offers.js?v=20261116-1137';
+import { roomLevel } from './decor.js?v=20261116-1137';
 
-import { is2d, setView } from './view-mode.js?v=20261116-0815';
-import { adBreak } from './ad-breaks.js?v=20261116-0815';
-import { resultAd, sideAd } from './ads.js?v=20261116-0815';
-import { gameStrip } from './game-strip.js?v=20261116-0815';
-import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261116-0815';
-const V = '?v=20261116-0815';
+import { is2d, setView } from './view-mode.js?v=20261116-1137';
+import { adBreak } from './ad-breaks.js?v=20261116-1137';
+import { resultAd, sideAd } from './ads.js?v=20261116-1137';
+import { gameStrip } from './game-strip.js?v=20261116-1137';
+import { mountParty, partyChip, offerParty, inParty, joinParty, myTableSize } from '../net/party.js?v=20261116-1137';
+const V = '?v=20261116-1137';
 const $ = (sel) => document.querySelector(sel);
 const app = $('#party');
 const params = new URLSearchParams(location.search);
@@ -451,16 +456,11 @@ function message(title, lead, ...buttons) {
 
 /* ─── how to play, on a sheet over the game ─── */
 async function openRules(game) {
+  // just this game's sheet (src/arcade/howto/, made by tools/make-howto.mjs): in the player's language
+  // where it has been written, anything missing in English
   let r = null;
-  try { r = (await import(`./rules.js${V}`)).RULES[game.slug]; } catch {}
-  if (!r) return;
-  // in the player's language where it has been written; the same steps, so anything missing stays English
-  if (RULES_IN.includes(LANG)) {
-    try {
-      const own = (await import(`./rules-i18n/${LANG}.js${V}`)).default[game.slug];
-      if (own?.steps?.length === r.steps.length) r = { ...r, ...own, house: own.house?.length === r.house?.length ? own.house : r.house };
-    } catch { /* the English stays */ }
-  }
+  try { const sheet = (await import(`./howto/${game.slug}.js${V}`)).default; r = { ...sheet.en, ...(RULES_IN.includes(LANG) ? sheet[LANG] : null) }; } catch {}
+  if (!r?.steps) return;
   const words = { ...RULE_WORDS.en, ...(RULE_WORDS[LANG] || {}) };
   document.querySelector('.sheet')?.remove();
   await new Promise((done) => {
@@ -753,7 +753,7 @@ function moments(events, players, view) {
   if (G.slug === 'ludo' && Array.isArray(view.t) && Array.isArray(prev.t)) {
     // Ludo's sounds, timed to the token's walk: out of the yard, onto a safe square, home, a capture
     const mv = ev('move');
-    const walk = mv ? (mv.steps || 1) * STEP_SECONDS * 1000 + 120 : 0;
+    const walk = mv ? (mv.steps || 1) * stepSeconds() * 1000 + 120 : 0;
     const later = (ms, sound) => setTimeout(() => audioManager.play(sound), ms);
     const r = ev('roll');
     if (r && r.n === 6) later(1250, 'correct');
@@ -764,7 +764,7 @@ function moments(events, players, view) {
       const moved = after.findIndex((x, k) => x !== before[k] && x >= 0);
       if (moved >= 0 && !ev('capture') && !ev('home')) {
         const to = after[moved];
-        if (to <= 50 && LUDO_SAFE.includes((LUDO_STARTS[ludoQuarterOf(view, seat)] + to) % 52)) later(walk, 'select');
+        if (to <= 50 && GameMod.SAFE.includes((GameMod.STARTS[ludoQuarterOf(view, seat)] + to) % 52)) later(walk, 'select');
       }
       if (ev('capture')) later(walk + 150, 'whoosh');
       if (ev('home')) later(walk, 'achieve');
@@ -1364,7 +1364,7 @@ function pump(events) {
   if (shot && s.frames) match.busyUntil = Date.now() + (s.frames.length / 20) * 1000 + 300;
   const thrown = events.some(e => e.k === 'roll') && board?.throwDie ? 1500 : 0;
   const walk = events.find(e => e.steps);
-  if (thrown || walk) match.busyUntil = Date.now() + thrown + (walk ? walk.steps * STEP_SECONDS * 1000 + 200 : 0);
+  if (thrown || walk) match.busyUntil = Date.now() + thrown + (walk ? walk.steps * stepSeconds() * 1000 + 200 : 0);
   const names = namesOf();
   players.forEach((p, seat) => {
     if (p.kind !== 'guest') return;
@@ -2495,7 +2495,11 @@ addEventListener('pagehide', leaveAll);
 async function loadGame(game) {
   G = game;
   if (!ALL_GAMES.includes(game)) throw new Error('unknown game');
-  Logic = (await import(`./games/${game.slug}.js${V}`)).default;
+  // this game's rules and the 3D boards, fetched together
+  const [mod, boards] = await Promise.all([import(`./games/${game.slug}.js${V}`), Boards || import(`./boards.js${V}`)]);
+  GameMod = mod;
+  Logic = mod.default;
+  Boards = boards;
   document.title = `${game.name}: Play Free in 3D | ChitPlay`;
   lines = linesFor(game.slug, LANG);
   applyTheme(game);

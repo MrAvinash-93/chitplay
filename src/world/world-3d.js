@@ -8,17 +8,17 @@
  */
 import * as THREE from '../vendor/three.chitplay.min.js';
 import { gameBus, EVENTS } from '../core/event-bus.js';
-import { settingsStore } from '../persistence/settings-store.js?v=20261116-0815';
+import { settingsStore } from '../persistence/settings-store.js?v=20261116-1137';
 import { audioManager } from '../audio/audio-manager.js';
-import { createCharacter, setCharacterDetail } from './characters.js?v=20261116-0815';
-import { lookOf, lookKey } from './character-looks.js?v=20261116-0815';
-import { buildRoomDetails } from './room-details.js?v=20261116-0815';
-import { COUNTRIES } from './countries.js?v=20261116-0815';
-import { voiceBox, voiceLangsFor } from './voice.js?v=20261116-0815';
-import { isSpecialEmoji } from './table-talk.js?v=20261116-0815';
-import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261116-0815';
-import { decorMakers } from './decor-makers.js?v=20261116-0815';
-import * as Themes from './themes.js?v=20261116-0815';
+import { createCharacter, setCharacterDetail } from './characters.js?v=20261116-1137';
+import { lookOf, lookKey } from './character-looks.js?v=20261116-1137';
+import { buildRoomDetails } from './room-details.js?v=20261116-1137';
+import { COUNTRIES } from './countries.js?v=20261116-1137';
+import { voiceBox, voiceLangsFor } from './voice.js?v=20261116-1137';
+import { isSpecialEmoji } from './table-talk.js?v=20261116-1137';
+import { decorState, placeOf, ROOM_SIZES, SPOTS, spotFits, themeOf } from '../arcade/decor.js?v=20261116-1137';
+import { decorMakers } from './decor-makers.js?v=20261116-1137';
+import * as Themes from './themes.js?v=20261116-1137';
 
 const TAU = Math.PI * 2;
 
@@ -1309,12 +1309,13 @@ function createWorld() {
 
   // a big sheet covers the room: nobody will miss the extra frames, and the battery will thank us
   const CALM_MS = 1000 / 20;
+  let calmMs = CALM_MS;   // slower still when something covers the room completely
   let calm = false, frameNo = 0, boardSlow = false, boardMs = 16;
   function frame(now) {
     rafId = requestAnimationFrame(frame);
     const q = QUALITY[quality];
     const goalMs = boardShot && !boardSlow ? Math.min(q.frameMs, 1000 / 60) : q.frameMs;
-    if (now - lastRender < (calm && !tour.on ? Math.max(CALM_MS, goalMs) : goalMs) - 2) return;
+    if (now - lastRender < (calm && !tour.on ? Math.max(calmMs, goalMs) : goalMs) - 2) return;
     // a phone that can't hold it goes back to its steady rate rather than stutter
     if (boardShot && !boardSlow && lastRender) {
       boardMs = boardMs * 0.97 + (now - lastRender) * 0.03;
@@ -1694,7 +1695,8 @@ function createWorld() {
       }
       snapCamera = true;
     },
-    setCalm(on) { calm = !!on; },
+    /** Fewer frames while the room is behind something: on, and how many pictures a second (20 unless told). */
+    setCalm(on, perSecond = 20) { calm = !!on; calmMs = 1000 / Math.max(1, perSecond); },
     setPaused(on) { paused = !!on; },
     /** Where this player's throwing hand is right now. */
     handOf(i) { return actors[i].handWorld(new THREE.Vector3()); },
