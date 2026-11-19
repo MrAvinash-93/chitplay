@@ -1,10 +1,10 @@
-import { createApp } from './lifecycle.js?v=20261116-1359';
-import { GAME_PHASES } from './config.js?v=20261116-1359';
+import { createApp } from './lifecycle.js?v=20261119-1241';
+import { GAME_PHASES } from './config.js?v=20261119-1241';
 import { audioManager } from '../audio/audio-manager.js';
-import { loadWorld } from '../world/world-loader.js?v=20261116-1359';
-import { GameScreen } from '../ui/screens/game-screen.js?v=20261116-1359';
-import { mountParty } from '../net/party.js?v=20261116-1359';
-import { maybeShowIntro } from '../ui/intro.js?v=20261116-1359';
+import { loadWorld } from '../world/world-loader.js?v=20261119-1241';
+import { GameScreen } from '../ui/screens/game-screen.js?v=20261119-1241';
+import { mountParty } from '../net/party.js?v=20261119-1241';
+import { maybeShowIntro } from '../ui/intro.js?v=20261119-1241';
 
 /**
  * ChitPlay is now a single 3D game: one screen (the 3D room) that hosts the
@@ -38,7 +38,7 @@ function boot() {
   try { maybeShowIntro(openedWith); } catch (e) { console.warn('[intro]', e); }
   // the Android app: AdMob's banner under the games list, never on a game (src/app/native-ads.js)
   if (window.Capacitor?.isNativePlatform?.()) {
-    import('./native-ads.js?v=20261116-1359').then(m => m.listBanner(!window.__chitplayCopsPage)).catch(() => {});
+    import('./native-ads.js?v=20261119-1241').then(m => m.listBanner(!window.__chitplayCopsPage)).catch(() => {});
   }
 
   // Expose for debugging (non-enumerable, dev-only)

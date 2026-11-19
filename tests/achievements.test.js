@@ -8,9 +8,9 @@ globalThis.localStorage = {
 };
 
 const [{ ALL_GAMES }, { profile }, { ACHIEVEMENTS, checkUnlocks, holdPopups }] = await Promise.all([
-  import('../src/arcade/catalog.js?v=20261116-1359'),
-  import('../src/persistence/profile-store.js?v=20261116-1359'),
-  import('../src/arcade/achievements.js?v=20261116-1359'),
+  import('../src/arcade/catalog.js?v=20261119-1241'),
+  import('../src/persistence/profile-store.js?v=20261119-1241'),
+  import('../src/arcade/achievements.js?v=20261119-1241'),
 ]);
 
 holdPopups(true);

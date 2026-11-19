@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261116-1359';
-import { is2d } from './view-mode.js?v=20261116-1359';
-import { adBreak } from './ad-breaks.js?v=20261116-1359';
-import { resultAd, sideAd } from './ads.js?v=20261116-1359';
-import { myTableSize } from '../net/party.js?v=20261116-1359';
-import { W, H, TICK } from './video/lib.js?v=20261116-1359';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261116-1359';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261116-1359';
-import { MOMENT, linesFor } from './talk.js?v=20261116-1359';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261116-1359';
-import { ask, confirmSpend } from './dialog.js?v=20261116-1359';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261116-1359';
-import { profile } from '../persistence/profile-store.js?v=20261116-1359';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261116-1359';
+import { hintsLeft, showHint } from './hint.js?v=20261119-1241';
+import { is2d } from './view-mode.js?v=20261119-1241';
+import { adBreak } from './ad-breaks.js?v=20261119-1241';
+import { resultAd, sideAd } from './ads.js?v=20261119-1241';
+import { myTableSize } from '../net/party.js?v=20261119-1241';
+import { W, H, TICK } from './video/lib.js?v=20261119-1241';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261119-1241';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261119-1241';
+import { MOMENT, linesFor } from './talk.js?v=20261119-1241';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261119-1241';
+import { ask, confirmSpend } from './dialog.js?v=20261119-1241';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261119-1241';
+import { profile } from '../persistence/profile-store.js?v=20261119-1241';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261119-1241';
 
-const V = '?v=20261116-1359';
+const V = '?v=20261119-1241';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -826,7 +826,7 @@ export async function runTv(ctx) {
       if (e?.currentTarget) e.currentTarget.disabled = true;
       let earned = false;
       try {
-        const ads = await import('../app/native-ads.js?v=20261116-1359');
+        const ads = await import('../app/native-ads.js?v=20261119-1241');
         earned = await ads.appReward({ pause: () => music(false), resume: () => {} });
       } catch { earned = false; }
       if (earned) carryOn(); else end();

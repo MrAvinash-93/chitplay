@@ -3,6 +3,8 @@ Allow: /
 Disallow: /archive/
 Disallow: /tests/
 Disallow: /tools/
+Disallow: /README.md
+Disallow: /LICENSE
 
 # Google AdSense crawler
 User-agent: Mediapartners-Google

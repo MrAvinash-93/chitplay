@@ -16,15 +16,15 @@
  * Each table's own room is the game's usual "Play with friends" room: its lead opens it (mode=nearby),
  * reports the code, and the others join it (?join=code&auto=1).
  */
-import { ALL_GAMES, CATEGORIES, gameBySlug, localName, allNames } from '../arcade/catalog.js?v=20261116-1359';
-import { logoSvg } from '../arcade/logo.js?v=20261116-1359';
-import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261116-1359';
-import { profile } from '../persistence/profile-store.js?v=20261116-1359';
+import { ALL_GAMES, CATEGORIES, gameBySlug, localName, allNames } from '../arcade/catalog.js?v=20261119-1241';
+import { logoSvg } from '../arcade/logo.js?v=20261119-1241';
+import { NearbyGuest, NearbyHost, newToken, randomCode } from './nearby.js?v=20261119-1241';
+import { profile } from '../persistence/profile-store.js?v=20261119-1241';
 
 const KEY = 'chitplay.party';            // { code, host }
 const TOKEN_KEY = 'chitplay.partyToken';
 const STATE_KEY = 'chitplay.partyState'; // the host's plan: { go }
-const V = '?v=20261116-1359';
+const V = '?v=20261119-1241';
 const DONE_KEY = 'chitplay.partyDone';   // the last plan this phone acted on
 const MAX_FRIENDS = 9;
 const channel = (code) => `party-${code}`;
