@@ -1,8 +1,8 @@
 /** The 3D picture of road-dash on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, canvasTex, ease, lights, pool, std } from './common.js?v=20261119-1241';
-import { speedOf as roadSpeed } from '../road-dash.js?v=20261119-1241';
-import { SEAT_COLORS, TICK } from '../lib.js?v=20261119-1241';
+import { TAU, basic, box, canvasTex, ease, lights, pool, std } from './common.js?v=20261119-1247';
+import { speedOf as roadSpeed } from '../road-dash.js?v=20261119-1247';
+import { SEAT_COLORS, TICK } from '../lib.js?v=20261119-1247';
 
 /* ─── Road Dash: behind the rickshaws, from village fields to an evening rush hour ─── */
 // each stretch of road: the sky, the ground beside it, and how bright the street lights are

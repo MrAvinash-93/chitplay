@@ -4,7 +4,7 @@
  * `seats` is how many sit down by default when bots fill the table. All names are traditional or
  * plain descriptions, and every board and piece is drawn by us.
  */
-import { LOCAL_NAMES } from './local-names.js?v=20261119-1241';
+import { LOCAL_NAMES } from './local-names.js?v=20261119-1247';
 export const VIDEO_GAMES = [
   { slug: 'flying-chit', video: true, hot: true, aka: 'flappy chit wings endless udti bangle', name: 'Flying Chit', icon: '📨', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#e8a317', medals: [50, 200, 500, 1000], blurb: 'Steer a winged chit through classroom bangles, chain combos and earn coins for new 3D chit styles.' },
   { slug: 'tunnel-race', video: true, hot: true, aka: 'paper plane tunnel 3d endless race hawai jahaz', name: 'Tunnel Race', icon: '✈️', min: 1, max: 4, seats: 1, minutes: '1–5', kind: 'Arcade', accent: '#7b3fe4', medals: [50, 150, 300, 600], blurb: 'A paper plane in an endless tunnel. Steer round the walls and grab the gems.' },

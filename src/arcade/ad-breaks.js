@@ -46,7 +46,7 @@ function load() {
 export async function adBreak(name, { pause = () => {}, resume = () => {} } = {}) {
   // the Android app: AdMob's interstitial, with the same spacing (src/app/native-ads.js)
   if (window.Capacitor?.isNativePlatform?.()) {
-    try { const { appBreak } = await import('../app/native-ads.js?v=20261119-1241'); await appBreak({ pause, resume }); } catch {}
+    try { const { appBreak } = await import('../app/native-ads.js?v=20261119-1247'); await appBreak({ pause, resume }); } catch {}
     return false;
   }
   if (!ENABLED) return false;

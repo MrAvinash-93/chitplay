@@ -23,7 +23,7 @@ if (live.trim() !== KEY) {
 }
 // at most 10,000 URLs per request
 for (let i = 0; i < urls.length; i += 10000) {
-  const res = await fetch('https://api.indexnow.org/indexnow', {
+  const res = await fetch('https://www.bing.com/indexnow', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify({ host: HOST, key: KEY, keyLocation: `https://${HOST}/${KEY}.txt`, urlList: urls.slice(i, i + 10000) }),

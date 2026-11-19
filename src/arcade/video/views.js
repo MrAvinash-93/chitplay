@@ -3,7 +3,7 @@
  * that game is played: a phone playing Pen Fight never downloads the tunnel, the ghost house or the hoops.
  * createView(slug) resolves to the view, or null when the game has only the flat picture.
  */
-const V = '?v=20261119-1241';
+const V = '?v=20261119-1247';
 const FILES = {
   'turbo-tunnel': ['./turbo-view.js', 'turboView'],
   'ghost-hostel': ['./views/ghost-hostel.js', 'default'],

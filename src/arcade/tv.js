@@ -3,22 +3,22 @@
  * controllers. One person, a computer player, two people on one keyboard or two gamepads, or friends
  * on their own phones (the host's phone runs the game, the others show it and send their buttons).
  */
-import { hintsLeft, showHint } from './hint.js?v=20261119-1241';
-import { is2d } from './view-mode.js?v=20261119-1241';
-import { adBreak } from './ad-breaks.js?v=20261119-1241';
-import { resultAd, sideAd } from './ads.js?v=20261119-1241';
-import { myTableSize } from '../net/party.js?v=20261119-1241';
-import { W, H, TICK } from './video/lib.js?v=20261119-1241';
-import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261119-1241';
-import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261119-1241';
-import { MOMENT, linesFor } from './talk.js?v=20261119-1241';
-import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261119-1241';
-import { ask, confirmSpend } from './dialog.js?v=20261119-1241';
-import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261119-1241';
-import { profile } from '../persistence/profile-store.js?v=20261119-1241';
-import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261119-1241';
+import { hintsLeft, showHint } from './hint.js?v=20261119-1247';
+import { is2d } from './view-mode.js?v=20261119-1247';
+import { adBreak } from './ad-breaks.js?v=20261119-1247';
+import { resultAd, sideAd } from './ads.js?v=20261119-1247';
+import { myTableSize } from '../net/party.js?v=20261119-1247';
+import { W, H, TICK } from './video/lib.js?v=20261119-1247';
+import { NearbyHost, nearbyError, peekTables, PUBLIC_TABLES, tableCode } from '../net/nearby.js?v=20261119-1247';
+import { bestOf, gameFinished, holdPopups, popup, rankProgress } from './achievements.js?v=20261119-1247';
+import { MOMENT, linesFor } from './talk.js?v=20261119-1247';
+import { clearSaved, isReload, loadSaved, saveGame } from './resume.js?v=20261119-1247';
+import { ask, confirmSpend } from './dialog.js?v=20261119-1247';
+import { hotPrompt, resultImage, shareResult, suggestionRow } from './share.js?v=20261119-1247';
+import { profile } from '../persistence/profile-store.js?v=20261119-1247';
+import { reminderSettings, reminderSupported, setReminder } from './reminder.js?v=20261119-1247';
 
-const V = '?v=20261119-1241';
+const V = '?v=20261119-1247';
 const SEND_EVERY = 3;
 const PUBLIC_WAIT_MS = 15000;
 // the TV's picture: sharper on a computer, and sharper still on a big monitor where it is shown large
@@ -826,7 +826,7 @@ export async function runTv(ctx) {
       if (e?.currentTarget) e.currentTarget.disabled = true;
       let earned = false;
       try {
-        const ads = await import('../app/native-ads.js?v=20261119-1241');
+        const ads = await import('../app/native-ads.js?v=20261119-1247');
         earned = await ads.appReward({ pause: () => music(false), resume: () => {} });
       } catch { earned = false; }
       if (earned) carryOn(); else end();
@@ -900,7 +900,7 @@ export async function runTv(ctx) {
       guestLink ? h('p', { class: 'lead' }, ['Waiting for the host to play again…']) : btn(lost || r.endless ? '🔁 Try again' : `🔁 ${say.playAgain}`, () => rematch(), 'primary'),
       btn(won || info?.newBest ? '📤 Share my win' : '📤 Share my score', async () => {
         const pic = resultImage({ picture: canvas, game, headline: won ? 'I won!' : r.endless ? `I scored ${myScore}!` : 'Rematch?', sub: r.endless ? 'Can you beat me?' : names.join(' vs ') });
-        await shareResult({ canvas: pic, text: r.endless ? `I scored ${myScore} in ${game.name} on ChitPlay. Can you beat it?` : `${won ? 'I won' : 'I played'} ${game.name} on ChitPlay!`, slug: game.slug });
+        await shareResult({ canvas: pic, text: r.endless ? `I scored ${myScore} in ${game.name} on ChitPlay. Can you beat it? Free, no download:` : won ? `I just won ${game.name} on ChitPlay 🏆 Think you can beat me? Free, no download:` : `Let's play ${game.name} together on ChitPlay! Free, no download:`, slug: game.slug });
       }),
       suggestionRow(game.slug, '../', lost || r.endless ? 'Or try another game' : 'Try these next'),
       offer ? btn('🔔 Remind me to play every day', async (e) => {

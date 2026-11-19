@@ -1,9 +1,9 @@
 /** The 3D picture of flying-chit on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, canvasTex, ease, pool, std, wingedChit } from './common.js?v=20261119-1241';
-import { SEAT_COLORS, TICK } from '../lib.js?v=20261119-1241';
-import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261119-1241';
-import { GRAZE as FLY_GRAZE, placeAt, speedAt } from '../flying-chit.js?v=20261119-1241';
+import { TAU, basic, box, canvasTex, ease, pool, std, wingedChit } from './common.js?v=20261119-1247';
+import { SEAT_COLORS, TICK } from '../lib.js?v=20261119-1247';
+import { selectedGameCosmetic } from '../../game-cosmetics.js?v=20261119-1247';
+import { GRAZE as FLY_GRAZE, placeAt, speedAt } from '../flying-chit.js?v=20261119-1247';
 
 /* ─── Flying Chit: an endless classroom, morning to night ─── */
 // the room's light at each level: sky through the windows, the air, and how bright the tube lights are

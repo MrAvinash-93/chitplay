@@ -3,9 +3,9 @@
  * router, and event bus, and exposes the transition function used by screens.
  */
 import { GameState } from '../core/game-state.js';
-import { StateMachine } from '../core/state-machine.js?v=20261119-1241';
+import { StateMachine } from '../core/state-machine.js?v=20261119-1247';
 import { Router } from './router.js';
-import { GAME_PHASES } from './config.js?v=20261119-1241';
+import { GAME_PHASES } from './config.js?v=20261119-1247';
 import { gameBus, EVENTS } from '../core/event-bus.js';
 import { audioManager } from '../audio/audio-manager.js';
 
