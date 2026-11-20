@@ -1,8 +1,8 @@
 /** The 3D picture of backyard-rally on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { basic, box, canvasTex, pool, std, toX, toZ } from './common.js?v=20261119-1247';
-import { H as HOOP_H, SEAT_COLORS, TICK, W as HOOP_W } from '../lib.js?v=20261119-1247';
-import { TOP as RALLY_TOP, WIN as RALLY_WIN } from '../backyard-rally.js?v=20261119-1247';
+import { basic, box, canvasTex, pool, std, toX, toZ } from './common.js?v=20261120-0817';
+import { H as HOOP_H, SEAT_COLORS, TICK, W as HOOP_W } from '../lib.js?v=20261120-0817';
+import { TOP as RALLY_TOP, WIN as RALLY_WIN } from '../backyard-rally.js?v=20261120-0817';
 
 function rallyView() {
   const scene = new THREE.Scene();

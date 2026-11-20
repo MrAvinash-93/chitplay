@@ -13,7 +13,7 @@
  */
 // Language packs are loaded on demand: a player only downloads the lines of
 // the language they are actually playing in.
-const V = '?v=20261119-1247';
+const V = '?v=20261120-0817';
 const LOADERS = {
   english: () => import(`./lines/english.js${V}`),
   japanese: () => import(`./lines/japanese.js${V}`),

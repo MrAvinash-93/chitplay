@@ -1,8 +1,8 @@
 /** The 3D picture of ghost-hostel on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261119-1247';
-import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from '../ghost-hostel.js?v=20261119-1247';
-import { TAU, basic, box, canvasTex, pool, std } from './common.js?v=20261119-1247';
+import { SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261120-0817';
+import { ALTAR as GHOST_ALTAR, CORRIDOR_Y as GHOST_CORRIDOR, DOOR as GHOST_DOOR, NIGHT as GHOST_NIGHT, RAGE as GHOST_RAGE, roomX as GHOST_ROOMX } from '../ghost-hostel.js?v=20261120-0817';
+import { TAU, basic, box, canvasTex, pool, std } from './common.js?v=20261120-0817';
 
 /* ─── Ghost Hostel: a row of rooms seen from above the corridor, and the ghost floating in it ─── */
 function ghostView() {

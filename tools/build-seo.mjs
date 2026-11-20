@@ -12,7 +12,7 @@
  *         node tools/build-seo.mjs [https://www.chitplay.com] --game-guides-only
  * (Run it again whenever a game, name or rule changes.)
  */
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GUIDES as STRATEGY_GUIDES, writeStrategyGuides } from './strategy-guides.mjs';
@@ -31,6 +31,13 @@ const SAVED_PUB = existsSync(ADS_TXT) ? (readFileSync(ADS_TXT, 'utf8').match(/pu
 const PUB = (ARGS.find(arg => /^pub-\d{10,20}$/.test(arg)) || process.env.ADSENSE_PUB || SAVED_PUB).trim();
 const HAS_ADS = /^pub-\d{10,20}$/.test(PUB);
 // both ways AdSense verifies a site: the meta tag and the ad code itself
+/**
+ * AdSense review mode (from 2026-11-20, after the first review said the site needs fixing): Google
+ * reviews the English site only. The pages in other languages stay online at the same addresses, but
+ * are noindex, carry no ad code and leave the sitemap and the hreflang lists, and Adsterra is off.
+ * After AdSense approves, set REVIEW to false and rebuild to bring them all back.
+ */
+const REVIEW = true;
 const ADSENSE_TAG = HAS_ADS ? `\n<meta name="google-adsense-account" content="ca-${PUB}">\n<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-${PUB}" crossorigin="anonymous"></script>` : '';
 /**
  * Ad places on the reading pages (game guides, articles, categories): between paragraphs, never next to
@@ -44,7 +51,7 @@ const AD_SLOTS = { guide: '', article: '', category: '' };
  * Empty ADSTERRA_NATIVE turns it off everywhere.
  */
 const ADSTERRA_NATIVE = { src: 'https://bauval.org/21/d5795ad3a6b91ea89d9d71ba6f70c273', id: 'd5795ad3a6b91ea89d9d71ba6f70c273' };
-const adsterraBox = () => (ADSTERRA_NATIVE.id ? `<style>.adbox:not(:has(iframe, [id^=container-] *)){display:none}</style><aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><div id="container-${ADSTERRA_NATIVE.id}" style="min-height:120px"></div><script async="async" data-cfasync="false" src="${ADSTERRA_NATIVE.src}"></script></aside>` : '');
+const adsterraBox = () => (!REVIEW && ADSTERRA_NATIVE.id ? `<style>.adbox:not(:has(iframe, [id^=container-] *)){display:none}</style><aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><div id="container-${ADSTERRA_NATIVE.id}" style="min-height:120px"></div><script async="async" data-cfasync="false" src="${ADSTERRA_NATIVE.src}"></script></aside>` : '');
 /**
  * Adsterra display banner, near the end of a reading page (after its questions). Both sizes share the
  * network's global atOptions, so a page runs exactly one: 300×250 on a phone, 728×90 on a wide screen,
@@ -52,7 +59,7 @@ const adsterraBox = () => (ADSTERRA_NATIVE.id ? `<style>.adbox:not(:has(iframe, 
  * is read in (document.write), as the network's own code does. Empty keys turn it off.
  */
 const ADSTERRA_BANNER = { phone: '0d0ef2bd40ba59e938dff27d3e6fd82c', wide: '8097c2bfb6769d5f4e6978f1fb86828a' };
-const bannerSlot = () => (ADSTERRA_BANNER.phone ? `<style>.adbox:not(:has(iframe, [id^=container-] *)){display:none}</style><aside class="adbox adbox--banner" aria-label="Advertisement"><small>Advertisement</small><div class="adbanner" style="display:flex;justify-content:center;overflow:hidden;min-height:90px"><script>(function(){var w=window.innerWidth>=760&&'${ADSTERRA_BANNER.wide}';var k=w||'${ADSTERRA_BANNER.phone}';window.atOptions={key:k,format:'iframe',height:w?90:250,width:w?728:300,params:{}};document.write('<scr'+'ipt src="https://bauval.org/22/'+k+'"><\\/scr'+'ipt>');})();</script></div></aside>` : '');
+const bannerSlot = () => (!REVIEW && ADSTERRA_BANNER.phone ? `<style>.adbox:not(:has(iframe, [id^=container-] *)){display:none}</style><aside class="adbox adbox--banner" aria-label="Advertisement"><small>Advertisement</small><div class="adbanner" style="display:flex;justify-content:center;overflow:hidden;min-height:90px"><script>(function(){var w=window.innerWidth>=760&&'${ADSTERRA_BANNER.wide}';var k=w||'${ADSTERRA_BANNER.phone}';window.atOptions={key:k,format:'iframe',height:w?90:250,width:w?728:300,params:{}};document.write('<scr'+'ipt src="https://bauval.org/22/'+k+'"><\\/scr'+'ipt>');})();</script></div></aside>` : '');
 const adSlot = (name) => (HAS_ADS && AD_SLOTS[name] ? `<aside class="adbox" aria-label="Advertisement"><small>Advertisement</small><ins class="adsbygoogle" style="display:block;min-height:250px" data-ad-client="ca-${PUB}" data-ad-slot="${AD_SLOTS[name]}" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></aside>` : adsterraBox());
 
 const CONTACT_EMAIL = 'chitplaygame@gmail.com';
@@ -455,7 +462,7 @@ ${ANALYTICS}
 ${iconLinks('../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../assets/game-guide.css?v=20261119-1247">
+<link rel="stylesheet" href="../../assets/game-guide.css?v=20261120-0817">
 </head>
 <body class="game-guide">
 <a class="skip-link" href="#content">Skip to game guide</a>
@@ -565,7 +572,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261119-1247">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261120-0817">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -643,7 +650,7 @@ ${ANALYTICS}
 ${iconLinks('../../../')}
 ${alternates}
 <script type="application/ld+json">${json(ld)}</script>
-<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261119-1247">
+<link rel="stylesheet" href="../../../assets/game-guide.css?v=20261120-0817">
 </head>
 <body class="game-guide" lang="${L.code}">
 <a class="skip-link" href="#content">${esc(L.ui.skip)}</a>
@@ -883,12 +890,14 @@ const CATEGORIES = [
     desc: 'Play Ludo, Chess, Carrom, Snakes and Ladders, Checkers and more board and dice games free online in 3D, against the computer or with friends.',
     h1: 'Board games: play free online in 3D',
     intro: ['The board games families have played at home for generations, set out on a mat in a 3D room: Ludo, Carrom, Chess, Snakes and Ladders, Checkers, Reversi, Mancala, Nine Men\u2019s Morris and Four in a Row, plus the dice games Yacht and Pig.', 'Every game follows its usual rules, with the house rules people argue about switchable on or off. Play the computer at easy, normal or hard, invite friends to join from their own phones with a code, or pass one phone round the table.'],
+    guide: [["Which board game suits your group?", "Ludo is the one to pick when ages are mixed: the dice keep a young player in the game against an adult, and two to four people can play. Chess and Checkers suit two players who enjoy planning, because nothing is left to luck and the better player usually wins. Carrom is about a steady hand, so it rewards practice more than thinking. Snakes and Ladders is pure luck, which makes it the fairest choice for the youngest players. Mancala and Nine Men’s Morris are ancient games that take ten minutes and still give a thinking player an edge."], ["Tips that help in most board games", "Before each move, ask what your opponent wants to do next and whether your move makes it easier. In Ludo, keep one token on a safe square and do not open all four at once, so a capture costs you little. In Reversi the corners can never be flipped back, so avoid the squares next to an empty corner. In Four in a Row the middle column takes part in the most lines, so start there. In Chess, bring the knights and bishops out before moving the queen, and castle early to keep the king safe."]],
     faq: [['What is the best board game to play online with friends?', 'Ludo is the favourite: two to four players, quick to learn and full of comebacks. Chess and Carrom are best for two.'], ['Can I play board games online without signing up?', 'Yes. Every ChitPlay board game can be played as a guest, with no account and no download.']] },
   { slug: 'card-games', kinds: ['Cards'], name: 'Card games',
     title: 'Free Card Games Online: Call Break, Crazy Eights | ChitPlay',
     desc: 'Play Call Break, Color Clash and Crazy Eights free online in 3D: card games for 2 to 4 players against the computer or with friends.',
     h1: 'Card games: play free online with friends',
     intro: ['Shuffle up for card games that work as well at a table as they do on a phone. Call Break is the trick-taking favourite of South Asia, where spades are always trumps. Color Clash is a fast colour-and-number shedding game with +2 and Rainbow +4 cards, and Crazy Eights is the classic where an eight changes the suit.', 'Your hand stays hidden on your own screen, the table shows the cards everyone can see, and computer players fill any empty seat.', 'Each game keeps score across several rounds, so one bad hand never decides it: Call Break is played over five rounds, Color Clash to 150 points or five rounds, and Crazy Eights over three. The score for every player stays on the screen, and the rules page of each game explains the scoring with examples, so new players can join a table and keep up from the first deal.'],
+    guide: [["Call Break in a few lines", "Call Break uses one deck of 52 cards and four players, with 13 cards each. Before each round every player calls how many tricks they expect to win. You must follow the suit that was led if you can; if you cannot, you must play a spade when you have one, because spades always beat the other suits. Making your call scores points, and falling short costs you points, so a careful call is often worth more than a bold one."], ["Small habits that win card games", "Count the spades as they fall in Call Break: once the high ones are gone, your middle spades become winners. Lead a suit only when you hold its top card, or when you want to make others use up their spades. In Crazy Eights keep your eights until you really need to change the suit, and get rid of high cards early. In Color Clash save a Rainbow +4 for the end, when another player is down to their last cards."]],
     faq: [['How do you play Call Break online?', 'Open Call Break on ChitPlay, bid how many tricks you will win, then win them. Spades are always trumps. Play the computer or invite three friends.'], ['Are the card games free?', 'Yes, all the card games are free, with no real money, betting or prizes.']] },
   { slug: 'arcade-games', kinds: ['Arcade'], name: 'Arcade games',
     title: 'Free 3D Arcade Games Online: Fly, Race, Shoot Hoops | ChitPlay',
@@ -901,12 +910,14 @@ const CATEGORIES = [
     desc: 'Play Who Is the Spy, Werewolf Night, Truth or Dare, Majority Vote and more party games free online, with friends on one phone or their own.',
     h1: 'Party games for groups: free online',
     intro: ['Party games for three to ten people, for evenings with friends and family: find the spy from the clues, catch the werewolves before morning, answer a friendly truth or dare, guess what most of the table will choose, or write a folded story one line at a time.', 'Play them on one phone passed round the room, or with everyone on their own phone. And the paper chit game that started ChitPlay, Raja Rani Chor Police, is the classic four-player party game of bluffing.'],
+    guide: [["How hidden-role games work", "Who Is the Spy and Werewolf Night are hidden-role games: a few players get a secret role, and everyone else has to find them by talking and then voting. The secret players win by blending in. Give clues that are true but not too obvious, so the spy cannot copy them, and listen for answers that are vague or come a little too late. If you are the spy, describe the word in a general way and let the others talk first."], ["Keeping a party game fun for everyone", "Short rounds keep everyone involved, so it is better to play several quick games than one long one. In Truth or Dare, any question or dare can be skipped, and nobody should be pushed into one. Consequences and Majority Vote need no skill at all, which makes them a good start for a group that has just met. Raja Rani Chor Police works best with exactly four players and a good poker face."]],
     faq: [['What is a good party game for a big group?', 'Who Is the Spy and Werewolf Night both work well for five to ten players.'], ['Are the party games suitable for every age?', 'Yes. Questions and dares are friendly, and any prompt can be skipped.']] },
   { slug: 'pen-and-paper-games', kinds: ['Puzzle'], slugs: ['tic-tac-toe', 'dots-and-boxes', 'bingo', 'memory-match'], name: 'Pen and paper games',
     title: 'Free Pen and Paper Games Online: Tic-Tac-Toe, Bingo & More | ChitPlay',
     desc: 'Play Tic-Tac-Toe, Dots and Boxes, Bingo and Memory Match free online: the pen and paper games from school, against the computer or with friends.',
     h1: 'Pen and paper games: the school classics online',
     intro: ['The games from the back of a notebook: Tic-Tac-Toe, Dots and Boxes, Bingo with a 5 × 5 card of 1 to 25, and Memory Match, quick to learn and always ready for a rematch.', 'They are drawn on paper on the mat in the 3D room, and you can play them against the computer, with a friend on one phone, or with friends on their own phones.', 'They are small games with real thinking in them. Tic-Tac-Toe teaches you to look one move ahead and block a line before it is made. Dots and Boxes rewards patience: the player who avoids giving away the last free box usually wins the chain. Memory Match is all about concentration, remembering where each picture was when somebody else turned it over. A round takes a minute or two, so they are perfect for a short break or for playing with younger brothers, sisters and grandparents.'],
+    guide: [["Simple ways to play these games better", "In Tic-Tac-Toe, take the centre or a corner first, and always check whether your opponent has two in a row before you make your own plan. In Dots and Boxes, count the long chains near the end of the game: the player who forces the other to open the last chain usually takes most of the boxes. In Bingo, players take turns calling numbers, so call the ones that finish your own lines, and notice which numbers the others keep calling. In Memory Match, turn over the cards in order, row by row, so you remember positions instead of guessing."]],
     faq: [['Can you win every game of Tic-Tac-Toe?', 'No. With perfect play from both sides it is always a draw, so the fun is in catching a mistake.'], ['How do you win Dots and Boxes?', 'Close more boxes than anyone else. Closing a box gives you another turn, so avoid drawing the third side of a box.']] },
   { slug: 'puzzle-games', kinds: [], slugs: ['unblock-puzzle', 'word-guess', 'number-memory', 'stroop-test', 'fast-typing', 'reaction-time', 'memory-match'], name: 'Puzzle and brain games',
     title: 'Free Puzzle & Brain Games Online: Unblock, Word Guess | ChitPlay',
@@ -919,6 +930,7 @@ const CATEGORIES = [
     desc: 'Play free 3D racing and tunnel games online: race a car round a tunnel in Turbo Tunnel, fly through Tunnel Race, dodge traffic in Road Dash. No download, alone or with friends.',
     h1: 'Racing and tunnel games: free online in 3D',
     intro: ['Fast 3D games where you steer through something that never ends. In Turbo Tunnel you drive a car round the inside of a tunnel, dodging traffic, lasers and falling rocks; Tunnel Race sends a paper plane down a turning tunnel; Road Dash puts you in an auto-rickshaw on a busy road; and Flying Chit steers a winged chit through classroom bangles.', 'Every run gets faster and brings new obstacles, but nothing appears too late to dodge: each obstacle is placed so there is always a way through. Play alone for a high score, or race up to three friends on one screen or on their own phones, with no download and no sign-up.', 'On a phone you steer with the controls on screen; on a computer use the arrow keys or W A S D, or plug in a gamepad. The graphics adjust themselves to keep the game smooth on older phones.'],
+    guide: [["How to get a higher score", "Look further down the road or tunnel than feels natural: the earlier you see an obstacle, the smaller the steering move you need. Small, early moves beat big late ones, which can throw you into the next obstacle. Each level brings new obstacles, so play the early levels a few times to learn their patterns. When racing friends, remember that one crash costs more than a slightly slower, safer line."]],
     faq: [['Is there a free tunnel game I can play online?', 'Yes. Turbo Tunnel and Tunnel Race are free 3D tunnel games on ChitPlay. They run in the browser on phones and computers, with no download.'], ['Can I race my friends?', 'Yes. Choose Play with friends and share the code, or sit side by side on one computer with W A S D and the arrow keys.']] },
 ];
 function categoryPage(c) {
@@ -965,6 +977,7 @@ ${logoLink('../../')}
 ${c.intro.map(t => `<p>${esc(t)}</p>`).join('\n')}
 <h2>${games.length} ${esc(c.name.toLowerCase())} to play</h2>
 <ul class="games">${games.map(g => `<li><img src="../../assets/games/${g.slug}-square.webp" alt="${esc(g.name.replace('?', ''))} logo" width="64" height="64" loading="lazy" decoding="async"><div><strong>${esc(g.name)}</strong> <small>👥 ${g.players} players · ⏱ ${g.time}</small><br>${esc(g.blurb)}<br><a class="go" href="../../play/?game=${g.slug}&mode=play">▶ Play</a> <a href="../${g.slug}/">Rules and tips</a></div></li>`).join('')}</ul>
+${(c.guide || []).map(([h, t]) => `<h2>${esc(h)}</h2>\n<p>${esc(t)}</p>`).join('\n')}
 <p><a class="btn" href="../../">▶ Open ChitPlay</a></p>
 ${adSlot('category')}
 <h2>Questions</h2>
@@ -1694,5 +1707,42 @@ const notFound = readFileSync(join(ROOT, '404.html'), 'utf8').replace(/<!-- anal
 const playApp = join(ROOT, 'play', 'index.html');
 if (existsSync(playApp)) writeFileSync(playApp, readFileSync(playApp, 'utf8').replace(/<!-- analytics -->[\s\S]*?<!-- \/analytics -->/, ANALYTICS.replace(ADSENSE_TAG, '')));
 writeFileSync(join(ROOT, '404.html'), notFound);
+
+// review mode: the pages in other languages leave the index and carry no ads (see REVIEW above)
+if (REVIEW) {
+  const langDirs = LANG_PAGES.map(L => L.dir);
+  const langCodes = new Set(LANG_PAGES.map(L => L.code));
+  const langAlternate = /<link rel="alternate" hreflang="([a-zA-Z-]+)" href="[^"]*">\r?\n?/g;
+  const htmlFiles = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap(d => d.isDirectory() ? htmlFiles(join(dir, d.name)) : d.name.endsWith('.html') ? [join(dir, d.name)] : []);
+  const skip = new Set(['archive', 'tests', 'tools', 'src', 'assets', 'node_modules', '.git', '.claude']);
+  let quiet = 0;
+  for (const top of readdirSync(ROOT, { withFileTypes: true })) {
+    if (!top.isDirectory() || skip.has(top.name)) continue;
+    const isLang = langDirs.includes(top.name);
+    for (const file of htmlFiles(join(ROOT, top.name))) {
+      let html = readFileSync(file, 'utf8');
+      const before = html;
+      html = html.replace(langAlternate, (tag, code) => (langCodes.has(code) ? '' : tag));
+      if (isLang) {
+        html = html.replace(/<meta name="robots" content="[^"]*">/, '<meta name="robots" content="noindex, follow">');
+        if (ADSENSE_TAG) html = html.replace(ADSENSE_TAG, '');
+        quiet++;
+      }
+      if (html !== before) writeFileSync(file, html);
+    }
+  }
+  // the home page lists the languages too
+  const home = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const quietHome = home.replace(langAlternate, (tag, code) => (langCodes.has(code) ? '' : tag));
+  if (quietHome !== home) writeFileSync(join(ROOT, 'index.html'), quietHome);
+  // and the sitemap keeps the English pages only
+  const langPrefixes = langDirs.map(dir => `<loc>${SITE}/${dir}/`);
+  const sitemap = readFileSync(join(ROOT, 'sitemap.xml'), 'utf8').split('\n')
+    .filter(line => !langPrefixes.some(prefix => line.includes(prefix)))
+    .map(line => line.replace(/<xhtml:link rel="alternate" hreflang="([a-zA-Z-]+)" href="[^"]*"\/>/g, (tag, code) => (langCodes.has(code) ? '' : tag)))
+    .join('\n');
+  writeFileSync(join(ROOT, 'sitemap.xml'), sitemap);
+  console.log(`AdSense review mode: ${quiet} pages in other languages set to noindex without ads; sitemap ${sitemap.match(/<loc>/g).length} urls`);
+}
 
 console.log(`SEO built for ${SITE}: ${COUNTRY_ORDER.length} game pages, hub, sitemap (${urls.length} urls), robots, manifest, index.html`);

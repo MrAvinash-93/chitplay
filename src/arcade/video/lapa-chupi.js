@@ -1,3 +1,3 @@
-import { makeTagGame } from './tag-game-core.js?v=20261119-1247';
+import { makeTagGame } from './tag-game-core.js?v=20261120-0817';
 
 export default makeTagGame('lapa-chupi');

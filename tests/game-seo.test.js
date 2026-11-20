@@ -68,6 +68,10 @@ test('every catalog game has names and descriptions in each published SEO langua
   }
 });
 
+// AdSense review mode (tools/build-seo.mjs REVIEW): the pages in other languages are noindex and
+// no page lists them as alternates, until AdSense approves the site
+const REVIEW = /const REVIEW = true;/.test(readFileSync(join(ROOT, 'tools', 'build-seo.mjs'), 'utf8'));
+
 test('every English and localized game guide has an authentic gameplay preview', () => {
   for (const game of GUIDES) {
     const preview = join(ROOT, 'assets', 'gameplay', `${game.slug}.jpg`);
@@ -75,7 +79,7 @@ test('every English and localized game guide has an authentic gameplay preview',
     assert.deepEqual(jpegDimensions(preview), { width: 1200, height: 630 }, `${game.slug} preview must be 1200x630`);
     // only pages with a full guide in their language are offered to search engines and linked as
     // alternates; the rest exist for players but carry noindex (the main game has its own full pages)
-    const guided = (language) => game.slug === 'cops-and-robbers' || !!guideFor(language.code, game.slug);
+    const guided = (language) => !REVIEW && (game.slug === 'cops-and-robbers' || !!guideFor(language.code, game.slug));
     const cluster = [
       ['en', `https://www.chitplay.com/games/${game.slug}/`],
       ...LANG_PAGES.filter(guided).map((language) => [language.code, `https://www.chitplay.com/${language.dir}/games/${game.slug}/`]),
@@ -125,7 +129,7 @@ test('every game-idea article is written in every language, with the same games 
       const file = join(ROOT, L.dir || '', 'articles', A.slug, 'index.html');
       assert.ok(existsSync(file), `${L.code}: ${A.slug} page not built`);
       const html = readFileSync(file, 'utf8');
-      assert.equal((html.match(/<link rel="alternate" hreflang=/g) || []).length, langs.length + 1, `${L.code}: ${A.slug} must name every language version and x-default`);
+      assert.equal((html.match(/<link rel="alternate" hreflang=/g) || []).length, REVIEW ? 2 : langs.length + 1, `${L.code}: ${A.slug} must name every language version and x-default`);
       assert.ok(html.includes('"FAQPage"') && html.includes('"Article"'), `${L.code}: ${A.slug} needs Article and FAQ schema`);
       for (const g of A.games) assert.ok(html.includes(g === 'cops-and-robbers' ? '?game=cops-and-robbers' : `play/?game=${g}&amp;mode=play`) || html.includes(`play/?game=${g}&mode=play`), `${L.code}: ${A.slug} has no play link for ${g}`);
     }

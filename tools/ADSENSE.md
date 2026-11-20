@@ -87,3 +87,14 @@ You can request a new review after fixing the issue.
 - Certified CMP: https://support.google.com/adsense/answer/13554116
 - ads.txt: https://support.google.com/adsense/answer/12171612
 - Children / COPPA: https://support.google.com/adsense/answer/3248194
+
+## Review mode (since 2026-11-20)
+
+The first review (2026-11-19) came back "needs fixing". The likely cause was low-value content: on a two-week-old domain, 912 of the 990 pages in the sitemap were shorter translated pages in 16 languages. So `REVIEW = true` in `tools/build-seo.mjs` now does the following:
+- The pages in other languages stay online at the same addresses, but are `noindex`, carry no AdSense code, and are left out of the sitemap and the hreflang lists. The sitemap has the 78 English pages.
+- Adsterra is off everywhere: on the reading pages, and in the games (`ID = ''` in `src/arcade/ads.js`).
+- The category pages gained original guide sections.
+
+After approval: set `REVIEW = false`, put the Adsterra id back if still wanted, run `node tools/build-seo.mjs` and `node tools/release.mjs`, push, then run `node tools/indexnow.mjs`.
+
+Resubmit: wait about two weeks after the push so Google recrawls the site, then go to AdSense, Sites, chitplay.com, tick "I confirm I have fixed the issues", and press Request review.

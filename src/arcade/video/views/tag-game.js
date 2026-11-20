@@ -1,8 +1,8 @@
 /** The 3D picture of tag-game on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { basic, box, lights, std } from './common.js?v=20261119-1247';
-import { FURNITURE, TAG_COVER } from '../tag-game-core.js?v=20261119-1247';
-import { H as HOOP_H, SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261119-1247';
+import { basic, box, lights, std } from './common.js?v=20261120-0817';
+import { FURNITURE, TAG_COVER } from '../tag-game-core.js?v=20261120-0817';
+import { H as HOOP_H, SEAT_COLORS, W as HOOP_W } from '../lib.js?v=20261120-0817';
 
 /*
  * The tag games in 3D: hide and seek in a big house (rooms with their own floors, low walls with wide

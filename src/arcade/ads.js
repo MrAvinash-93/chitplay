@@ -8,7 +8,8 @@
  * Never on a phone during play. The box stays hidden until an ad has actually arrived, so nobody
  * ever sees an empty "Advertisement" label. Set ID to '' to switch ads off.
  */
-const ID = 'd5795ad3a6b91ea89d9d71ba6f70c273';
+// off while Google AdSense reviews the site again (2026-11-20): put the id back to bring Adsterra back
+const ID = '';
 const SRC = 'https://bauval.org/21/d5795ad3a6b91ea89d9d71ba6f70c273';
 // never on a computer at home or in testing: impressions there would count as invalid traffic
 // and never in the Android app, which shows AdMob instead (src/app/native-ads.js)

@@ -1,8 +1,8 @@
 /** The 3D picture of hungry-snake on the TV (src/arcade/video/views.js picks it). */
 import * as THREE from '../../../vendor/three.chitplay.min.js';
-import { TAU, basic, box, canvasTex, ease, pool, std, tableCamera } from './common.js?v=20261119-1247';
-import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from '../hungry-snake.js?v=20261119-1247';
-import { SEAT_COLORS } from '../lib.js?v=20261119-1247';
+import { TAU, basic, box, canvasTex, ease, pool, std, tableCamera } from './common.js?v=20261120-0817';
+import { COLS as SNAKE_COLS, ROWS as SNAKE_ROWS } from '../hungry-snake.js?v=20261120-0817';
+import { SEAT_COLORS } from '../lib.js?v=20261120-0817';
 
 // the garden's grass at each level: spring green, deeper green, evening, night under a lamp
 const SNAKE_MOODS = [

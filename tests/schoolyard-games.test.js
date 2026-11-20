@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import spinDuel, { LAUNCH_TICKS as SPIN_LAUNCH_TICKS } from '../src/arcade/video/spin-duel.js?v=20261119-1247';
-import penFight, { LAUNCH_TICKS as PEN_LAUNCH_TICKS } from '../src/arcade/video/pen-fight.js?v=20261119-1247';
-import lapaChupi from '../src/arcade/video/lapa-chupi.js?v=20261119-1247';
+import spinDuel, { LAUNCH_TICKS as SPIN_LAUNCH_TICKS } from '../src/arcade/video/spin-duel.js?v=20261120-0817';
+import penFight, { LAUNCH_TICKS as PEN_LAUNCH_TICKS } from '../src/arcade/video/pen-fight.js?v=20261120-0817';
+import lapaChupi from '../src/arcade/video/lapa-chupi.js?v=20261120-0817';
 
 function hudText(state) {
   const text = [];
